@@ -8,7 +8,7 @@ function PaginaPrincipal() {
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Navbar */}
             <Navbar bg="white" className="border-bottom px-4 py-0" style={{ height: '52px' }}>
-                <Navbar.Brand href="#home">
+                <Navbar.Brand href="PaginaPrincipal">
                     <img src={logoImg} alt="Softinsa" style={{ height: '40px' }} />
                 </Navbar.Brand>
 
@@ -61,11 +61,11 @@ function PaginaPrincipal() {
                         <BiUserCircle size={28} color="#6b7280" />
                         <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>Consultor</span>
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', padding: '0 16px 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pages</div>
+                    <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', padding: '0 16px 6px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign:'left' }}>Pages</div>
 
                     <ListGroup variant="flush">
                         <ListGroup.Item action active className="border-0 d-flex align-items-center gap-2" style={{ fontSize: 13, borderRight: '3px solid #2563eb', background: '#eff6ff', color: '#2563eb' }}>
-                            <BiGrid size={16} /> Main Page
+                            <BiGrid size={16} /> Página Principal
                         </ListGroup.Item>
                         <ListGroup.Item action className="border-0 d-flex align-items-center gap-2" style={{ fontSize: 13 }}>
                             <BiGrid size={16} /> Perfil do Consultor
@@ -91,7 +91,7 @@ function PaginaPrincipal() {
                                         { icon: <BiStar size={25}/>, top: 'Pontos totais', bottom: '90 pontos' },
                                         { icon: <BiUserCircle size={25}/>, bottom: 'Lembretes' }
                                     ].map((s, i) => (
-                                        <div key={i} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                                        <div key={i} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, textAlign:'left' }}>
                                             {s.icon}
                                             <div>
                                                 {s.top && <div style={{ fontSize: 10, opacity: 0.8 }}>{s.top}</div>}
@@ -126,7 +126,7 @@ function PaginaPrincipal() {
                 </div>
 
                 {/* Right Panel */}
-                <div style={{ width: 260, background: 'white', borderLeft: '1px solid #e5e7eb', padding: 16, flexShrink: 0, overflowY: 'auto' }}>
+                <div style={{ width: 260, background: 'white', borderLeft: '1px solid #e5e7eb', padding: 16, flexShrink: 0, overflowY: 'auto', textAlign:'left'}}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Notificações</div>
                     {[
                         { text: 'Atualizou o perfil de acesso', time: '59 minutos atrás' },
