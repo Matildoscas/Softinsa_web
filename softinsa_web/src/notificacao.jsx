@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Navbar, Nav, Form } from 'react-bootstrap';
+import { Container, Row, Col, ListGroup, Card, ProgressBar, Navbar, Nav, Form, Button } from 'react-bootstrap';
 import { BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
+import { HiOutlineArrowLeft } from 'react-icons/hi';
 import logoImg from './assets/logo.png';
+import { useNavigate } from 'react-router-dom';
 
-function PaginaPrincipal() {
+function NotificacaoPage() {
     return (
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Navbar */}
@@ -80,49 +82,15 @@ function PaginaPrincipal() {
 
                 {/* Main Content */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-                    {/* Welcome Card */}
-                    <Card className="border-0 mb-3" style={{ background: '#3b6fd4', borderRadius: 12 }}>
-                        <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
-                            <div>
-                                <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>Bom dia, Utilizador!</h5>
-                                <div className="d-flex gap-2">
-                                    {[
-                                        { icon: <BiMedal size={25}/>, top: 'Badges', bottom: 'Tem 5 badges' },
-                                        { icon: <BiStar size={25}/>, top: 'Pontos totais', bottom: '90 pontos' },
-                                        { icon: <BiUserCircle size={25}/>, bottom: 'Lembretes' }
-                                    ].map((s, i) => (
-                                        <div key={i} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, textAlign:'left' }}>
-                                            {s.icon}
-                                            <div>
-                                                {s.top && <div style={{ fontSize: 10, opacity: 0.8 }}>{s.top}</div>}
-                                                <div style={{ fontWeight: 600 }}>{s.bottom}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <BiUserCircle size={50} color="rgba(255,255,255,0.8)" />
-                            </div>
-                        </Card.Body>
-                    </Card>
-
-                    {/* Catalog Button */}
-                    <div className="text-center mb-4">
-                        <Button variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
-                            <BiGrid size={20} /> Catálogo de Badges
-                        </Button>
-                    </div>
-
-                    {/* Badges com progresso */}
-                    <BadgeSection title="Badges com progresso" sub="Tem 1 badge em progresso">
-                        <BadgeCard name="The Watchtower - Nível A" desc="Observability & Performance Specialist" points={10} progress={70} />
-                    </BadgeSection>
-
-                    {/* Recomendação */}
-                    <BadgeSection title="Recomendação de badge" sub="O nosso sistema recomenda:">
-                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
-                    </BadgeSection>
+                    <Button 
+                        variant="link" 
+                        className="d-flex align-items-center text-decoration-none p-0"
+                        style={{ color: '#4A5568', fontSize: '1.2rem' }}
+                        onClick={() => navigate('/PaginaPrincipal.jsx')}
+                        >
+                        <HiOutlineArrowLeft className="me-1" />
+                        <span style={{ fontWeight: '200' }}>Voltar</span>
+                    </Button>
                 </div>
 
                 {/* Right Panel */}
@@ -191,4 +159,4 @@ function BadgeCard({ name, desc, points, progress }) {
     );
 }
 
-export default PaginaPrincipal;
+export default NotificacaoPage;

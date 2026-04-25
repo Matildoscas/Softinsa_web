@@ -27,7 +27,7 @@ function LoginPage() {
         <Col md={6} className="d-flex align-items-center justify-content-center" style={{ height: '100vh' }}>
           <Card 
             className="border-0 shadow-sm" 
-            style={{ width: '100%', maxWidth: '450px', borderRadius: '12px', padding: '2rem' }}
+            style={{ width: '100%', maxWidth: '500px', borderRadius: '12px', padding: '2rem' }}
           >
             <Card.Body>
               <div className="text-center mb-4">
@@ -77,7 +77,7 @@ function LoginPage() {
                   </InputGroup>
                 </Form.Group>
 
-                <div className="mb-4">
+                <div className="mb-4 text-start">
                   <a href="#" className="text-decoration-none fw-bold" style={{ fontSize: '0.85rem', color: '#1a73e8' }}>
                     Esqueceu a password?
                   </a>
