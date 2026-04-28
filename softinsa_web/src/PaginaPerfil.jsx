@@ -5,8 +5,15 @@ import logoImg from './assets/logo.png';
 import { useNavigate, Link } from 'react-router-dom';
 
 
-function PaginaPrincipal() {
+function PaginaPerfil() {
     const navigate = useNavigate();
+
+    const badgeConquistadoData = {
+        name: "Script Initiate - Nível A",
+        desc: "Automation & Deployment (CI/CD)",
+        points: 10,
+        dateConquered: "03/02/2025" // Adicione esta prop
+    };
 
     const notificationsPopover = (
         <Popover id="popover-notifications" style={{ width: '320px', maxWidth: 'none', borderRadius: '12px' }}>
@@ -117,7 +124,7 @@ function PaginaPrincipal() {
                         <BiBell size={18} color="white" />
                         </div>
                     </OverlayTrigger>
-                    <div onClick={() => navigate('/perfil')} style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                         <BiUserCircle size={20} color="white" />
                     </div>
                 </Nav>
@@ -133,10 +140,10 @@ function PaginaPrincipal() {
                     <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', padding: '0 16px 6px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign:'left' }}>Pages</div>
 
                     <ListGroup variant="flush">
-                        <ListGroup.Item action active className="border-0 d-flex align-items-center gap-2" href="/" style={{ fontSize: 13, borderRight: '3px solid #2563eb', background: '#eff6ff', color: '#2563eb' }}>
+                        <ListGroup.Item action className="border-0 d-flex align-items-center gap-2" href="/" style={{ fontSize: 13 }}>
                             <BiGrid size={16} /> Página Principal
                         </ListGroup.Item>
-                        <ListGroup.Item action className="border-0 d-flex align-items-center gap-2" href="/perfil" style={{ fontSize: 13 }}>
+                        <ListGroup.Item action active className="border-0 d-flex align-items-center gap-2"  href="/perfil" style={{ fontSize: 13, borderRight: '3px solid #2563eb', background: '#eff6ff', color: '#2563eb' }}>
                             <BiGrid size={16} /> Perfil do Consultor
                         </ListGroup.Item>
                         <div style={{ paddingLeft: 16 }}>
@@ -161,11 +168,9 @@ function PaginaPrincipal() {
                                         { icon: <BiUserCircle size={25}/>, bottom: 'Lembretes', path: '/lembretes' }
                                     ].map((s, i) => {
                                         
-                                        // 1. Criamos o conteúdo do card primeiro
                                         const CardContent = ( <> {s.icon} <div>{s.top && <div style={{ fontSize: 10, opacity: 0.8 }}>{s.top}</div>}
                                             <div style={{ fontWeight: 600 }}>{s.bottom}</div> </div> </>);
 
-                                        // 2. Definimos o estilo base
                                         const cardStyle = { 
                                         background: 'rgba(255,255,255,0.2)', 
                                         borderRadius: 8, 
@@ -180,7 +185,6 @@ function PaginaPrincipal() {
                                         cursor: s.path ? 'pointer' : 'default'
                                         };
 
-                                        // 3. Se tiver path, renderiza como <Link>, senão como <div>
                                         return s.path ? ( <Link key={i} to={s.path} style={cardStyle}> {CardContent}</Link>) : (
                                             <div key={i} style={cardStyle}>
                                                 {CardContent}
@@ -196,20 +200,29 @@ function PaginaPrincipal() {
                     </Card>
 
                     {/* Catalog Button */}
-                    <div className="text-center mb-4">
-                        <Button variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
+                    <div className="text-center mb-4 d-flex justify-content-center gap-2">
+                        <Button variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
+                            <BiGrid size={20} /> Catálogo de Badges
+                        </Button>
+                        <Button variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
                             <BiGrid size={20} /> Catálogo de Badges
                         </Button>
                     </div>
 
-                    {/* Badges com progresso */}
-                    <BadgeSection title="Badges com progresso" sub="Tem 1 badge em progresso">
-                        <BadgeCard name="The Watchtower - Nível A" desc="Observability & Performance Specialist" points={10} progress={70} />
-                    </BadgeSection>
+                    <BadgeSection title="Os seus Badges" sub="O nosso sistema recomenda:">
 
-                    {/* Recomendação */}
-                    <BadgeSection title="Recomendação de badge" sub="O nosso sistema recomenda:">
-                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
+                        <BadgeCard
+                            name={badgeConquistadoData.name}
+                            desc={badgeConquistadoData.desc}
+                            points={badgeConquistadoData.points}
+                            dateConquered={badgeConquistadoData.dateConquered}
+                        />
+                        <BadgeCard
+                            name={badgeConquistadoData.name}
+                            desc={badgeConquistadoData.desc}
+                            points={badgeConquistadoData.points}
+                            dateConquered={badgeConquistadoData.dateConquered}
+                        />
                     </BadgeSection>
                 </div>
 
@@ -257,26 +270,61 @@ function BadgeSection({ title, sub, children }) {
     );
 }
 
-function BadgeCard({ name, desc, points, progress }) {
+// Componente de card ATUALIZADO para se parecer com a image_1.png
+function BadgeCard({ name, desc, points, progress, dateConquered }) {
     return (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ fontSize: 28, flexShrink: 0 }}>🥇</div>
-            <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{name}</div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: progress ? 6 : 0 }}>{desc}</div>
-                {progress && (
-                    <>
-                        <ProgressBar now={progress} style={{ height: 6 }} />
-                        <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'right', marginTop: 2 }}>{progress}%</div>
-                    </>
-                )}
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
+            {/* Seção principal do card */}
+            <div style={{ padding: '16px', display: 'flex', alignItems: 'start', gap: 20 }}>
+                {/* 1. Ícone do Badge dentro de um círculo */}
+                <div style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    background: '#f3f6f9', // Cor de fundo do círculo da image_1.png
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    border: '1px solid #e1e8ed' // Borda leve para o círculo
+                }}>
+                    <span style={{ fontSize: 32 }}>🥇</span>
+                </div>
+
+                {/* 2. Textos do Badge (Título maior) */}
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 2 }}>{name}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: progress ? 8 : 0 }}>{desc}</div>
+                    {progress && (
+                        <>
+                            <ProgressBar now={progress} style={{ height: 6 }} />
+                            <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'right', marginTop: 2 }}>{progress}%</div>
+                        </>
+                    )}
+                </div>
+
+                {/* 3. Caixa de Pontos */}
+                <div style={{ border: '1.5px solid #d1d5db', borderRadius: 10, padding: '8px 14px', textAlign: 'center', minWidth: 64, flexShrink: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#111827', marginBottom: 1 }}>Pontos</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#111827', lineHeight: 1.1 }}>{points}</div>
+                </div>
             </div>
-            <div style={{ border: '1.5px solid #d1d5db', borderRadius: 8, padding: '6px 12px', textAlign: 'center', minWidth: 56, flexShrink: 0 }}>
-                <div style={{ fontSize: 10, color: '#6b7280' }}>Pontos</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>{points}</div>
-            </div>
+
+            {/* 4. Rodapé do Card (Opcional, se a data existir) */}
+            {dateConquered && (
+                <div style={{
+                    borderTop: '1px solid #e5e7eb',
+                    padding: '8px 16px',
+                    backgroundColor: '#fafafa',
+                    textAlign: 'center',
+                    fontSize: 11,
+                    color: '#6b7280'
+                }}>
+                    Conquistado a {dateConquered}
+                </div>
+            )}
         </div>
     );
 }
 
-export default PaginaPrincipal;
+export default PaginaPerfil;

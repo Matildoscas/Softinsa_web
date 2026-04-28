@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Navbar, Nav, Form, OverlayTrigger, Popover } from 'react-bootstrap';
 import { BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
+import { HiOutlineArrowLeft } from 'react-icons/hi';
 import logoImg from './assets/logo.png';
 import { useNavigate, Link } from 'react-router-dom';
 
-
-function PaginaPrincipal() {
+function LembretePage() {
     const navigate = useNavigate();
 
     const notificationsPopover = (
@@ -60,7 +60,7 @@ function PaginaPrincipal() {
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Navbar */}
             <Navbar bg="white" className="border-bottom px-4 py-0" style={{ height: '52px' }}>
-                <Navbar.Brand as={Link} to="/">
+                <Navbar.Brand href="PaginaPrincipal">
                     <img src={logoImg} alt="Softinsa" style={{ height: '40px' }} />
                 </Navbar.Brand>
 
@@ -117,7 +117,7 @@ function PaginaPrincipal() {
                         <BiBell size={18} color="white" />
                         </div>
                     </OverlayTrigger>
-                    <div onClick={() => navigate('/perfil')} style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                         <BiUserCircle size={20} color="white" />
                     </div>
                 </Nav>
@@ -136,7 +136,7 @@ function PaginaPrincipal() {
                         <ListGroup.Item action active className="border-0 d-flex align-items-center gap-2" href="/" style={{ fontSize: 13, borderRight: '3px solid #2563eb', background: '#eff6ff', color: '#2563eb' }}>
                             <BiGrid size={16} /> Página Principal
                         </ListGroup.Item>
-                        <ListGroup.Item action className="border-0 d-flex align-items-center gap-2" href="/perfil" style={{ fontSize: 13 }}>
+                        <ListGroup.Item action className="border-0 d-flex align-items-center gap-2" style={{ fontSize: 13 }}>
                             <BiGrid size={16} /> Perfil do Consultor
                         </ListGroup.Item>
                         <div style={{ paddingLeft: 16 }}>
@@ -148,92 +148,42 @@ function PaginaPrincipal() {
                 </div>
 
                 {/* Main Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-                    {/* Welcome Card */}
-                    <Card className="border-0 mb-3" style={{ background: '#3b6fd4', borderRadius: 12 }}>
-                        <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
-                            <div>
-                                <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>Bom dia, Utilizador!</h5>
-                                <div className="d-flex gap-2">
-                                    {[
-                                        { icon: <BiMedal size={25}/>, top: 'Badges', bottom: 'Tem 5 badges' },
-                                        { icon: <BiStar size={25}/>, top: 'Pontos totais', bottom: '90 pontos' },
-                                        { icon: <BiUserCircle size={25}/>, bottom: 'Lembretes', path: '/lembretes' }
-                                    ].map((s, i) => {
-                                        
-                                        // 1. Criamos o conteúdo do card primeiro
-                                        const CardContent = ( <> {s.icon} <div>{s.top && <div style={{ fontSize: 10, opacity: 0.8 }}>{s.top}</div>}
-                                            <div style={{ fontWeight: 600 }}>{s.bottom}</div> </div> </>);
+                <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
+                    <Button 
+                        variant="link" 
+                        className="d-flex align-items-center text-decoration-none p-0"
+                        style={{ color: '#4A5568', fontSize: '1.1rem' }}
+                        onClick={() => navigate('/')}
+                        >
+                        <HiOutlineArrowLeft className="me-1" />
+                        <span style={{ fontWeight: '400' }}>Voltar</span>
+                    </Button>
 
-                                        // 2. Definimos o estilo base
-                                        const cardStyle = { 
-                                        background: 'rgba(255,255,255,0.2)', 
-                                        borderRadius: 8, 
-                                        padding: '6px 12px', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        gap: 6, 
-                                        fontSize: 12, 
-                                        textAlign: 'left',
-                                        color: 'inherit',
-                                        textDecoration: 'none',
-                                        cursor: s.path ? 'pointer' : 'default'
-                                        };
-
-                                        // 3. Se tiver path, renderiza como <Link>, senão como <div>
-                                        return s.path ? ( <Link key={i} to={s.path} style={cardStyle}> {CardContent}</Link>) : (
-                                            <div key={i} style={cardStyle}>
-                                                {CardContent}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <BiUserCircle size={50} color="rgba(255,255,255,0.8)" />
-                            </div>
-                        </Card.Body>
-                    </Card>
-
-                    {/* Catalog Button */}
-                    <div className="text-center mb-4">
-                        <Button variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
-                            <BiGrid size={20} /> Catálogo de Badges
-                        </Button>
-                    </div>
-
-                    {/* Badges com progresso */}
-                    <BadgeSection title="Badges com progresso" sub="Tem 1 badge em progresso">
-                        <BadgeCard name="The Watchtower - Nível A" desc="Observability & Performance Specialist" points={10} progress={70} />
-                    </BadgeSection>
-
-                    {/* Recomendação */}
-                    <BadgeSection title="Recomendação de badge" sub="O nosso sistema recomenda:">
-                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
-                    </BadgeSection>
+                    <LembreteSection>
+                        <LembreteCard name="Ana Maria" title="Atualizou o perfil de acesso" desc="Automation & Deployment (CI/CD)" meta="Script Initiate · Nível A" time="35 minutos atrás" />
+                    </LembreteSection>
                 </div>
 
                 {/* Right Panel */}
                 <div style={{ width: 250, background: 'white', borderLeft: '1px solid #e5e7eb', padding: 16, flexShrink: 0, overflowY: 'auto', textAlign:'left'}}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Notificações</div>
-                    {[
-                        { text: 'Atualizou o perfil de acesso', time: '59 minutos atrás' },
-                        { text: 'Recebeu um novo Badge', time: '12 horas atrás' },
-                        { text: 'O seu Badge foi validado pelo Ser...', time: '12 horas atrás' },
-                    ].map((n, i) => (
-                        <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 8 }}>
-                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <BiBell size={12} color="#2563eb" />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{n.text}</div>
-                                <div style={{ fontSize: 11, color: '#9ca3af' }}>{n.time}</div>
-                            </div>
-                        </div>
-                    ))}
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Os meus Badges</div>
+                    
+                    <BadgeSection>
+                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
+                    </BadgeSection>
+
+                    <BadgeSection>
+                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
+                    </BadgeSection>
+
+                    <BadgeSection>
+                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
+                    </BadgeSection>
+
                     <div style={{ textAlign: 'right' }}>
-                        <a href="/notificacoes" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none' }}>Ver todas as notificações</a>
+                        <a href="#" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none' }}>Ver todos os meus badges</a>
                     </div>
+                    
                 </div>
             </div>
         </div>
@@ -248,35 +198,96 @@ function BadgeSection({ title, sub, children }) {
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{sub}</div>
                 </div>
-                <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                    <BiMenu size={14} /> Ver Todos
-                </div>
             </div>
             {children}
         </div>
     );
 }
 
-function BadgeCard({ name, desc, points, progress }) {
+function BadgeCard({ name, points }) {
     return (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ fontSize: 28, flexShrink: 0 }}>🥇</div>
-            <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{name}</div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: progress ? 6 : 0 }}>{desc}</div>
-                {progress && (
-                    <>
-                        <ProgressBar now={progress} style={{ height: 6 }} />
-                        <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'right', marginTop: 2 }}>{progress}%</div>
-                    </>
-                )}
+        <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            background: 'white', 
+            border: '1px solid #e5e7eb', 
+            borderRadius: 20, 
+            padding: '24px 0 16px 0', 
+            width: '100%', 
+            maxWidth: 350,
+            textAlign: 'center'
+        }}>
+            {/* Círculo de fundo da medalha */}
+            <div style={{ 
+                width: 90, 
+                height: 90, 
+                backgroundColor: '#f0f7ff', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: 35,
+                marginBottom: 10,
+                marginTop: -10
+            }}>
+                🥇
             </div>
-            <div style={{ border: '1.5px solid #d1d5db', borderRadius: 8, padding: '6px 12px', textAlign: 'center', minWidth: 56, flexShrink: 0 }}>
-                <div style={{ fontSize: 10, color: '#6b7280' }}>Pontos</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>{points}</div>
+
+            {/* Linha Divisória */}
+            <div style={{ width: '100%', height: '1px', backgroundColor: '#f3f4f6', marginBottom: 6 }} />
+
+            {/* Conteúdo de Texto */}
+            <div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
+                    {name}
+                </div>
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1, marginBottom: 0 }}>
+                    {points} Pontos
+                </div>
             </div>
         </div>
     );
 }
 
-export default PaginaPrincipal;
+function LembreteCard({ name, title, desc, meta, time }) {
+  return (
+    <div className="d-flex bg-white border rounded px-4 py-3 mb-2 gap-3" style={{ alignItems: "stretch" }}>
+
+      {/* Esquerda: Avatar + meta + tempo */}
+      <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: 80 }}>
+        <div
+          className="rounded-circle bg-secondary-subtle d-flex align-items-center justify-content-center"
+          style={{ width: 44, height: 44 }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="#8a96a8" viewBox="0 0 24 24">
+            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+          </svg>
+        </div>
+        <span className="text-muted text-center" style={{ fontSize: "0.72rem", lineHeight: 1.4 }}>{meta}</span>
+        <span className="text-secondary text-center" style={{ fontSize: "0.70rem" }}>{time}</span>
+      </div>
+
+      {/* Divisor vertical */}
+      <div className="border-start" />
+
+      {/* Centro: Título + Descrição */}
+      <div className="flex-grow-1 d-flex flex-column justify-content-center">
+        <div className="fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>{title}</div>
+        <div className="text-muted" style={{ fontSize: "0.82rem" }}>{desc}</div>
+      </div>
+
+      {/* Abrir alinhado em baixo */}
+      <div className="d-flex align-items-end">
+        <a href="#" className="text-primary small text-decoration-none">Abrir</a>
+      </div>
+
+    </div>
+  );
+}
+
+function LembreteSection({ children }) {
+  return <div>{children}</div>;
+}
+
+export default LembretePage;

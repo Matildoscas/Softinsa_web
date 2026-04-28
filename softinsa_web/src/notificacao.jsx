@@ -6,6 +6,7 @@ import logoImg from './assets/logo.png';
 import { useNavigate } from 'react-router-dom';
 
 function NotificacaoPage() {
+    const navigate = useNavigate();
     return (
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Navbar */}
@@ -14,7 +15,7 @@ function NotificacaoPage() {
                     <img src={logoImg} alt="Softinsa" style={{ height: '40px' }} />
                 </Navbar.Brand>
 
-                <div style={{ position: 'relative', marginLeft: '16px' }}>
+                <div style={{ position: 'relative', marginLeft: '3.7%' }}>
                     <BiSearch
                         size={20}
                         style={{
@@ -36,7 +37,7 @@ function NotificacaoPage() {
                             border: '1px solid #e5e7eb',
                             borderRadius: '10px',
                             fontSize: '14px',
-                            width: '500px',
+                            width: '600px',
                             outline: 'none',
                             color: '#374151',
                             background: '#f9fafb'
@@ -66,7 +67,7 @@ function NotificacaoPage() {
                     <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', padding: '0 16px 6px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign:'left' }}>Pages</div>
 
                     <ListGroup variant="flush">
-                        <ListGroup.Item action active className="border-0 d-flex align-items-center gap-2" style={{ fontSize: 13, borderRight: '3px solid #2563eb', background: '#eff6ff', color: '#2563eb' }}>
+                        <ListGroup.Item action active className="border-0 d-flex align-items-center gap-2" href="/" style={{ fontSize: 13, borderRight: '3px solid #2563eb', background: '#eff6ff', color: '#2563eb' }}>
                             <BiGrid size={16} /> Página Principal
                         </ListGroup.Item>
                         <ListGroup.Item action className="border-0 d-flex align-items-center gap-2" style={{ fontSize: 13 }}>
@@ -81,39 +82,54 @@ function NotificacaoPage() {
                 </div>
 
                 {/* Main Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
                     <Button 
                         variant="link" 
                         className="d-flex align-items-center text-decoration-none p-0"
-                        style={{ color: '#4A5568', fontSize: '1.2rem' }}
-                        onClick={() => navigate('/PaginaPrincipal.jsx')}
+                        style={{ color: '#4A5568', fontSize: '1.1rem' }}
+                        onClick={() => navigate('/')}
                         >
                         <HiOutlineArrowLeft className="me-1" />
-                        <span style={{ fontWeight: '200' }}>Voltar</span>
+                        <span style={{ fontWeight: '400' }}>Voltar</span>
                     </Button>
+
+                    <NotificationSection>
+                        <NotificationCard name="Ana Maria" title="Atualizou o perfil de acesso" desc="Automation & Deployment (CI/CD)" meta="Script Initiate · Nível A" time="35 minutos atrás" />
+                    </NotificationSection>
+
+                    <NotificationSection>
+                        <NotificationCard name="Ana Maria" title="Atualizou o perfil de acesso" desc="Automation & Deployment (CI/CD)" meta="Script Initiate · Nível A" time="35 minutos atrás" />
+                    </NotificationSection>
+
+                    <NotificationSection>
+                        <NotificationCard name="Ana Maria" title="Atualizou o perfil de acesso" desc="Automation & Deployment (CI/CD)" meta="Script Initiate · Nível A" time="35 minutos atrás" />
+                    </NotificationSection>
+
+                    <NotificationSection>
+                        <NotificationCard name="Ana Maria" title="Atualizou o perfil de acesso" desc="Automation & Deployment (CI/CD)" meta="Script Initiate · Nível A" time="35 minutos atrás" />
+                    </NotificationSection>
                 </div>
 
                 {/* Right Panel */}
                 <div style={{ width: 250, background: 'white', borderLeft: '1px solid #e5e7eb', padding: 16, flexShrink: 0, overflowY: 'auto', textAlign:'left'}}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Notificações</div>
-                    {[
-                        { text: 'Atualizou o perfil de acesso', time: '59 minutos atrás' },
-                        { text: 'Recebeu um novo Badge', time: '12 horas atrás' },
-                        { text: 'O seu Badge foi validado pelo Ser...', time: '12 horas atrás' },
-                    ].map((n, i) => (
-                        <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 8 }}>
-                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <BiBell size={12} color="#2563eb" />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{n.text}</div>
-                                <div style={{ fontSize: 11, color: '#9ca3af' }}>{n.time}</div>
-                            </div>
-                        </div>
-                    ))}
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Os meus Badges</div>
+                    
+                    <BadgeSection>
+                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
+                    </BadgeSection>
+
+                    <BadgeSection>
+                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
+                    </BadgeSection>
+
+                    <BadgeSection>
+                        <BadgeCard name="Script Initiate - Nível A" desc="Automation & Deployment (CI/CD)" points={10} />
+                    </BadgeSection>
+
                     <div style={{ textAlign: 'right' }}>
-                        <a href="#" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none' }}>Ver todas as notificações</a>
+                        <a href="#" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none' }}>Ver todos os meus badges</a>
                     </div>
+                    
                 </div>
             </div>
         </div>
@@ -128,35 +144,96 @@ function BadgeSection({ title, sub, children }) {
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{sub}</div>
                 </div>
-                <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                    <BiMenu size={14} /> Ver Todos
-                </div>
             </div>
             {children}
         </div>
     );
 }
 
-function BadgeCard({ name, desc, points, progress }) {
+function BadgeCard({ name, points }) {
     return (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ fontSize: 28, flexShrink: 0 }}>🥇</div>
-            <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{name}</div>
-                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: progress ? 6 : 0 }}>{desc}</div>
-                {progress && (
-                    <>
-                        <ProgressBar now={progress} style={{ height: 6 }} />
-                        <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'right', marginTop: 2 }}>{progress}%</div>
-                    </>
-                )}
+        <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            background: 'white', 
+            border: '1px solid #e5e7eb', 
+            borderRadius: 20, 
+            padding: '24px 0 16px 0', 
+            width: '100%', 
+            maxWidth: 350,
+            textAlign: 'center'
+        }}>
+            {/* Círculo de fundo da medalha */}
+            <div style={{ 
+                width: 90, 
+                height: 90, 
+                backgroundColor: '#f0f7ff', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: 35,
+                marginBottom: 10,
+                marginTop: -10
+            }}>
+                🥇
             </div>
-            <div style={{ border: '1.5px solid #d1d5db', borderRadius: 8, padding: '6px 12px', textAlign: 'center', minWidth: 56, flexShrink: 0 }}>
-                <div style={{ fontSize: 10, color: '#6b7280' }}>Pontos</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>{points}</div>
+
+            {/* Linha Divisória */}
+            <div style={{ width: '100%', height: '1px', backgroundColor: '#f3f4f6', marginBottom: 6 }} />
+
+            {/* Conteúdo de Texto */}
+            <div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
+                    {name}
+                </div>
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1, marginBottom: 0 }}>
+                    {points} Pontos
+                </div>
             </div>
         </div>
     );
+}
+
+function NotificationCard({ name, title, desc, meta, time }) {
+  return (
+    <div className="d-flex bg-white border rounded px-4 py-3 mb-2 gap-3" style={{ alignItems: "stretch" }}>
+
+      {/* Esquerda: Avatar + meta + tempo */}
+      <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: 80 }}>
+        <div
+          className="rounded-circle bg-secondary-subtle d-flex align-items-center justify-content-center"
+          style={{ width: 44, height: 44 }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="#8a96a8" viewBox="0 0 24 24">
+            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+          </svg>
+        </div>
+        <span className="text-muted text-center" style={{ fontSize: "0.72rem", lineHeight: 1.4 }}>{meta}</span>
+        <span className="text-secondary text-center" style={{ fontSize: "0.70rem" }}>{time}</span>
+      </div>
+
+      {/* Divisor vertical */}
+      <div className="border-start" />
+
+      {/* Centro: Título + Descrição */}
+      <div className="flex-grow-1 d-flex flex-column justify-content-center">
+        <div className="fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>{title}</div>
+        <div className="text-muted" style={{ fontSize: "0.82rem" }}>{desc}</div>
+      </div>
+
+      {/* Abrir alinhado em baixo */}
+      <div className="d-flex align-items-end">
+        <a href="#" className="text-primary small text-decoration-none">Abrir</a>
+      </div>
+
+    </div>
+  );
+}
+
+function NotificationSection({ children }) {
+  return <div>{children}</div>;
 }
 
 export default NotificacaoPage;
