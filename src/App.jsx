@@ -13,8 +13,19 @@ function App() {
         // Redirecionamento para login
         <Route path="/" element={<Navigate to="/login" />} />
 
+        // Rotas públicas com proteção de acesso (redirecionamento se já autenticado)
+        <Route 
+          path="/login" 
+          element={
+            localStorage.getItem('token') ? (
+              <Navigate to="/pag_consultor" />
+            ) : (
+              <LoginPage />
+            )
+          } 
+        />
+
         // Rotas públicas
-        <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
 
