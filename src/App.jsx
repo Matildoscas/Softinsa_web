@@ -10,6 +10,8 @@ function App() {
   return (
     <Router>
       <Routes>
+        // Redirecionamento para login
+        <Route path="/" element={<Navigate to="/login" />} />
 
         // Rotas públicas
         <Route path="/login" element={<LoginPage />} />
