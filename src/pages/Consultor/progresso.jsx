@@ -3,10 +3,9 @@ import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Navbar, Nav,
 import { BiFace, BiLoader, BiBook, BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
 import logoImg from './assets/logo.png';
 import { useNavigate, Link } from 'react-router-dom';
-import Header from './Componentes/header.jsx';
-import RightSidebar from './Componentes/right_sidebar.jsx';
-import LeftSidebar from './Componentes/left_sidebar.jsx';
-
+import Header from '../../components/header.jsx';
+import RightSidebar from '../../components/right_sidebar.jsx';
+import LeftSidebar from '../../components/left_sidebar.jsx';
 
 function ProgressoPage() {
     const navigate = useNavigate();

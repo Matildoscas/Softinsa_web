@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000' // O endereço do teu backend Node.js
+  baseURL: 'https://softinsa-api.onrender.com' //  O endereço real da tua API no Render!
 });
 
 export default api;

@@ -4,9 +4,9 @@ import { BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch
 import { HiOutlineArrowLeft } from 'react-icons/hi';
 import logoImg from './assets/logo.png';
 import { useNavigate } from 'react-router-dom';
-import Header from './Componentes/header.jsx';
-import RightSidebar from './Componentes/right_sidebar.jsx';
-import LeftSidebar from './Componentes/left_sidebar.jsx';
+import Header from '../../components/header.jsx';
+import RightSidebar from '../../components/right_sidebar.jsx';
+import LeftSidebar from '../../components/left_sidebar.jsx';
 
 function NotificacaoPage() {
     const navigate = useNavigate();

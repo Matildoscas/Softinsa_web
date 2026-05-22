@@ -64,7 +64,7 @@ function PaginaPerfil() {
                         <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
                             <div>
                                 <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Olá, {user?.nome_completo || "Consultor"}!
+                                    Olá, {user?.nome_completo || user?.NOME_COMPLETO || "Consultor"}!
                                 </h5>
                                 <div className="d-flex gap-2">
                                     <div style={cardStyleBase}>
