@@ -98,7 +98,7 @@ function PaginaPerfil() {
                         <Button onClick={() => navigate('/progresso')} variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
                             <BiLoader size={20} /> Progresso
                         </Button>
-                        <Button variant="primary" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
+                        <Button onClick={() => navigate('/historico_badges')} variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
                             <BiBook size={20} /> Histórico de Badges
                         </Button>
                     </div>

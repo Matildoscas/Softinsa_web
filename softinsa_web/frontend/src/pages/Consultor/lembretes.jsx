@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Navbar, Nav, Form, OverlayTrigger, Popover } from 'react-bootstrap';
 import { BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
 import { HiOutlineArrowLeft } from 'react-icons/hi';
-import logoImg from './assets/logo.png';
+import logoImg from '../../assets/logo.png';
 import { useNavigate, Link } from 'react-router-dom';
-import Header from './Componentes/header.jsx';
-import RightSidebar from './Componentes/right_sidebar.jsx';
-import LeftSidebar from './Componentes/left_sidebar.jsx';
+import Header from '../../components/header.jsx';
+import RightSidebar from '../../components/right_sidebar.jsx';
+import LeftSidebar from '../../components/left_sidebar.jsx';
 
 function LembretePage() {
     const navigate = useNavigate();

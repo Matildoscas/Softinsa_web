@@ -115,4 +115,44 @@ router.get('/especial', async (req, res) => {
   }
 });
 
+// ESTATÍSTICAS DE BADGES (comuns vs especiais - nível E)
+router.get('/estatisticas/:id', async (req, res) => {
+  const { id } = req.params;
+ 
+  try {
+    const result = await db.query(`
+      SELECT
+        COALESCE(
+          COUNT(cb.ID_BADGE) FILTER (WHERE n.NOME != 'E'), 0
+        ) AS badges_comuns_conquistados,
+        COALESCE(
+          COUNT(cb.ID_BADGE) FILTER (WHERE n.NOME = 'E'), 0
+        ) AS badges_especiais_conquistados,
+        (
+          SELECT COALESCE(COUNT(*), 0)
+          FROM BADGE_MODELO b2
+          JOIN NIVEIS n2 ON b2.ID_NIVEL = n2.ID_NIVEL
+          WHERE n2.NOME != 'E'
+            AND b2.ID_AREA = (SELECT ID_AREA FROM CONSULTOR WHERE ID_UTILIZADOR = $1)
+        ) AS total_badges_comuns,
+        (
+          SELECT COALESCE(COUNT(*), 0)
+          FROM BADGE_MODELO b2
+          JOIN NIVEIS n2 ON b2.ID_NIVEL = n2.ID_NIVEL
+          WHERE n2.NOME = 'E'
+            AND b2.ID_AREA = (SELECT ID_AREA FROM CONSULTOR WHERE ID_UTILIZADOR = $1)
+        ) AS total_badges_especiais
+      FROM CONSULTOR_BADGE cb
+      RIGHT JOIN CONSULTOR c ON c.ID_UTILIZADOR = $1
+      LEFT JOIN BADGE_MODELO b ON cb.ID_BADGE = b.ID_BADGE AND cb.ID_CONSULTOR = $1
+      LEFT JOIN NIVEIS n ON b.ID_NIVEL = n.ID_NIVEL
+    `, [id]);
+ 
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Erro ao buscar estatísticas de badges:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
