@@ -7,6 +7,7 @@ import PaginaPerfil from './pages/Consultor/PaginaPerfil_Consultor.jsx';
 import NotificacaoPage from './pages/Consultor/notificacao.jsx';
 import LembretePage from './pages/Consultor/lembretes.jsx';
 import ProgressoPage from './pages/Consultor/progresso_consultor.jsx';
+import CatalogoBadgesPage from './pages/Consultor/catalogo_badges.jsx';
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
         <Route path="/notificacoes" element={<NotificacaoPage />} />
         <Route path="/lembretes" element={<LembretePage />} />
         <Route path="/progresso" element={<ProgressoPage />} />
+        <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
         
       </Routes>
     </Router>
