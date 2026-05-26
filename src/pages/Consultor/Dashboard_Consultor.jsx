@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Image, Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
+import { Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
 import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js'; 
 
+// Importação dos componentes estruturais
 import Header from '../../components/header.jsx';
 import RightSidebar from '../../components/right_sidebar.jsx';
 import LeftSidebar from '../../components/left_sidebar.jsx';
@@ -11,6 +12,7 @@ import LeftSidebar from '../../components/left_sidebar.jsx';
 function PaginaPrincipal() {
     const navigate = useNavigate();
     
+    // Estados para os dados da BD
     const [user, setUser] = useState(null);
     const [progressoBadges, setProgressoBadges] = useState([]);
     const [recomendados, setRecomendados] = useState([]);
@@ -19,15 +21,23 @@ function PaginaPrincipal() {
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-        if (storedUser) {
+        
+        if (!storedUser) {
+            setLoading(false);
+            navigate('/login');
+            return; 
+        }
+
+        try {
             const userData = JSON.parse(storedUser);
             setUser(userData);
             
             const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
 
             if (!userId) {
-                console.error("ID do utilizador não encontrado no localStorage.");
+                console.error("ID do utilizador inválido no localStorage.");
                 setLoading(false);
+                navigate('/login');
                 return;
             }
 
@@ -48,12 +58,14 @@ function PaginaPrincipal() {
                 }
                 setLoading(false);
             }).catch(err => {
-                console.error("Erro ao carregar dados em paralelo:", err);
+                console.error("Erro ao carregar dados da API:", err);
                 setLoading(false);
             });
-        } else {
+
+        } catch (parseError) {
+            console.error("Erro ao ler o utilizador do localStorage:", parseError);
             setLoading(false);
-            navigate('/login'); 
+            navigate('/login');
         }
     }, [navigate]);
 
@@ -74,6 +86,7 @@ function PaginaPrincipal() {
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
                     
+                    {/* Welcome Card Dinâmico */}
                     <Card className="border-0 mb-3" style={{ background: '#3b6fd4', borderRadius: 12 }}>
                         <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
                             <div>
@@ -113,6 +126,7 @@ function PaginaPrincipal() {
                         </Button>
                     </div>
 
+                    {/* Seção: Badges com Progresso */}
                     <BadgeSection 
                         title="Badges com progresso" 
                         sub={`Tem ${progressoBadges.length} badge(s) em progresso`}
@@ -132,6 +146,7 @@ function PaginaPrincipal() {
                         )}
                     </BadgeSection>
 
+                    {/* Seção: Recomendação */}
                     <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:">
                         {recomendados.length > 0 ? (
                             recomendados.map((b, i) => (
@@ -155,6 +170,7 @@ function PaginaPrincipal() {
     );
 }
 
+// Estilo auxiliar para os mini-cards do Header Azul
 const cardStyleBase = { 
     background: 'rgba(255,255,255,0.2)', 
     borderRadius: 8, 
