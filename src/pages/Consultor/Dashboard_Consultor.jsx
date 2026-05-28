@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import { Image, Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
+import { Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
 import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../../services/api.js'; // Garante que o caminho está correto
+import api from '../../services/api.js'; 
 
-// Importação dos teus componentes estruturais
+// Importação dos componentes estruturais
 import Header from '../../components/header.jsx';
 import RightSidebar from '../../components/right_sidebar.jsx';
 import LeftSidebar from '../../components/left_sidebar.jsx';
-//import ImagemBadge from '../../assets/Cybersecurity_Badge.png';
 
 function PaginaPrincipal() {
     const navigate = useNavigate();
@@ -18,35 +17,57 @@ function PaginaPrincipal() {
     const [progressoBadges, setProgressoBadges] = useState([]);
     const [recomendados, setRecomendados] = useState([]);
     const [loading, setLoading] = useState(true);
-
     const [stats, setStats] = useState({ total_badges: 0, total_pontos: 0 });
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-        if (storedUser) {
+        
+        if (!storedUser) {
+            setLoading(false);
+            navigate('/login');
+            return; 
+        }
+
+        try {
             const userData = JSON.parse(storedUser);
             setUser(userData);
+            
             const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+
+            if (!userId) {
+                console.error("ID do utilizador inválido no localStorage.");
+                setLoading(false);
+                navigate('/login');
+                return;
+            }
 
             setLoading(true);
             Promise.all([
                 api.get(`/badges/progresso/${userId}`),
                 api.get(`/badges/recomendados/${userId}`),
-                api.get(`/dashboard/${userId}`) // Chamada para a nova rota
+                api.get(`/dashboard/${userId}`) 
             ]).then(([progressoRes, recomendadosRes, dashboardRes]) => {
-                setProgressoBadges(progressoRes.data);
-                setRecomendados(recomendadosRes.data);
-                setStats({
-                    total_badges: Number(dashboardRes.data.total_badges),
-                    total_pontos: Number(dashboardRes.data.total_pontos)
-                });
+                setProgressoBadges(progressoRes.data || []);
+                setRecomendados(recomendadosRes.data || []);
+                
+                if (dashboardRes.data) {
+                    setStats({
+                        total_badges: Number(dashboardRes.data.total_badges || 0),
+                        total_pontos: Number(dashboardRes.data.total_pontos || 0)
+                    });
+                }
                 setLoading(false);
             }).catch(err => {
-                console.error("Erro ao carregar dados:", err);
+                console.error("Erro ao carregar dados da API:", err);
                 setLoading(false);
             });
+
+        } catch (parseError) {
+            console.error("Erro ao ler o utilizador do localStorage:", parseError);
+            setLoading(false);
+            navigate('/login');
         }
-    }, []);
+    }, [navigate]);
 
     if (loading) {
         return (
@@ -70,14 +91,13 @@ function PaginaPrincipal() {
                         <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
                             <div>
                                 <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Bom dia, {user?.nome_completo || "Utilizador"}!
+                                    Bom dia, {user?.nome_completo || user?.NOME_COMPLETO || "Utilizador"}!
                                 </h5>
                                 <div className="d-flex gap-2">
                                     <div style={cardStyleBase}>
                                         <BiMedal size={25}/>
                                         <div>
                                             <div style={{ fontSize: 10, opacity: 0.8 }}>Badges</div>
-                                            {/* Usa o stats vindo da dashboard */}
                                             <div style={{ fontWeight: 600 }}>Tem {stats.total_badges} badges</div>
                                         </div>
                                     </div>
@@ -85,7 +105,6 @@ function PaginaPrincipal() {
                                         <BiStar size={25}/>
                                         <div>
                                             <div style={{ fontSize: 10, opacity: 0.8 }}>Pontos totais</div>
-                                            {/* Usa o stats vindo da dashboard */}
                                             <div style={{ fontWeight: 600 }}>{stats.total_pontos} pontos</div>
                                         </div>
                                     </div>
@@ -116,10 +135,10 @@ function PaginaPrincipal() {
                             progressoBadges.map((b, i) => (
                                 <BadgeCard 
                                     key={i}
-                                    name={b.nome_badge || b.NOME} 
+                                    name={b.nome || b.NOME_BADGE || b.nome_badge} 
                                     desc={b.descricao} 
                                     points={b.pontos} 
-                                    progress={b.progresso} 
+                                    progress={b.progresso || 0} 
                                 />
                             ))
                         ) : (
@@ -129,15 +148,19 @@ function PaginaPrincipal() {
 
                     {/* Seção: Recomendação */}
                     <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:">
-                        {recomendados.map((b, i) => (
-                            <BadgeCard 
-                                key={i}
-                                name={b.nome} 
-                                desc={b.descricao} 
-                                points={b.pontos} 
-                                dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
-                            />
-                        ))}
+                        {recomendados.length > 0 ? (
+                            recomendados.map((b, i) => (
+                                <BadgeCard 
+                                    key={i}
+                                    name={b.nome || b.NOME_BADGE} 
+                                    desc={b.descricao} 
+                                    points={b.pontos} 
+                                    dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
+                                />
+                            ))
+                        ) : (
+                            <p className="text-muted small ms-2">Nenhuma recomendação disponível para esta área de momento.</p>
+                        )}
                     </BadgeSection>
                 </div>
 
@@ -158,9 +181,6 @@ const cardStyleBase = {
     fontSize: 12, 
     textAlign: 'left'
 };
-
-// --- COMPONENTES AUXILIARES (BadgeSection e BadgeCard) ---
-// (Mantive a estrutura visual que enviaste, apenas injetando as props)
 
 function BadgeSection({ title, sub, children }) {
     return (
@@ -188,13 +208,12 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
                     display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0,
                     border: '1px solid #e1e8ed', overflow: 'hidden'
                 }}>
-                    {/* <Image src={ImagemBadge} alt='Badge' fluid /> */}
                 </div>
 
                 <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{name}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{desc}</div>
-                    {progress !== undefined && (
+                    {progress !== undefined && progress > 0 && (
                         <div className="mt-2">
                             <ProgressBar now={progress} style={{ height: 6 }} />
                             <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'right' }}>{progress}%</div>

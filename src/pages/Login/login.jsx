@@ -26,10 +26,22 @@ function LoginPage() {
       // Chamada à API (Porta 3000 /auth/login) 
       const response = await api.post("/auth/login", { email, password });
 
+      console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
+
       if (response.data.token) {
         // Guardar dados no localStorage (equivalente ao SharedPreferences) [cite: 12]
+        
         localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+
+        const utilizadorSeguro = {
+            id_utilizador: data.user.id_utilizador || data.user.ID_UTILIZADOR,
+            email: data.user.email || data.user.EMAIL,
+            // Proteger o nome: aceita qualquer uma das variantes que venha do banco
+            nome: data.user.nome_completo || data.user.NOME_COMPLETO || data.user.nome,
+            nome_completo: data.user.nome_completo || data.user.NOME_COMPLETO
+        };
+
+        localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
         // Redirecionar conforme o ID da área ou tipo de utilizador
         navigate("/pag_consultor"); 
