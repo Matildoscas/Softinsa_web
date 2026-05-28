@@ -8,7 +8,7 @@ import ImagemLogin from "../../assets/imagem_login.png";
 function AreaPage() {
     const location = useLocation();
     const navigate = useNavigate();
-    const dadosIniciais = location.state; // Recebe os dados do RegisterPage 
+    const dadosIniciais = location.state; // Recebe os dados do Register.jsx 
 
     const [areas, setAreas] = useState([]);
     const [selectedAreaId, setSelectedAreaId] = useState("");
@@ -16,11 +16,11 @@ function AreaPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
 
-    // Carregar áreas da API (Equivalente ao _carregarAreas do Flutter) 
+    // Carregar áreas da API
     useEffect(() => {
         api.get("/areas")
             .then(res => {
-                setAreas(res.data);
+                setAreas(res.data || []);
                 setIsLoading(false);
             })
             .catch(() => {
@@ -30,7 +30,6 @@ function AreaPage() {
     }, []);
 
     const handleFinalizar = async () => {
-        // 1. Log para debugar o que está a chegar do RegisterPage
         console.log("Dados recebidos da página anterior:", dadosIniciais);
         console.log("ID da Área selecionada:", selectedAreaId);
 
@@ -41,22 +40,26 @@ function AreaPage() {
 
         setIsSaving(true);
         try {
-            // Garante que os nomes das propriedades batem certo com o teu auth.js no backend 
             const payload = {
-                nome: dadosIniciais?.nome, // <--- Verifica se no RegisterPage o nome é 'nome' ou 'nome_completo'
+                nome: dadosIniciais?.nome, 
                 email: dadosIniciais?.email,
                 password: dadosIniciais?.password,
-                aceitar_termos: dadosIniciais?.aceitarTermos,
-                id_area: parseInt(selectedAreaId)
+                aceitar_termos: dadosIniciais?.aceitar_termos || dadosIniciais?.aceitarTermos,
+                id_area: parseInt(selectedAreaId, 10)
             };
 
             console.log("Enviando Payload Final:", payload);
 
             await api.post("/auth/register", payload);
             setMessage({ type: "success", text: "Conta criada! Verifique o seu email." });
+            
+            // Aguarda 3 segundos para o utilizador ler o aviso e manda para o login
             setTimeout(() => navigate("/login"), 3000);
         } catch (err) {
-            setMessage({ type: "danger", text: err.response?.data?.error || "Erro no registo." });
+            setMessage({ 
+                type: "danger", 
+                text: err.response?.data?.message || err.response?.data?.error || "Erro no registo." 
+            });
         } finally {
             setIsSaving(false);
         }
@@ -90,11 +93,12 @@ function AreaPage() {
                                             >
                                                 <option value="">Selecione uma área...</option>
                                                 {areas.map((area) => (
+                                                    // Ajustado para ler as propriedades em minúsculas vindas do PostgreSQL
                                                     <option 
-                                                        key={area.id_area || area.id} 
-                                                        value={area.id_area || area.id}
+                                                        key={area.id_area} 
+                                                        value={area.id_area}
                                                     >
-                                                        {area.nome_area || area.nome}
+                                                        {area.nome_area}
                                                     </option>
                                                 ))}
                                             </Form.Select>

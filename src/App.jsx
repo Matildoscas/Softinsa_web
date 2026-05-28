@@ -1,19 +1,19 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/Login/login.jsx';
-import RegisterPage from './pages/Login/register.jsx';
-import AreaPage from './pages/Login/area_register.jsx';
-import PaginaPrincipal from './pages/Consultor/Dashboard_Consultor.jsx';
-import PaginaPerfil from './pages/Consultor/PaginaPerfil_Consultor.jsx';
-// Importa as outras páginas (Admin, Consultor, etc.)
+import LoginPage from './pages/Login/Login.jsx';
+import RegisterPage from './pages/Login/Register.jsx';
+import AreaPage from './pages/Login/AreaRegister.jsx';
+import PaginaPrincipal from './pages/Consultor/DashboardConsultor.jsx';
+import PaginaPerfil from './pages/Consultor/PaginaPerfilConsultor.jsx';
+import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx'; // 🎯 Importado para alinhar com o link do Popover
 
 function App() {
   return (
     <Router>
       <Routes>
-        // Redirecionamento para login
+        {/* Redirecionamento inicial para o login */}
         <Route path="/" element={<Navigate to="/login" />} />
 
-        // Rotas públicas com proteção de acesso (redirecionamento se já autenticado)
+        {/* Rota de Login com verificação de token */}
         <Route 
           path="/login" 
           element={
@@ -25,13 +25,16 @@ function App() {
           } 
         />
 
-        // Rotas públicas
+        {/* Rotas Públicas de Registo */}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
 
-        // Rotas Consultor
+        {/* Rotas Protegidas do Consultor */}
         <Route path="/pag_consultor" element={<PaginaPrincipal />} />
-        <Route path="/perfil_consultor" element={<PaginaPerfil />} />
+        
+        {/* Rotas componentes */}
+        <Route path="/perfil" element={<PaginaPerfil />} />
+        <Route path="/notificacoes" element={<PaginaNotificacoes />} />
         
       </Routes>
     </Router>

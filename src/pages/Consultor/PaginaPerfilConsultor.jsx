@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
-import { BiLoader, BiBook, BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
+import { Card, Button, Spinner } from 'react-bootstrap';
+import { BiLoader, BiBook, BiUserCircle, BiMedal, BiStar, BiMenu } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../../services/api.js'; // Certifica-te que o caminho está correto
+import api from '../../services/api.js'; 
 
 // Componentes Estruturais
-import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
+import Header from '../../components/Header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 
 function PaginaPerfil() {
     const navigate = useNavigate();
@@ -23,16 +23,15 @@ function PaginaPerfil() {
         if (storedUser) {
             const userData = JSON.parse(storedUser);
             setUser(userData);
-            const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+            const userId = userData.id_utilizador; // Alinhado com a nova API
 
             setLoading(true);
             Promise.all([
                 api.get(`/dashboard/${userId}`),
-                api.get(`/badges/conquistados/${userId}`) // Chamada à nova rota criada acima
+                api.get(`/badges/conquistados/${userId}`)
             ]).then(([dashboardRes, badgesRes]) => {
-                setStats(dashboardRes.data);               
-                // Agora os dados vêm diretamente da nova rota /conquistados
-                setBadgesConquistados(badgesRes.data); 
+                setStats(dashboardRes.data || { total_badges: 0, total_pontos: 0 });               
+                setBadgesConquistados(badgesRes.data || []); 
                 setLoading(false);
             }).catch(err => {
                 console.error("Erro ao carregar dados do perfil:", err);
@@ -64,7 +63,7 @@ function PaginaPerfil() {
                         <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
                             <div>
                                 <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Olá, {user?.nome_completo || user?.NOME_COMPLETO || "Consultor"}!
+                                    Olá, {user?.nome_completo || "Consultor"}!
                                 </h5>
                                 <div className="d-flex gap-2">
                                     <div style={cardStyleBase}>
@@ -103,13 +102,13 @@ function PaginaPerfil() {
                         </Button>
                     </div>
 
-                    <BadgeSection title="Os seus Badges Conquistados" sub="Histórico de conquistas na Softinsa:">
+                    <BadgeSection title="Os seus Badges Conquistados" sub="Histórico de conquests na Softinsa:">
                         {badgesConquistados.length > 0 ? (
                             badgesConquistados.map((badge, index) => (
                                 <BadgeCard
                                     key={index}
-                                    name={badge.nome}
-                                    desc={badge.descricao}
+                                    name={badge.nome_badge || badge.nome}
+                                    desc={badge.descricao_badge || badge.descricao}
                                     points={badge.pontos}
                                     dateConquered={badge.data_atribuicao 
                                         ? new Date(badge.data_atribuicao).toLocaleDateString()
@@ -159,7 +158,7 @@ function BadgeSection({ title, sub, children }) {
     );
 }
 
-function BadgeCard({ name, desc, points, progress, dateConquered }) {
+function BadgeCard({ name, desc, points, dateConquered }) {
     return (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
             <div style={{ padding: '16px', display: 'flex', alignItems: 'start', gap: 20 }}>

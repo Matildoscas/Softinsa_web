@@ -1,39 +1,38 @@
 import { useState } from "react";
-import { Container, Row, Col, ListGroup, Card, ProgressBar, Navbar, Nav, Form, Button } from 'react-bootstrap';
-import { BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
+import { Button } from 'react-bootstrap';
 import { HiOutlineArrowLeft } from 'react-icons/hi';
-import logoImg from './assets/logo.png';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
+
+// Importação correta dos componentes estruturais
+import Header from '../../components/Header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 
 function NotificacaoPage() {
     const navigate = useNavigate();
+    
     return (
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Navbar */}
-
-
             <Header />
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 {/* Sidebar */}
-
                 <LeftSidebar />
 
                 {/* Main Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
                     <Button 
                         variant="link" 
-                        className="d-flex align-items-center text-decoration-none p-0"
+                        className="d-flex align-items-center text-decoration-none p-0 mb-3"
                         style={{ color: '#4A5568', fontSize: '1.1rem' }}
-                        onClick={() => navigate('/')}
-                        >
+                        onClick={() => navigate('/pag_consultor')}
+                    >
                         <HiOutlineArrowLeft className="me-1" />
                         <span style={{ fontWeight: '400' }}>Voltar</span>
                     </Button>
 
+                    {/* Lista de Notificações */}
                     <NotificationSection>
                         <NotificationCard name="Ana Maria" title="Atualizou o perfil de acesso" desc="Automation & Deployment (CI/CD)" meta="Script Initiate · Nível A" time="35 minutos atrás" />
                     </NotificationSection>
@@ -52,7 +51,6 @@ function NotificacaoPage() {
                 </div>
 
                 {/* Right Panel */}
-
                 <RightSidebar />
             </div>
         </div>

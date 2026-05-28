@@ -5,9 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js'; 
 
 // Importação dos componentes estruturais
-import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
+import Header from '../../components/Header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 
 function PaginaPrincipal() {
     const navigate = useNavigate();
@@ -32,7 +32,8 @@ function PaginaPrincipal() {
             const userData = JSON.parse(storedUser);
             setUser(userData);
             
-            const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+            // Ajustado estritamente para minúsculas seguindo a nova API
+            const userId = userData.id_utilizador;
 
             if (!userId) {
                 console.error("ID do utilizador inválido no localStorage.");
@@ -86,12 +87,12 @@ function PaginaPrincipal() {
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
                     
-                    {/* Welcome Card Dinâmico */}
+                    {/* Welcome Card Dinâmico com chaves limpas */}
                     <Card className="border-0 mb-3" style={{ background: '#3b6fd4', borderRadius: 12 }}>
                         <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
                             <div>
                                 <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Bom dia, {user?.nome_completo || user?.NOME_COMPLETO || "Utilizador"}!
+                                    Bom dia, {user?.nome_completo || "Utilizador"}!
                                 </h5>
                                 <div className="d-flex gap-2">
                                     <div style={cardStyleBase}>
@@ -135,8 +136,8 @@ function PaginaPrincipal() {
                             progressoBadges.map((b, i) => (
                                 <BadgeCard 
                                     key={i}
-                                    name={b.nome || b.NOME_BADGE || b.nome_badge} 
-                                    desc={b.descricao} 
+                                    name={b.nome_badge || b.nome} 
+                                    desc={b.descricao_badge || b.descricao} 
                                     points={b.pontos} 
                                     progress={b.progresso || 0} 
                                 />
@@ -152,8 +153,8 @@ function PaginaPrincipal() {
                             recomendados.map((b, i) => (
                                 <BadgeCard 
                                     key={i}
-                                    name={b.nome || b.NOME_BADGE} 
-                                    desc={b.descricao} 
+                                    name={b.nome_badge || b.nome} 
+                                    desc={b.descricao_badge || b.descricao} 
                                     points={b.pontos} 
                                     dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
                                 />
@@ -170,7 +171,6 @@ function PaginaPrincipal() {
     );
 }
 
-// Estilo auxiliar para os mini-cards do Header Azul
 const cardStyleBase = { 
     background: 'rgba(255,255,255,0.2)', 
     borderRadius: 8, 

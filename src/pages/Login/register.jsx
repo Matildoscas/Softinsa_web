@@ -9,7 +9,7 @@ function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [validated, setValidated] = useState(false);
     
-    // Estados para os campos (análogo aos Controllers do Flutter)
+    // Estados para os campos
     const [formData, setFormData] = useState({
         nome: "",
         email: "",
@@ -21,17 +21,26 @@ function RegisterPage() {
 
     const handleSubmit = (event) => {
         event.preventDefault();
+        setError(""); // Limpa erros anteriores no início da validação
         const form = event.currentTarget;
 
         if (form.checkValidity() === false || formData.password !== formData.confirmPassword || !formData.aceitarTermos) {
             setValidated(true);
-            if (formData.password !== formData.confirmPassword) setError("As passwords não coincidem!");
-            else if (!formData.aceitarTermos) setError("Deve aceitar os Termos de Serviço!");
+            if (formData.password !== formData.confirmPassword) {
+                setError("As passwords não coincidem!");
+            } else if (!formData.aceitarTermos) {
+                setError("Deve aceitar os Termos de Serviço!");
+            }
             return;
         }
 
-        // Avançar para a área passando os dados (Análogo ao MaterialPageRoute no Flutter)
-        navigate("/register-area", { state: formData });
+        // Avança para a página de seleção de área passando os dados integrados
+        navigate("/register-area", { 
+            state: {
+                ...formData,
+                aceitar_termos: formData.aceitarTermos // Garante compatibilidade direta com AreaRegister.jsx
+            } 
+        });
     };
 
     return (
@@ -57,6 +66,7 @@ function RegisterPage() {
                                         <InputGroup.Text className="bg-white text-muted"><UserRound size={18} /></InputGroup.Text>
                                         <Form.Control 
                                             required
+                                            type="text"
                                             placeholder="Nome Completo" 
                                             onChange={(e) => setFormData({...formData, nome: e.target.value})}
                                         />
@@ -108,11 +118,12 @@ function RegisterPage() {
                                         type="checkbox"
                                         label="Aceito os Termos e Condições"
                                         required
+                                        checked={formData.aceitarTermos}
                                         onChange={(e) => setFormData({...formData, aceitarTermos: e.target.checked})}
                                     />
                                 </Form.Group>
 
-                                <Button type="submit" className="w-100" style={{ backgroundColor: '#1d61ff', height: '50px' }}>
+                                <Button type="submit" className="w-100 d-flex align-items-center justify-content-center gap-2 text-white" style={{ backgroundColor: '#1d61ff', height: '50px', fontWeight: '600' }}>
                                     Seguinte <ArrowRight size={18} />
                                 </Button>
 

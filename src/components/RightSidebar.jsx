@@ -34,14 +34,14 @@ function RightSidebar() {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      const userId = user.id_utilizador || user.ID_UTILIZADOR;
+      const userId = user.id_utilizador; // Limpo apenas para o padrão minúsculo
 
       // Carregar Notificações
       api.get(`/notificacoes/${userId}`)
         .then(res => setNotifications(res.data))
         .catch(err => console.error("Erro ao carregar notificações:", err));
 
-      // Carregar Badges (usando a rota de progresso/conquistados que definiu no Flutter)
+      // Carregar Badges
       api.get(`/badges/progresso/${userId}`)
         .then(res => setBadges(res.data))
         .catch(err => console.error("Erro ao carregar badges:", err));
@@ -59,7 +59,8 @@ function RightSidebar() {
         <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Os meus Badges</div>
         {badges.length > 0 ? (
           badges.slice(0, 3).map((b, i) => (
-            <BadgeCard key={i} name={b.nome_badge || b.NOME} points={b.pontos || 10} />
+            /* Ajustado para ler apenas chaves minúsculas do PostgreSQL */
+            <BadgeCard key={i} name={b.nome_badge || b.nome} points={b.pontos || 10} />
           ))
         ) : (
           <div style={{ fontSize: 12, color: '#9ca3af' }}>Sem badges conquistados.</div>
@@ -81,9 +82,10 @@ function RightSidebar() {
               <BiBell size={12} color="#2563eb" />
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{n.conteudo || n.CONTEUDO}</div>
+              {/* Ajustado para chaves minúsculas do PostgreSQL */}
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{n.conteudo}</div>
               <div style={{ fontSize: 11, color: '#9ca3af' }}>
-                {new Date(n.data_envio || n.DATA_ENVIO).toLocaleDateString()}
+                {new Date(n.data_envio).toLocaleDateString()}
               </div>
             </div>
           </div>

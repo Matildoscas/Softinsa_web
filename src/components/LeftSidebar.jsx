@@ -1,22 +1,19 @@
-import { useState, useEffect } from "react"; // Adicionado useEffect
+import { useState, useEffect } from "react";
 import { ListGroup } from 'react-bootstrap';
 import { BiGrid, BiUserCircle } from 'react-icons/bi';
-import SidebarItem from './sidebar_item';
+import SidebarItem from './SidebarItem';
 
 function LeftSidebar() {
-  // Estado para armazenar o nome do utilizador
   const [userName, setUserName] = useState("Consultor");
 
   useEffect(() => {
-    // 1. Ir buscar os dados guardados no localStorage durante o login
     const storedUser = localStorage.getItem("user");
     
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
-        // 2. Usar o nome que vem da base de dados (NOME_COMPLETO no teu SQL)
-        // O nome da propriedade depende de como o teu backend envia o JSON [cite: 107, 113]
-        setUserName(user.nome_completo || user.NOME_COMPLETO || "Consultor");
+        // Ajustado para ler o 'nome_completo' que vem limpo da tua API
+        setUserName(user.nome_completo || "Consultor");
       } catch (error) {
         console.error("Erro ao ler dados do utilizador:", error);
       }
@@ -28,7 +25,6 @@ function LeftSidebar() {
         <div style={{ width: 250, background: 'white', borderRight: '1px solid #e5e7eb', padding: '10px 0', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px 14px' }}>
             <BiUserCircle size={28} color="#6b7280"/>
-            {/* O nome agora é dinâmico vindo da base de dados */}
             <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>
               {userName}
             </span>
@@ -37,7 +33,9 @@ function LeftSidebar() {
 
         <ListGroup variant="flush">
             <SidebarItem to="/pag_consultor" icon={<BiGrid size={16} />} label="Página Principal" />
-            <SidebarItem to="/perfil_consultor" icon={<BiGrid size={16}/>} label="Perfil do Consultor" />
+            
+            {/* Corrigido de /perfil_consultor para /perfil para alinhar com o App.jsx */}
+            <SidebarItem to="/perfil" icon={<BiGrid size={16}/>} label="Perfil do Consultor" />
             
             {/* Submenu de Badges fixo */}
             <div style={{ paddingLeft: 0, marginTop: '0px' }}>

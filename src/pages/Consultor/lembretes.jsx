@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Navbar, Nav, Form, OverlayTrigger, Popover } from 'react-bootstrap';
-import { BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
+import { Container, Button } from 'react-bootstrap';
 import { HiOutlineArrowLeft } from 'react-icons/hi';
-import logoImg from './assets/logo.png';
-import { useNavigate, Link } from 'react-router-dom';
-import Header from './Componentes/header.jsx';
-import RightSidebar from './Componentes/right_sidebar.jsx';
-import LeftSidebar from './Componentes/left_sidebar.jsx';
+import { useNavigate } from 'react-router-dom';
+
+// Importação dos componentes estruturais corrigidos
+import Header from '../../components/Header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 
 function LembretePage() {
     const navigate = useNavigate();
+    
     return (
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             {/* Navbar */}
@@ -17,90 +17,35 @@ function LembretePage() {
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 {/* Sidebar */}
-
                 <LeftSidebar />
 
                 {/* Main Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                    {/* Botão voltar ajustado para regressar à Dashboard principal */}
                     <Button 
                         variant="link" 
-                        className="d-flex align-items-center text-decoration-none p-0"
+                        className="d-flex align-items-center text-decoration-none p-0 mb-3"
                         style={{ color: '#4A5568', fontSize: '1.1rem' }}
-                        onClick={() => navigate('/')}
-                        >
+                        onClick={() => navigate('/pag_consultor')}
+                    >
                         <HiOutlineArrowLeft className="me-1" />
                         <span style={{ fontWeight: '400' }}>Voltar</span>
                     </Button>
 
                     <LembreteSection>
-                        <LembreteCard name="Ana Maria" title="Atualizou o perfil de acesso" desc="Automation & Deployment (CI/CD)" meta="Script Initiate · Nível A" time="35 minutos atrás" />
+                        <LembreteCard 
+                            name="Ana Maria" 
+                            title="Atualizou o perfil de acesso" 
+                            desc="Automation & Deployment (CI/CD)" 
+                            meta="Script Initiate · Nível A" 
+                            time="35 minutos atrás" 
+                        />
                     </LembreteSection>
                 </div>
 
                 {/* Right Panel */}
-
                 <RightSidebar />
                 
-            </div>
-        </div>
-    );
-}
-
-function BadgeSection({ title, sub, children }) {
-    return (
-        <div className="mb-3">
-            <div className="d-flex justify-content-between align-items-start mb-1">
-                <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>{sub}</div>
-                </div>
-            </div>
-            {children}
-        </div>
-    );
-}
-
-function BadgeCard({ name, points }) {
-    return (
-        <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            background: 'white', 
-            border: '1px solid #e5e7eb', 
-            borderRadius: 20, 
-            padding: '24px 0 16px 0', 
-            width: '100%', 
-            maxWidth: 350,
-            textAlign: 'center'
-        }}>
-            {/* Círculo de fundo da medalha */}
-            <div style={{ 
-                width: 90, 
-                height: 90, 
-                backgroundColor: '#f0f7ff', 
-                borderRadius: '50%', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                fontSize: 35,
-                marginBottom: 10,
-                marginTop: -10
-            }}>
-                🥇
-            </div>
-
-            {/* Linha Divisória */}
-            <div style={{ width: '100%', height: '1px', backgroundColor: '#f3f4f6', marginBottom: 6 }} />
-
-            {/* Conteúdo de Texto */}
-            <div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
-                    {name}
-                </div>
-                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1, marginBottom: 0 }}>
-                    {points} Pontos
-                </div>
             </div>
         </div>
     );

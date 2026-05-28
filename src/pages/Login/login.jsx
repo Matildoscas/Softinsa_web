@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, InputGroup, Alert } from "react-bootstrap";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api"; // Importa a instância do Axios configurada anteriormente
+import api from "../../services/api"; 
 import ImagemLogin from "../../assets/imagem_login.png";
 
 function LoginPage() {
@@ -16,42 +16,44 @@ function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    // Validação básica igual ao Flutter [cite: 9]
     if (!email || !password) {
       setError("Preencha o email e a password!");
       return;
     }
 
     try {
-      // Chamada à API (Porta 3000 /auth/login) 
+      // Chamada à API
       const response = await api.post("/auth/login", { email, password });
 
       console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
 
       if (response.data.token) {
-        // Guardar dados no localStorage (equivalente ao SharedPreferences) [cite: 12]
-        
+        // Guardar o token JWT de autenticação
         localStorage.setItem("token", response.data.token);
 
+        // 🎯 CORRIGIDO: Alterado de 'data.user' para 'response.data.user'
+        const apiUser = response.data.user;
+
         const utilizadorSeguro = {
-            id_utilizador: data.user.id_utilizador || data.user.ID_UTILIZADOR,
-            email: data.user.email || data.user.EMAIL,
-            // Proteger o nome: aceita qualquer uma das variantes que venha do banco
-            nome: data.user.nome_completo || data.user.NOME_COMPLETO || data.user.nome,
-            nome_completo: data.user.nome_completo || data.user.NOME_COMPLETO
+            id_utilizador: apiUser.id_utilizador,
+            email: apiUser.email_softinsa || apiUser.email,
+            nome_completo: apiUser.nome_completo
         };
 
+        // Salva os dados limpos do utilizador para consumo nos componentes (ex: Sidebar)
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
-        // Redirecionar conforme o ID da área ou tipo de utilizador
+        // Redireciona o consultor para a Dashboard principal
         navigate("/pag_consultor"); 
       }
     } catch (err) {
-      // Tratamento de erros vindo do backend [cite: 16, 104]
+      console.error("Erro na tentativa de login:", err);
+      
       if (err.response && err.response.status === 403) {
         setError("Confirme o seu email antes de iniciar sessão.");
       } else {
-        setError(err.response?.data?.error || "Email ou password incorretos!");
+        // Puxa dinamicamente a mensagem de erro tratada no teu backend
+        setError(err.response?.data?.message || err.response?.data?.error || "Email ou password incorretos!");
       }
     }
   };
