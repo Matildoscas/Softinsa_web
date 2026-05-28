@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// 🎯 CORRIGIDO: Pastas com 'L' e 'C' Maiúsculos para bater certo com o teu disco!
+// Pastas com Maiúsculas e ficheiros em PascalCase (Alinhado com as tuas pastas reais)
 import LoginPage from './pages/Login/Login.jsx';
 import RegisterPage from './pages/Login/Register.jsx';
 import AreaPage from './pages/Login/AreaRegister.jsx';
@@ -15,29 +15,18 @@ function App() {
         {/* Redirecionamento inicial para o login */}
         <Route path="/" element={<Navigate to="/login" />} />
 
-        {/* Rota de Login com verificação de token */}
-        <Route 
-          path="/login" 
-          element={
-            localStorage.getItem('token') ? (
-              <Navigate to="/pag_consultor" />
-            ) : (
-              <LoginPage />
-            )
-          } 
-        />
-
-        {/* Rotas Públicas de Registo */}
+        {/* Rotas Diretas sem lógica condicional no Router para evitar loops */}
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
 
-        {/* Rotas Protegidas do Consultor */}
+        {/* Rotas do Consultor */}
         <Route path="/pag_consultor" element={<PaginaPrincipal />} />
-        
-        {/* Rotas componentes */}
         <Route path="/perfil" element={<PaginaPerfil />} />
         <Route path="/notificacoes" element={<PaginaNotificacoes />} />
         
+        {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );
