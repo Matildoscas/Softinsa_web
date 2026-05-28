@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './pages/Login/Login.jsx';
-import RegisterPage from './pages/Login/Register.jsx';
-import AreaPage from './pages/Login/AreaRegister.jsx';
-import PaginaPrincipal from './pages/Consultor/DashboardConsultor.jsx';
-import PaginaPerfil from './pages/Consultor/PaginaPerfilConsultor.jsx';
-import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx'; // 🎯 Importado para alinhar com o link do Popover
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/login/Login.jsx';
+import RegisterPage from './pages/login/Register.jsx';
+import AreaPage from './pages/login/AreaRegister.jsx';
+import PaginaPrincipal from './pages/consultor/DashboardConsultor.jsx';
+import PaginaPerfil from './pages/consultor/PaginaPerfilConsultor.jsx';
+import PaginaNotificacoes from './pages/consultor/Notificacao.jsx';
 
 function App() {
   return (
