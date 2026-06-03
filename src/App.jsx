@@ -8,30 +8,18 @@ import NotificacaoPage from './pages/Consultor/notificacao.jsx';
 import LembretePage from './pages/Consultor/lembretes.jsx';
 import ProgressoPage from './pages/Consultor/progresso_consultor.jsx';
 import CatalogoBadgesPage from './pages/Consultor/catalogo_badges.jsx';
+import PaginaPrincipalAdmin from './pages/Admin/Dashboard_Admin.jsx';
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
+  const isAuthenticated = !!localStorage.getItem('token');
   return (
     <Router>
       <Routes>
-        // Redirecionamento para login
-        <Route path="/" element={<Navigate to="/login" />} />
-
-        // Rotas públicas com proteção de acesso (redirecionamento se já autenticado)
-        <Route 
-          path="/login" 
-          element={
-            localStorage.getItem('token') ? (
-              <Navigate to="/pag_consultor" />
-            ) : (
-              <LoginPage />
-            )
-          } 
-        />
-
-        // Rotas públicas
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
+
+        // Rotas públicas
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
 
@@ -42,6 +30,9 @@ function App() {
         <Route path="/lembretes" element={<LembretePage />} />
         <Route path="/progresso" element={<ProgressoPage />} />
         <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
+
+        // Rotas Admin
+        // <Route path="/pag_admin" element={<PaginaPrincipalAdmin />} />
         
       </Routes>
     </Router>

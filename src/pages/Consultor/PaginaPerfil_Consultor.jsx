@@ -32,7 +32,12 @@ function PaginaPerfil() {
             ]).then(([dashboardRes, badgesRes]) => {
                 setStats(dashboardRes.data);               
                 // Agora os dados vêm diretamente da nova rota /conquistados
-                setBadgesConquistados(badgesRes.data); 
+                const badgesUnicos = badgesRes.data.filter(
+                    (badge, index, self) =>
+                        index === self.findIndex((b) => b.id === badge.id)
+                );
+
+                setBadgesConquistados(badgesUnicos);
                 setLoading(false);
             }).catch(err => {
                 console.error("Erro ao carregar dados do perfil:", err);

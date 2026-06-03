@@ -126,41 +126,147 @@ function ProgressoPage() {
     });
     const [loading, setLoading] = useState(true);
 
+    const removerDuplicados = (lista) => {
+        return lista.filter(
+            (badge, index, self) =>
+            index === self.findIndex(
+                (b) =>
+                String(b.id || b.id_badge_modelo) ===
+                String(badge.id || badge.id_badge_modelo)
+            )
+        );
+    };
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            const userData = JSON.parse(storedUser);
-            setUser(userData);
-            const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
 
-            setLoading(true);
-            Promise.all([
-                api.get(`/badges/progresso/${userId}`),
-                api.get(`/badges/conquistados/${userId}`),
-                api.get(`/dashboard/${userId}`),
-                api.get(`/badges/estatisticas/${userId}`),
-            ]).then(([progressoRes, conquistadosRes, dashboardRes, estatisticasRes]) => {
-                setBadgesProgresso(progressoRes.data);
-                setBadgesConquistados(conquistadosRes.data);
-                setStats({
-                    total_badges: Number(dashboardRes.data.total_badges),
-                    total_pontos: Number(dashboardRes.data.total_pontos),
-                });
-                setBadgeStats({
-                    badges_comuns_conquistados: Number(estatisticasRes.data.badges_comuns_conquistados),
-                    badges_especiais_conquistados: Number(estatisticasRes.data.badges_especiais_conquistados),
-                    total_badges_comuns: Number(estatisticasRes.data.total_badges_comuns),
-                    total_badges_especiais: Number(estatisticasRes.data.total_badges_especiais),
-                });
-                setLoading(false);
-            }).catch(err => {
-                console.error("Erro ao carregar dados:", err);
-                setLoading(false);
-            });
-        } else {
-            setLoading(false); // Importante: parar o loading se não houver user
+        if (!storedUser) {
+            setLoading(false);
+            navigate("/login", { replace: true });
+            return;
         }
-    }, []);
+
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+
+        const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+
+        if (!userId) {
+            setLoading(false);
+            navigate("/login", { replace: true });
+            return;
+        }
+
+        setLoading(true);
+
+        Promise.all([
+            api.get(`/badges/learningpaths/${userId}`),
+            api.get(`/badges/todos`),
+            api.get(`/badges/conquistados/${userId}`),
+            api.get(`/dashboard/${userId}`),
+        ])
+        .then(([learningRes, todosRes, conquistadosRes, dashboardRes]) => {
+            const learningPaths = Array.isArray(learningRes.data)
+                ? learningRes.data
+                : [];
+
+            /*const todos = Array.isArray(todosRes.data)
+                ? todosRes.data
+                : [];*/
+
+            /*const conquistadosRaw = Array.isArray(conquistadosRes.data)
+                ? conquistadosRes.data
+                : [];*/
+
+            /*const conquistados = conquistadosRaw.filter(
+                (badge, index, self) =>
+                index === self.findIndex(
+                    (b) =>
+                    String(b.id || b.id_badge_modelo) ===
+                    String(badge.id || badge.id_badge_modelo)
+                )
+            );*/
+
+            let comunsTotal = 0;
+            let especiaisTotal = 0;
+
+            todos.forEach((b) => {
+                const nivel = Number(b.id_nivel || 0);
+
+                if (nivel === 5) {
+                especiaisTotal++;
+                } else if (nivel >= 1 && nivel <= 4) {
+                comunsTotal++;
+                }
+            });
+
+            let comunsObtidos = 0;
+            let especiaisObtidos = 0;
+
+            conquistados.forEach((b) => {
+                const nivel = Number(b.id_nivel || 0);
+
+                if (nivel === 5) {
+                especiaisObtidos++;
+                } else if (nivel >= 1 && nivel <= 4) {
+                comunsObtidos++;
+                }
+            });
+
+            const ranking = [...conquistados]
+                .sort((a, b) => Number(b.pontos || 0) - Number(a.pontos || 0))
+                .slice(0, 3);
+
+            setBadgesProgresso(learningPaths);
+            setBadgesConquistados(ranking);
+
+            const todosRaw = Array.isArray(todosRes.data) ? todosRes.data : [];
+            const conquistadosRaw = Array.isArray(conquistadosRes.data) ? conquistadosRes.data : [];
+
+            const todos = removerDuplicados(todosRaw);
+            const conquistados = removerDuplicados(conquistadosRaw);
+
+            const totalBadgesComuns = todos.filter((b) => {
+            const nivel = Number(b.id_nivel);
+            return nivel >= 1 && nivel <= 4;
+            }).length;
+
+            const totalBadgesEspeciais = todos.filter((b) => {
+            const nivel = Number(b.id_nivel);
+            return nivel === 5;
+            }).length;
+
+            const badgesComunsConquistados = conquistados.filter((b) => {
+            const nivel = Number(b.id_nivel);
+            return nivel >= 1 && nivel <= 4;
+            }).length;
+
+            const badgesEspeciaisConquistados = conquistados.filter((b) => {
+            const nivel = Number(b.id_nivel);
+            return nivel === 5;
+            }).length;
+
+            setStats({
+                total_badges: Number(dashboardRes.data.total_badges || 0),
+                total_pontos: Number(dashboardRes.data.total_pontos || 0),
+            });
+
+            setBadgeStats({
+                badges_comuns_conquistados: badgesComunsConquistados,
+                badges_especiais_conquistados: badgesEspeciaisConquistados,
+                total_badges_comuns: totalBadgesComuns,
+                total_badges_especiais: totalBadgesEspeciais,
+            });
+        })
+            .catch((err) => {
+            console.error("Erro ao carregar progresso:", err);
+            console.error("STATUS:", err.response?.status);
+            console.error("BODY:", err.response?.data);
+            })
+            .finally(() => {
+            setLoading(false);
+            });
+        }, [navigate]);
 
     if (loading) {
         return (
@@ -221,6 +327,33 @@ function ProgressoPage() {
                         </Button>
                     </div>
 
+                    <ProgressoSection
+                        title="Progressos nas Learning Paths"
+                        sub={`${badgesProgresso.length} learning path(s)`}
+                        >
+                        {badgesProgresso.length > 0 ? (
+                            badgesProgresso.map((lp, i) => (
+                            <div key={i} className="mb-3">
+                                <div style={{ fontSize: 13, fontWeight: 600 }}>
+                                {lp.nome_learningpath}
+                                </div>
+
+                                <ProgressBar
+                                now={Number(lp.percentagem || 0)}
+                                style={{ height: 7, marginTop: 6 }}
+                                />
+
+                                <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
+                                {lp.badges_conquistados} / {lp.total_badges} badges concluídos •{" "}
+                                {lp.percentagem}%
+                                </div>
+                            </div>
+                            ))
+                        ) : (
+                            <p className="text-muted small">Sem learning paths disponíveis.</p>
+                        )}
+                        </ProgressoSection>
+
                     {/* Seção: Badges com Progresso */}
                     <ProgressoSection title="Progressos dos Badges" sub="Resumo das tuas conquistas">
                         <div className="d-flex gap-4 flex-wrap mt-1">
@@ -237,25 +370,6 @@ function ProgressoPage() {
                         </div>
                     </ProgressoSection>
 
-                    {/* Badges com Progresso */}
-                    <ProgressoSection
-                        title="Badges com progresso"
-                        sub={`Tem ${badgesProgresso.length} badge(s) em progresso`}
-                    >
-                        {badgesProgresso.length > 0 ? (
-                            badgesProgresso.map((b, i) => (
-                                <ProgressoBadgeCard
-                                    key={i}
-                                    nome={b.nome || b.NOME}
-                                    descricao={b.descricao || b.DESCRICAO}
-                                    pontos={b.pontos || b.PONTOS}
-                                    progresso={b.progresso}
-                                />
-                            ))
-                        ) : (
-                            <p className="text-muted small">Não tem badges em progresso de momento.</p>
-                        )}
-                    </ProgressoSection>
  
                     {/* Ranking de Conquistas */}
                     <ProgressoSection
@@ -265,13 +379,13 @@ function ProgressoPage() {
                         {badgesConquistados.length > 0 ? (
                             badgesConquistados.map((b, i) => (
                                 <RankingCard
-                                    key={i}
-                                    nome={b.nome || b.NOME}
-                                    pontos={b.pontos || b.PONTOS}
-                                    dataAtribuicao={b.data_atribuicao || b.DATA_ATRIBUICAO}
+                                key={b.id || i}
+                                nome={b.nome || b.nome_badge || "Badge"}
+                                pontos={b.pontos || 0}
+                                dataAtribuicao={b.data_atribuicao}
                                 />
                             ))
-                        ) : (
+                            ) : (
                             <p className="text-muted small">Ainda não há conquistas registadas.</p>
                         )}
                     </ProgressoSection>

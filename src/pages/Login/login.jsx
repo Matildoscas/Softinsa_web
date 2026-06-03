@@ -28,23 +28,21 @@ function LoginPage() {
 
       console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
 
-      if (response.data.token) {
-        // Guardar dados no localStorage (equivalente ao SharedPreferences) [cite: 12]
-        
-        localStorage.setItem("token", response.data.token);
+      const data = response.data;
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
 
         const utilizadorSeguro = {
-            id_utilizador: data.user.id_utilizador || data.user.ID_UTILIZADOR,
-            email: data.user.email || data.user.EMAIL,
-            // Proteger o nome: aceita qualquer uma das variantes que venha do banco
-            nome: data.user.nome_completo || data.user.NOME_COMPLETO || data.user.nome,
-            nome_completo: data.user.nome_completo || data.user.NOME_COMPLETO
+          id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
+          email: data.user?.email || data.user?.EMAIL,
+          nome: data.user?.nome_completo || data.user?.NOME_COMPLETO || data.user?.nome,
+          nome_completo: data.user?.nome_completo || data.user?.NOME_COMPLETO
         };
 
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
-        // Redirecionar conforme o ID da área ou tipo de utilizador
-        navigate("/pag_consultor"); 
+        navigate("/pag_consultor");
       }
     } catch (err) {
       // Tratamento de erros vindo do backend [cite: 16, 104]
