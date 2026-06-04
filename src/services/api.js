@@ -1,7 +1,11 @@
 import axios from 'axios';
 
-const api = axios.create({
+/*const api = axios.create({
   baseURL: 'https://softinsa-api.onrender.com/api'
+});*/
+
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api'
 });
 
 api.interceptors.request.use(

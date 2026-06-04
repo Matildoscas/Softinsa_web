@@ -1,219 +1,338 @@
 import { useState, useEffect } from "react";
-import { Image, Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
-import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu } from 'react-icons/bi';
-import { useNavigate, Link } from 'react-router-dom';
-import api from '../../services/api.js'; // Garante que o caminho está correto
+import { Button, Spinner, Form } from "react-bootstrap";
+import { HiOutlineArrowLeft } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
 
-// Importação dos teus componentes estruturais
-import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
-//import ImagemBadge from '../../assets/Cybersecurity_Badge.png';
+import Header from "../../components/header.jsx";
+import RightSidebar from "../../components/right_sidebar.jsx";
+import LeftSidebar from "../../components/left_sidebar.jsx";
+import api from "../../services/api.js";
 
-function PaginaPrincipal() {
-    const navigate = useNavigate();
-    
-    // Estados para os dados da BD
-    const [user, setUser] = useState(null);
-    const [progressoBadges, setProgressoBadges] = useState([]);
-    const [recomendados, setRecomendados] = useState([]);
-    const [loading, setLoading] = useState(true);
+function CatalogoBadgesPage() {
+  const navigate = useNavigate();
 
-    const [stats, setStats] = useState({ total_badges: 0, total_pontos: 0 });
+  const [badges, setBadges] = useState([]);
+  const [conquistadosIds, setConquistadosIds] = useState([]);
+  const [pendentes, setPendentes] = useState([]);
+  const [pesquisa, setPesquisa] = useState("");
+  const [nivelFiltro, setNivelFiltro] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [areaFiltro, setAreaFiltro] = useState("");
+  const [ordenacaoArea, setOrdenacaoArea] = useState("az");
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            const userData = JSON.parse(storedUser);
-            setUser(userData);
-            const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+  const removerDuplicados = (lista) => {
+    const mapa = new Map();
 
-            setLoading(true);
-            Promise.all([
-                api.get(`/badges/progresso/${userId}`),
-                api.get(`/badges/recomendados/${userId}`),
-                api.get(`/dashboard/${userId}`) // Chamada para a nova rota
-            ]).then(([progressoRes, recomendadosRes, dashboardRes]) => {
-                setProgressoBadges(progressoRes.data);
-                setRecomendados(recomendadosRes.data);
-                setStats({
-                    total_badges: Number(dashboardRes.data.total_badges),
-                    total_pontos: Number(dashboardRes.data.total_pontos)
-                });
-                setLoading(false);
-            }).catch(err => {
-                console.error("Erro ao carregar dados:", err);
-                setLoading(false);
-            });
-        }
-    }, []);
+    lista.forEach((badge) => {
+      const id = String(badge.id || badge.id_badge_modelo);
+      if (!mapa.has(id)) mapa.set(id, { ...badge });
+    });
 
-    if (loading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-                <Spinner animation="border" variant="primary" />
-            </div>
-        );
+    return Array.from(mapa.values());
+  };
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+      navigate("/login", { replace: true });
+      return;
     }
 
-    return (
-        <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <Header />
+    const userData = JSON.parse(storedUser);
+    const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
 
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                <LeftSidebar />
+    setLoading(true);
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-                    
-                    {/* Welcome Card Dinâmico */}
-                    <Card className="border-0 mb-3" style={{ background: '#3b6fd4', borderRadius: 12 }}>
-                        <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
-                            <div>
-                                <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Bom dia, {user?.nome_completo || "Utilizador"}!
-                                </h5>
-                                <div className="d-flex gap-2">
-                                    <div style={cardStyleBase}>
-                                        <BiMedal size={25}/>
-                                        <div>
-                                            <div style={{ fontSize: 10, opacity: 0.8 }}>Badges</div>
-                                            {/* Usa o stats vindo da dashboard */}
-                                            <div style={{ fontWeight: 600 }}>Tem {stats.total_badges} badges</div>
-                                        </div>
-                                    </div>
-                                    <div style={cardStyleBase}>
-                                        <BiStar size={25}/>
-                                        <div>
-                                            <div style={{ fontSize: 10, opacity: 0.8 }}>Pontos totais</div>
-                                            {/* Usa o stats vindo da dashboard */}
-                                            <div style={{ fontWeight: 600 }}>{stats.total_pontos} pontos</div>
-                                        </div>
-                                    </div>
-                                    <Link to="/lembretes" style={{ ...cardStyleBase, cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}>
-                                        <BiUserCircle size={25}/>
-                                        <div style={{ fontWeight: 600 }}>Lembretes</div>
-                                    </Link>
-                                </div>
-                            </div>
-                            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <BiUserCircle size={50} color="rgba(255,255,255,0.8)" />
-                            </div>
-                        </Card.Body>
-                    </Card>
+    Promise.all([
+      api.get("/badges/todos"),
+      api.get(`/badges/conquistados/${userId}`),
+      api.get(`/certificados/pendentes/${userId}`),
+    ])
+      .then(([todosRes, conquistadosRes, pendentesRes]) => {
+        const todos = removerDuplicados(
+          Array.isArray(todosRes.data) ? todosRes.data : []
+        );
 
-                    <div className="text-center mb-4">
-                        <Button variant="white" onClick={() => navigate('/catalogo')} className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
-                            <BiGrid size={20} /> Catálogo de Badges
-                        </Button>
-                    </div>
+        const conquistados = removerDuplicados(
+          Array.isArray(conquistadosRes.data) ? conquistadosRes.data : []
+        );
 
-                    {/* Seção: Badges com Progresso */}
-                    <BadgeSection 
-                        title="Badges com progresso" 
-                        sub={`Tem ${progressoBadges.length} badge(s) em progresso`}
+        setBadges(todos);
+        setConquistadosIds(
+          conquistados.map((b) => Number(b.id || b.id_badge_modelo))
+        );
+        setPendentes(Array.isArray(pendentesRes.data) ? pendentesRes.data : []);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar catálogo:", err);
+      })
+      .finally(() => setLoading(false));
+  }, [navigate]);
+
+  const getPendenteDoBadge = (badgeId) => {
+    return pendentes.find(
+      (p) => Number(p.id_badge_modelo) === Number(badgeId)
+    );
+  };
+
+  const badgesFiltrados = badges
+  .filter((b) => {
+    const areaBadge = b.nome_area || b.nome_areas || b.area || "";
+
+    const matchArea = areaFiltro
+      ? areaBadge === areaFiltro
+      : true;
+
+    const matchNivel = nivelFiltro
+      ? Number(b.id_nivel) === Number(nivelFiltro)
+      : true;
+
+    return matchArea && matchNivel;
+  })
+  .sort((a, b) => {
+    const areaA = String(a.nome_area || a.nome_areas || a.area || "");
+    const areaB = String(b.nome_area || b.nome_areas || b.area || "");
+
+    const nomeA = String(a.nome || a.nome_badge || "");
+    const nomeB = String(b.nome || b.nome_badge || "");
+
+    if (ordenacaoArea === "za") {
+      const compareArea = areaB.localeCompare(areaA, "pt-PT");
+      if (compareArea !== 0) return compareArea;
+
+      return nomeB.localeCompare(nomeA, "pt-PT");
+    }
+
+    const compareArea = areaA.localeCompare(areaB, "pt-PT");
+    if (compareArea !== 0) return compareArea;
+
+    return nomeA.localeCompare(nomeB, "pt-PT");
+  });
+
+  const areasDisponiveis = [
+    ...new Set(
+        badges
+        .map((b) => b.nome_area || b.nome_areas || b.area)
+        .filter(Boolean)
+    ),
+    ].sort((a, b) => a.localeCompare(b, "pt-PT"));
+
+  return (
+    <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Header />
+
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <LeftSidebar />
+
+        <main style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
+          <Button
+            variant="link"
+            className="d-flex align-items-center text-decoration-none p-0 mb-2"
+            style={{ color: "#4A5568", fontSize: "1.05rem" }}
+            onClick={() => navigate("/pag_consultor")}
+          >
+            <HiOutlineArrowLeft className="me-1" />
+            <span>Voltar</span>
+          </Button>
+
+          <hr className="my-2" />
+
+          <div className="d-flex justify-content-between align-items-start mb-4">
+            <div>
+              <h5 className="fw-bold mb-0">Catálogo de Badges</h5>
+              <div style={{ fontSize: 13, color: "#4b5563" }}>
+                Há {badgesFiltrados.length} Badges disponíveis
+              </div>
+            </div>
+
+            <div className="d-flex gap-3">
+              <div>
+                <div style={filterLabel}>Filtrar por Área</div>
+                <div className="d-flex gap-2">
+                    <Form.Select
+                    value={areaFiltro}
+                    onChange={(e) => setAreaFiltro(e.target.value)}
+                    style={filterInput}
                     >
-                        {progressoBadges.length > 0 ? (
-                            progressoBadges.map((b, i) => (
-                                <BadgeCard 
-                                    key={i}
-                                    name={b.nome_badge || b.NOME} 
-                                    desc={b.descricao} 
-                                    points={b.pontos} 
-                                    progress={b.progresso} 
-                                />
-                            ))
-                        ) : (
-                            <p className="text-muted small ms-2">Não tem badges em progresso de momento.</p>
-                        )}
-                    </BadgeSection>
+                    <option value="">Todas as áreas</option>
+                    {areasDisponiveis.map((area) => (
+                        <option key={area} value={area}>
+                        {area}
+                        </option>
+                    ))}
+                    </Form.Select>
 
-                    {/* Seção: Recomendação */}
-                    <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:">
-                        {recomendados.map((b, i) => (
-                            <BadgeCard 
-                                key={i}
-                                name={b.nome} 
-                                desc={b.descricao} 
-                                points={b.pontos} 
-                                dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
-                            />
-                        ))}
-                    </BadgeSection>
+                    <Form.Select
+                        value={ordenacaoArea}
+                        onChange={(e) => setOrdenacaoArea(e.target.value)}
+                        style={{ ...filterInput, width: 130 }}
+                        >
+                        <option value="az">Área A-Z</option>
+                        <option value="za">Área Z-A</option>
+                    </Form.Select>
+                </div>
                 </div>
 
-                <RightSidebar />
+              <div>
+                <div style={filterLabel}>↕ Filtrar por Nível</div>
+                <Form.Select
+                  value={nivelFiltro}
+                  onChange={(e) => setNivelFiltro(e.target.value)}
+                  style={filterInput}
+                >
+                  <option value="">Todos</option>
+                  <option value="1">Nível A</option>
+                  <option value="2">Nível B</option>
+                  <option value="3">Nível C</option>
+                  <option value="4">Nível D</option>
+                  <option value="5">Nível E</option>
+                </Form.Select>
+              </div>
             </div>
-        </div>
-    );
+          </div>
+
+          {badgesFiltrados.map((badge, index) => {
+            const badgeId = Number(badge.id || badge.id_badge_modelo);
+            const conquistado = conquistadosIds.includes(badgeId);
+            const pendente = getPendenteDoBadge(badgeId);
+
+            return (
+              <CatalogoBadgeRow
+                key={badgeId || index}
+                badge={badge}
+                conquistado={conquistado}
+                pendente={pendente}
+              />
+            );
+          })}
+
+          <div className="d-flex justify-content-center mt-5 mb-4">
+            <Button
+              variant="white"
+              className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
+              style={{ fontSize: 15, fontWeight: 500, minWidth: 210 }}
+              onClick={() => navigate("/historico_badges")}
+            >
+              🏅 Os seus Badges
+            </Button>
+          </div>
+
+          <hr />
+        </main>
+
+        <RightSidebar />
+      </div>
+    </div>
+  );
 }
 
-// Estilo auxiliar para os mini-cards do Header Azul
-const cardStyleBase = { 
-    background: 'rgba(255,255,255,0.2)', 
-    borderRadius: 8, 
-    padding: '6px 12px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: 6, 
-    fontSize: 12, 
-    textAlign: 'left'
+function CatalogoBadgeRow({ badge, conquistado, pendente }) {
+  const nome = badge.nome || badge.nome_badge || "Badge";
+  const descricao = badge.descricao || badge.descricao_badge_modelo || "";
+  const pontos = badge.pontos || 0;
+  const area = badge.nome_area || badge.nome_areas || badge.area || "";
+
+  const estadoTexto = conquistado
+    ? "Conquistado"
+    : pendente
+      ? pendente.estado_validacao || "Em progresso"
+      : "Por Conquistar";
+
+  const corEstado = conquistado
+    ? "#2E7D32"
+    : pendente
+      ? "#EF6C00"
+      : "#3b4a60";
+
+  return (
+    <div style={badgeCard}>
+      <div style={badgeContent}>
+        <div style={badgeIcon}>🏅</div>
+
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 500, color: "#111827" }}>
+            {nome}
+          </div>
+
+          <div style={{ fontSize: 12, color: "#344563", marginTop: 4 }}>
+            {descricao}
+            {area && (
+                <div style={{ fontSize: 12, color: "#4470AF", marginTop: 3 }}>
+                    {area}
+                </div>
+                )}
+          </div>
+        </div>
+
+        <div style={pointsBox}>
+          <div style={{ fontSize: 10, fontWeight: 600 }}>Pontos</div>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>{pontos}</div>
+        </div>
+      </div>
+
+      <div style={{ ...statusBar, color: corEstado }}>
+        {estadoTexto}
+      </div>
+    </div>
+  );
+}
+
+const filterLabel = {
+  fontSize: 13,
+  color: "#374151",
+  marginBottom: 6,
 };
 
-// --- COMPONENTES AUXILIARES (BadgeSection e BadgeCard) ---
-// (Mantive a estrutura visual que enviaste, apenas injetando as props)
+const filterInput = {
+  width: 260,
+  height: 42,
+  borderRadius: 10,
+  border: "1px solid #dbeafe",
+};
 
-function BadgeSection({ title, sub, children }) {
-    return (
-        <div className="mb-4">
-            <div className="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>{sub}</div>
-                </div>
-                <div style={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                    <BiMenu size={14} /> Ver Todos
-                </div>
-            </div>
-            {children}
-        </div>
-    );
-}
+const badgeCard = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 10,
+  marginBottom: 14,
+  overflow: "hidden",
+};
 
-function BadgeCard({ name, desc, points, progress, dateConquered }) {
-    return (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 20 }}>
-                <div style={{
-                    width: 70, height: 70, borderRadius: '50%', background: '#f3f6f9',
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0,
-                    border: '1px solid #e1e8ed', overflow: 'hidden'
-                }}>
-                    {/* <Image src={ImagemBadge} alt='Badge' fluid /> */}
-                </div>
+const badgeContent = {
+  padding: "18px 12px",
+  display: "flex",
+  alignItems: "center",
+  gap: 18,
+};
 
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{name}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>{desc}</div>
-                    {progress !== undefined && (
-                        <div className="mt-2">
-                            <ProgressBar now={progress} style={{ height: 6 }} />
-                            <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'right' }}>{progress}%</div>
-                        </div >
-                    )}
-                </div>
+const badgeIcon = {
+  width: 72,
+  height: 72,
+  borderRadius: "50%",
+  background: "#eef6ff",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexShrink: 0,
+  fontSize: 28,
+};
 
-                <div style={{ border: '1.5px solid #d1d5db', borderRadius: 10, padding: '5px 10px', textAlign: 'center', minWidth: 60 }}>
-                    <div style={{ fontSize: 10, fontWeight: 600 }}>Pontos</div>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>{points}</div>
-                </div>
-            </div>
-            {dateConquered && (
-                <div style={{ borderTop: '1px solid #e5e7eb', padding: '6px', backgroundColor: '#fafafa', textAlign: 'center', fontSize: 11, color: '#2563eb', fontWeight: 500 }}>
-                    {dateConquered}
-                </div>
-            )}
-        </div>
-    );
-}
+const pointsBox = {
+  border: "1.5px solid #4470AF",
+  borderRadius: 12,
+  padding: "8px 10px",
+  minWidth: 52,
+  textAlign: "center",
+  boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+};
 
-export default PaginaPrincipal;
+const statusBar = {
+  borderTop: "1px solid #e5e7eb",
+  textAlign: "center",
+  padding: "6px 0",
+  fontSize: 12,
+  background: "#fbfdff",
+};
+
+export default CatalogoBadgesPage;

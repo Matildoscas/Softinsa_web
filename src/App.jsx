@@ -9,6 +9,7 @@ import LembretePage from './pages/Consultor/lembretes.jsx';
 import ProgressoPage from './pages/Consultor/progresso_consultor.jsx';
 import CatalogoBadgesPage from './pages/Consultor/catalogo_badges.jsx';
 import PaginaPrincipalAdmin from './pages/Admin/Dashboard_Admin.jsx';
+import HistoricoBadgesPage from './pages/Consultor/historico_badges.jsx';
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route path="/lembretes" element={<LembretePage />} />
         <Route path="/progresso" element={<ProgressoPage />} />
         <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
+        <Route path="/historico_badges" element={<HistoricoBadgesPage />} />
 
         // Rotas Admin
         // <Route path="/pag_admin" element={<PaginaPrincipalAdmin />} />

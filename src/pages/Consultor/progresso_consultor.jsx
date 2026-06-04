@@ -137,6 +137,16 @@ function ProgressoPage() {
         );
     };
 
+    const isEspecial = (badge) => {
+    const nivel = Number(badge.id_nivel || 0);
+    return nivel === 5;
+    };
+
+    const isComum = (badge) => {
+        const nivel = Number(badge.id_nivel || 0);
+        return nivel >= 1 && nivel <= 4;
+    };
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
 
@@ -170,33 +180,61 @@ function ProgressoPage() {
                 ? learningRes.data
                 : [];
 
-            /*const todos = Array.isArray(todosRes.data)
+            const todosRaw = Array.isArray(todosRes.data)
                 ? todosRes.data
-                : [];*/
+                : [];
 
-            /*const conquistadosRaw = Array.isArray(conquistadosRes.data)
+            const conquistadosRaw = Array.isArray(conquistadosRes.data)
                 ? conquistadosRes.data
-                : [];*/
+                : [];
 
-            /*const conquistados = conquistadosRaw.filter(
-                (badge, index, self) =>
-                index === self.findIndex(
-                    (b) =>
-                    String(b.id || b.id_badge_modelo) ===
-                    String(badge.id || badge.id_badge_modelo)
-                )
-            );*/
+            const todos = removerDuplicados(todosRaw);
+            const conquistados = removerDuplicados(conquistadosRaw);
+
+            console.log("===== BADGES CONQUISTADOS =====");
+
+            conquistados.forEach((badge) => {
+                console.log({
+                    id: badge.id,
+                    nome: badge.nome,
+                    id_nivel: badge.id_nivel,
+                    pontos: badge.pontos,
+                });
+            });
+
+            console.log("===============================");
+
+            console.log("===== TODOS OS BADGES =====");
+
+            todos.forEach((badge) => {
+                console.log({
+                    id: badge.id,
+                    nome: badge.nome,
+                    id_nivel: badge.id_nivel,
+                    pontos: badge.pontos,
+                });
+            });
+
+            console.log("========================");
+
+            console.log(
+                "ESPECIAIS CONQUISTADOS:",
+                conquistados.filter((b) => Number(b.id_nivel) === 5)
+            );
+
+            console.log(
+                "COMUNS CONQUISTADOS:",
+                conquistados.filter((b) => Number(b.id_nivel) < 5)
+            );
 
             let comunsTotal = 0;
             let especiaisTotal = 0;
 
             todos.forEach((b) => {
-                const nivel = Number(b.id_nivel || 0);
-
-                if (nivel === 5) {
-                especiaisTotal++;
-                } else if (nivel >= 1 && nivel <= 4) {
-                comunsTotal++;
+                if (isEspecial(b)) {
+                    especiaisTotal++;
+                } else if (isComum(b)) {
+                    comunsTotal++;
                 }
             });
 
@@ -204,12 +242,10 @@ function ProgressoPage() {
             let especiaisObtidos = 0;
 
             conquistados.forEach((b) => {
-                const nivel = Number(b.id_nivel || 0);
-
-                if (nivel === 5) {
-                especiaisObtidos++;
-                } else if (nivel >= 1 && nivel <= 4) {
-                comunsObtidos++;
+                if (isEspecial(b)) {
+                    especiaisObtidos++;
+                } else if (isComum(b)) {
+                    comunsObtidos++;
                 }
             });
 
@@ -220,42 +256,16 @@ function ProgressoPage() {
             setBadgesProgresso(learningPaths);
             setBadgesConquistados(ranking);
 
-            const todosRaw = Array.isArray(todosRes.data) ? todosRes.data : [];
-            const conquistadosRaw = Array.isArray(conquistadosRes.data) ? conquistadosRes.data : [];
-
-            const todos = removerDuplicados(todosRaw);
-            const conquistados = removerDuplicados(conquistadosRaw);
-
-            const totalBadgesComuns = todos.filter((b) => {
-            const nivel = Number(b.id_nivel);
-            return nivel >= 1 && nivel <= 4;
-            }).length;
-
-            const totalBadgesEspeciais = todos.filter((b) => {
-            const nivel = Number(b.id_nivel);
-            return nivel === 5;
-            }).length;
-
-            const badgesComunsConquistados = conquistados.filter((b) => {
-            const nivel = Number(b.id_nivel);
-            return nivel >= 1 && nivel <= 4;
-            }).length;
-
-            const badgesEspeciaisConquistados = conquistados.filter((b) => {
-            const nivel = Number(b.id_nivel);
-            return nivel === 5;
-            }).length;
-
             setStats({
                 total_badges: Number(dashboardRes.data.total_badges || 0),
                 total_pontos: Number(dashboardRes.data.total_pontos || 0),
             });
 
             setBadgeStats({
-                badges_comuns_conquistados: badgesComunsConquistados,
-                badges_especiais_conquistados: badgesEspeciaisConquistados,
-                total_badges_comuns: totalBadgesComuns,
-                total_badges_especiais: totalBadgesEspeciais,
+                badges_comuns_conquistados: comunsObtidos,
+                badges_especiais_conquistados: especiaisObtidos,
+                total_badges_comuns: comunsTotal,
+                total_badges_especiais: especiaisTotal,
             });
         })
             .catch((err) => {
