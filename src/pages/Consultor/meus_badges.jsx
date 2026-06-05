@@ -9,7 +9,7 @@ import RightSidebar from "../../components/right_sidebar.jsx";
 import LeftSidebar from "../../components/left_sidebar.jsx";
 import api from "../../services/api.js";
 
-function CatalogoBadgesPage() {
+function MeusBadgesPage() {
   const navigate = useNavigate();
 
   const [badges, setBadges] = useState([]);
@@ -22,6 +22,7 @@ function CatalogoBadgesPage() {
   const [ordenacaoArea, setOrdenacaoArea] = useState("az");
   const [conquistados, setConquistados] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
+  const [tipoFiltro, setTipoFiltro] = useState("todos");
   const badgesPorPagina = 5;
 
   const removerDuplicados = (lista) => {
@@ -49,26 +50,48 @@ function CatalogoBadgesPage() {
     setLoading(true);
 
     Promise.all([
-      api.get("/badges/todos"),
-      api.get(`/badges/conquistados/${userId}`),
-      api.get(`/certificados/pendentes/${userId}`),
-    ])
-      .then(([todosRes, conquistadosRes, pendentesRes]) => {
-        const todos = removerDuplicados(
-          Array.isArray(todosRes.data) ? todosRes.data : []
-        );
+        api.get("/badges/todos"),
+        api.get(`/badges/conquistados/${userId}`),
+        ])
+        .then(([todosRes, conquistadosRes]) => {
+            const todos = removerDuplicados(
+            Array.isArray(todosRes.data) ? todosRes.data : []
+            );
 
-        const conquistados = removerDuplicados(
-          Array.isArray(conquistadosRes.data) ? conquistadosRes.data : []
-        );
+            const conquistadosRaw = removerDuplicados(
+            Array.isArray(conquistadosRes.data) ? conquistadosRes.data : []
+            );
 
-        setBadges(todos);
-        setConquistados(conquistados);
-        setConquistadosIds(
-          conquistados.map((b) => Number(b.id || b.id_badge_modelo))
-        );
-        setPendentes(Array.isArray(pendentesRes.data) ? pendentesRes.data : []);
-      })
+            const conquistadosComArea = conquistadosRaw.map((badgeConquistado) => {
+            const badgeId = Number(
+                badgeConquistado.id || badgeConquistado.id_badge_modelo
+            );
+
+            const badgeCatalogo = todos.find(
+                (b) => Number(b.id || b.id_badge_modelo) === badgeId
+            );
+
+            return {
+                ...badgeCatalogo,
+                ...badgeConquistado,
+                nome_area:
+                badgeConquistado.nome_area ||
+                badgeCatalogo?.nome_area ||
+                badgeCatalogo?.nome_areas ||
+                badgeCatalogo?.area ||
+                "",
+            };
+            });
+
+            setBadges(conquistadosComArea);
+            setConquistados(conquistadosComArea);
+
+            setConquistadosIds(
+            conquistadosComArea.map((b) => Number(b.id || b.id_badge_modelo))
+            );
+
+            setPendentes([]);
+        })
       .catch((err) => {
         console.error("Erro ao carregar catálogo:", err);
       })
@@ -93,7 +116,16 @@ function CatalogoBadgesPage() {
       ? Number(b.id_nivel) === Number(nivelFiltro)
       : true;
 
-    return matchArea && matchNivel;
+    const nivel = Number(b.id_nivel || 0);
+
+    const matchTipo =
+      tipoFiltro === "comuns"
+        ? nivel >= 1 && nivel <= 4
+        : tipoFiltro === "especiais"
+          ? nivel === 5
+          : true;
+
+    return matchArea && matchNivel && matchTipo;
   })
   .sort((a, b) => {
     const areaA = String(a.nome_area || a.nome_areas || a.area || "");
@@ -124,7 +156,7 @@ function CatalogoBadgesPage() {
 
   useEffect(() => {
     setPaginaAtual(1);
-  }, [areaFiltro, nivelFiltro, ordenacaoArea]);
+  }, [areaFiltro, nivelFiltro, ordenacaoArea, tipoFiltro]);
 
   const areasDisponiveis = [
     ...new Set(
@@ -162,9 +194,9 @@ function CatalogoBadgesPage() {
 
           <div className="d-flex justify-content-between align-items-start mb-4">
             <div>
-              <h5 className="fw-bold mb-0">Catálogo de Badges</h5>
+              <h5 className="fw-bold mb-0">Todos os seus badges conquistados</h5>
               <div style={{ fontSize: 13, color: "#4b5563" }}>
-                Há {badgesFiltrados.length} Badges disponíveis
+                Tem {badgesFiltrados.length} Badges
               </div>
             </div>
 
@@ -216,9 +248,9 @@ function CatalogoBadgesPage() {
 
           {badgesPaginaAtual.map((badge, index) => {
             const badgeId = Number(badge.id || badge.id_badge_modelo);
-            const conquistadoBadge = getConquistadoDoBadge(badgeId);
-            const conquistado = !!conquistadoBadge;
-            const pendente = getPendenteDoBadge(badgeId);
+            const conquistadoBadge = badge;
+            const conquistado = true;
+            const pendente = null;
 
             return (
               <CatalogoBadgeRow
@@ -239,17 +271,45 @@ function CatalogoBadgesPage() {
             onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
           />
 
-          <div className="d-flex justify-content-center mt-5 mb-4">
+          <div className="d-flex justify-content-center gap-3 mt-5 mb-4 flex-wrap">
             <Button
-              variant="white"
-              className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
-              style={{ fontSize: 16, fontWeight: 500, minWidth: 200 }}
-              onClick={() => navigate("/meus_badges")}
+                variant="white"
+                className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
+                style={{
+                ...bottomButtonStyle,
+                background: tipoFiltro === "comuns" ? "#e8f0ff" : "white",
+                borderColor: tipoFiltro === "comuns" ? "#4470AF" : "#dee2e6",
+                }}
+                onClick={() => setTipoFiltro("comuns")}
             >
-              <BiMedal size={20} />
-              Os seus Badges
+                <BiMedal size={20} />
+                Badges Comuns
             </Button>
-          </div>
+
+            <Button
+                variant="white"
+                className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
+                style={{
+                ...bottomButtonStyle,
+                background: tipoFiltro === "especiais" ? "#e8f0ff" : "white",
+                borderColor: tipoFiltro === "especiais" ? "#4470AF" : "#dee2e6",
+                }}
+                onClick={() => setTipoFiltro("especiais")}
+            >
+                <BiMedal size={20} />
+                Badges Especiais
+            </Button>
+
+            <Button
+                variant="white"
+                className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
+                style={{bottomButtonStyle}}
+                onClick={() => navigate("/catalogo-badges")}
+            >
+                <BiGrid size={20} />
+                Catálogo de Badges
+            </Button>
+            </div>
 
           <hr />
         </main>
@@ -348,7 +408,7 @@ function CatalogoBadgeRow({ badge, conquistado, conquistadoBadge, pendente, onCl
       : "#3b4a60";
 
   return (
-    <div style={{...badgeCard, cursor: "pointer", }} onClick={onClick}    >
+    <div style={{...badgeCard, cursor: "pointer",}} onClick={onClick}>
       <div style={badgeContent}>
         <div style={badgeIcon}>🏅</div>
 
@@ -464,4 +524,11 @@ const paginationCurrent = {
   justifyContent: "center",
 };
 
-export default CatalogoBadgesPage;
+const bottomButtonStyle = {
+  fontSize: 16,
+  fontWeight: 500,
+  minWidth: 220,
+  height: 46,
+};
+
+export default MeusBadgesPage;

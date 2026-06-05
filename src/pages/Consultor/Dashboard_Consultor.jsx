@@ -139,29 +139,34 @@ function PaginaPrincipal() {
                     <BadgeSection 
                         title="Badges Obtidos" 
                         sub={`Tem ${progressoBadges.length} badge(s)`}
+                        onVerTodos={() => navigate('/catalogo-badges')}
                     >
                         {progressoBadges.length > 0 ? (
                             progressoBadges.map((b, i) => (
-                                <BadgeCard 
-                                    key={i}
-                                    name={b.nome || b.nome_badge || "Badge"}
-                                    desc={b.descricao || b.descricao_badge_modelo || ""}
-                                    points={b.pontos || 0}
-                                    progress={b.progress || b.progresso || 0}
-                                    dateConquered={
-                                        b.data_atribuicao
-                                        ? `Conquistado a ${new Date(b.data_atribuicao).toLocaleDateString()}`
-                                        : "Conquistado recentemente"
-                                    }
-                                    />
+                                <BadgeCard
+                                key={b.id || i}
+                                name={b.nome || b.nome_badge || "Badge"}
+                                desc={b.descricao || b.descricao_badge_modelo || ""}
+                                points={b.pontos || 0}
+                                progress={b.progress || b.progresso || 0}
+                                conquistado={true}
+                                onClick={() => navigate(`/badge-detalhe/${b.id}`)}
+                                dateConquered={
+                                    b.data_atribuicao
+                                    ? `Conquistado a ${new Date(b.data_atribuicao).toLocaleDateString("pt-PT")}`
+                                    : "Conquistado recentemente"
+                                }
+                                />
                             ))
-                        ) : (
-                            <p className="text-muted small ms-2">Não tem badges em progresso de momento.</p>
-                        )}
+                            ) : (
+                            <p className="text-muted small ms-2">
+                                Não tem badges em progresso de momento.
+                            </p>
+                            )}
                     </BadgeSection>
 
                     {/* Seção: Recomendação */}
-                    <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:">
+                    <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:" onVerTodos={() => navigate('/catalogo-badges')}>
                         {recomendados.map((b, i) => (
                             <BadgeCard 
                                 key={i}
@@ -169,6 +174,7 @@ function PaginaPrincipal() {
                                 desc={b.descricao} 
                                 points={b.pontos} 
                                 dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
+                                onClick={() => navigate(`/badge-detalhe/${b.id}`)}
                             />
                         ))}
                     </BadgeSection>
@@ -195,7 +201,7 @@ const cardStyleBase = {
 // --- COMPONENTES AUXILIARES (BadgeSection e BadgeCard) ---
 // (Mantive a estrutura visual que enviaste, apenas injetando as props)
 
-function BadgeSection({ title, sub, children }) {
+function BadgeSection({ title, sub, children, onVerTodos }) {
     return (
         <div className="mb-4">
             <div className="d-flex justify-content-between align-items-start mb-2">
@@ -203,7 +209,7 @@ function BadgeSection({ title, sub, children }) {
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{sub}</div>
                 </div>
-                <div style={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                <div onClick={onVerTodos} style={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>                   
                     <BiMenu size={14} /> Ver Todos
                 </div>
             </div>
@@ -212,9 +218,9 @@ function BadgeSection({ title, sub, children }) {
     );
 }
 
-function BadgeCard({ name, desc, points, progress, dateConquered }) {
+function BadgeCard({ name, desc, points, progress, dateConquered, conquistado = false, onClick }) {
     return (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
+        <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, marginBottom: 10, overflow: 'hidden', ...BadgeCard, cursor: 'pointer' }} onClick={onClick}>
             <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 20 }}>
                 <div style={{
                     width: 70, height: 70, borderRadius: '50%', background: '#f3f6f9',
@@ -241,7 +247,17 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
                 </div>
             </div>
             {dateConquered && (
-                <div style={{ borderTop: '1px solid #e5e7eb', padding: '6px', backgroundColor: '#fafafa', textAlign: 'center', fontSize: 11, color: '#2563eb', fontWeight: 500 }}>
+                <div
+                    style={{
+                        borderTop: "1px solid #e5e7eb",
+                        padding: "6px",
+                        backgroundColor: "#fafafa",
+                        textAlign: "center",
+                        fontSize: 11,
+                        color: conquistado ? "#2E7D32" : "#65696f",
+                        fontWeight: 600,
+                    }}
+                    >
                     {dateConquered}
                 </div>
             )}

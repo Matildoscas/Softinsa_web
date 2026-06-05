@@ -10,6 +10,9 @@ import ProgressoPage from './pages/Consultor/progresso_consultor.jsx';
 import CatalogoBadgesPage from './pages/Consultor/catalogo_badges.jsx';
 import PaginaPrincipalAdmin from './pages/Admin/Dashboard_Admin.jsx';
 import HistoricoBadgesPage from './pages/Consultor/historico_badges.jsx';
+import MeusBadgesPage from './pages/Consultor/meus_badges.jsx';
+import BadgeDetailPage from './pages/Consultor/informacao_badge.jsx';
+import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -32,7 +35,9 @@ function App() {
         <Route path="/progresso" element={<ProgressoPage />} />
         <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
         <Route path="/historico_badges" element={<HistoricoBadgesPage />} />
-
+        <Route path="/meus_badges" element={<MeusBadgesPage />} />
+        <Route path="/badge-detalhe/:id" element={<BadgeDetailPage />} />
+        <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
         // Rotas Admin
         // <Route path="/pag_admin" element={<PaginaPrincipalAdmin />} />
         
