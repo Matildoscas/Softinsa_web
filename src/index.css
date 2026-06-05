@@ -30,6 +30,31 @@
   }
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #certificado-print,
+  #certificado-print * {
+    visibility: visible;
+  }
+
+  #certificado-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #9ca3af;

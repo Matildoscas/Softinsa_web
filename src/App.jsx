@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './App.css';
+import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
 import LoginPage from './pages/Login/login.jsx';
 import RegisterPage from './pages/Login/register.jsx';
 import AreaPage from './pages/Login/area_register.jsx';
@@ -13,6 +15,7 @@ import HistoricoBadgesPage from './pages/Consultor/historico_badges.jsx';
 import MeusBadgesPage from './pages/Consultor/meus_badges.jsx';
 import BadgeDetailPage from './pages/Consultor/informacao_badge.jsx';
 import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
+import CertificadoPage from './pages/Consultor/certificado.jsx';
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -22,6 +25,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/galeria-badges" element={<GaleriaBadgesPage />} />
 
         // Rotas públicas
         <Route path="/register" element={<RegisterPage />} />
@@ -38,6 +42,7 @@ function App() {
         <Route path="/meus_badges" element={<MeusBadgesPage />} />
         <Route path="/badge-detalhe/:id" element={<BadgeDetailPage />} />
         <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
+        <Route path="/certificado/:id" element={<CertificadoPage />} />
         // Rotas Admin
         // <Route path="/pag_admin" element={<PaginaPrincipalAdmin />} />
         

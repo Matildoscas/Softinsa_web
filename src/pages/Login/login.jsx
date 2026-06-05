@@ -121,6 +121,9 @@ function LoginPage() {
                     Registar
                   </a>
                 </div>
+                <button onClick={() => navigate("/galeria-badges")}>
+                  Ver galeria de badges
+                </button>
 
               </Form>
             </Card.Body>

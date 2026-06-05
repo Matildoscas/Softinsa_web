@@ -24,6 +24,63 @@
   }
 }
 
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body,
+  #root {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #certificado-print,
+  #certificado-print * {
+    visibility: visible !important;
+  }
+
+  #certificado-print {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+
+    width: 185mm !important;
+    height: 260mm !important;
+    max-width: none !important;
+
+    margin: 0 !important;
+    padding: 18mm !important;
+    box-sizing: border-box !important;
+
+    background: white !important;
+    border: 1px solid #dbe3ef !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    overflow: hidden !important;
+  }
+
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
 .hero {
   position: relative;
 

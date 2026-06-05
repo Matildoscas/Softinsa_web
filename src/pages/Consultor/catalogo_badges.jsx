@@ -338,7 +338,7 @@ function CatalogoBadgeRow({ badge, conquistado, conquistadoBadge, pendente, onCl
       ? `Conquistado a ${new Date(conquistadoBadge.data_atribuicao).toLocaleDateString("pt-PT")}`
       : "Conquistado recentemente"
     : pendente
-      ? pendente.estado_validacao || "Em progresso"
+      ? pendente.estado_validacao || "A aguardar validação"
       : "Por Conquistar";
   
   const corEstado = conquistado

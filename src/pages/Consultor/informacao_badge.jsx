@@ -225,9 +225,12 @@ function BadgeDetailPage() {
                     Partilhar badge no LinkedIn
                 </button>
 
-                <button style={actionBtn}>
-                    <HiOutlineDownload size={17} style={{ marginRight: 8 }} />
-                    Obter certificado
+                <button
+                  style={actionBtn}
+                  onClick={() => navigate(`/certificado/${badge.id}`)}
+                >
+                  <HiOutlineDownload size={17} style={{ marginRight: 8 }} />
+                  Obter certificado
                 </button>
 
                 <button style={actionBtn}>
