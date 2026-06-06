@@ -16,6 +16,7 @@ import MeusBadgesPage from './pages/Consultor/meus_badges.jsx';
 import BadgeDetailPage from './pages/Consultor/informacao_badge.jsx';
 import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 import CertificadoPage from './pages/Consultor/certificado.jsx';
+import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -43,8 +44,18 @@ function App() {
         <Route path="/badge-detalhe/:id" element={<BadgeDetailPage />} />
         <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
         <Route path="/certificado/:id" element={<CertificadoPage />} />
+        <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
         // Rotas Admin
-        // <Route path="/pag_admin" element={<PaginaPrincipalAdmin />} />
+        <Route path="/admin" element={<PaginaPrincipalAdmin />} />
+
+        <Route path="/admin/learning-paths" element={<div>Gestão de Learning Paths</div>} />
+        <Route path="/admin/service-lines" element={<div>Gestão de Service Lines</div>} />
+        <Route path="/admin/areas" element={<div>Gestão de Áreas</div>} />
+        <Route path="/admin/badges" element={<div>Gestão de Badges</div>} />
+        <Route path="/admin/avisos" element={<div>Informações Genéricas e Avisos</div>} />
+        <Route path="/admin/rgpd" element={<div>Políticas de RGPD</div>} />
+        <Route path="/admin/notificacoes" element={<div>Configurar notificações</div>} />
+        <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
         
       </Routes>
     </Router>

@@ -1,51 +1,161 @@
 import { useEffect, useState } from "react";
-import { Spinner, Form } from "react-bootstrap";
+import { Spinner, Button, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { BiTrophy, BiStar, BiUser, BiChevronUp, BiChevronDown } from "react-icons/bi";
+import logoImg from "../../assets/logo.png";
 import api from "../../services/api.js";
+
+const niveis = ["A", "B", "C", "D", "E"];
 
 function GaleriaBadgesPage() {
   const navigate = useNavigate();
 
   const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pesquisa, setPesquisa] = useState("");
-  const [areaFiltro, setAreaFiltro] = useState("");
-  const [nivelFiltro, setNivelFiltro] = useState("");
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [badgeSelecionado, setBadgeSelecionado] = useState(null);
+
+  const areasPorPagina = 3;
+
+  const normalizarBadgesComRequisitos = (lista) => {
+    const mapa = new Map();
+
+    lista.forEach((linha) => {
+      const badgeId = Number(linha.id || linha.id_badge_modelo);
+
+      if (!badgeId) return;
+
+      if (!mapa.has(badgeId)) {
+        mapa.set(badgeId, {
+          id: badgeId,
+          nome: linha.nome || linha.nome_badge,
+          descricao: linha.descricao || linha.descricao_badge_modelo,
+          pontos: Number(linha.pontos || 0),
+          id_nivel: linha.id_nivel,
+          id_areas: linha.id_areas,
+          nome_area:
+            linha.nome_area ||
+            linha.nome_areas ||
+            linha.area ||
+            "Área não definida",
+          requisitos: [],
+        });
+      }
+
+      const badgeAtual = mapa.get(badgeId);
+
+      // Caso 1: API já vem com requisitos agrupados
+      if (Array.isArray(linha.requisitos)) {
+        linha.requisitos.forEach((req) => {
+          const reqId =
+            req.id_requisito ||
+            req.id_requisitos ||
+            req.titulo ||
+            req.nome;
+
+          const jaExiste = badgeAtual.requisitos.some(
+            (r) =>
+              String(r.id_requisito || r.id || r.titulo) === String(reqId)
+          );
+
+          if (!jaExiste) {
+            badgeAtual.requisitos.push({
+              id_requisito: req.id_requisito || req.id_requisitos || null,
+              id: req.titulo || req.nome || "Requisito",
+              titulo: req.nome || req.nome_requisito || req.titulo || "Requisito",
+              descricao:
+                req.descricao ||
+                req.descricao_requisito ||
+                "",
+              link: req.link_requisito || req.link || "",
+            });
+          }
+        });
+
+        return;
+      }
+
+      // Caso 2: API vem linha a linha com requisitos
+      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
+        const reqId =
+          linha.id_requisito ||
+          linha.id_requisitos ||
+          linha.titulo ||
+          linha.nome_requisito;
+
+        const jaExiste = badgeAtual.requisitos.some(
+          (r) =>
+            String(r.id_requisito || r.id || r.titulo) === String(reqId)
+        );
+
+        if (!jaExiste) {
+          badgeAtual.requisitos.push({
+            id_requisito: linha.id_requisito || linha.id_requisitos || null,
+            id: linha.titulo || linha.nome_requisito || "Requisito",
+            titulo: linha.nome_requisito || linha.titulo || "Requisito",
+            descricao: linha.descricao_requisito || "",
+            link: linha.link_requisito || linha.link || "",
+          });
+        }
+      }
+    });
+
+    return Array.from(mapa.values());
+  };
 
   useEffect(() => {
-    api.get("/badges/galeria/publica")
+    api
+      .get("/badges/galeria/publica")
       .then((res) => {
-        setBadges(Array.isArray(res.data) ? res.data : []);
+        const dados = Array.isArray(res.data) ? res.data : [];
+        const badgesNormalizados = normalizarBadgesComRequisitos(dados);
+
+        console.log("BADGES GALERIA:", badgesNormalizados);
+        console.log("TOTAL BADGES:", badgesNormalizados.length);
+        console.log(
+          "REQUISITOS:",
+          badgesNormalizados.map((b) => ({
+            id: b.id,
+            nome: b.nome,
+            requisitos: b.requisitos.length,
+          }))
+        );
+
+        setBadges(badgesNormalizados);
       })
       .catch((err) => {
-        console.error("Erro ao carregar galeria pública:", err);
+        console.error("Erro ao carregar galeria:", err);
+        console.error("STATUS:", err.response?.status);
+        console.error("BODY:", err.response?.data);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  const areasDisponiveis = [
-    ...new Set(
-      badges
-        .map((b) => b.nome_area)
-        .filter(Boolean)
-    ),
-  ].sort((a, b) => a.localeCompare(b, "pt-PT"));
+  const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
+    const area = badge.nome_area || "Área não definida";
 
-  const badgesFiltrados = badges.filter((b) => {
-    const texto = `${b.nome || ""} ${b.descricao || ""} ${b.nome_area || ""}`.toLowerCase();
+    if (!acc[area]) {
+      acc[area] = [];
+    }
 
-    const matchPesquisa = texto.includes(pesquisa.toLowerCase());
+    acc[area].push(badge);
+    return acc;
+  }, {});
 
-    const matchArea = areaFiltro
-      ? b.nome_area === areaFiltro
-      : true;
+  const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) =>
+    a.localeCompare(b, "pt-PT")
+  );
 
-    const matchNivel = nivelFiltro
-      ? Number(b.id_nivel) === Number(nivelFiltro)
-      : true;
+  const totalPaginas = Math.ceil(areasOrdenadas.length / areasPorPagina);
 
-    return matchPesquisa && matchArea && matchNivel;
-  });
+  const inicio = (paginaAtual - 1) * areasPorPagina;
+  const fim = inicio + areasPorPagina;
+  const areasPaginaAtual = areasOrdenadas.slice(inicio, fim);
+
+  const totalPontos = badges.reduce(
+    (total, badge) => total + Number(badge.pontos || 0),
+    0
+  );
 
   if (loading) {
     return (
@@ -57,99 +167,325 @@ function GaleriaBadgesPage() {
 
   return (
     <div style={page}>
-      <header style={header}>
-        <div style={logo}>SOFTINSA</div>
-
-        <button
-          style={loginBtn}
-          onClick={() => navigate("/login")}
-        >
-          Entrar
-        </button>
-      </header>
+      <PublicHeader
+        onLogin={() => navigate("/login")}
+        onRegister={() => navigate("/register")}
+      />
 
       <main style={main}>
-        <section style={hero}>
-          <h1 style={title}>Galeria de Badges</h1>
-          <p style={subtitle}>
-            Explore todos os badges disponíveis na plataforma Softinsa.
-          </p>
+        <section style={heroCard}>
+          <div>
+            <div style={heroTitle}>Galeria de Badges</div>
+
+            <div style={heroStats}>
+              <div style={heroStatItem}>
+                <div style={heroStatIcon}>
+                  <BiTrophy size={20} />
+                </div>
+                <div>
+                  <div style={heroStatLabel}>Badges</div>
+                  <div style={heroStatValue}>{badges.length}</div>
+                </div>
+              </div>
+
+              <div style={heroStatItem}>
+                <div style={heroStatIcon}>
+                  <BiStar size={20} />
+                </div>
+                <div>
+                  <div style={heroStatLabel}>Total de pontos</div>
+                  <div style={heroStatValue}>{totalPontos} pontos</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={heroUserCircle}>
+            <BiUser size={52} />
+          </div>
         </section>
 
-        <section style={filters}>
-          <Form.Control
-            placeholder="Pesquisar badge..."
-            value={pesquisa}
-            onChange={(e) => setPesquisa(e.target.value)}
-            style={input}
-          />
+        <div style={contentWrapper}>
+          {areasPaginaAtual.map((area) => (
+            <section key={area} style={areaSection}>
+              <h3 style={areaTitle}>{area}</h3>
 
-          <Form.Select
-            value={areaFiltro}
-            onChange={(e) => setAreaFiltro(e.target.value)}
-            style={input}
-          >
-            <option value="">Todas as áreas</option>
-            {areasDisponiveis.map((area) => (
-              <option key={area} value={area}>
-                {area}
-              </option>
-            ))}
-          </Form.Select>
-
-          <Form.Select
-            value={nivelFiltro}
-            onChange={(e) => setNivelFiltro(e.target.value)}
-            style={input}
-          >
-            <option value="">Todos os níveis</option>
-            <option value="1">Nível A</option>
-            <option value="2">Nível B</option>
-            <option value="3">Nível C</option>
-            <option value="4">Nível D</option>
-            <option value="5">Nível E</option>
-          </Form.Select>
-        </section>
-
-        <div style={count}>
-          {badgesFiltrados.length} badge(s) encontrados
+              <div style={badgeGrid}>
+                {badgesAgrupadosPorArea[area].map((badge) => (
+                  <BadgeGalleryCard
+                    key={badge.id}
+                    badge={badge}
+                    onClick={() => setBadgeSelecionado(badge)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
 
-        <section style={grid}>
-          {badgesFiltrados.map((badge) => (
-            <BadgePublicCard
-              key={badge.id}
-              badge={badge}
-              onClick={() => navigate(`/galeria-badges/${badge.id}`)}
-            />
-          ))}
-        </section>
+        <PaginacaoGaleria
+          paginaAtual={paginaAtual}
+          totalPaginas={totalPaginas}
+          onAnterior={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+          onProxima={() =>
+            setPaginaAtual((p) => Math.min(totalPaginas, p + 1))
+          }
+        />
       </main>
+
+      <BadgePublicModal
+        badge={badgeSelecionado}
+        show={!!badgeSelecionado}
+        onClose={() => setBadgeSelecionado(null)}
+      />
     </div>
   );
 }
 
-function BadgePublicCard({ badge, onClick }) {
+function PublicHeader({ onLogin, onRegister }) {
   return (
-    <div style={card} onClick={onClick}>
-      <div style={icon}>🏅</div>
+    <header style={header}>
+      <div style={headerInner}>
+        <img src={logoImg} alt="Softinsa" style={logoImgStyle} />
 
-      <div style={cardTitle}>
-        {badge.nome}
+        <div style={headerActions}>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={onLogin}
+            style={loginButton}
+          >
+            Login
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onRegister}
+            style={registerButton}
+          >
+            Registar
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function BadgeGalleryCard({ badge, onClick }) {
+  return (
+    <div style={badgeCard} onClick={onClick}>
+      <div style={badgeIcon}>🏅</div>
+
+      <div style={badgeName}>
+        {badge.nome || "Badge"}
+      </div>
+    </div>
+  );
+}
+
+function BadgePublicModal({ badge, show, onClose }) {
+  if (!badge) return null;
+
+  return (
+    <Modal
+      show={show}
+      onHide={onClose}
+      centered
+      size="lg"
+      backdrop="static"
+    >
+      <Modal.Header closeButton style={{ borderBottom: "1px solid #e5e7eb" }}>
+        <Modal.Title style={{ fontSize: 18, fontWeight: 700 }}>
+          Informação do Badge
+        </Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body style={{ background: "#f7f7f7", padding: 24 }}>
+        <div style={heroBadgeCard}>
+          <div style={heroIconWrap}>🏅</div>
+
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 10 }}>
+            {badge.nome}
+          </div>
+
+          {badge.nome_area && (
+            <div style={{ fontSize: 13, color: "#4470AF", marginTop: 4 }}>
+              {badge.nome_area}
+            </div>
+          )}
+
+          <div style={pointsPill}>
+            {badge.pontos || 0} pontos
+          </div>
+        </div>
+
+        <div style={sectionCard}>
+          <div style={sectionTitle}>Descrição</div>
+          <p style={descriptionText}>
+            {badge.descricao || "Sem descrição disponível."}
+          </p>
+        </div>
+
+        <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
+
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: 10 }}>
+            Requisitos do Nível
+          </div>
+
+          {badge.requisitos?.length > 0 ? (
+            badge.requisitos.map((req, i) => (
+              <RequisitoRow
+                key={`${req.id}-${i}`}
+                req={req}
+                defaultOpen={i === 0}
+              />
+            ))
+          ) : (
+            <div style={sectionCard}>
+              <span style={{ fontSize: 13, color: "#6b7280" }}>
+                Sem requisitos registados para este badge.
+              </span>
+            </div>
+          )}
+        </div>
+      </Modal.Body>
+
+      <Modal.Footer style={{ borderTop: "1px solid #e5e7eb" }}>
+        <Button variant="outline-secondary" onClick={onClose}>
+          Fechar
+        </Button>
+
+        <Button variant="primary" onClick={() => window.location.href = "/login"}>
+          Iniciar sessão para submeter evidências
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
+
+function NivelSelector({ nivelAtual }) {
+  return (
+    <div style={sectionCard}>
+      <div style={sectionTitle}>Nível</div>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+        {niveis.map((n) => (
+          <div
+            key={n}
+            style={{
+              ...nivelCircle,
+              background: n === nivelAtual ? "#F5C518" : "#f0f0f0",
+              border:
+                n === nivelAtual
+                  ? "2px solid #e0a800"
+                  : "1.5px solid #d1d5db",
+              color: n === nivelAtual ? "#7a5800" : "#374151",
+              fontWeight: n === nivelAtual ? 700 : 500,
+              boxShadow:
+                n === nivelAtual
+                  ? "0 2px 8px rgba(245,197,24,0.35)"
+                  : "none",
+            }}
+          >
+            {n}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RequisitoRow({ req, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen || false);
+
+  return (
+    <div style={requisitoCard}>
+      <div style={requisitoHeader} onClick={() => setOpen((v) => !v)}>
+        <div>
+          <span style={{ fontWeight: 700, color: "#111827" }}>
+            Requisito {req.id}
+          </span>
+          {" - "}
+          <span style={{ color: "#4470AF", fontWeight: 500 }}>
+            {req.titulo}
+          </span>
+        </div>
+
+        {open ? (
+          <BiChevronUp size={22} color="#6b7280" />
+        ) : (
+          <BiChevronDown size={22} color="#6b7280" />
+        )}
       </div>
 
-      <div style={cardArea}>
-        {badge.nome_area || "Área não definida"}
+      {open && (
+        <div style={requisitoBody}>
+          <span style={{ fontWeight: 700 }}>{req.id}</span>
+          {" - "}
+          {req.descricao || "Sem descrição."}
+
+          {req.link && (
+            <div style={{ marginTop: 4 }}>
+              <a
+                href={req.link}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#4470AF", fontSize: 13 }}
+              >
+                {req.link}
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaginacaoGaleria({
+  paginaAtual,
+  totalPaginas,
+  onAnterior,
+  onProxima,
+}) {
+  if (totalPaginas <= 1) return null;
+
+  const disabledAnterior = paginaAtual === 1;
+  const disabledProxima = paginaAtual === totalPaginas;
+
+  return (
+    <div style={paginationWrapper}>
+      <button
+        style={{
+          ...paginationButton,
+          opacity: disabledAnterior ? 0.45 : 1,
+          cursor: disabledAnterior ? "not-allowed" : "pointer",
+        }}
+        disabled={disabledAnterior}
+        onClick={onAnterior}
+      >
+        {"<"}
+      </button>
+
+      <div style={paginationCurrent}>{paginaAtual}</div>
+
+      <div style={paginationText}>
+        {paginaAtual}/{totalPaginas}
       </div>
 
-      <div style={cardDesc}>
-        {badge.descricao}
-      </div>
-
-      <div style={footer}>
-        <span>Nível {nivelParaLetra(badge.id_nivel)}</span>
-        <strong>{badge.pontos} pontos</strong>
-      </div>
+      <button
+        style={{
+          ...paginationButton,
+          opacity: disabledProxima ? 0.45 : 1,
+          cursor: disabledProxima ? "not-allowed" : "pointer",
+        }}
+        disabled={disabledProxima}
+        onClick={onProxima}
+      >
+        {">"}
+      </button>
     </div>
   );
 }
@@ -163,7 +499,7 @@ function nivelParaLetra(idNivel) {
   if (nivel === 4) return "D";
   if (nivel === 5) return "E";
 
-  return "-";
+  return "";
 }
 
 const page = {
@@ -172,135 +508,306 @@ const page = {
 };
 
 const header = {
-  height: 70,
+  height: 72,
   background: "white",
   borderBottom: "1px solid #e5e7eb",
   display: "flex",
   alignItems: "center",
+};
+
+const headerInner = {
+  width: "100%",
+  maxWidth: 1500,
+  margin: "0 auto",
+  padding: "0 32px",
+  display: "flex",
+  alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 48px",
 };
 
-const logo = {
-  fontSize: 24,
-  fontWeight: 800,
-  color: "#4470AF",
-  letterSpacing: 1,
+const logoImgStyle = {
+  height: 42,
+  objectFit: "contain",
 };
 
-const loginBtn = {
-  border: "1px solid #4470AF",
-  background: "white",
-  color: "#4470AF",
+const headerActions = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+};
+
+const loginButton = {
   borderRadius: 999,
-  padding: "8px 20px",
+  padding: "6px 18px",
   fontWeight: 600,
-  cursor: "pointer",
+};
+
+const registerButton = {
+  borderRadius: 999,
+  padding: "6px 18px",
+  fontWeight: 600,
+  background: "#4470AF",
+  borderColor: "#4470AF",
 };
 
 const main = {
-  maxWidth: 1180,
+  width: "100%",
+  maxWidth: 1500,
   margin: "0 auto",
-  padding: "42px 24px",
+  padding: "32px 32px 60px",
 };
 
-const hero = {
-  textAlign: "center",
-  marginBottom: 30,
-};
-
-const title = {
-  fontSize: 34,
-  fontWeight: 800,
-  color: "#111827",
-};
-
-const subtitle = {
-  fontSize: 15,
-  color: "#6b7280",
-};
-
-const filters = {
+const heroCard = {
+  background: "#4470AF",
+  borderRadius: 12,
+  minHeight: 150,
+  padding: "26px 38px",
+  color: "white",
   display: "flex",
-  gap: 12,
-  marginBottom: 18,
-  flexWrap: "wrap",
-};
-
-const input = {
-  height: 42,
-  borderRadius: 10,
-  minWidth: 220,
-  flex: 1,
-};
-
-const count = {
-  fontSize: 13,
-  color: "#6b7280",
-  marginBottom: 18,
-};
-
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-  gap: 18,
-};
-
-const card = {
-  background: "white",
-  border: "1px solid #dbe3ef",
-  borderRadius: 16,
-  padding: 20,
-  cursor: "pointer",
-  minHeight: 260,
-  display: "flex",
-  flexDirection: "column",
   alignItems: "center",
-  textAlign: "center",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+  justifyContent: "space-between",
+  boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
+  marginBottom: 48,
 };
 
-const icon = {
-  width: 80,
-  height: 80,
-  borderRadius: "50%",
-  background: "#eef6ff",
+const heroTitle = {
+  fontSize: 22,
+  fontWeight: 600,
+  marginBottom: 34,
+};
+
+const heroStats = {
+  display: "flex",
+  alignItems: "center",
+  gap: 70,
+};
+
+const heroStatItem = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+};
+
+const heroStatIcon = {
+  width: 38,
+  height: 38,
+  borderRadius: 7,
+  background: "rgba(255,255,255,0.25)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 34,
-  marginBottom: 12,
 };
 
-const cardTitle = {
+const heroStatLabel = {
+  fontSize: 12,
+  opacity: 0.9,
+};
+
+const heroStatValue = {
+  fontSize: 14,
+  fontWeight: 700,
+};
+
+const heroUserCircle = {
+  width: 82,
+  height: 82,
+  borderRadius: "50%",
+  background: "rgba(255,255,255,0.2)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const contentWrapper = {
+  width: "100%",
+  maxWidth: 1320,
+  margin: "0 auto",
+};
+
+const areaSection = {
+  marginBottom: 42,
+};
+
+const areaTitle = {
+  fontSize: 21,
+  fontWeight: 800,
+  color: "#111827",
+  marginBottom: 20,
+};
+
+const badgeGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+  gap: "24px 34px",
+};
+
+const badgeCard = {
+  height: 104,
+  background: "white",
+  border: "1.5px solid #4470AF",
+  borderRadius: 8,
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  padding: "0 16px",
+  cursor: "pointer",
+  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+  transition: "transform 0.15s ease, box-shadow 0.15s ease",
+};
+
+const badgeIcon = {
+  width: 70,
+  height: 70,
+  borderRadius: "50%",
+  background: "#e5e5e5",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 28,
+  flexShrink: 0,
+};
+
+const badgeName = {
+  flex: 1,
+  fontSize: 15,
+  fontWeight: 600,
+  color: "#111827",
+  textAlign: "center",
+  lineHeight: 1.15,
+};
+
+const paginationWrapper = {
+  display: "flex",
+  justifyContent: "flex-end",
+  alignItems: "center",
+  gap: 8,
+  marginTop: 10,
+  paddingRight: 60,
+};
+
+const paginationButton = {
+  width: 38,
+  height: 38,
+  border: "none",
+  borderRadius: 8,
+  background: "#e9eef5",
+  color: "#2f3d4f",
+  fontSize: 18,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const paginationCurrent = {
+  width: 38,
+  height: 38,
+  borderRadius: 8,
+  background: "#dfe6ef",
+  color: "#2f3d4f",
   fontSize: 16,
+  fontWeight: 500,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const paginationText = {
+  minWidth: 42,
+  textAlign: "center",
+  fontSize: 13,
+  color: "#2f3d4f",
+};
+
+const heroBadgeCard = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 12,
+  padding: "28px 20px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  marginBottom: 16,
+};
+
+const heroIconWrap = {
+  width: 90,
+  height: 90,
+  borderRadius: "50%",
+  background: "#eef3fb",
+  border: "2px solid #dbe3ef",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 42,
+};
+
+const pointsPill = {
+  marginTop: 10,
+  background: "#eef6ff",
+  color: "#4470AF",
+  border: "1px solid #dbe3ef",
+  borderRadius: 999,
+  padding: "4px 14px",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
+const sectionCard = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 12,
+  padding: "16px 20px",
+  marginBottom: 16,
+};
+
+const sectionTitle = {
+  fontSize: 15,
   fontWeight: 700,
   color: "#111827",
-  marginBottom: 6,
 };
 
-const cardArea = {
-  fontSize: 12,
-  color: "#4470AF",
-  marginBottom: 10,
-};
-
-const cardDesc = {
-  fontSize: 12,
-  color: "#6b7280",
-  lineHeight: 1.5,
-  flex: 1,
-};
-
-const footer = {
-  borderTop: "1px solid #e5e7eb",
-  paddingTop: 12,
-  marginTop: 14,
-  width: "100%",
-  display: "flex",
-  justifyContent: "space-between",
-  fontSize: 12,
+const descriptionText = {
+  fontSize: 13,
   color: "#374151",
+  marginTop: 8,
+  marginBottom: 0,
+  lineHeight: 1.65,
+};
+
+const nivelCircle = {
+  width: 52,
+  height: 52,
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 18,
+};
+
+const requisitoCard = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 10,
+  marginBottom: 10,
+  overflow: "hidden",
+};
+
+const requisitoHeader = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "14px 18px",
+  cursor: "pointer",
+  fontSize: 13,
+  userSelect: "none",
+};
+
+const requisitoBody = {
+  padding: "10px 18px 16px",
+  fontSize: 13,
+  color: "#374151",
+  borderTop: "1px solid #e5e7eb",
+  background: "#fafbff",
 };
 
 const center = {

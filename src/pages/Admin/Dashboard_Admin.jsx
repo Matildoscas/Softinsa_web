@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, Button, ProgressBar, Spinner, Nav } from 'react-bootstrap';
 import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu, BiUser, BiBell, BiSearch, BiLogOut, BiTrendingUp, BiTrendingDown, BiDotsHorizontalRounded } from 'react-icons/bi';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
@@ -6,6 +6,11 @@ import {
     LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
     ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
+import api from "../../services/api.js";
+
+import Header from "../../components/header.jsx";
+import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
+import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 
 // ─── STATIC DATA (substituir por chamadas à API quando BD estiver disponível) ───
 
@@ -19,231 +24,7 @@ const statsData = {
     total_badges2_trend: "+5% esta semana",
 };
 
-// api.get(`/utilizadores/admin-info`) → adminUser
-const adminUser = {
-    nome_completo: "Administrador",
-    total_consultores: 145,
-    service_line_leaders: 15,
-    talent_managers: 4,
-    total_badges: 78,
-};
-
-// api.get(`/charts/consultores-anuais`) → lineChartData
-const lineChartData = [
-    { mes: 'Jan', este_ano: 100, ano_passado: 80 },
-    { mes: 'Fev', este_ano: 130, ano_passado: 95 },
-    { mes: 'Mar', este_ano: 120, ano_passado: 110 },
-    { mes: 'Abr', este_ano: 160, ano_passado: 130 },
-    { mes: 'Mai', este_ano: 210, ano_passado: 150 },
-    { mes: 'Jun', este_ano: 190, ano_passado: 170 },
-    { mes: 'Jul', este_ano: 260, ano_passado: 200 },
-];
-
-// api.get(`/charts/consultores-por-area`) → barChartData
-const barChartData = [
-    { area: 'Hybrid Cloud', total: 55 },
-    { area: 'App Operations', total: 92 },
-    { area: 'Sourcing & Talent', total: 68 },
-];
-
-// api.get(`/charts/atividade-consultores`) → pieData
-const pieData = [
-    { name: 'Consultores Ativos', value: 91.5 },
-    { name: 'Consultores Inativos', value: 8.5 },
-];
 const PIE_COLORS = ['#2563eb', '#93c5fd'];
-
-// api.get(`/notificacoes/admin/recentes`) → notifications
-const notifications = [
-    { id: 1, titulo: 'Editou Políticas de RGPD', tempo: 'Agora', icon: 'settings' },
-    { id: 2, titulo: 'Atualizou um perfil de acesso', tempo: '59 minutos atrás', icon: 'user' },
-    { id: 3, titulo: 'Resolveu problemas técnicos', tempo: '10 horas atrás', icon: 'settings' },
-];
-
-// api.get(`/utilizadores/top-badges`) → topUtilizadores
-const topUtilizadores = [
-    { id: 1, nome: 'Patricia Mendes', cargo: 'Talent Manager', badges: 15 },
-    { id: 2, nome: 'Fernando Costa', cargo: 'Consultor', badges: 12 },
-    { id: 3, nome: 'Miguel Silva', cargo: 'Consultor', badges: 5 },
-];
-
-// ─── LEFT SIDEBAR (Admin) ────────────────────────────────────────────────────
-
-const adminMenuItems = [
-    { label: 'Main Page', to: '/admin' },
-    {
-        label: 'Gestão de contas', to: '#', children: [
-            { label: 'Gestão de Learning Paths', to: '/admin/learning-paths' },
-            { label: 'Gestão de Service Lines', to: '/admin/service-lines' },
-            { label: 'Gestão de Areas', to: '/admin/areas' },
-            { label: 'Gestão de Badges', to: '/admin/badges' },
-            { label: 'Informações Gerénricas e Avisos', to: '/admin/avisos' },
-            { label: 'Políticas de RGPD', to: '/admin/rgpd' },
-        ]
-    },
-    { label: 'Configurar notificações', to: '/admin/notificacoes' },
-];
-
-function AdminLeftSidebar() {
-    const [openGroups, setOpenGroups] = useState(['Gestão de contas']);
-
-    const toggle = (label) => {
-        setOpenGroups(prev =>
-            prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
-        );
-    };
-
-    return (
-        <div style={{ width: 240, background: 'white', borderRight: '1px solid #e5e7eb', padding: '10px 0', flexShrink: 0, overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px 14px' }}>
-                <BiUserCircle size={28} color="#6b7280" />
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>Administrador</span>
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', padding: '0 16px 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pages</div>
-
-            {adminMenuItems.map((item) => (
-                <div key={item.label}>
-                    {item.children ? (
-                        <>
-                            <div
-                                onClick={() => toggle(item.label)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '8px 16px', fontSize: 13, color: '#4b5563', cursor: 'pointer',
-                                    userSelect: 'none'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <BiGrid size={15} />
-                                    <span>{item.label}</span>
-                                </div>
-                                <span style={{ fontSize: 10 }}>{openGroups.includes(item.label) ? '▲' : '▼'}</span>
-                            </div>
-                            {openGroups.includes(item.label) && item.children.map(child => (
-                                <NavLink
-                                    key={child.label}
-                                    to={child.to}
-                                    style={({ isActive }) => ({
-                                        display: 'block', padding: '6px 16px 6px 36px', fontSize: 12,
-                                        color: isActive ? '#2563eb' : '#6b7280', textDecoration: 'none',
-                                        background: isActive ? '#eff6ff' : 'transparent',
-                                        borderRight: isActive ? '3px solid #2563eb' : '3px solid transparent',
-                                    })}
-                                >
-                                    {child.label}
-                                </NavLink>
-                            ))}
-                        </>
-                    ) : (
-                        <NavLink
-                            to={item.to}
-                            end
-                            style={({ isActive }) => ({
-                                display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px',
-                                fontSize: 13, textDecoration: 'none', color: isActive ? '#2563eb' : '#4b5563',
-                                backgroundColor: isActive ? '#eff6ff' : 'transparent',
-                                borderRight: isActive ? '3px solid #2563eb' : '3px solid transparent',
-                                fontWeight: isActive ? 600 : 400,
-                            })}
-                        >
-                            <BiGrid size={16} />
-                            <span>{item.label}</span>
-                        </NavLink>
-                    )}
-                </div>
-            ))}
-        </div>
-    );
-}
-
-// ─── HEADER ──────────────────────────────────────────────────────────────────
-
-function AdminHeader() {
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        // api: localStorage.clear() + navigate('/login')
-        localStorage.clear();
-        navigate('/login');
-    };
-
-    return (
-        <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', height: 52, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 16, flexShrink: 0 }}>
-            <span style={{ fontWeight: 700, fontSize: 18, color: '#111827', letterSpacing: '-0.5px' }}>
-                <span style={{ color: '#111827' }}>SOFT</span><span style={{ color: '#2563eb' }}>INSA</span>
-            </span>
-
-            <div style={{ position: 'relative', marginLeft: 20, flex: 1, maxWidth: 500 }}>
-                <BiSearch size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
-                <input
-                    type="text"
-                    placeholder="Pesquisar..."
-                    style={{
-                        paddingLeft: 32, paddingRight: 12, height: 34, border: '1px solid #e5e7eb',
-                        borderRadius: 10, fontSize: 14, width: '100%', outline: 'none',
-                        color: '#374151', background: '#f9fafb'
-                    }}
-                />
-            </div>
-
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                    <BiBell size={18} color="white" />
-                </div>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                    <BiUserCircle size={20} color="white" />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─── RIGHT SIDEBAR ───────────────────────────────────────────────────────────
-
-function AdminRightSidebar() {
-    return (
-        <div style={{ width: 260, background: 'white', borderLeft: '1px solid #e5e7eb', padding: 16, flexShrink: 0, overflowY: 'auto' }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Notificações</div>
-
-            {notifications.map(n => (
-                <div key={n.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <BiUser size={14} color="#2563eb" />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{n.titulo}</div>
-                        <div style={{ fontSize: 11, color: '#9ca3af' }}>{n.tempo}</div>
-                    </div>
-                </div>
-            ))}
-
-            <div style={{ textAlign: 'right', marginTop: 4 }}>
-                <a href="/admin/notificacoes" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none' }}>Ver todas as notificações</a>
-            </div>
-
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: '20px 0 12px' }}>Top Utilizadores</div>
-
-            {topUtilizadores.map(u => (
-                <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <BiUserCircle size={24} color="#6b7280" />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{u.nome}</div>
-                        <div style={{ fontSize: 11, color: '#6b7280' }}>Cargo: {u.cargo}</div>
-                        <div style={{ fontSize: 11, color: '#6b7280' }}>{u.badges} badges</div>
-                    </div>
-                </div>
-            ))}
-
-            <div style={{ textAlign: 'center', marginTop: 8 }}>
-                <a href="/admin/utilizadores" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                    <BiGrid size={14} /> Ver Todos
-                </a>
-            </div>
-        </div>
-    );
-}
 
 // ─── STAT CARD ───────────────────────────────────────────────────────────────
 
@@ -294,16 +75,183 @@ function ChartTabs({ tabs, active, onChange }) {
 
 function PaginaPrincipalAdmin() {
     const [activeTab, setActiveTab] = useState('Total Consultores');
+    const [lineChartData, setLineChartData] = useState([]);
+    const [pieData, setPieData] = useState([
+        { name: "Consultores Ativos", value: 0 },
+        { name: "Consultores Inativos", value: 0 },
+    ]);
+    const [barChartData, setBarChartData] = useState([]);
+    const [areasDetalhe, setAreasDetalhe] = useState([]);
 
-    const chartLineKey = activeTab === 'Total Consultores'
-        ? { key: 'este_ano', label: 'Este ano' }
-        : activeTab === 'Total Learning Paths'
-            ? { key: 'este_ano', label: 'Este ano' }
-            : { key: 'este_ano', label: 'Este ano' };
+    const [statsResumo, setStatsResumo] = useState({
+        total_consultores: 0,
+        total_badges_atribuidos: 0,
+        total_badges: 0,
+    });
+
+    useEffect(() => {
+    api.get("/dashboard/admin/resumo-principal")
+        .then((res) => {
+            console.log("RESUMO ADMIN:", res.data);
+
+            setAdminResumo({
+            nome_completo: nomeAdmin,
+            total_consultores: Number(res.data.total_consultores || 0),
+            service_line_leaders: Number(res.data.total_sll || 0),
+            talent_managers: Number(res.data.total_tm || 0),
+            total_badges: Number(res.data.total_badges || 0),
+            });
+
+            setStatsResumo({
+            total_consultores: Number(res.data.total_consultores || 0),
+            total_badges_atribuidos: Number(res.data.total_badges_atribuidos || 0),
+            total_badges: Number(res.data.total_badges || 0),
+            });
+        })
+        .catch((err) => {
+            console.error("Erro ao carregar resumo admin:", err);
+            console.error("STATUS:", err.response?.status);
+            console.error("BODY:", err.response?.data);
+        });
+    }, []);
+
+    useEffect(() => {
+        api.get("/dashboard/admin/atividade-consultores")
+            .then((res) => {
+            setPieData([
+                {
+                name: "Consultores Ativos",
+                value: Number(res.data.percentagem_ativos || 0),
+                total: Number(res.data.ativos || 0),
+                },
+                {
+                name: "Consultores Inativos",
+                value: Number(res.data.percentagem_inativos || 0),
+                total: Number(res.data.inativos || 0),
+                },
+            ]);
+            })
+            .catch((err) => {
+            console.error("Erro ao carregar atividade dos consultores:", err);
+            console.error("STATUS:", err.response?.status);
+            console.error("BODY:", err.response?.data);
+            });
+    }, []);
+
+    useEffect(() => {
+    api.get("/dashboard/admin/consultores-por-area")
+        .then((res) => {
+        const dados = Array.isArray(res.data) ? res.data : [];
+
+        const normalizados = dados.map((item) => ({
+            area: abreviarArea(item.area),
+            areaCompleta: item.area,
+            total: Number(item.total || 0),
+        }));
+
+        const ordenados = [...normalizados].sort((a, b) => b.total - a.total);
+
+        // Gráfico: só top 5
+        setBarChartData(ordenados.slice(0, 5));
+
+        // Detalhes: todas as áreas
+        setAreasDetalhe(ordenados);
+        })
+        .catch((err) => {
+        console.error("Erro ao carregar consultores por área:", err);
+        console.error("STATUS:", err.response?.status);
+        console.error("BODY:", err.response?.data);
+        });
+    }, []);
+
+    const chartKeys =
+        activeTab === "Total Consultores"
+            ? {
+                esteAno: "consultores_este_ano",
+                anoPassado: "consultores_ano_passado",
+            }
+            : activeTab === "Total Learning Paths"
+            ? {
+                esteAno: "learningpaths_este_ano",
+                anoPassado: "learningpaths_ano_passado",
+                }
+            : {
+                esteAno: "badges_este_ano",
+                anoPassado: "badges_ano_passado",
+                };
+
+     const [adminResumo, setAdminResumo] = useState({
+        nome_completo: "Administrador",
+        total_consultores: 0,
+        service_line_leaders: 0,
+        talent_managers: 0,
+        total_badges: 0,
+    });
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("user");
+
+        let nomeAdmin = "Administrador";
+
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+
+                nomeAdmin =
+                    user.nome_completo ||
+                    user.nome ||
+                    user.NOME_COMPLETO ||
+                    "Administrador";
+            } catch (err) {
+                console.error("Erro ao ler admin:", err);
+            }
+        }
+
+        api.get("/dashboard/admin/resumo-principal")
+            .then((res) => {
+                console.log("RESUMO ADMIN:", res.data);
+
+                setAdminResumo({
+                    nome_completo: nomeAdmin,
+                    total_consultores: Number(res.data.total_consultores || 0),
+                    service_line_leaders: Number(res.data.total_sll || 0),
+                    talent_managers: Number(res.data.total_tm || 0),
+                    total_badges: Number(res.data.total_badges || 0),
+                });
+            })
+            .catch((err) => {
+                console.error("Erro ao carregar resumo admin:", err);
+                console.error("STATUS:", err.response?.status);
+                console.error("BODY:", err.response?.data);
+            });
+
+    }, []);
+
+    function abreviarArea(area) {
+        if (!area) return "Sem área";
+
+        if (area.toLowerCase().includes("hybrid")) {
+            return "Hybrid Cloud";
+        }
+
+        if (area.toLowerCase().includes("application")) {
+            return "App Operations";
+        }
+
+        if (area.toLowerCase().includes("sourcing")) {
+            return "Sourcing & Talent";
+        }
+
+        if (area.length > 18) {
+            return area.slice(0, 18) + "...";
+        }
+
+        return area;
+    }
 
     return (
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <AdminHeader />
+            <Header />
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 <AdminLeftSidebar />
@@ -315,12 +263,33 @@ function PaginaPrincipalAdmin() {
                         <Card.Body className="p-4 text-white">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <h5 style={{ fontWeight: 600, marginBottom: 16 }}>Bom dia, {adminUser.nome_completo}!</h5>
+                                    <h5 style={{ fontWeight: 600, marginBottom: 16 }}>
+                                    Bom dia, {adminResumo.nome_completo}!
+                                    </h5>
                                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                                        <WelcomeStat icon={<BiUserCircle size={20} />} label="Consultores" value={`Tem ${adminUser.total_consultores} consultores`} />
-                                        <WelcomeStat icon={<BiUser size={20} />} label="Service Line Leaders" value={`Tem ${adminUser.service_line_leaders} S.L.L`} />
-                                        <WelcomeStat icon={<BiUser size={20} />} label="Talent Managers" value={`Tem ${adminUser.talent_managers} T.M.`} />
-                                        <WelcomeStat icon={<BiMedal size={20} />} label="Badges" value={`Tem ${adminUser.total_badges} badges`} />
+                                        <WelcomeStat
+                                            icon={<BiUserCircle size={20} />}
+                                            label="Consultores"
+                                            value={`Tem ${adminResumo.total_consultores} consultores`}
+                                        />
+
+                                        <WelcomeStat
+                                            icon={<BiUser size={20} />}
+                                            label="Service Line Leaders"
+                                            value={`Tem ${adminResumo.service_line_leaders} S.L.L`}
+                                        />
+
+                                        <WelcomeStat
+                                            icon={<BiUser size={20} />}
+                                            label="Talent Managers"
+                                            value={`Tem ${adminResumo.talent_managers} T.M.`}
+                                        />
+
+                                        <WelcomeStat
+                                            icon={<BiMedal size={20} />}
+                                            label="Badges"
+                                            value={`Tem ${adminResumo.total_badges} badges`}
+                                        />
                                         <button style={{
                                             background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
                                             borderRadius: 8, padding: '6px 14px', color: 'white', fontSize: 12,
@@ -342,20 +311,22 @@ function PaginaPrincipalAdmin() {
                         <StatCard
                             icon={<BiUserCircle size={26} color="#2563eb" />}
                             label="Consultores"
-                            value={statsData.total_consultores}
-                            trend={statsData.total_consultores_trend}
-                        />
-                        <StatCard
+                            value={statsResumo.total_consultores}
+                            trend="+ este mês"
+                            />
+
+                            <StatCard
                             icon={<BiMedal size={26} color="#2563eb" />}
                             label="Badges atribuídos"
-                            value={statsData.total_badges_atribuidos}
-                            trend={statsData.total_badges_trend}
-                        />
-                        <StatCard
+                            value={statsResumo.total_badges_atribuidos}
+                            trend="+ esta semana"
+                            />
+
+                            <StatCard
                             icon={<BiStar size={26} color="#2563eb" />}
                             label="Total Badges"
-                            value={statsData.total_badges}
-                            trend={statsData.total_badges2_trend}
+                            value={statsResumo.total_badges}
+                            trend="+ esta semana"
                         />
                     </div>
 
@@ -384,8 +355,22 @@ function PaginaPrincipalAdmin() {
                                     <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                                     <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                                     <Tooltip />
-                                    <Line type="monotone" dataKey="este_ano" stroke="#2563eb" strokeWidth={2} dot={false} />
-                                    <Line type="monotone" dataKey="ano_passado" stroke="#d1d5db" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                                    <Line
+                                        type="monotone"
+                                        dataKey={chartKeys.esteAno}
+                                        stroke="#2563eb"
+                                        strokeWidth={2}
+                                        dot={false}
+                                        />
+
+                                        <Line
+                                        type="monotone"
+                                        dataKey={chartKeys.anoPassado}
+                                        stroke="#d1d5db"
+                                        strokeWidth={2}
+                                        dot={false}
+                                        strokeDasharray="4 2"
+                                    />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
@@ -403,14 +388,38 @@ function PaginaPrincipalAdmin() {
                                     <Tooltip formatter={(v) => `${v}%`} />
                                 </PieChart>
                             </ResponsiveContainer>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
                                 {pieData.map((item, i) => (
-                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#374151' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <span style={{ width: 10, height: 10, borderRadius: '50%', background: PIE_COLORS[i], display: 'inline-block' }} />
-                                            {item.name}
+                                    <div
+                                    key={i}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        fontSize: 12,
+                                        color: "#374151",
+                                    }}
+                                    >
+                                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                        <span
+                                        style={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: "50%",
+                                            background: PIE_COLORS[i],
+                                            display: "inline-block",
+                                        }}
+                                        />
+                                        {item.name}
+                                        {item.total !== undefined && (
+                                        <span style={{ color: "#9ca3af" }}>
+                                            ({item.total})
                                         </span>
-                                        <span style={{ fontWeight: 600 }}>{item.value}%</span>
+                                        )}
+                                    </span>
+
+                                    <span style={{ fontWeight: 600 }}>
+                                        {Number(item.value || 0).toFixed(1)}%
+                                    </span>
                                     </div>
                                 ))}
                             </div>
@@ -425,12 +434,73 @@ function PaginaPrincipalAdmin() {
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 14 }}>Total de consultores em cada área</div>
                             <ResponsiveContainer width="100%" height={200}>
                                 <BarChart data={barChartData} barSize={36}>
-                                    <XAxis dataKey="area" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                                    <Tooltip />
+                                    <XAxis
+                                    dataKey="area"
+                                    tick={{ fontSize: 11, fill: "#9ca3af" }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    />
+
+                                    <YAxis
+                                    tick={{ fontSize: 11, fill: "#9ca3af" }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    />
+
+                                    <Tooltip
+                                    formatter={(value) => [`${value} consultores`, "Total"]}
+                                    labelFormatter={(label, payload) => {
+                                        const item = payload?.[0]?.payload;
+                                        return item?.areaCompleta || label;
+                                    }}
+                                    />
+
                                     <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                                        {barChartData.map((_, i) => (
-                                            <Cell key={i} fill={i === 1 ? '#06b6d4' : i === 2 ? '#111827' : '#93c5fd'} />
+                                    {barChartData.map((item, i) => (
+                                        <div
+                                            key={item.areaCompleta || item.area}
+                                            style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                            marginBottom: 14,
+                                            }}
+                                        >
+                                            <span
+                                            style={{
+                                                width: 10,
+                                                height: 10,
+                                                borderRadius: "50%",
+                                                background:
+                                                i === 1
+                                                    ? "#06b6d4"
+                                                    : i === 2
+                                                    ? "#355cb0"
+                                                    : "#93c5fd",
+                                                flexShrink: 0,
+                                            }}
+                                            />
+
+                                            <span
+                                            style={{
+                                                fontSize: 12,
+                                                color: "#374151",
+                                                flex: 1,
+                                            }}
+                                            >
+                                            {item.areaCompleta || item.area}
+                                            </span>
+
+                                            <span
+                                            style={{
+                                                fontSize: 13,
+                                                fontWeight: 700,
+                                                color: "#355cb0",
+                                            }}
+                                            >
+                                            {item.total}
+                                            </span>
+                                        </div>
                                         ))}
                                     </Bar>
                                 </BarChart>
@@ -438,19 +508,87 @@ function PaginaPrincipalAdmin() {
                         </div>
 
                         {/* Area breakdown list */}
-                        <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e5e7eb', padding: 20 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 14 }}>Detalhes por Área</div>
-                            {[
-                                { area: 'Hybrid Cloud – LowCode (Outsystems)', total: 55, color: '#93c5fd' },
-                                { area: 'Application Operations, DevSecOps & IT Automation – DevOps', total: 92, color: '#06b6d4' },
-                                { area: 'Sourcing & Talent Management Sourcing & Talent Management', total: 68, color: '#111827' },
-                            ].map((item, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
-                                    <span style={{ fontSize: 12, color: '#374151', flex: 1 }}>{item.area}</span>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.total}</span>
+                        <div
+                        style={{
+                            background: "white",
+                            borderRadius: 12,
+                            border: "1px solid #e5e7eb",
+                            padding: 20,
+                            minHeight: 220,
+                        }}
+                        >
+                        <div
+                            style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#111827",
+                            marginBottom: 14,
+                            }}
+                        >
+                            Detalhes por Área
+                        </div>
+
+                        <div
+                            style={{
+                            maxHeight: 190,
+                            overflowY: "auto",
+                            paddingRight: 4,
+                            }}
+                        >
+                            {areasDetalhe.length > 0 ? (
+                            areasDetalhe.map((item, i) => (
+                                <div
+                                key={item.areaCompleta || item.area}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    marginBottom: 14,
+                                }}
+                                >
+                                <span
+                                    style={{
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: "50%",
+                                    background: getAreaColor(i),
+                                    flexShrink: 0,
+                                    }}
+                                />
+
+                                <span
+                                    style={{
+                                    fontSize: 12,
+                                    color: "#374151",
+                                    flex: 1,
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    }}
+                                    title={item.areaCompleta || item.area}
+                                >
+                                    {item.areaCompleta || item.area}
+                                </span>
+
+                                <span
+                                    style={{
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    color: "#1e40af",
+                                    minWidth: 28,
+                                    textAlign: "right",
+                                    }}
+                                >
+                                    {item.total}
+                                </span>
                                 </div>
-                            ))}
+                            ))
+                            ) : (
+                            <div style={{ fontSize: 12, color: "#9ca3af" }}>
+                                Sem dados por área.
+                            </div>
+                            )}
+                        </div>
                         </div>
                     </div>
 
@@ -477,6 +615,21 @@ function WelcomeStat({ icon, label, value }) {
             </div>
         </div>
     );
+}
+
+function getAreaColor(index) {
+  const colors = [
+    "#93c5fd",
+    "#06b6d4",
+    "#2563eb",
+    "#111827",
+    "#8b5cf6",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+  ];
+
+  return colors[index % colors.length];
 }
 
 export default PaginaPrincipalAdmin;
