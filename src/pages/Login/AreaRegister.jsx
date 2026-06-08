@@ -20,11 +20,21 @@ function AreaPage() {
     useEffect(() => {
         api.get("/areas")
             .then(res => {
-                setAreas(res.data || []);
+                // Validação de Segurança: Garante que o que guardamos é um array.
+                // Se res.data for um array, usa-o. Se for um objeto com propriedade data, usa essa propriedade.
+                if (Array.isArray(res.data)) {
+                    setAreas(res.data);
+                } else if (res.data && Array.isArray(res.data.data)) {
+                    setAreas(res.data.data);
+                } else {
+                    setAreas([]); // Fallback para não quebrar o .map()
+                }
                 setIsLoading(false);
             })
-            .catch(() => {
-                setMessage({ type: "danger", text: "Erro ao carregar áreas." });
+            .catch((err) => {
+                console.error("Erro na requisição das áreas:", err);
+                setMessage({ type: "danger", text: "Erro ao carregar áreas da API." });
+                setAreas([]); // Garante array vazio em caso de erro de rede
                 setIsLoading(false);
             });
     }, []);
@@ -82,7 +92,9 @@ function AreaPage() {
 
                             {message.text && <Alert variant={message.type}>{message.text}</Alert>}
 
-                            {isLoading ? <div className="text-center"><Spinner animation="border" /></div> : (
+                            {isLoading ? (
+                                <div className="text-center"><Spinner animation="border" /></div>
+                            ) : (
                                 <Form>
                                     <Form.Group className="mb-4">
                                         <InputGroup>
@@ -92,13 +104,14 @@ function AreaPage() {
                                                 onChange={(e) => setSelectedAreaId(e.target.value)}
                                             >
                                                 <option value="">Selecione uma área...</option>
-                                                {areas.map((area) => (
-                                                    // Ajustado para ler as propriedades em minúsculas vindas do PostgreSQL
+                                                
+                                                {/* Proteção adicional com operador opcional (?) e validação de Array */}
+                                                {Array.isArray(areas) && areas.map((area) => (
                                                     <option 
-                                                        key={area.id_area} 
-                                                        value={area.id_area}
+                                                        key={area?.id_area || area?.id} 
+                                                        value={area?.id_area || area?.id}
                                                     >
-                                                        {area.nome_area}
+                                                        {area?.nome_area || area?.nome || "Área sem nome"}
                                                     </option>
                                                 ))}
                                             </Form.Select>

@@ -6,8 +6,8 @@ import api from '../../services/api.js'; // Certifica-te que o caminho está cor
 
 // Componentes Estruturais
 import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 
 function PaginaPerfil() {
     const navigate = useNavigate();

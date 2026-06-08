@@ -6,8 +6,8 @@ import api from '../../services/api.js'; // Garante que o caminho está correto
 
 // Importação dos teus componentes estruturais
 import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 //import ImagemBadge from '../../assets/Cybersecurity_Badge.png';
 
 function ProgressoSection({ title, sub, children }) {
