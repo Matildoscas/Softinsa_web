@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Dropdown, Navbar, Nav, Form, OverlayTrigger, Popover } from 'react-bootstrap';
 import { BiLogOut, BiUser, BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch, BiCog } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
-import NotificationPopover from './notificacoes_pop';
+import NotificationPopover from './NotificacoesPop';
 import logoImg from '../assets/logo.png';
 
 function Header() {

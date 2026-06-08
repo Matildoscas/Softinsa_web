@@ -11,7 +11,8 @@ const NotificationPopover = React.forwardRef(({ style, ...props }, ref) => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      const userId = user.id_utilizador || user.ID_UTILIZADOR; // [cite: 105, 115]
+      // Ajustado estritamente para o padrão minúsculo da nova API
+      const userId = user.id_utilizador; 
 
       api.get(`/notificacoes/${userId}`)
         .then(res => {
@@ -25,7 +26,6 @@ const NotificationPopover = React.forwardRef(({ style, ...props }, ref) => {
     }
   }, []);
 
-  // Função auxiliar para formatar a data (podes melhorar isto com a lib 'date-fns' depois)
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -51,9 +51,10 @@ const NotificationPopover = React.forwardRef(({ style, ...props }, ref) => {
                     <BiUserCircle size={30} color="#6c757d" />
                   </div>
                   <div>
-                    <h6 className="mb-0 fw-bold" style={{ fontSize: '13px' }}>{n.conteudo || n.CONTEUDO}</h6>
+                    {/* Ajustado para ler as propriedades em minúsculas do PostgreSQL */}
+                    <h6 className="mb-0 fw-bold" style={{ fontSize: '13px' }}>{n.conteudo}</h6>
                     <small className="text-muted d-block mb-1">
-                      {formatTime(n.data_envio || n.DATA_ENVIO)}
+                      {formatTime(n.data_envio)}
                     </small>
                   </div>
                 </div>
