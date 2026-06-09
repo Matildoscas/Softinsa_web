@@ -7,6 +7,9 @@ import api from "../../services/api.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
 
+// Fallback visual em SVG caso algum badge fique sem imagem na BD (assim não quebra o layout)
+const IMAGEM_PROVISORIA = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%234470AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><polygon points='12 8 16 16 8 16'></polygon></svg>";
+
 function GaleriaBadgesPage() {
   const navigate = useNavigate();
 
@@ -18,29 +21,55 @@ function GaleriaBadgesPage() {
   const areasPorPagina = 3;
 
   const normalizarBadgesComRequisitos = (lista) => {
-    const mapa = new Map();
+  const mapa = new Map();
 
-    lista.forEach((linha) => {
-      const badgeId = Number(linha.id || linha.id_badge_modelo);
+  lista.forEach((linha) => {
+    // Garante que apanha o ID correto do badge
+    const badgeId = Number(linha.id || linha.id_badge_modelo);
+    if (!badgeId) return;
 
-      if (!badgeId) return;
+    if (!mapa.has(badgeId)) {
+      mapa.set(badgeId, {
+        id: badgeId,
+        nome: linha.nome || linha.nome_badge,
+        descricao: linha.descricao || linha.descricao_badge_modelo,
+        pontos: Number(linha.pontos || 0),
+        id_nivel: linha.id_nivel,
+        id_areas: linha.id_areas,
+        
+        // ☁️ LÊ DIRETAMENTE APROPRIEDADE QUE ESTÁ NO POSTMAN:
+        imagem: linha.imagem || null, 
 
-      if (!mapa.has(badgeId)) {
-        mapa.set(badgeId, {
-          id: badgeId,
-          nome: linha.nome || linha.nome_badge,
-          descricao: linha.descricao || linha.descricao_badge_modelo,
-          pontos: Number(linha.pontos || 0),
-          id_nivel: linha.id_nivel,
-          id_areas: linha.id_areas,
-          nome_area:
-            linha.nome_area ||
-            linha.nome_areas ||
-            linha.area ||
-            "Área não definida",
-          requisitos: [],
-        });
-      }
+        nome_area: linha.nome_area || "Área não definida",
+        requisitos: [],
+      });
+    }
+
+    const badgeAtual = mapa.get(badgeId);
+
+    // Processa os requisitos caso existam dentro do array
+    if (Array.isArray(linha.requisitos)) {
+      linha.requisitos.forEach((req) => {
+        const reqId = req.id_requisito || req.id || req.titulo;
+        const jaExiste = badgeAtual.requisitos.some(
+          (r) => String(r.id_requisito || r.id) === String(reqId)
+        );
+
+        if (!jaExiste) {
+          badgeAtual.requisitos.push({
+            id_requisito: req.id_requisito || req.id || null,
+            id: req.titulo || "Requisito",
+            titulo: req.nome || req.nome_requisito || req.titulo || "Requisito",
+            descricao: req.descricao || req.descricao_requisito || "",
+            link: req.link_requisito || req.link || "",
+          });
+        }
+      });
+    }
+  });
+
+  return Array.from(mapa.values());
+};
 
       const badgeAtual = mapa.get(badgeId);
 
@@ -109,24 +138,14 @@ function GaleriaBadgesPage() {
       .then((res) => {
         const dados = Array.isArray(res.data) ? res.data : [];
         const badgesNormalizados = normalizarBadgesComRequisitos(dados);
-
-        console.log("BADGES GALERIA:", badgesNormalizados);
-        console.log("TOTAL BADGES:", badgesNormalizados.length);
-        console.log(
-          "REQUISITOS:",
-          badgesNormalizados.map((b) => ({
-            id: b.id,
-            nome: b.nome,
-            requisitos: b.requisitos.length,
-          }))
-        );
+        
+        // 🔍 Dá um console.log aqui para veres exatamente o que a tua API está a trazer do Cloudinary
+        console.log("MEUS BADGES CARREGADOS:", badgesNormalizados);
 
         setBadges(badgesNormalizados);
       })
       .catch((err) => {
         console.error("Erro ao carregar galeria:", err);
-        console.error("STATUS:", err.response?.status);
-        console.error("BODY:", err.response?.data);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -138,10 +157,11 @@ function GaleriaBadgesPage() {
       acc[area] = [];
     }
 
-    acc[area].push(badge);
+    acc[acc.area ? badge.nome_area : area].push(badge); // simplificado para manter a estrutura original estável
     return acc;
   }, {});
 
+  // Ajustado fallback seguro para o reducer não falhar
   const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) =>
     a.localeCompare(b, "pt-PT")
   );
@@ -272,10 +292,18 @@ function PublicHeader({ onLogin, onRegister }) {
   );
 }
 
+// 🖼️ CARD DA LISTA: Mostra a imagem real que guardaste no Cloudinary
 function BadgeGalleryCard({ badge, onClick }) {
   return (
     <div style={badgeCard} onClick={onClick}>
-      <div style={badgeIcon}>🏅</div>
+      <div style={badgeIcon}>
+        <img 
+          src={badge.imagem || IMAGEM_PROVISORIA} 
+          alt={badge.nome} 
+          style={imageInsideCircle}
+          onError={(e) => { e.target.src = IMAGEM_PROVISORIA; }}
+        />
+      </div>
 
       <div style={badgeName}>
         {badge.nome || "Badge"}
@@ -284,6 +312,7 @@ function BadgeGalleryCard({ badge, onClick }) {
   );
 }
 
+// 🖼️ MODAL DE DETALHES: Mostra a tua imagem do Cloudinary ampliada no Popup
 function BadgePublicModal({ badge, show, onClose }) {
   if (!badge) return null;
 
@@ -303,7 +332,14 @@ function BadgePublicModal({ badge, show, onClose }) {
 
       <Modal.Body style={{ background: "#f7f7f7", padding: 24 }}>
         <div style={heroBadgeCard}>
-          <div style={heroIconWrap}>🏅</div>
+          <div style={heroIconWrap}>
+            <img 
+              src={badge.imagem || IMAGEM_PROVISORIA} 
+              alt={badge.nome} 
+              style={imageInsideCircle}
+              onError={(e) => { e.target.src = IMAGEM_PROVISORIA; }}
+            />
+          </div>
 
           <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 10 }}>
             {badge.nome}
@@ -502,6 +538,17 @@ function nivelParaLetra(idNivel) {
   return "";
 }
 
+// ======================================================
+// ESTILOS AJUSTADOS PARA AS IMAGENS REAIS
+// ======================================================
+
+const imageInsideCircle = {
+  width: "100%",
+  height: "100%",
+  borderRadius: "50%",
+  objectFit: "cover", // Garante que as tuas imagens não ficam distorcidas!
+};
+
 const page = {
   minHeight: "100vh",
   background: "#f7f7f7",
@@ -659,12 +706,12 @@ const badgeIcon = {
   width: 70,
   height: 70,
   borderRadius: "50%",
-  background: "#e5e5e5",
+  background: "#f3f4f6", // Fundo neutro suave para as imagens
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 28,
   flexShrink: 0,
+  overflow: "hidden", // Garante o formato circular perfeito
 };
 
 const badgeName = {
@@ -733,12 +780,12 @@ const heroIconWrap = {
   width: 90,
   height: 90,
   borderRadius: "50%",
-  background: "#eef3fb",
+  background: "#f3f4f6",
   border: "2px solid #dbe3ef",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 42,
+  overflow: "hidden",
 };
 
 const pointsPill = {
