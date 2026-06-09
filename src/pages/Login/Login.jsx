@@ -13,60 +13,60 @@ function LoginPage() {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setError(null);
+  e.preventDefault();
+  setError(null);
 
-    // Validação básica igual ao Flutter [cite: 9]
-    if (!email || !password) {
-      setError("Preencha o email e a password!");
-      return;
-    }
+  if (!email || !password) {
+    setError("Preencha o email e a password!");
+    return;
+  }
 
-    try {
-      // Chamada à API (Porta 3000 /auth/login) 
-      const response = await api.post("/auth/login", { email, password });
+  try {
+    // Chamada à API
+    const response = await api.post("/auth/login", { email, password });
+    console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
 
-      console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
+    const data = response.data;
 
-      const data = response.data;
+    if (data.token) {
+      localStorage.setItem("token", data.token);
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
+      // MAPEAMENTO CORRIGIDO: Ajustado para bater certo com as colunas do pgAdmin
+      const utilizadorSeguro = {
+      id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
+      email: data.user?.email || data.user?.EMAIL,
+      nome: data.user?.nome_completo || data.user?.NOME_COMPLETO || data.user?.nome,
+        contacto: data.user?.contacto || data.user?.telemovel || "",
+        estado_conta: data.user?.estado_conta || data.user?.estado || "ativo",
+        
+        // Garante a captura do cargo ou tipo de utilizador
+        tipo_utilizador: data.user?.tipo_utilizador || data.user?.cargo || data.user?.id_cargo || "consultor"
+      };
 
-        const utilizadorSeguro = {
-          id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
-          email: data.user?.email || data.user?.EMAIL,
-          nome: data.user?.nome_completo || data.user?.NOME_COMPLETO || data.user?.nome,
-          nome_completo: data.user?.nome_completo || data.user?.NOME_COMPLETO,
-          contacto: data.user?.contacto || data.user?.CONTACTO || "",
-          estado_conta: data.user?.estado_conta || data.user?.ESTADO_CONTA,
-          tipo_utilizador:
-            data.user?.tipo_utilizador ||
-            data.user?.TIPO_UTILIZADOR ||
-            data.user?.cargo ||
-            data.user?.CARGO ||
-            "",
-        };
+      localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
-        localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
+      // Conversão segura para string para evitar erros de compilação
+      const tipo = String(utilizadorSeguro.tipo_utilizador).toLowerCase();
+      console.log("Tipo de utilizador detetado no Router:", tipo);
+      // Certo: usando a coluna correta da imagem do pgAdmin
+const resultado = await db.query("SELECT * FROM utilizadores WHERE email_utilizador = $1", [email]);
 
-        const tipo = String(utilizadorSeguro.tipo_utilizador).toLowerCase();
-
-        if (tipo.includes("admin") || tipo.includes("administrador")) {
-          navigate("/admin");
-        } else {
-          navigate("/pag_consultor");
-        }
-      }
-    } catch (err) {
-      // Tratamento de erros vindo do backend [cite: 16, 104]
-      if (err.response && err.response.status === 403) {
-        setError("Confirme o seu email antes de iniciar sessão.");
+      // Redirecionamento baseado no cargo
+      if (tipo.includes("admin") || tipo.includes("administrador") || tipo === "1") { 
+        navigate("/admin");
       } else {
-        setError(err.response?.data?.error || "Email ou password incorretos!");
+        navigate("/pag_consultor");
       }
     }
-  };
+  } catch (err) {
+    console.error("Erro detalhado no login:", err);
+    if (err.response && err.response.status === 403) {
+      setError("Confirme o seu email antes de iniciar sessão.");
+    } else {
+      setError(err.response?.data?.message || err.response?.data?.error || "Email ou password incorretos!");
+    }
+  }
+};
 
   return (
     <Container fluid className="p-0" style={{ backgroundColor: "#f4f7f6" }}>
