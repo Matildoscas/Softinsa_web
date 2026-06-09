@@ -7,7 +7,7 @@ import api from "../../services/api.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
 
-// Fallback visual em SVG caso algum badge fique sem imagem na BD (assim não quebra o layout)
+// Fallback visual em SVG caso algum badge fique sem imagem na BD
 const IMAGEM_PROVISORIA = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%234470AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><polygon points='12 8 16 16 8 16'></polygon></svg>";
 
 function GaleriaBadgesPage() {
@@ -20,118 +20,77 @@ function GaleriaBadgesPage() {
 
   const areasPorPagina = 3;
 
-  const normalizarBadgesComRequisitos = (lista) => {
-  const mapa = new Map();
+  // FUNÇÃO CORRIGIDA COM O FIX DE HTTPS E TRATAMENTO DE LINKS DO CLOUDINARY
+ const normalizarBadgesComRequisitos = (lista) => {
+    const mapa = new Map();
 
-  lista.forEach((linha) => {
-    // Garante que apanha o ID correto do badge
-    const badgeId = Number(linha.id || linha.id_badge_modelo);
-    if (!badgeId) return;
+    // TESTE DE FORÇA BRUTA: Alerta visual com os campos reais vindos da API
+    if (lista && lista.length > 0 && !window.__apiVerificada) {
+      window.__apiVerificada = true;
+      const chavesDisponiveis = Object.keys(lista[0]);
+      alert(
+        "CAMPOS QUE O BACKEND ENVIOU:\n" + 
+        JSON.stringify(chavesDisponiveis) + 
+        "\n\nCONTEÚDO DA LINHA:\n" + 
+        JSON.stringify(lista[0]).substring(0, 300) + "..."
+      );
+    }
 
-    if (!mapa.has(badgeId)) {
-      mapa.set(badgeId, {
-        id: badgeId,
-        nome: linha.nome || linha.nome_badge,
-        descricao: linha.descricao || linha.descricao_badge_modelo,
-        pontos: Number(linha.pontos || 0),
-        id_nivel: linha.id_nivel,
-        id_areas: linha.id_areas,
+    lista.forEach((linha) => {
+      const badgeId = Number(linha.id || linha.id_badge_modelo);
+      if (!badgeId) return;
+
+      if (!mapa.has(badgeId)) {
+        // Tenta ler qualquer campo de imagem mapeado
+        let urlBruta = linha.imagem || linha.imagem_url || linha.imagem_badge || null;
+        let urlTratada = urlBruta ? String(urlBruta).trim() : null;
         
-        // ☁️ LÊ DIRETAMENTE APROPRIEDADE QUE ESTÁ NO POSTMAN:
-        imagem: linha.imagem || null, 
-
-        nome_area: linha.nome_area || "Área não definida",
-        requisitos: [],
-      });
-    }
-
-    const badgeAtual = mapa.get(badgeId);
-
-    // Processa os requisitos caso existam dentro do array
-    if (Array.isArray(linha.requisitos)) {
-      linha.requisitos.forEach((req) => {
-        const reqId = req.id_requisito || req.id || req.titulo;
-        const jaExiste = badgeAtual.requisitos.some(
-          (r) => String(r.id_requisito || r.id) === String(reqId)
-        );
-
-        if (!jaExiste) {
-          badgeAtual.requisitos.push({
-            id_requisito: req.id_requisito || req.id || null,
-            id: req.titulo || "Requisito",
-            titulo: req.nome || req.nome_requisito || req.titulo || "Requisito",
-            descricao: req.descricao || req.descricao_requisito || "",
-            link: req.link_requisito || req.link || "",
-          });
+        if (urlTratada && urlTratada !== "null" && urlTratada !== "undefined") {
+          urlTratada = urlTratada.replace(/^http:\/\//i, "https://");
+          if (urlTratada.includes("image/upload/")) {
+            urlTratada = urlTratada.replace("image/upload/", "image/upload/c_fill,g_auto,w_300,h_300/");
+          }
+        } else {
+          urlTratada = null; // Deixa nulo para o CSS cinzento atuar se não houver link
         }
-      });
-    }
-  });
 
-  return Array.from(mapa.values());
-};
+        mapa.set(badgeId, {
+          id: badgeId,
+          nome: linha.nome || linha.nome_badge || "Badge",
+          descricao: linha.descricao || linha.descricao_badge_modelo,
+          pontos: Number(linha.pontos || 0),
+          id_nivel: Number(linha.id_nivel),
+          id_areas: linha.id_areas,
+          imagem: urlTratada, 
+          nome_area: linha.nome_area || "Área não definida",
+          requisitos: [],
+        });
+      }
 
       const badgeAtual = mapa.get(badgeId);
 
-      // Caso 1: API já vem com requisitos agrupados
       if (Array.isArray(linha.requisitos)) {
         linha.requisitos.forEach((req) => {
-          const reqId =
-            req.id_requisito ||
-            req.id_requisitos ||
-            req.titulo ||
-            req.nome;
-
+          const reqId = req.id_requisito || req.id || req.titulo;
           const jaExiste = badgeAtual.requisitos.some(
-            (r) =>
-              String(r.id_requisito || r.id || r.titulo) === String(reqId)
+            (r) => String(r.id_requisito || r.id) === String(reqId)
           );
 
           if (!jaExiste) {
             badgeAtual.requisitos.push({
-              id_requisito: req.id_requisito || req.id_requisitos || null,
-              id: req.titulo || req.nome || "Requisito",
+              id_requisito: req.id_requisito || req.id || null,
+              id: req.titulo || "Requisito",
               titulo: req.nome || req.nome_requisito || req.titulo || "Requisito",
-              descricao:
-                req.descricao ||
-                req.descricao_requisito ||
-                "",
+              descricao: req.descricao || req.descricao_requisito || "",
               link: req.link_requisito || req.link || "",
             });
           }
         });
-
-        return;
-      }
-
-      // Caso 2: API vem linha a linha com requisitos
-      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
-        const reqId =
-          linha.id_requisito ||
-          linha.id_requisitos ||
-          linha.titulo ||
-          linha.nome_requisito;
-
-        const jaExiste = badgeAtual.requisitos.some(
-          (r) =>
-            String(r.id_requisito || r.id || r.titulo) === String(reqId)
-        );
-
-        if (!jaExiste) {
-          badgeAtual.requisitos.push({
-            id_requisito: linha.id_requisito || linha.id_requisitos || null,
-            id: linha.titulo || linha.nome_requisito || "Requisito",
-            titulo: linha.nome_requisito || linha.titulo || "Requisito",
-            descricao: linha.descricao_requisito || "",
-            link: linha.link_requisito || linha.link || "",
-          });
-        }
       }
     });
 
     return Array.from(mapa.values());
   };
-
   useEffect(() => {
     api
       .get("/badges/galeria/publica")
@@ -139,9 +98,7 @@ function GaleriaBadgesPage() {
         const dados = Array.isArray(res.data) ? res.data : [];
         const badgesNormalizados = normalizarBadgesComRequisitos(dados);
         
-        // 🔍 Dá um console.log aqui para veres exatamente o que a tua API está a trazer do Cloudinary
         console.log("MEUS BADGES CARREGADOS:", badgesNormalizados);
-
         setBadges(badgesNormalizados);
       })
       .catch((err) => {
@@ -152,22 +109,18 @@ function GaleriaBadgesPage() {
 
   const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
     const area = badge.nome_area || "Área não definida";
-
     if (!acc[area]) {
       acc[area] = [];
     }
-
-    acc[acc.area ? badge.nome_area : area].push(badge); // simplificado para manter a estrutura original estável
+    acc[area].push(badge);
     return acc;
   }, {});
 
-  // Ajustado fallback seguro para o reducer não falhar
   const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) =>
     a.localeCompare(b, "pt-PT")
   );
 
   const totalPaginas = Math.ceil(areasOrdenadas.length / areasPorPagina);
-
   const inicio = (paginaAtual - 1) * areasPorPagina;
   const fim = inicio + areasPorPagina;
   const areasPaginaAtual = areasOrdenadas.slice(inicio, fim);
@@ -247,9 +200,7 @@ function GaleriaBadgesPage() {
           paginaAtual={paginaAtual}
           totalPaginas={totalPaginas}
           onAnterior={() => setPaginaAtual((p) => Math.max(1, p - 1))}
-          onProxima={() =>
-            setPaginaAtual((p) => Math.min(totalPaginas, p + 1))
-          }
+          onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
         />
       </main>
 
@@ -292,38 +243,33 @@ function PublicHeader({ onLogin, onRegister }) {
   );
 }
 
-// 🖼️ CARD DA LISTA: Mostra a imagem real que guardaste no Cloudinary
 function BadgeGalleryCard({ badge, onClick }) {
   return (
     <div style={badgeCard} onClick={onClick}>
       <div style={badgeIcon}>
-        <img 
-          src={badge.imagem || IMAGEM_PROVISORIA} 
-          alt={badge.nome} 
-          style={imageInsideCircle}
-          onError={(e) => { e.target.src = IMAGEM_PROVISORIA; }}
-        />
+        {badge.imagem ? (
+          <img 
+            src={badge.imagem} 
+            alt={badge.nome} 
+            style={imageInsideCircle}
+          />
+        ) : (
+          // Se não houver imagem vinda da API, mostra as iniciais do Badge estilizadas
+          <span style={{ color: "#4470AF", fontWeight: "bold", fontSize: 16 }}>
+            {badge.nome ? badge.nome.substring(0, 2).toUpperCase() : "B"}
+          </span>
+        )}
       </div>
-
-      <div style={badgeName}>
-        {badge.nome || "Badge"}
-      </div>
+      <div style={badgeName}>{badge.nome || "Badge"}</div>
     </div>
   );
 }
 
-// 🖼️ MODAL DE DETALHES: Mostra a tua imagem do Cloudinary ampliada no Popup
 function BadgePublicModal({ badge, show, onClose }) {
   if (!badge) return null;
 
   return (
-    <Modal
-      show={show}
-      onHide={onClose}
-      centered
-      size="lg"
-      backdrop="static"
-    >
+    <Modal show={show} onHide={onClose} centered size="lg" backdrop="static">
       <Modal.Header closeButton style={{ borderBottom: "1px solid #e5e7eb" }}>
         <Modal.Title style={{ fontSize: 18, fontWeight: 700 }}>
           Informação do Badge
@@ -392,7 +338,6 @@ function BadgePublicModal({ badge, show, onClose }) {
         <Button variant="outline-secondary" onClick={onClose}>
           Fechar
         </Button>
-
         <Button variant="primary" onClick={() => window.location.href = "/login"}>
           Iniciar sessão para submeter evidências
         </Button>
@@ -405,7 +350,6 @@ function NivelSelector({ nivelAtual }) {
   return (
     <div style={sectionCard}>
       <div style={sectionTitle}>Nível</div>
-
       <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
         {niveis.map((n) => (
           <div
@@ -413,16 +357,10 @@ function NivelSelector({ nivelAtual }) {
             style={{
               ...nivelCircle,
               background: n === nivelAtual ? "#F5C518" : "#f0f0f0",
-              border:
-                n === nivelAtual
-                  ? "2px solid #e0a800"
-                  : "1.5px solid #d1d5db",
+              border: n === nivelAtual ? "2px solid #e0a800" : "1.5px solid #d1d5db",
               color: n === nivelAtual ? "#7a5800" : "#374151",
               fontWeight: n === nivelAtual ? 700 : 500,
-              boxShadow:
-                n === nivelAtual
-                  ? "0 2px 8px rgba(245,197,24,0.35)"
-                  : "none",
+              boxShadow: n === nivelAtual ? "0 2px 8px rgba(245,197,24,0.35)" : "none",
             }}
           >
             {n}
@@ -448,12 +386,7 @@ function RequisitoRow({ req, defaultOpen }) {
             {req.titulo}
           </span>
         </div>
-
-        {open ? (
-          <BiChevronUp size={22} color="#6b7280" />
-        ) : (
-          <BiChevronDown size={22} color="#6b7280" />
-        )}
+        {open ? <BiChevronUp size={22} color="#6b7280" /> : <BiChevronDown size={22} color="#6b7280" />}
       </div>
 
       {open && (
@@ -464,12 +397,7 @@ function RequisitoRow({ req, defaultOpen }) {
 
           {req.link && (
             <div style={{ marginTop: 4 }}>
-              <a
-                href={req.link}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "#4470AF", fontSize: 13 }}
-              >
+              <a href={req.link} target="_blank" rel="noreferrer" style={{ color: "#4470AF", fontSize: 13 }}>
                 {req.link}
               </a>
             </div>
@@ -480,12 +408,7 @@ function RequisitoRow({ req, defaultOpen }) {
   );
 }
 
-function PaginacaoGaleria({
-  paginaAtual,
-  totalPaginas,
-  onAnterior,
-  onProxima,
-}) {
+function PaginacaoGaleria({ paginaAtual, totalPaginas, onAnterior, onProxima }) {
   if (totalPaginas <= 1) return null;
 
   const disabledAnterior = paginaAtual === 1;
@@ -494,29 +417,16 @@ function PaginacaoGaleria({
   return (
     <div style={paginationWrapper}>
       <button
-        style={{
-          ...paginationButton,
-          opacity: disabledAnterior ? 0.45 : 1,
-          cursor: disabledAnterior ? "not-allowed" : "pointer",
-        }}
+        style={{ ...paginationButton, opacity: disabledAnterior ? 0.45 : 1, cursor: disabledAnterior ? "not-allowed" : "pointer" }}
         disabled={disabledAnterior}
         onClick={onAnterior}
       >
         {"<"}
       </button>
-
       <div style={paginationCurrent}>{paginaAtual}</div>
-
-      <div style={paginationText}>
-        {paginaAtual}/{totalPaginas}
-      </div>
-
+      <div style={paginationText}>{paginaAtual}/{totalPaginas}</div>
       <button
-        style={{
-          ...paginationButton,
-          opacity: disabledProxima ? 0.45 : 1,
-          cursor: disabledProxima ? "not-allowed" : "pointer",
-        }}
+        style={{ ...paginationButton, opacity: disabledProxima ? 0.45 : 1, cursor: disabledProxima ? "not-allowed" : "pointer" }}
         disabled={disabledProxima}
         onClick={onProxima}
       >
@@ -528,340 +438,53 @@ function PaginacaoGaleria({
 
 function nivelParaLetra(idNivel) {
   const nivel = Number(idNivel);
-
   if (nivel === 1) return "A";
   if (nivel === 2) return "B";
   if (nivel === 3) return "C";
   if (nivel === 4) return "D";
   if (nivel === 5) return "E";
-
   return "";
 }
 
-// ======================================================
-// ESTILOS AJUSTADOS PARA AS IMAGENS REAIS
-// ======================================================
-
-const imageInsideCircle = {
-  width: "100%",
-  height: "100%",
-  borderRadius: "50%",
-  objectFit: "cover", // Garante que as tuas imagens não ficam distorcidas!
-};
-
-const page = {
-  minHeight: "100vh",
-  background: "#f7f7f7",
-};
-
-const header = {
-  height: 72,
-  background: "white",
-  borderBottom: "1px solid #e5e7eb",
-  display: "flex",
-  alignItems: "center",
-};
-
-const headerInner = {
-  width: "100%",
-  maxWidth: 1500,
-  margin: "0 auto",
-  padding: "0 32px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-};
-
-const logoImgStyle = {
-  height: 42,
-  objectFit: "contain",
-};
-
-const headerActions = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-};
-
-const loginButton = {
-  borderRadius: 999,
-  padding: "6px 18px",
-  fontWeight: 600,
-};
-
-const registerButton = {
-  borderRadius: 999,
-  padding: "6px 18px",
-  fontWeight: 600,
-  background: "#4470AF",
-  borderColor: "#4470AF",
-};
-
-const main = {
-  width: "100%",
-  maxWidth: 1500,
-  margin: "0 auto",
-  padding: "32px 32px 60px",
-};
-
-const heroCard = {
-  background: "#4470AF",
-  borderRadius: 12,
-  minHeight: 150,
-  padding: "26px 38px",
-  color: "white",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
-  marginBottom: 48,
-};
-
-const heroTitle = {
-  fontSize: 22,
-  fontWeight: 600,
-  marginBottom: 34,
-};
-
-const heroStats = {
-  display: "flex",
-  alignItems: "center",
-  gap: 70,
-};
-
-const heroStatItem = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-};
-
-const heroStatIcon = {
-  width: 38,
-  height: 38,
-  borderRadius: 7,
-  background: "rgba(255,255,255,0.25)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const heroStatLabel = {
-  fontSize: 12,
-  opacity: 0.9,
-};
-
-const heroStatValue = {
-  fontSize: 14,
-  fontWeight: 700,
-};
-
-const heroUserCircle = {
-  width: 82,
-  height: 82,
-  borderRadius: "50%",
-  background: "rgba(255,255,255,0.2)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const contentWrapper = {
-  width: "100%",
-  maxWidth: 1320,
-  margin: "0 auto",
-};
-
-const areaSection = {
-  marginBottom: 42,
-};
-
-const areaTitle = {
-  fontSize: 21,
-  fontWeight: 800,
-  color: "#111827",
-  marginBottom: 20,
-};
-
-const badgeGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-  gap: "24px 34px",
-};
-
-const badgeCard = {
-  height: 104,
-  background: "white",
-  border: "1.5px solid #4470AF",
-  borderRadius: 8,
-  display: "flex",
-  alignItems: "center",
-  gap: 14,
-  padding: "0 16px",
-  cursor: "pointer",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-  transition: "transform 0.15s ease, box-shadow 0.15s ease",
-};
-
-const badgeIcon = {
-  width: 70,
-  height: 70,
-  borderRadius: "50%",
-  background: "#f3f4f6", // Fundo neutro suave para as imagens
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-  overflow: "hidden", // Garante o formato circular perfeito
-};
-
-const badgeName = {
-  flex: 1,
-  fontSize: 15,
-  fontWeight: 600,
-  color: "#111827",
-  textAlign: "center",
-  lineHeight: 1.15,
-};
-
-const paginationWrapper = {
-  display: "flex",
-  justifyContent: "flex-end",
-  alignItems: "center",
-  gap: 8,
-  marginTop: 10,
-  paddingRight: 60,
-};
-
-const paginationButton = {
-  width: 38,
-  height: 38,
-  border: "none",
-  borderRadius: 8,
-  background: "#e9eef5",
-  color: "#2f3d4f",
-  fontSize: 18,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const paginationCurrent = {
-  width: 38,
-  height: 38,
-  borderRadius: 8,
-  background: "#dfe6ef",
-  color: "#2f3d4f",
-  fontSize: 16,
-  fontWeight: 500,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const paginationText = {
-  minWidth: 42,
-  textAlign: "center",
-  fontSize: 13,
-  color: "#2f3d4f",
-};
-
-const heroBadgeCard = {
-  background: "white",
-  border: "1px solid #dbe3ef",
-  borderRadius: 12,
-  padding: "28px 20px",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  marginBottom: 16,
-};
-
-const heroIconWrap = {
-  width: 90,
-  height: 90,
-  borderRadius: "50%",
-  background: "#f3f4f6",
-  border: "2px solid #dbe3ef",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-};
-
-const pointsPill = {
-  marginTop: 10,
-  background: "#eef6ff",
-  color: "#4470AF",
-  border: "1px solid #dbe3ef",
-  borderRadius: 999,
-  padding: "4px 14px",
-  fontSize: 12,
-  fontWeight: 700,
-};
-
-const sectionCard = {
-  background: "white",
-  border: "1px solid #dbe3ef",
-  borderRadius: 12,
-  padding: "16px 20px",
-  marginBottom: 16,
-};
-
-const sectionTitle = {
-  fontSize: 15,
-  fontWeight: 700,
-  color: "#111827",
-};
-
-const descriptionText = {
-  fontSize: 13,
-  color: "#374151",
-  marginTop: 8,
-  marginBottom: 0,
-  lineHeight: 1.65,
-};
-
-const nivelCircle = {
-  width: 52,
-  height: 52,
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: 18,
-};
-
-const requisitoCard = {
-  background: "white",
-  border: "1px solid #dbe3ef",
-  borderRadius: 10,
-  marginBottom: 10,
-  overflow: "hidden",
-};
-
-const requisitoHeader = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "14px 18px",
-  cursor: "pointer",
-  fontSize: 13,
-  userSelect: "none",
-};
-
-const requisitoBody = {
-  padding: "10px 18px 16px",
-  fontSize: 13,
-  color: "#374151",
-  borderTop: "1px solid #e5e7eb",
-  background: "#fafbff",
-};
-
-const center = {
-  height: "100vh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
+// Estilos alternativos e alinhamentos
+const imageInsideCircle = { width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" };
+const page = { minHeight: "100vh", background: "#f7f7f7" };
+const header = { height: 72, background: "white", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center" };
+const headerInner = { width: "100%", maxWidth: 1500, margin: "0 auto", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between" };
+const logoImgStyle = { height: 42, objectFit: "contain" };
+const headerActions = { display: "flex", alignItems: "center", gap: 10 };
+const loginButton = { borderRadius: 999, padding: "6px 18px", fontWeight: 600 };
+const registerButton = { borderRadius: 999, padding: "6px 18px", fontWeight: 600, background: "#4470AF", borderColor: "#4470AF" };
+const main = { width: "100%", maxWidth: 1500, margin: "0 auto", padding: "32px 32px 60px" };
+const heroCard = { background: "#4470AF", borderRadius: 12, minHeight: 150, padding: "26px 38px", color: "white", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 10px 22px rgba(0,0,0,0.18)", marginBottom: 48 };
+const heroTitle = { fontSize: 22, fontWeight: 600, marginBottom: 34 };
+const heroStats = { display: "flex", alignItems: "center", gap: 70 };
+const heroStatItem = { display: "flex", alignItems: "center", gap: 10 };
+const heroStatIcon = { width: 38, height: 38, borderRadius: 7, background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center" };
+const heroStatLabel = { fontSize: 12, opacity: 0.9 };
+const heroStatValue = { fontSize: 14, fontWeight: 700 };
+const heroUserCircle = { width: 82, height: 82, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" };
+const contentWrapper = { width: "100%", maxWidth: 1320, margin: "0 auto" };
+const areaSection = { marginBottom: 42 };
+const areaTitle = { fontSize: 21, fontWeight: 800, color: "#111827", marginBottom: 20 };
+const badgeGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "24px 34px" };
+const badgeCard = { height: 104, background: "white", border: "1.5px solid #4470AF", borderRadius: 8, display: "flex", alignItems: "center", gap: 14, padding: "0 16px", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.08)", transition: "transform 0.15s ease, box-shadow 0.15s ease" };
+const badgeIcon = { width: 70, height: 70, borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" };
+const badgeName = { flex: 1, fontSize: 15, fontWeight: 600, color: "#111827", textAlign: "center", lineHeight: 1.15 };
+const paginationWrapper = { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginTop: 10, paddingRight: 60 };
+const paginationButton = { width: 38, height: 38, border: "none", borderRadius: 8, background: "#e9eef5", color: "#2f3d4f", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" };
+const paginationCurrent = { width: 38, height: 38, borderRadius: 8, background: "#dfe6ef", color: "#2f3d4f", fontSize: 16, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center" };
+const paginationText = { minWidth: 42, textAlign: "center", fontSize: 13, color: "#2f3d4f" };
+const heroBadgeCard = { background: "white", border: "1px solid #dbe3ef", borderRadius: 12, padding: "28px 20px", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 16 };
+const heroIconWrap = { width: 90, height: 90, borderRadius: "50%", background: "#f3f4f6", border: "2px solid #dbe3ef", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" };
+const pointsPill = { marginTop: 10, background: "#eef6ff", color: "#4470AF", border: "1px solid #dbe3ef", borderRadius: 999, padding: "4px 14px", fontSize: 12, fontWeight: 700 };
+const sectionCard = { background: "white", border: "1px solid #dbe3ef", borderRadius: 12, padding: "16px 20px", marginBottom: 16 };
+const sectionTitle = { fontSize: 15, fontWeight: 700, color: "#111827" };
+const descriptionText = { fontSize: 13, color: "#374151", marginTop: 8, marginBottom: 0, lineHeight: 1.65 };
+const nivelCircle = { width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 };
+const requisitoCard = { background: "white", border: "1px solid #dbe3ef", borderRadius: 10, marginBottom: 10, overflow: "hidden" };
+const requisitoHeader = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", cursor: "pointer", fontSize: 13, userSelect: "none" };
+const requisitoBody = { padding: "10px 18px 16px", fontSize: 13, color: "#374151", borderTop: "1px solid #e5e7eb", background: "#fafbff" };
+const center = { height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" };
 
 export default GaleriaBadgesPage;
