@@ -52,11 +52,12 @@ function AdminLeftSidebar() {
         end
       />
 
-      <div
-        onClick={() => setGestaoAberta((v) => !v)}
-        style={groupHeader}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={groupHeaderWrapper}>
+        <button
+          type="button"
+          onClick={() => setGestaoAberta((v) => !v)}
+          style={chevronButton}
+        >
           <BiChevronRight
             size={14}
             style={{
@@ -65,10 +66,22 @@ function AdminLeftSidebar() {
               color: "#9ca3af",
             }}
           />
+        </button>
 
+        <NavLink
+          to="/admin/contas"
+          style={({ isActive }) => ({
+            ...groupHeaderLink,
+            backgroundColor: isActive ? "#f8fafc" : "transparent",
+            border: isActive ? "1px solid #111827" : "1px solid transparent",
+            borderRadius: isActive ? 10 : 0,
+            color: "#111827",
+            fontWeight: isActive ? 600 : 400,
+          })}
+        >
           <BiUser size={16} />
           <span>Gestão de contas</span>
-        </div>
+        </NavLink>
       </div>
 
       {gestaoAberta && (
@@ -215,6 +228,35 @@ const subLink = {
   alignItems: "center",
   gap: 8,
   padding: "8px 28px 8px 58px",
+  fontSize: 14,
+  textDecoration: "none",
+  transition: "all 0.15s",
+};
+
+const groupHeaderWrapper = {
+  display: "flex",
+  alignItems: "center",
+  margin: "0 14px 6px",
+};
+
+const chevronButton = {
+  width: 26,
+  height: 34,
+  border: "none",
+  background: "transparent",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  padding: 0,
+};
+
+const groupHeaderLink = {
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "8px 12px",
   fontSize: 14,
   textDecoration: "none",
   transition: "all 0.15s",

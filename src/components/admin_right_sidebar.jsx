@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BiBell, BiUserCircle, BiGrid } from "react-icons/bi";
+import { BiBell, BiUserCircle, BiGrid, BiMedal } from "react-icons/bi";
 import api from "../services/api";
 
 function AdminRightSidebar() {
@@ -7,32 +7,46 @@ function AdminRightSidebar() {
   const [topUtilizadores, setTopUtilizadores] = useState([]);
 
   useEffect(() => {
+    carregarNotificacoes();
+    carregarTopUtilizadores();
+  }, []);
+
+  function carregarNotificacoes() {
     const storedUser = localStorage.getItem("user");
     const user = storedUser ? JSON.parse(storedUser) : null;
-    const userId = user?.id_utilizador || user?.ID_UTILIZADOR;
 
-    if (userId) {
-        api
-        .get(`/notificacoes/${userId}`)
-        .then((res) => {
-            setNotifications(Array.isArray(res.data) ? res.data : []);
-        })
-        .catch((err) => {
-            console.error("Erro ao carregar notificações do admin:", err);
-            setNotifications([]);
-        });
+    const userId =
+      user?.id_utilizador ||
+      user?.ID_UTILIZADOR ||
+      user?.id;
+
+    if (!userId) {
+      setNotifications([]);
+      return;
     }
 
     api
-        .get("/admin/top-utilizadores-ativos")
-        .then((res) => {
+      .get(`/notificacoes/${userId}`)
+      .then((res) => {
+        setNotifications(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar notificações do admin:", err);
+        setNotifications([]);
+      });
+  }
+
+  function carregarTopUtilizadores() {
+    api
+      .get("/dashboard/admin/top-utilizadores")
+      .then((res) => {
         setTopUtilizadores(Array.isArray(res.data) ? res.data : []);
-        })
-        .catch((err) => {
-        console.error("Erro ao carregar top utilizadores ativos:", err);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar top utilizadores:", err);
         setTopUtilizadores([]);
-        });
-    }, []);
+      });
+  }
 
   return (
     <div style={containerStyle}>
@@ -47,10 +61,7 @@ function AdminRightSidebar() {
       )}
 
       <div style={{ textAlign: "right", marginTop: 4 }}>
-        <a
-          href="/admin/notificacoes"
-          style={smallLink}
-        >
+        <a href="/admin/notificacoes" style={smallLink}>
           Ver todas as notificações
         </a>
       </div>
@@ -59,11 +70,15 @@ function AdminRightSidebar() {
 
       {topUtilizadores.length > 0 ? (
         topUtilizadores.slice(0, 3).map((u, i) => (
-          <TopUserCard key={u.id_utilizador || i} user={u} />
+          <TopUserCard
+            key={u.id_utilizador || i}
+            user={u}
+            posicao={i + 1}
+          />
         ))
       ) : (
         <div style={emptyText}>
-          Ainda não existem utilizadores ativos.
+          Ainda não existem utilizadores com pontos.
         </div>
       )}
 
@@ -81,12 +96,15 @@ function NotificationCard({ n }) {
     n.titulo ||
     n.conteudo ||
     n.CONTEUDO ||
+    n.mensagem ||
+    n.descricao ||
     "Notificação";
 
   const data =
     n.data_envio ||
     n.DATA_ENVIO ||
     n.created_at ||
+    n.data_criacao ||
     null;
 
   return (
@@ -105,7 +123,7 @@ function NotificationCard({ n }) {
   );
 }
 
-function TopUserCard({ user }) {
+function TopUserCard({ user, posicao }) {
   const nome =
     user.nome_completo ||
     user.nome ||
@@ -113,32 +131,83 @@ function TopUserCard({ user }) {
     "Utilizador";
 
   const cargo =
-    user.cargo ||
     user.tipo_utilizador ||
+    user.cargo ||
     user.perfil ||
-    "Utilizador";
+    "Consultor";
 
-  const tempo =
-    user.tempo_ativo ||
-    user.tempo_sessao ||
-    user.tempo_consecutivo ||
-    null;
+  const pontos = Number(user.total_pontos || user.pontos || 0);
+
+  const rankingStyle = getRankingStyle(posicao);
 
   return (
-    <div style={topUserCard}>
-      <div style={avatar}>
-        <BiUserCircle size={28} color="#6b7280" />
+    <div
+      style={{
+        ...topUserCard,
+        background: rankingStyle.background,
+        border: `1px solid ${rankingStyle.border}`,
+      }}
+    >
+      <div
+        style={{
+          ...avatar,
+          background: rankingStyle.avatarBg,
+        }}
+      >
+        <span style={{ fontSize: 18 }}>{rankingStyle.medalha}</span>
       </div>
 
       <div style={{ flex: 1 }}>
         <div style={userName}>{nome}</div>
         <div style={userInfo}>Cargo: {cargo}</div>
-        <div style={userInfo}>
-          {tempo ? `Ativo há ${tempo}` : "Ativo recentemente"}
+
+        <div
+          style={{
+            fontSize: 11,
+            color: rankingStyle.text,
+            fontWeight: 700,
+            marginTop: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <BiMedal size={13} />
+          {pontos} pontos
         </div>
       </div>
     </div>
   );
+}
+
+function getRankingStyle(posicao) {
+  if (posicao === 1) {
+    return {
+      medalha: "🥇",
+      background: "#fff8e1",
+      border: "#facc15",
+      avatarBg: "#fef3c7",
+      text: "#92400e",
+    };
+  }
+
+  if (posicao === 2) {
+    return {
+      medalha: "🥈",
+      background: "#f3f4f6",
+      border: "#9ca3af",
+      avatarBg: "#e5e7eb",
+      text: "#374151",
+    };
+  }
+
+  return {
+    medalha: "🥉",
+    background: "#fff1e6",
+    border: "#d97706",
+    avatarBg: "#fed7aa",
+    text: "#92400e",
+  };
 }
 
 function formatarTempo(data) {
@@ -227,7 +296,6 @@ const topUserCard = {
   alignItems: "center",
   gap: 10,
   marginBottom: 12,
-  background: "#fafafa",
   borderRadius: 10,
   padding: "9px 10px",
 };
@@ -236,7 +304,6 @@ const avatar = {
   width: 38,
   height: 38,
   borderRadius: "50%",
-  background: "#e5e7eb",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

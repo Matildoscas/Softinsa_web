@@ -17,6 +17,8 @@ import BadgeDetailPage from './pages/Consultor/informacao_badge.jsx';
 import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
+
+import GestaoContas from "./pages/admin/gestao_contas.jsx";
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -56,7 +58,10 @@ function App() {
         <Route path="/admin/rgpd" element={<div>Políticas de RGPD</div>} />
         <Route path="/admin/notificacoes" element={<div>Configurar notificações</div>} />
         <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
-        
+        <Route path="/admin/contas" element={<GestaoContas />} />
+        {/*<Route path="/admin/contas/novo" element={<CriarContaAdmin />} />
+        <Route path="/admin/contas/editar/:id" element={<EditarContaAdmin />} />*/}
+
       </Routes>
     </Router>
   );
