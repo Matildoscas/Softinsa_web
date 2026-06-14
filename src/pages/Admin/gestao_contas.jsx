@@ -5,12 +5,15 @@ import {
   BiFilter,
   BiSort,
   BiEdit,
-  BiTrash,
   BiPlus,
   BiChevronRight,
   BiChevronLeft,
+  BiUserX,
+  BiX,
 } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
+
+import logoImg from "../../assets/logo.png";
 
 import api from "../../services/api.js";
 import Header from "../../components/header.jsx";
@@ -175,6 +178,9 @@ function GestaoContas() {
   const [filtroNome, setFiltroNome] = useState("");
   const [ordenarPor, setOrdenarPor] = useState("");
   const [paginaAtual, setPaginaAtual] = useState(1);
+  const [modalDesativarAberta, setModalDesativarAberta] = useState(false);
+  const [contaSelecionada, setContaSelecionada] = useState(null);
+  const [aDesativar, setADesativar] = useState(false);
 
   useEffect(() => {
     carregarContas();
@@ -247,22 +253,52 @@ function GestaoContas() {
     navigate(`/admin/contas/editar/${id}`);
   }
 
-  async function handleApagar(id) {
-    const confirmar = window.confirm(
-      "Tens a certeza que queres desativar esta conta?"
-    );
+  function abrirModalDesativar(conta) {
+    if (conta.status === "Inativo") {
+      return;
+    }
 
-    if (!confirmar) return;
+    setContaSelecionada(conta);
+    setModalDesativarAberta(true);
+  }
+
+  function fecharModalDesativar() {
+    if (aDesativar) return;
+
+    setModalDesativarAberta(false);
+    setContaSelecionada(null);
+  }
+
+  async function confirmarDesativarConta() {
+    if (!contaSelecionada) return;
 
     try {
-      await api.put(`/utilizadores/${id}/desativar`);
-      await carregarContas();
+      setADesativar(true);
+
+      await api.put(`/utilizadores/${contaSelecionada.id}/desativar`);
+
+      setContas((prev) =>
+        prev.map((c) =>
+          c.id === contaSelecionada.id
+            ? {
+                ...c,
+                status: "Inativo",
+              }
+            : c
+        )
+      );
+
+      setModalDesativarAberta(false);
+      setContaSelecionada(null);
     } catch (err) {
       console.error("Erro ao desativar conta:", err);
+
       alert(
         err.response?.data?.error ||
           "Não foi possível desativar esta conta."
       );
+    } finally {
+      setADesativar(false);
     }
   }
 
@@ -287,13 +323,12 @@ function GestaoContas() {
         <AdminLeftSidebar />
 
         <div
-            style={{
-                background: "white",
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-                overflowX: "auto",
-                overflowY: "hidden",
-            }}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: 24,
+            minWidth: 0,
+          }}
         >
           <button
             onClick={() => navigate("/admin")}
@@ -443,6 +478,7 @@ function GestaoContas() {
               borderRadius: 12,
               border: "1px solid #e5e7eb",
               overflow: "hidden",
+              width: "100%",
             }}
           >
             {isLoading ? (
@@ -457,6 +493,14 @@ function GestaoContas() {
               </div>
             ) : (
               <>
+
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "auto",
+                  overflowY: "hidden",
+                }}
+              >
                 <table
                     style={{
                         width: "100%",
@@ -581,11 +625,20 @@ function GestaoContas() {
                             </button>
 
                             <button
-                              onClick={() => handleApagar(c.id)}
-                              style={iconButtonDelete}
-                              title="Desativar conta"
+                              onClick={() => abrirModalDesativar(c)}
+                              style={{
+                                ...iconButtonDeactivate,
+                                opacity: c.status === "Inativo" ? 0.35 : 1,
+                                cursor: c.status === "Inativo" ? "not-allowed" : "pointer",
+                              }}
+                              title={
+                                c.status === "Inativo"
+                                  ? "Conta já está inativa"
+                                  : "Desativar conta"
+                              }
+                              disabled={c.status === "Inativo"}
                             >
-                              <BiTrash size={18} />
+                              <BiUserX size={18} />
                             </button>
                           </div>
                         </td>
@@ -601,6 +654,7 @@ function GestaoContas() {
                     )}
                   </tbody>
                 </table>
+              </div>
 
                 <div style={paginationBox}>
                   <button
@@ -645,6 +699,93 @@ function GestaoContas() {
         </div>
 
         <AdminRightSidebar />
+      </div>
+
+      {modalDesativarAberta && (
+        <DesativarContaModal
+          conta={contaSelecionada}
+          loading={aDesativar}
+          onClose={fecharModalDesativar}
+          onConfirm={confirmarDesativarConta}
+        />
+      )}      
+
+    </div>
+  );
+}
+
+function DesativarContaModal({ conta, loading, onClose, onConfirm }) {
+  if (!conta) return null;
+
+  return (
+    <div style={modalOverlay}>
+      <div style={modalCard}>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          style={modalCloseButton}
+        >
+          <BiX size={22} />
+        </button>
+
+        <div style={modalLogoBox}>
+          <img src={logoImg} alt="Softinsa" style={{ height: "40px" }} />
+        </div>
+
+        <div style={modalIconDanger}>
+          <BiUserX size={34} />
+        </div>
+
+        <h3 style={modalTitle}>Desativar conta?</h3>
+
+        <p style={modalText}>
+          A conta de <strong>{conta.nome}</strong> será marcada como{" "}
+          <strong>Inativa</strong>.
+        </p>
+
+        <p style={modalSubText}>
+          Esta ação não apaga o utilizador da base de dados. O histórico da
+          conta, badges, candidaturas e registos continuam guardados para
+          consulta administrativa.
+        </p>
+
+        <div style={modalUserBox}>
+          <div style={modalUserAvatar}>
+            <BiUserCircle size={24} color="#d97706" />
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <div style={modalUserName}>{conta.nome}</div>
+            <div style={modalUserEmail}>{conta.email}</div>
+          </div>
+
+          <span style={modalUserRole}>{conta.funcao}</span>
+        </div>
+
+        <div style={modalActions}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            style={modalCancelButton}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              ...modalConfirmButton,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "A desativar..." : "Sim, desativar conta"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -721,10 +862,9 @@ const iconButtonEdit = {
   padding: 2,
 };
 
-const iconButtonDelete = {
+const iconButtonDeactivate = {
   background: "none",
   border: "none",
-  cursor: "pointer",
   color: "#dc2626",
   padding: 2,
 };
@@ -760,5 +900,155 @@ const pagBtn = (active, disabled = false) => ({
   justifyContent: "center",
   opacity: disabled ? 0.5 : 1,
 });
+
+const modalOverlay = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(15, 23, 42, 0.55)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+  padding: 20,
+};
+
+const modalCard = {
+  position: "relative",
+  width: "100%",
+  maxWidth: 460,
+  background: "white",
+  borderRadius: 18,
+  padding: "28px 28px 24px",
+  boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)",
+  border: "1px solid #e5e7eb",
+  textAlign: "center",
+};
+
+const modalCloseButton = {
+  position: "absolute",
+  top: 14,
+  right: 14,
+  width: 32,
+  height: 32,
+  borderRadius: "50%",
+  border: "1px solid #e5e7eb",
+  background: "white",
+  color: "#6b7280",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+};
+
+const modalLogoBox = {
+  marginBottom: 16,
+  display: "flex",
+  justifyContent: "center",
+};
+
+const modalIconDanger = {
+  width: 68,
+  height: 68,
+  margin: "0 auto 16px",
+  borderRadius: "50%",
+  background: "#fee2e2",
+  color: "#dc2626",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const modalTitle = {
+  fontSize: 20,
+  fontWeight: 800,
+  color: "#111827",
+  margin: "0 0 8px",
+};
+
+const modalText = {
+  fontSize: 14,
+  color: "#374151",
+  margin: "0 0 8px",
+  lineHeight: 1.5,
+};
+
+const modalSubText = {
+  fontSize: 12,
+  color: "#6b7280",
+  margin: "0 0 18px",
+  lineHeight: 1.5,
+};
+
+const modalUserBox = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  background: "#f8fafc",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 12,
+  marginBottom: 20,
+  textAlign: "left",
+};
+
+const modalUserAvatar = {
+  width: 38,
+  height: 38,
+  borderRadius: "50%",
+  background: "#fef3c7",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const modalUserName = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#111827",
+};
+
+const modalUserEmail = {
+  fontSize: 11,
+  color: "#6b7280",
+  marginTop: 2,
+};
+
+const modalUserRole = {
+  background: "#eff6ff",
+  color: "#2563eb",
+  borderRadius: 999,
+  padding: "4px 9px",
+  fontSize: 11,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const modalActions = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 10,
+};
+
+const modalCancelButton = {
+  border: "1px solid #d1d5db",
+  background: "white",
+  color: "#374151",
+  borderRadius: 10,
+  padding: "9px 15px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const modalConfirmButton = {
+  border: "none",
+  background: "#dc2626",
+  color: "white",
+  borderRadius: 10,
+  padding: "9px 15px",
+  fontSize: 13,
+  fontWeight: 700,
+};
 
 export default GestaoContas;

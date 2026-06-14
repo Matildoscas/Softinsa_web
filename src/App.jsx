@@ -19,6 +19,14 @@ import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
 
 import GestaoContas from "./pages/admin/gestao_contas.jsx";
+import EditarConta from "./pages/admin/editar_contas.jsx";
+import CriarConta from "./pages/admin/criar_conta.jsx";
+import GestaoServiceLines from "./pages/admin/gestao_servicelines.jsx";
+import CriarServiceLine from "./pages/admin/criar_servicelines.jsx";
+import EditarServiceLine from "./pages/admin/editar_servicelines.jsx";
+import GestaoAreas from "./pages/admin/gestao_areas.jsx";
+import CriarArea from "./pages/admin/criar_areas.jsx";
+import GestaoNiveis from "./pages/admin/gestao_niveis.jsx";
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -51,16 +59,20 @@ function App() {
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
 
         <Route path="/admin/learning-paths" element={<div>Gestão de Learning Paths</div>} />
-        <Route path="/admin/service-lines" element={<div>Gestão de Service Lines</div>} />
-        <Route path="/admin/areas" element={<div>Gestão de Áreas</div>} />
         <Route path="/admin/badges" element={<div>Gestão de Badges</div>} />
         <Route path="/admin/avisos" element={<div>Informações Genéricas e Avisos</div>} />
         <Route path="/admin/rgpd" element={<div>Políticas de RGPD</div>} />
         <Route path="/admin/notificacoes" element={<div>Configurar notificações</div>} />
         <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
         <Route path="/admin/contas" element={<GestaoContas />} />
-        {/*<Route path="/admin/contas/novo" element={<CriarContaAdmin />} />
-        <Route path="/admin/contas/editar/:id" element={<EditarContaAdmin />} />*/}
+        <Route path="/admin/contas/novo" element={<CriarConta />} />
+        <Route path="/admin/contas/editar/:id" element={<EditarConta />} />
+        <Route path="/admin/service-lines" element={<GestaoServiceLines />} />
+        <Route path="/admin/service-lines/nova" element={<CriarServiceLine />} />
+        <Route path="/admin/service-lines/editar/:id" element={<EditarServiceLine />} />
+        <Route path="/admin/areas" element={<GestaoAreas />} />
+        <Route path="/admin/areas/nova" element={<CriarArea />} />
+        <Route path="/admin/areas/:areaId/niveis" element={<GestaoNiveis />} />
 
       </Routes>
     </Router>
