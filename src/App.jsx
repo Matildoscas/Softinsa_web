@@ -28,7 +28,10 @@ import GestaoAreas from "./pages/admin/gestao_areas.jsx";
 import CriarArea from "./pages/admin/criar_areas.jsx";
 import EditarArea from "./pages/admin/editar_areas.jsx";
 import GestaoRequisitos from "./pages/admin/gestao_requisitos.jsx";
-// Importa as outras páginas (Admin, Consultor, etc.)
+import GestaoLearningPaths from "./pages/admin/gestao_learningpaths.jsx";
+import CriarLearningPath from "./pages/admin/criar_learningpaths.jsx";
+import EditarLearningPath from "./pages/admin/editar_learningpaths.jsx";
+import InformacoesAvisos from "./pages/admin/avisos_informacoes.jsx";
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -59,9 +62,7 @@ function App() {
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
 
-        <Route path="/admin/learning-paths" element={<div>Gestão de Learning Paths</div>} />
         <Route path="/admin/badges" element={<div>Gestão de Badges</div>} />
-        <Route path="/admin/avisos" element={<div>Informações Genéricas e Avisos</div>} />
         <Route path="/admin/rgpd" element={<div>Políticas de RGPD</div>} />
         <Route path="/admin/notificacoes" element={<div>Configurar notificações</div>} />
         <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
@@ -75,6 +76,10 @@ function App() {
         <Route path="/admin/areas/nova" element={<CriarArea />} />
         <Route path="/admin/areas/editar/:id" element={<EditarArea />} />
         <Route path="/admin/niveis/:idNivel/requisitos" element={<GestaoRequisitos />} />
+        <Route path="/admin/learning-paths" element={<GestaoLearningPaths />} />
+        <Route path="/admin/learning-paths/novo" element={<CriarLearningPath />} />
+        <Route path="/admin/learning-paths/editar/:id" element={<EditarLearningPath />} />
+        <Route path="/admin/avisos" element={<InformacoesAvisos />} />
 
       </Routes>
     </Router>
