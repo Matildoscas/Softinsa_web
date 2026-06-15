@@ -26,7 +26,8 @@ import CriarServiceLine from "./pages/admin/criar_servicelines.jsx";
 import EditarServiceLine from "./pages/admin/editar_servicelines.jsx";
 import GestaoAreas from "./pages/admin/gestao_areas.jsx";
 import CriarArea from "./pages/admin/criar_areas.jsx";
-import GestaoNiveis from "./pages/admin/gestao_niveis.jsx";
+import EditarArea from "./pages/admin/editar_areas.jsx";
+import GestaoRequisitos from "./pages/admin/gestao_requisitos.jsx";
 // Importa as outras páginas (Admin, Consultor, etc.)
 
 function App() {
@@ -72,7 +73,8 @@ function App() {
         <Route path="/admin/service-lines/editar/:id" element={<EditarServiceLine />} />
         <Route path="/admin/areas" element={<GestaoAreas />} />
         <Route path="/admin/areas/nova" element={<CriarArea />} />
-        <Route path="/admin/areas/:areaId/niveis" element={<GestaoNiveis />} />
+        <Route path="/admin/areas/editar/:id" element={<EditarArea />} />
+        <Route path="/admin/niveis/:idNivel/requisitos" element={<GestaoRequisitos />} />
 
       </Routes>
     </Router>

@@ -71,6 +71,21 @@ function normalizarBadge(b) {
         0
     ),
 
+    id_nivel:
+      b.id_nivel ||
+      b.ID_NIVEL ||
+      null,
+
+    nome_nivel:
+      b.nome_nivel ||
+      b.NOME_NIVEL ||
+      "",
+
+    codigo_nivel:
+      b.codigo_nivel ||
+      b.CODIGO_NIVEL ||
+      "",
+
     requisitos: Array.isArray(b.requisitos)
       ? b.requisitos.map((r) => ({
           id:
@@ -255,7 +270,18 @@ function ConfigurarNiveisModal({
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {niveis.map((nivel, indexNivel) => (
+          {niveis.map((nivel, indexNivel) => {
+          const codigoNivelAtual = String(nivel.nome_nivel || "")
+            .trim()
+            .toUpperCase();
+
+          const badgesDoNivel = badgesDisponiveis.filter((badge) => {
+            return String(badge.codigo_nivel || "")
+              .trim()
+              .toUpperCase() === codigoNivelAtual;
+          });
+
+          return (
             <div key={nivel.nome_nivel} style={nivelConfigBox}>
               <div style={nivelHeader}>
                 <div style={nivelCodeBox}>{nivel.nome_nivel}</div>
@@ -288,7 +314,7 @@ function ConfigurarNiveisModal({
                 >
                   <option value="">Selecionar badge</option>
 
-                  {badgesDisponiveis.map((badge) => (
+                  {badgesDoNivel.map((badge) => (
                     <option
                       key={badge.id}
                       value={badge.id}
@@ -298,6 +324,12 @@ function ConfigurarNiveisModal({
                     </option>
                   ))}
                 </select>
+
+                {badgesDoNivel.length === 0 && (
+                  <div style={emptySmallBox}>
+                    Não existem badges disponíveis para o nível {nivel.nome_nivel}.
+                  </div>
+                )}
 
                 {nivel.badgeSelecionado && (
                   <div style={badgePreviewBox}>
@@ -310,7 +342,11 @@ function ConfigurarNiveisModal({
                     </div>
 
                     <div style={badgePreviewMeta}>
-                      Pontos:{" "}
+                      Nível:{" "}
+                      <strong>
+                        {nivel.badgeSelecionado.codigo_nivel}
+                      </strong>{" "}
+                      · Pontos:{" "}
                       <strong>{nivel.badgeSelecionado.pontos}</strong> ·
                       Requisitos:{" "}
                       <strong>
@@ -358,7 +394,8 @@ function ConfigurarNiveisModal({
                 )}
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
 
         <div style={modalActions}>
