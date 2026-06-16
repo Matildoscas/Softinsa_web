@@ -8,7 +8,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
-import Header from "../../components/header.jsx";
+import Header from "../../components/Header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 

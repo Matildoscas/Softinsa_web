@@ -5,9 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js'; 
 
 // Componentes Estruturais
-import Header from '../../components/Header.jsx';
-import RightSidebar from '../../components/RightSidebar.jsx';
-import LeftSidebar from '../../components/LeftSidebar.jsx';
+import Header from "../../components/Header.jsx";
+import LeftSidebar from "../../components/LeftSidebar.jsx";
+import RightSidebar from "../../components/RightSidebar.jsx";
 
 function PaginaPerfil() {
     const navigate = useNavigate();
