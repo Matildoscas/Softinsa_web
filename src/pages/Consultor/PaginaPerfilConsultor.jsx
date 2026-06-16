@@ -30,8 +30,14 @@ function PaginaPerfil() {
                 api.get(`/dashboard/${userId}`),
                 api.get(`/badges/conquistados/${userId}`)
             ]).then(([dashboardRes, badgesRes]) => {
-                setStats(dashboardRes.data || { total_badges: 0, total_pontos: 0 });               
-                setBadgesConquistados(badgesRes.data || []); 
+                setStats(dashboardRes.data);               
+                // Agora os dados vêm diretamente da nova rota /conquistados
+                const badgesUnicos = badgesRes.data.filter(
+                    (badge, index, self) =>
+                        index === self.findIndex((b) => b.id === badge.id)
+                );
+
+                setBadgesConquistados(badgesUnicos);
                 setLoading(false);
             }).catch(err => {
                 console.error("Erro ao carregar dados do perfil:", err);
@@ -97,7 +103,7 @@ function PaginaPerfil() {
                         <Button onClick={() => navigate('/progresso')} variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
                             <BiLoader size={20} /> Progresso
                         </Button>
-                        <Button variant="primary" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
+                        <Button onClick={() => navigate('/historico_badges')} variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
                             <BiBook size={20} /> Histórico de Badges
                         </Button>
                     </div>

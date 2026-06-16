@@ -27,24 +27,39 @@ function LoginPage() {
 
       console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
 
-      if (response.data.token) {
-        // Guardar o token JWT de autenticação
-        localStorage.setItem("token", response.data.token);
+      const data = response.data;
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
 
         // 🎯 CORRIGIDO: Alterado de 'data.user' para 'response.data.user'
         const apiUser = response.data.user;
 
         const utilizadorSeguro = {
-            id_utilizador: apiUser.id_utilizador,
-            email: apiUser.email_softinsa || apiUser.email,
-            nome_completo: apiUser.nome_completo
+          id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
+          email: data.user?.email || data.user?.EMAIL,
+          nome: data.user?.nome_completo || data.user?.NOME_COMPLETO || data.user?.nome,
+          nome_completo: data.user?.nome_completo || data.user?.NOME_COMPLETO,
+          contacto: data.user?.contacto || data.user?.CONTACTO || "",
+          estado_conta: data.user?.estado_conta || data.user?.ESTADO_CONTA,
+          tipo_utilizador:
+            data.user?.tipo_utilizador ||
+            data.user?.TIPO_UTILIZADOR ||
+            data.user?.cargo ||
+            data.user?.CARGO ||
+            "",
         };
 
         // Salva os dados limpos do utilizador para consumo nos componentes (ex: Sidebar)
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
-        // Redireciona o consultor para a Dashboard principal
-        navigate("/pag_consultor"); 
+        const tipo = String(utilizadorSeguro.tipo_utilizador).toLowerCase();
+
+        if (tipo.includes("admin") || tipo.includes("administrador")) {
+          navigate("/admin");
+        } else {
+          navigate("/pag_consultor");
+        }
       }
     } catch (err) {
       console.error("Erro na tentativa de login:", err);
@@ -125,7 +140,14 @@ function LoginPage() {
                     Registar
                   </a>
                 </div>
-
+                  <Button
+                    type="button"
+                    variant="outline-primary"
+                    className="w-100 mt-3"
+                    onClick={() => navigate("/galeria-badges")}
+                  >
+                    Ver galeria de badges
+                  </Button>
               </Form>
             </Card.Body>
           </Card>

@@ -35,17 +35,33 @@ function RightSidebar() {
     if (storedUser) {
       const user = JSON.parse(storedUser);
       const userId = user.id_utilizador; // Limpo apenas para o padrão minúsculo
-
-      // Carregar Notificações
-      api.get(`/notificacoes/${userId}`)
-        .then(res => setNotifications(res.data))
-        .catch(err => console.error("Erro ao carregar notificações:", err));
-
-      // Carregar Badges
-      api.get(`/badges/progresso/${userId}`)
-        .then(res => setBadges(res.data))
-        .catch(err => console.error("Erro ao carregar badges:", err));
     }
+    if (!storedUser) return;
+
+    if (!userId) return;
+
+    api.get(`/notificacoes/${userId}`)
+      .then(res => {
+        setNotifications(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(err => console.error("Erro ao carregar notificações:", err));
+
+    api.get(`/badges/conquistados/${userId}`)
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : [];
+
+        const badgesUnicos = data.filter(
+          (badge, index, self) =>
+            index === self.findIndex(
+              (b) =>
+                String(b.id || b.id_badge_modelo) ===
+                String(badge.id || badge.id_badge_modelo)
+            )
+        );
+
+        setBadges(badgesUnicos);
+      })
+      .catch(err => console.error("Erro ao carregar badges:", err));
   }, [location.pathname]);
 
   const containerStyle = { 
@@ -59,14 +75,17 @@ function RightSidebar() {
         <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', marginBottom: 12 }}>Os meus Badges</div>
         {badges.length > 0 ? (
           badges.slice(0, 3).map((b, i) => (
-            /* Ajustado para ler apenas chaves minúsculas do PostgreSQL */
-            <BadgeCard key={i} name={b.nome_badge || b.nome} points={b.pontos || 10} />
+            <BadgeCard
+              key={b.id || b.id_badge_modelo || i}
+              name={b.nome || b.nome_badge || b.NOME || "Badge"}
+              points={b.pontos || 0}
+            />
           ))
         ) : (
           <div style={{ fontSize: 12, color: '#9ca3af' }}>Sem badges conquistados.</div>
         )}
         <div style={{ textAlign: 'right' }}>
-          <a href="/catalogo" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none' }}>Ver catálogo</a>
+          <a href="/catalogo-badges" style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none' }}>Ver catálogo</a>
         </div>
       </div>
     );

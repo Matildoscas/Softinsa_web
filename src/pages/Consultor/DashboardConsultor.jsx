@@ -21,53 +21,57 @@ function PaginaPrincipal() {
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-        
+
         if (!storedUser) {
             setLoading(false);
-            navigate('/login');
-            return; 
+            navigate("/login", { replace: true });
+            return;
         }
 
-        try {
-            const userData = JSON.parse(storedUser);
-            setUser(userData);
-            
-            // Ajustado estritamente para minúsculas seguindo a nova API
-            const userId = userData.id_utilizador;
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
 
-            if (!userId) {
-                console.error("ID do utilizador inválido no localStorage.");
-                setLoading(false);
-                navigate('/login');
-                return;
-            }
+        const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
 
-            setLoading(true);
-            Promise.all([
-                api.get(`/badges/progresso/${userId}`),
-                api.get(`/badges/recomendados/${userId}`),
-                api.get(`/dashboard/${userId}`) 
-            ]).then(([progressoRes, recomendadosRes, dashboardRes]) => {
-                setProgressoBadges(progressoRes.data || []);
-                setRecomendados(recomendadosRes.data || []);
-                
-                if (dashboardRes.data) {
-                    setStats({
-                        total_badges: Number(dashboardRes.data.total_badges || 0),
-                        total_pontos: Number(dashboardRes.data.total_pontos || 0)
-                    });
-                }
-                setLoading(false);
-            }).catch(err => {
-                console.error("Erro ao carregar dados da API:", err);
+        if (!userId) {
+            console.error("ID do utilizador não encontrado:", userData);
+            setLoading(false);
+            navigate("/login", { replace: true });
+            return;
+        }
+
+        setLoading(true);
+
+        Promise.all([
+            api.get(`/badges/progresso/${userId}`),
+            api.get(`/badges/recomendados/${userId}`),
+            api.get(`/dashboard/${userId}`)
+        ])
+            .then(([progressoRes, recomendadosRes, dashboardRes]) => {
+                const badgesUnicos = progressoRes.data.filter(
+                    (badge, index, self) =>
+                    index === self.findIndex(
+                        (b) => b.id === badge.id
+                    )
+                );
+
+                setProgressoBadges(badgesUnicos);
+                setRecomendados(recomendadosRes.data);
+
+                setStats({
+                    total_badges: Number(dashboardRes.data.total_badges || 0),
+                    total_pontos: Number(dashboardRes.data.total_pontos || 0)
+                });
+            })
+            .catch(err => {
+                console.error("Erro ao carregar dados:", err);
+                console.error("STATUS:", err.response?.status);
+                console.error("BODY:", err.response?.data);
+            })
+            .finally(() => {
                 setLoading(false);
             });
 
-        } catch (parseError) {
-            console.error("Erro ao ler o utilizador do localStorage:", parseError);
-            setLoading(false);
-            navigate('/login');
-        }
     }, [navigate]);
 
     if (loading) {
@@ -92,7 +96,7 @@ function PaginaPrincipal() {
                         <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
                             <div>
                                 <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Bom dia, {user?.nome_completo || "Utilizador"}!
+                                    Bom dia, {user?.nome_completo || user?.nome || "Utilizador"}!
                                 </h5>
                                 <div className="d-flex gap-2">
                                     <div style={cardStyleBase}>
@@ -122,46 +126,53 @@ function PaginaPrincipal() {
                     </Card>
 
                     <div className="text-center mb-4">
-                        <Button variant="white" onClick={() => navigate('/catalogo')} className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
+                        <Button variant="white" onClick={() => navigate('/catalogo-badges')} className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
                             <BiGrid size={20} /> Catálogo de Badges
                         </Button>
                     </div>
 
                     {/* Seção: Badges com Progresso */}
                     <BadgeSection 
-                        title="Badges com progresso" 
-                        sub={`Tem ${progressoBadges.length} badge(s) em progresso`}
+                        title="Badges Obtidos" 
+                        sub={`Tem ${progressoBadges.length} badge(s)`}
+                        onVerTodos={() => navigate('/catalogo-badges')}
                     >
                         {progressoBadges.length > 0 ? (
                             progressoBadges.map((b, i) => (
-                                <BadgeCard 
-                                    key={i}
-                                    name={b.nome_badge || b.nome} 
-                                    desc={b.descricao_badge || b.descricao} 
-                                    points={b.pontos} 
-                                    progress={b.progresso || 0} 
+                                <BadgeCard
+                                key={b.id || i}
+                                name={b.nome || b.nome_badge || "Badge"}
+                                desc={b.descricao || b.descricao_badge_modelo || ""}
+                                points={b.pontos || 0}
+                                progress={b.progress || b.progresso || 0}
+                                conquistado={true}
+                                onClick={() => navigate(`/badge-detalhe/${b.id}`)}
+                                dateConquered={
+                                    b.data_atribuicao
+                                    ? `Conquistado a ${new Date(b.data_atribuicao).toLocaleDateString("pt-PT")}`
+                                    : "Conquistado recentemente"
+                                }
                                 />
                             ))
-                        ) : (
-                            <p className="text-muted small ms-2">Não tem badges em progresso de momento.</p>
-                        )}
+                            ) : (
+                            <p className="text-muted small ms-2">
+                                Não tem badges em progresso de momento.
+                            </p>
+                            )}
                     </BadgeSection>
 
                     {/* Seção: Recomendação */}
-                    <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:">
-                        {recomendados.length > 0 ? (
-                            recomendados.map((b, i) => (
-                                <BadgeCard 
-                                    key={i}
-                                    name={b.nome_badge || b.nome} 
-                                    desc={b.descricao_badge || b.descricao} 
-                                    points={b.pontos} 
-                                    dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
-                                />
-                            ))
-                        ) : (
-                            <p className="text-muted small ms-2">Nenhuma recomendação disponível para esta área de momento.</p>
-                        )}
+                    <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:" onVerTodos={() => navigate('/catalogo-badges')}>
+                        {recomendados.map((b, i) => (
+                            <BadgeCard 
+                                key={i}
+                                name={b.nome} 
+                                desc={b.descricao} 
+                                points={b.pontos} 
+                                dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
+                                onClick={() => navigate(`/badge-detalhe/${b.id}`)}
+                            />
+                        ))}
                     </BadgeSection>
                 </div>
 
@@ -182,7 +193,10 @@ const cardStyleBase = {
     textAlign: 'left'
 };
 
-function BadgeSection({ title, sub, children }) {
+// --- COMPONENTES AUXILIARES (BadgeSection e BadgeCard) ---
+// (Mantive a estrutura visual que enviaste, apenas injetando as props)
+
+function BadgeSection({ title, sub, children, onVerTodos }) {
     return (
         <div className="mb-4">
             <div className="d-flex justify-content-between align-items-start mb-2">
@@ -190,7 +204,7 @@ function BadgeSection({ title, sub, children }) {
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{sub}</div>
                 </div>
-                <div style={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                <div onClick={onVerTodos} style={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>                   
                     <BiMenu size={14} /> Ver Todos
                 </div>
             </div>
@@ -199,9 +213,9 @@ function BadgeSection({ title, sub, children }) {
     );
 }
 
-function BadgeCard({ name, desc, points, progress, dateConquered }) {
+function BadgeCard({ name, desc, points, progress, dateConquered, conquistado = false, onClick }) {
     return (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
+        <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, marginBottom: 10, overflow: 'hidden', ...BadgeCard, cursor: 'pointer' }} onClick={onClick}>
             <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 20 }}>
                 <div style={{
                     width: 70, height: 70, borderRadius: '50%', background: '#f3f6f9',
@@ -213,12 +227,12 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
                 <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{name}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{desc}</div>
-                    {progress !== undefined && progress > 0 && (
+                    {/*{progress !== undefined && (
                         <div className="mt-2">
                             <ProgressBar now={progress} style={{ height: 6 }} />
                             <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'right' }}>{progress}%</div>
                         </div >
-                    )}
+                    )}*/}
                 </div>
 
                 <div style={{ border: '1.5px solid #d1d5db', borderRadius: 10, padding: '5px 10px', textAlign: 'center', minWidth: 60 }}>
@@ -227,7 +241,17 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
                 </div>
             </div>
             {dateConquered && (
-                <div style={{ borderTop: '1px solid #e5e7eb', padding: '6px', backgroundColor: '#fafafa', textAlign: 'center', fontSize: 11, color: '#2563eb', fontWeight: 500 }}>
+                <div
+                    style={{
+                        borderTop: "1px solid #e5e7eb",
+                        padding: "6px",
+                        backgroundColor: "#fafafa",
+                        textAlign: "center",
+                        fontSize: 11,
+                        color: conquistado ? "#2E7D32" : "#65696f",
+                        fontWeight: 600,
+                    }}
+                    >
                     {dateConquered}
                 </div>
             )}

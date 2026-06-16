@@ -1,11 +1,10 @@
 import { Container, Button } from 'react-bootstrap';
 import { HiOutlineArrowLeft } from 'react-icons/hi';
-import { useNavigate } from 'react-router-dom';
-
-// Importação dos componentes estruturais corrigidos
-import Header from '../../components/Header.jsx';
-import RightSidebar from '../../components/RightSidebar.jsx';
-import LeftSidebar from '../../components/LeftSidebar.jsx';
+import logoImg from '../../assets/logo.png';
+import { useNavigate, Link } from 'react-router-dom';
+import Header from '../../components/header.jsx';
+import RightSidebar from '../../components/right_sidebar.jsx';
+import LeftSidebar from '../../components/left_sidebar.jsx';
 
 function LembretePage() {
     const navigate = useNavigate();

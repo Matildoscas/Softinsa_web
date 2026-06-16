@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Dropdown, Navbar, Nav, Form, OverlayTrigger, Popover } from 'react-bootstrap';
-import { BiLogOut, BiUser, BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
+import { BiLogOut, BiUser, BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch, BiCog } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
 import NotificationPopover from './NotificacoesPop';
 import logoImg from '../assets/logo.png';
@@ -82,6 +82,10 @@ function Header() {
                     <Dropdown.Menu className="shadow border-0 mt-2" style={{ borderRadius: '12px', fontSize: '14px' }}>
                         <Dropdown.Item onClick={() => navigate('/perfil')} className="py-2 d-flex align-items-center gap-2">
                         <BiUser size={18} /> O meu Perfil
+                        </Dropdown.Item>
+                        <Dropdown.Divider />
+                        <Dropdown.Item onClick={() => navigate("/definicoes")} className="py-2 d-flex align-items-center gap-2">
+                        <BiCog size={18} /> Definições de Conta
                         </Dropdown.Item>
                         <Dropdown.Divider />
                         <Dropdown.Item onClick={handleLogout} className="py-2 d-flex align-items-center gap-2 text-danger">
