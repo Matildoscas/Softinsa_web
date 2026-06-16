@@ -32,11 +32,11 @@ function RightSidebar() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      const userId = user.id_utilizador; // Limpo apenas para o padrão minúsculo
-    }
+
     if (!storedUser) return;
+
+    const user = JSON.parse(storedUser);
+    const userId = user.id_utilizador; // Limpo apenas para o padrão minúsculo
 
     if (!userId) return;
 
