@@ -33,10 +33,8 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-*/
-
 export default api;
-
+*/
 import axios from 'axios';
 
 const api = axios.create({
