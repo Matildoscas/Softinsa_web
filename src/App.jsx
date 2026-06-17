@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+// consultor
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
 import LoginPage from './pages/Login/Login.jsx';
 import RegisterPage from './pages/Login/Register.jsx';
@@ -18,6 +19,7 @@ import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
 
+//admin
 import GestaoContas from "./pages/Admin/gestao_contas.jsx";
 import EditarConta from "./pages/Admin/editar_contas.jsx";
 import CriarConta from "./pages/Admin/criar_conta.jsx";
@@ -35,6 +37,10 @@ import InformacoesAvisos from "./pages/Admin/avisos_informacoes.jsx";
 import PoliticasRGPD from "./pages/Admin/politicas_rgpd.jsx";
 import EdicaoRGPD from "./pages/Admin/editar_politicas_rgpd.jsx";
 import ConfigurarNotificacoes from "./pages/Admin/config_notificacao.jsx";
+import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx'; 
+
+// Talent Manager
+import TM_Dashboard from './pages/TalentManager/TM_Dashboard.jsx';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -62,9 +68,9 @@ function App() {
         <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
         <Route path="/certificado/:id" element={<CertificadoPage />} />
         <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
+        
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
-
         <Route path="/admin/badges" element={<div>Gestão de Badges</div>} />
         <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
         <Route path="/admin/contas" element={<GestaoContas />} />
@@ -85,6 +91,14 @@ function App() {
         <Route path="/admin/rgpd/editar" element={<EdicaoRGPD />} />
         <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
 
+        <Route path="/perfil" element={<PaginaPerfil />} />
+        <Route path="/notificacoes" element={<PaginaNotificacoes />} />
+
+        {/* Rotas para o Talent Manager */}
+        <Route path="/talent_manager/dashboard" element={<TM_Dashboard />} />
+
+        {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );

@@ -32,8 +32,11 @@ function LoginPage() {
       if (data.token) {
         localStorage.setItem("token", data.token);
 
-        // 🎯 CORRIGIDO: Alterado de 'data.user' para 'response.data.user'
         const apiUser = response.data.user;
+
+        // CORREÇÃO: LER EM MINÚSCULAS CONFORME VEM NO CONSOLE LOG
+        const userEmail = apiUser.email || apiUser.email_utilizador || apiUser.EMAIL_SOFTINSA;
+        const userCargo = apiUser.cargo || 'TALENT_MANAGER'; // Forçamos TALENT_MANAGER temporariamente para teste
 
         const utilizadorSeguro = {
           id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
@@ -50,7 +53,7 @@ function LoginPage() {
             "",
         };
 
-        // Salva os dados limpos do utilizador para consumo nos componentes (ex: Sidebar)
+        // Salva os dados limpos do utilizador
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
         const tipo = String(utilizadorSeguro.tipo_utilizador).toLowerCase();
