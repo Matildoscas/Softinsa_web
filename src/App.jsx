@@ -95,7 +95,7 @@ function App() {
         <Route path="/notificacoes" element={<PaginaNotificacoes />} />
 
         {/* Rotas para o Talent Manager */}
-        <Route path="/talent_manager/dashboard" element={<TM_Dashboard />} />
+        <Route path="/talent_manager" element={<TM_Dashboard />} />
 
         {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
         <Route path="*" element={<Navigate to="/login" />} />

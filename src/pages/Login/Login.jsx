@@ -40,28 +40,30 @@ function LoginPage() {
 
         const utilizadorSeguro = {
           id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
-          email: data.user?.email || data.user?.EMAIL,
-          nome: data.user?.nome_completo || data.user?.NOME_COMPLETO || data.user?.nome,
           nome_completo: data.user?.nome_completo || data.user?.NOME_COMPLETO,
-          contacto: data.user?.contacto || data.user?.CONTACTO || "",
+          email: data.user?.email || data.user?.EMAIL,
+          email_softinsa: data.user?.email_softinsa || data.user?.EMAIL_SOFTINSA,
           estado_conta: data.user?.estado_conta || data.user?.ESTADO_CONTA,
-          tipo_utilizador:
-            data.user?.tipo_utilizador ||
-            data.user?.TIPO_UTILIZADOR ||
-            data.user?.cargo ||
-            data.user?.CARGO ||
-            "",
+          tipo_utilizador: data.user?.tipo_utilizador || "utilizador",
         };
+
         console.log("UTILIZADOR SEGURO:", utilizadorSeguro);
 
         // Salva os dados limpos do utilizador
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
-        const tipo = String(utilizadorSeguro.tipo_utilizador).toLowerCase();
+        const tipo = String(utilizadorSeguro.tipo_utilizador || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "");
 
-        if (tipo.includes("admin") || tipo.includes("administrador")) {
+        if (tipo.includes("administrador") || tipo.includes("admin")) {
           navigate("/admin");
-        } else {
+        } else if (tipo.includes("talent_manager") || tipo.includes("talentmanager")) {
+          navigate("/talent_manager");
+        } else if (tipo.includes("consultor")) {
           navigate("/pag_consultor");
         }
       }
