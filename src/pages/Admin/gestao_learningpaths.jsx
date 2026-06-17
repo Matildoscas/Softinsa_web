@@ -392,9 +392,8 @@ function GestaoLearningPaths() {
       lp.nome.toLowerCase().includes(texto) ||
       lp.descricao.toLowerCase().includes(texto) ||
       lp.areas.toLowerCase().includes(texto) ||
-      lp.serviceLines.toLowerCase().includes(texto) ||
-      lp.tipo.toLowerCase().includes(texto) ||
-      lp.modalidade.toLowerCase().includes(texto)
+      lp.serviceLines.toLowerCase().includes(texto)
+      // Tipo e Modalidade removidos da pesquisa
     );
   });
 
@@ -451,140 +450,131 @@ function GestaoLearningPaths() {
   }
 
   function handleExcel() {
-  if (listaFiltrada.length === 0) {
-    alert("Não existem Learning Paths para exportar.");
-    return;
+    if (listaFiltrada.length === 0) {
+      alert("Não existem Learning Paths para exportar.");
+      return;
+    }
+
+    const dadosExcel = listaFiltrada.map((lp) => ({
+      ID: lp.id,
+      "Learning Path": lp.nome,
+      Descrição: lp.descricao,
+      Áreas: lp.areas,
+      "Service Lines": lp.serviceLines,
+      // Tipo e Modalidade removidos
+      Estado: lp.estado === "ATIVO" ? "Ativo" : "Inativo",
+      "N.º Service Lines": lp.totalServiceLines,
+      "N.º Inscritos": lp.inscritos,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
+
+    worksheet["!cols"] = [
+      { wch: 8 },  // ID
+      { wch: 32 }, // Learning Path
+      { wch: 70 }, // Descrição
+      { wch: 70 }, // Áreas
+      { wch: 70 }, // Service Lines
+      { wch: 18 }, // Estado
+      { wch: 18 }, // N.º Service Lines
+      { wch: 16 }, // N.º Inscritos
+    ];
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Learning Paths"
+    );
+
+    const dataHoje = new Date()
+      .toLocaleDateString("pt-PT")
+      .replaceAll("/", "-");
+
+    XLSX.writeFile(workbook, `learning_paths_${dataHoje}.xlsx`);
   }
 
-  const dadosExcel = listaFiltrada.map((lp) => ({
-    ID: lp.id,
-    "Learning Path": lp.nome,
-    Descrição: lp.descricao,
-    Áreas: lp.areas,
-    "Service Lines": lp.serviceLines,
-    Tipo: lp.tipo,
-    Modalidade: lp.modalidade,
-    Estado: lp.estado === "ATIVO" ? "Ativo" : "Inativo",
-    "N.º Service Lines": lp.totalServiceLines,
-    "N.º Inscritos": lp.inscritos,
-  }));
+  function handlePDF() {
+    if (listaFiltrada.length === 0) {
+      alert("Não existem Learning Paths para exportar.");
+      return;
+    }
 
-  const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
 
-  worksheet["!cols"] = [
-    { wch: 8 },
-    { wch: 32 },
-    { wch: 70 },
-    { wch: 70 },
-    { wch: 70 },
-    { wch: 18 },
-    { wch: 16 },
-    { wch: 12 },
-    { wch: 18 },
-    { wch: 16 },
-  ];
+    const dataHoje = new Date().toLocaleDateString("pt-PT");
 
-  const workbook = XLSX.utils.book_new();
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("SOFTINSA - Gestão de Learning Paths", 14, 16);
 
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Learning Paths"
-  );
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Exportado em: ${dataHoje}`, 14, 23);
+    doc.text(`Total: ${listaFiltrada.length} Learning Paths`, 14, 29);
 
-  const dataHoje = new Date()
-    .toLocaleDateString("pt-PT")
-    .replaceAll("/", "-");
+    const linhas = listaFiltrada.map((lp) => [
+      lp.id,
+      lp.nome,
+      lp.estado === "ATIVO" ? "Ativo" : "Inativo",
+      lp.totalServiceLines,
+      lp.inscritos,
+      lp.areas,
+      lp.serviceLines,
+      lp.descricao,
+    ]);
 
-  XLSX.writeFile(workbook, `learning_paths_${dataHoje}.xlsx`);
-}
+    autoTable(doc, {
+      startY: 36,
+      head: [[
+        "ID",
+        "Learning Path",
+        "Estado",
+        "SL",
+        "Inscritos",
+        "Áreas",
+        "Service Lines",
+        "Descrição",
+      ]],
+      body: linhas,
+      styles: {
+        fontSize: 7,
+        cellPadding: 2,
+        overflow: "linebreak",
+        valign: "top",
+      },
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { cellWidth: 10 }, // ID
+        1: { cellWidth: 40 }, // Learning Path
+        2: { cellWidth: 18 }, // Estado
+        3: { cellWidth: 12 }, // SL
+        4: { cellWidth: 16 }, // Inscritos
+        5: { cellWidth: 55 }, // Áreas
+        6: { cellWidth: 55 }, // Service Lines
+        7: { cellWidth: 80 }, // Descrição (largura aumentada aproveitando o espaço das antigas colunas)
+      },
+      margin: { top: 36, left: 8, right: 8 },
+    });
 
-function handlePDF() {
-  if (listaFiltrada.length === 0) {
-    alert("Não existem Learning Paths para exportar.");
-    return;
+    const dataFicheiro = new Date()
+      .toLocaleDateString("pt-PT")
+      .replaceAll("/", "-");
+
+    doc.save(`learning_paths_${dataFicheiro}.pdf`);
   }
-
-  const doc = new jsPDF({
-    orientation: "landscape",
-    unit: "mm",
-    format: "a4",
-  });
-
-  const dataHoje = new Date().toLocaleDateString("pt-PT");
-
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text("SOFTINSA - Gestão de Learning Paths", 14, 16);
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Exportado em: ${dataHoje}`, 14, 23);
-  doc.text(`Total: ${listaFiltrada.length} Learning Paths`, 14, 29);
-
-  const linhas = listaFiltrada.map((lp) => [
-    lp.id,
-    lp.nome,
-    lp.tipo,
-    lp.modalidade,
-    lp.estado === "ATIVO" ? "Ativo" : "Inativo",
-    lp.totalServiceLines,
-    lp.inscritos,
-    lp.areas,
-    lp.serviceLines,
-    lp.descricao,
-  ]);
-
-  autoTable(doc, {
-    startY: 36,
-    head: [[
-      "ID",
-      "Learning Path",
-      "Tipo",
-      "Modalidade",
-      "Estado",
-      "SL",
-      "Inscritos",
-      "Áreas",
-      "Service Lines",
-      "Descrição",
-    ]],
-    body: linhas,
-    styles: {
-      fontSize: 7,
-      cellPadding: 2,
-      overflow: "linebreak",
-      valign: "top",
-    },
-    headStyles: {
-      fillColor: [37, 99, 235],
-      textColor: 255,
-      fontStyle: "bold",
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    columnStyles: {
-      0: { cellWidth: 10 },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 18 },
-      5: { cellWidth: 10 },
-      6: { cellWidth: 16 },
-      7: { cellWidth: 48 },
-      8: { cellWidth: 48 },
-      9: { cellWidth: 68 },
-    },
-    margin: { top: 36, left: 8, right: 8 },
-  });
-
-  const dataFicheiro = new Date()
-    .toLocaleDateString("pt-PT")
-    .replaceAll("/", "-");
-
-  doc.save(`learning_paths_${dataFicheiro}.pdf`);
-}
 
   return (
     <div
@@ -701,7 +691,6 @@ function handlePDF() {
     </div>
   );
 }
-
 function tagPill(styleObj) {
   return {
     background: styleObj.bg,
