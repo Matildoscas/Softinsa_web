@@ -37,7 +37,6 @@ function criarRequisito(aberto = true) {
     tempId: Date.now() + Math.random(),
     titulo: "Completar formação associada",
     descricao: "O consultor deve ter concluído o curso:",
-    tipo_requisito: "FORMAÇÃO",
     link: "",
     aberto,
   };
@@ -540,7 +539,6 @@ function CriarBadge() {
           titulo: req.titulo.trim(),
           nome_requisito: req.titulo.trim(),
           descricao_requisito: req.descricao.trim(),
-          tipo_requisito: req.tipo_requisito || "FORMAÇÃO",
           links: req.link.trim() ? [req.link.trim()] : [],
         }));
 
@@ -550,7 +548,6 @@ function CriarBadge() {
       formData.append("descricao_badge_modelo", form.descricao.trim());
       formData.append("pontos", Number(form.pontos));
       formData.append("id_nivel", form.id_nivel);
-      formData.append("tipo_badge", "NORMAL");
       formData.append("estado_badge_modelo", "ATIVO");
       formData.append("numero_requisitos", requisitosLimpos.length);
       formData.append("tempo_expiracao_quantidade", form.tempoExpiracao || 0);

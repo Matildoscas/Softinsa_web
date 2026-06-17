@@ -45,7 +45,6 @@ function criarRequisito(aberto = true) {
     titulo: "Completar formação associada",
     nome_requisito: "Completar formação associada",
     descricao_requisito: "O consultor deve ter concluído o curso:",
-    tipo_requisito: "FORMAÇÃO",
     link: "",
     links: [],
     aberto,
@@ -200,7 +199,6 @@ function normalizarRequisito(req, index) {
       req.descricao_requisito ||
       req.descricao ||
       "O consultor deve ter concluído o curso:",
-    tipo_requisito: req.tipo_requisito || "FORMAÇÃO",
     link: links[0] || "",
     links,
     aberto: index === 0,
@@ -758,7 +756,6 @@ function EditarBadge() {
         titulo: req.titulo.trim(),
         nome_requisito: req.nome_requisito?.trim() || req.titulo.trim(),
         descricao_requisito: req.descricao_requisito.trim(),
-        tipo_requisito: req.tipo_requisito || "FORMAÇÃO",
         links: req.link?.trim() ? [req.link.trim()] : [],
       }));
 
