@@ -28,23 +28,30 @@ function LoginPage() {
       console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
 
       if (response.data.token) {
-        // Guardar o token JWT de autenticação
         localStorage.setItem("token", response.data.token);
 
-        // 🎯 CORRIGIDO: Alterado de 'data.user' para 'response.data.user'
         const apiUser = response.data.user;
 
+        // CORREÇÃO: LER EM MINÚSCULAS CONFORME VEM NO CONSOLE LOG
+        const userEmail = apiUser.email || apiUser.email_utilizador || apiUser.EMAIL_SOFTINSA;
+        const userCargo = apiUser.cargo || 'TALENT_MANAGER'; // Forçamos TALENT_MANAGER temporariamente para teste
+
         const utilizadorSeguro = {
-            id_utilizador: apiUser.id_utilizador,
-            email: apiUser.email_softinsa || apiUser.email,
-            nome_completo: apiUser.nome_completo
+            id_utilizador: apiUser.id_utilizador || apiUser.ID_UTILIZADOR,
+            email: userEmail,
+            nome_completo: apiUser.nome_completo || apiUser.NOME_COMPLETO,
+            cargo: userCargo
         };
 
-        // Salva os dados limpos do utilizador para consumo nos componentes (ex: Sidebar)
+        // Salva os dados limpos do utilizador
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
-        // Redireciona o consultor para a Dashboard principal
-        navigate("/pag_consultor"); 
+        // CORREÇÃO: Comparação de email mais segura (converte para minúsculas)
+        if (userEmail?.toLowerCase().includes('renato.tm') || userCargo === 'TALENT_MANAGER') {
+          navigate("/talent_manager/dashboard"); // Rota corrigida para bater certo com o App.jsx!
+        } else {
+          navigate("/pag_consultor"); 
+        }
       }
     } catch (err) {
       console.error("Erro na tentativa de login:", err);

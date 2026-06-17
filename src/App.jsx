@@ -7,6 +7,7 @@ import AreaPage from './pages/Login/AreaRegister.jsx';
 import PaginaPrincipal from './pages/Consultor/DashboardConsultor.jsx';
 import PaginaPerfil from './pages/Consultor/PaginaPerfilConsultor.jsx';
 import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx'; 
+import TM_Dashboard from './pages/TalentManager/TM_Dashboard.jsx';
 
 function App() {
   return (
@@ -24,7 +25,10 @@ function App() {
         <Route path="/pag_consultor" element={<PaginaPrincipal />} />
         <Route path="/perfil" element={<PaginaPerfil />} />
         <Route path="/notificacoes" element={<PaginaNotificacoes />} />
-        
+
+        {/* Rotas para o Talent Manager */}
+        <Route path="/talent_manager/dashboard" element={<TM_Dashboard />} />
+
         {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
