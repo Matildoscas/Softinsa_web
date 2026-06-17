@@ -40,7 +40,7 @@ import ConfigurarNotificacoes from "./pages/Admin/config_notificacao.jsx";
 import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx'; 
 
 // Talent Manager
-import TM_Dashboard from './pages/TalentManager/TM_Dashboard.jsx';
+import TM_Dashboard from './pages/TalentManager/TM_DashBoard.jsx';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
