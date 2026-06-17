@@ -21,8 +21,8 @@ import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx'
 
 //admin
 import GestaoBadges from "./pages/Admin/gestao_badges.jsx";
-import CriarBadges from "./pages/Admin/criar_badges.jsx";
-import EditarBadges from "./pages/Admin/editar_badges.jsx";
+import CriarBadge from "./pages/Admin/criar_badges.jsx";
+import EditarBadge from "./pages/Admin/editar_badges.jsx";
 import GestaoContas from "./pages/Admin/gestao_contas.jsx";
 import EditarConta from "./pages/Admin/editar_contas.jsx";
 import CriarConta from "./pages/Admin/criar_conta.jsx";
