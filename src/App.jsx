@@ -35,6 +35,9 @@ import InformacoesAvisos from "./pages/admin/avisos_informacoes.jsx";
 import PoliticasRGPD from "./pages/admin/politicas_rgpd.jsx";
 import EdicaoRGPD from "./pages/admin/editar_politicas_rgpd.jsx";
 import ConfigurarNotificacoes from "./pages/admin/config_notificacao.jsx";
+import GestaoBadges from "./pages/admin/gestao_badges.jsx";
+import CriarBadge from "./pages/admin/criar_badges.jsx";
+import EditarBadge from "./pages/admin/editar_badges.jsx";
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -65,7 +68,6 @@ function App() {
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
 
-        <Route path="/admin/badges" element={<div>Gestão de Badges</div>} />
         <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
         <Route path="/admin/contas" element={<GestaoContas />} />
         <Route path="/admin/contas/novo" element={<CriarConta />} />
@@ -84,6 +86,9 @@ function App() {
         <Route path="/admin/rgpd" element={<PoliticasRGPD />} />
         <Route path="/admin/rgpd/editar" element={<EdicaoRGPD />} />
         <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
+        <Route path="/admin/badges" element={<GestaoBadges />} />
+        <Route path="/admin/badges/novo" element={<CriarBadge />} />
+        <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
 
       </Routes>
     </Router>
