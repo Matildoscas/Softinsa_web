@@ -6,20 +6,22 @@ function LeftSidebarTM() {
     const navigate = useNavigate();
     const currentPath = location.pathname;
 
-    // Função auxiliar para verificar se a rota atual está ativa
-    const isActive = (path) => currentPath === path;
+    // Função melhorada para verificar com precisão se a rota está ativa
+    const isActive = (path) => currentPath === path || currentPath.startsWith(path + '/');
 
-    // Estilos baseados no design da imagem image_8add60.png
+    // Estilos corrigidos para preencher o ecrã até abaixo de forma fluida
     const sidebarStyle = {
         width: '260px',
         backgroundColor: '#f8f9fa',
-        height: '100%',
+        // 🚀 Faz com que o menu ocupe todo o ecrã vertical disponível descontando o Header
+        minHeight: 'calc(100vh - 65px)', 
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         padding: '24px 16px',
         borderRight: '1px solid #e9ecef',
-        fontFamily: 'system-ui, sans-serif'
+        fontFamily: 'system-ui, sans-serif',
+        flexShrink: 0 // Garante que o menu não esmaga horizontalmente em ecrãs mais pequenos
     };
 
     const itemStyle = (active) => ({
@@ -29,10 +31,10 @@ function LeftSidebarTM() {
         padding: '10px 14px',
         borderRadius: '12px',
         cursor: 'pointer',
-        backgroundColor: active ? '#f1f3f5' : 'transparent',
-        border: active ? '1px solid #ced4da' : '1px solid transparent',
-        color: active ? '#212529' : '#495057',
-        fontWeight: active ? '500' : '400',
+        backgroundColor: active ? '#e9ecef' : 'transparent', // Destaque cinza mais visível
+        border: active ? '1px solid #dee2e6' : '1px solid transparent',
+        color: active ? '#0d6efd' : '#495057', // Texto azul se estiver ativo
+        fontWeight: active ? '600' : '400',
         fontSize: '14px',
         textDecoration: 'none',
         transition: 'all 0.2s ease',
@@ -71,13 +73,13 @@ function LeftSidebarTM() {
                 <nav>
                     {/* Página Inicial */}
                     <div style={itemStyle(isActive('/tm/dashboard'))} onClick={() => navigate('/tm/dashboard')}>
-                        <BiChevronRight size={16} style={{ opacity: 0.5 }} />
+                        <BiChevronRight size={16} style={{ opacity: isActive('/tm/dashboard') ? 1 : 0.5 }} />
                         <BiLayout size={18} />
                         <span>Página Inicial</span>
                     </div>
 
-                    {/* Menu Pai: Badges */}
-                    <div style={itemStyle(false)} style={{ ...itemStyle(false), cursor: 'default' }}>
+                    {/* Menu Pai: Badges (Corrigido o bug do duplo atributo style) */}
+                    <div style={{ ...itemStyle(false), cursor: 'default' }}>
                         <BiChevronRight size={16} style={{ opacity: 0.5 }} />
                         <BiMedal size={18} />
                         <span>Badges</span>
@@ -99,7 +101,7 @@ function LeftSidebarTM() {
 
                     {/* Consultores */}
                     <div style={{ ...itemStyle(isActive('/tm/consultores')), marginTop: '8px' }} onClick={() => navigate('/tm/consultores')}>
-                        <BiChevronRight size={16} style={{ opacity: 0.5 }} />
+                        <BiChevronRight size={16} style={{ opacity: isActive('/tm/consultores') ? 1 : 0.5 }} />
                         <BiGroup size={18} />
                         <span>Consultores</span>
                     </div>
@@ -107,7 +109,7 @@ function LeftSidebarTM() {
             </div>
 
             {/* LOGOTIPO DA SOFTINSA NO RODAPÉ */}
-            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '8px', marginTop: '32px' }}>
                 <div style={{ 
                     backgroundColor: '#ffffff', 
                     padding: '8px 24px', 
@@ -117,7 +119,6 @@ function LeftSidebarTM() {
                     alignItems: 'center',
                     justifyContent: 'center'
                 }}>
-                    {/* Substitui pelo teu elemento <img> real se preferires */}
                     <span style={{ fontWeight: 'bold', color: '#1d4ed8', fontSize: '16px', letterSpacing: '0.5px' }}>
                         SOFT<span style={{ color: '#06b6d4' }}>I</span>NSA
                     </span>
