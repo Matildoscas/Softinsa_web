@@ -52,6 +52,15 @@ function LoginPage() {
             data.user?.CARGO ||
             "",
         };
+        console.log("UTILIZADOR SEGURO:", 
+          utilizadorSeguro.id_utilizador,
+          utilizadorSeguro.email, 
+          utilizadorSeguro.nome, 
+          utilizadorSeguro.nome_completo, 
+          utilizadorSeguro.contacto, 
+          utilizadorSeguro.estado_conta, 
+          utilizadorSeguro.tipo_utilizador
+        );
 
         // Salva os dados limpos do utilizador
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
