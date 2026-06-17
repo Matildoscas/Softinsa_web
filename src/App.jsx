@@ -90,6 +90,9 @@ function App() {
         <Route path="/admin/rgpd" element={<PoliticasRGPD />} />
         <Route path="/admin/rgpd/editar" element={<EdicaoRGPD />} />
         <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
+        <Route path="/admin/badges" element={<GestaoBadges />} />
+        <Route path="/admin/badges/novo" element={<CriarBadge />} />
+        <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
 
         <Route path="/perfil" element={<PaginaPerfil />} />
         <Route path="/notificacoes" element={<PaginaNotificacoes />} />
