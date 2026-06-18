@@ -61,8 +61,10 @@ function normalizarNivel(n) {
       n.total_requisitos ||
         n.numero_requisitos ||
         n.NUMERO_REQUISITOS ||
-        0
+        (Array.isArray(n.requisitos) ? n.requisitos.length : 0)
     ),
+
+    requisitos: Array.isArray(n.requisitos) ? n.requisitos : [],
   };
 }
 
@@ -201,7 +203,6 @@ function EditarArea() {
   const [form, setForm] = useState({
     nome: "",
     descricao: "",
-    tipo: "",
     estado: "ATIVO",
     id_serviceline: "",
   });
@@ -225,7 +226,7 @@ function EditarArea() {
 
       const [areaRes, serviceLinesRes] = await Promise.all([
         api.get(`/areas/${id}`),
-        api.get("/servicelines"),
+        api.get("/servicelines/select"),
       ]);
 
       const areaData = areaRes.data?.area || areaRes.data;
@@ -233,7 +234,6 @@ function EditarArea() {
       setForm({
         nome: areaData.nome_area || "",
         descricao: areaData.descricao_area || "",
-        tipo: areaData.tipo_area || "",
         estado: normalizarEstadoArea(areaData.estado_area),
         id_serviceline: areaData.id_serviceline || "",
       });
@@ -296,10 +296,6 @@ function EditarArea() {
       novosErros.descricao = "A descrição é obrigatória.";
     }
 
-    if (!form.tipo.trim()) {
-      novosErros.tipo = "O tipo é obrigatório.";
-    }
-
     if (!form.id_serviceline) {
       novosErros.id_serviceline = "Seleciona uma Service Line.";
     }
@@ -320,7 +316,6 @@ function EditarArea() {
       await api.put(`/areas/${id}`, {
         nome_area: form.nome.trim(),
         descricao_area: form.descricao.trim(),
-        tipo_area: form.tipo.trim(),
         estado_area: normalizarEstadoArea(form.estado),
         id_serviceline: Number(form.id_serviceline),
       });
@@ -491,28 +486,6 @@ function EditarArea() {
                 </div>
 
                 <div style={twoColumns}>
-                  <div>
-                    <label style={labelStyle}>
-                      Tipo de Área <span style={{ color: "#dc2626" }}>*</span>
-                    </label>
-
-                    <input
-                      value={form.tipo}
-                      onChange={(e) => set("tipo")(e.target.value)}
-                      placeholder="Ex: Tecnologia"
-                      style={inputStyle("tipo")}
-                      onFocus={(e) => {
-                        if (!erros.tipo) e.target.style.borderColor = "#2563eb";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = erros.tipo
-                          ? "#fca5a5"
-                          : "#d1d5db";
-                      }}
-                    />
-
-                    {erros.tipo && <div style={fieldError}>{erros.tipo}</div>}
-                  </div>
 
                   <div>
                     <label style={labelStyle}>
@@ -701,7 +674,7 @@ const fieldError = {
 
 const twoColumns = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  gridTemplateColumns: "1fr",
   gap: 18,
 };
 

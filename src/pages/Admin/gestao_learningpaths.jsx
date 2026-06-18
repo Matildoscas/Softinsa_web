@@ -51,23 +51,13 @@ function normalizarLearningPath(lp) {
       "Sem descrição.",
 
     estado: normalizarEstado(
-      lp.estado_learningpaths ||
+      lp.estado_learningpath ||
+        lp.estado_learningpaths ||
+        lp.ESTADO_LEARNINGPATH ||
         lp.ESTADO_LEARNINGPATHS ||
         lp.estado ||
         "ATIVO"
     ),
-
-    tipo:
-      lp.tipo_learningpaths ||
-      lp.TIPO_LEARNINGPATHS ||
-      lp.tipo ||
-      "Tecnologia",
-
-    modalidade:
-      lp.modalidade ||
-      lp.MODALIDADE ||
-      lp.tipo_formacao ||
-      "Online",
 
     areas:
       lp.areas ||
@@ -85,7 +75,6 @@ function normalizarLearningPath(lp) {
       lp.total_servicelines ||
         lp.total_service_lines ||
         lp.numero_servicelines ||
-        lp.serviceLines ||
         0
     ),
 
@@ -95,16 +84,16 @@ function normalizarLearningPath(lp) {
         lp.consultores ||
         0
     ),
+
+    dataCriacao:
+      lp.data_criacao ||
+      lp.DATA_CRIACAO ||
+      null,
   };
 }
 
 function tagStyle(tag) {
   const map = {
-    Tecnologia: { bg: "#dbeafe", color: "#1d4ed8" },
-    Online: { bg: "#dcfce7", color: "#15803d" },
-    Negócio: { bg: "#fef9c3", color: "#854d0e" },
-    Gestão: { bg: "#f3e8ff", color: "#7e22ce" },
-    Presencial: { bg: "#ffe4e6", color: "#be123c" },
     Ativa: { bg: "#dcfce7", color: "#15803d" },
     Inativa: { bg: "#fee2e2", color: "#b91c1c" },
   };
@@ -165,8 +154,6 @@ function ListaCompacta({ label, texto, limite = 3 }) {
 
 function LearningPathCard({ lp, onEditar, onDesativar }) {
   const estadoLabel = lp.estado === "ATIVO" ? "Ativa" : "Inativa";
-  const tipoStyle = tagStyle(lp.tipo);
-  const modalidadeStyle = tagStyle(lp.modalidade);
   const estadoStyle = tagStyle(estadoLabel);
 
   return (
@@ -197,10 +184,8 @@ function LearningPathCard({ lp, onEditar, onDesativar }) {
               <div style={lpDescription}>{lp.descricao}</div>
 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <span style={tagPill(tipoStyle)}>{lp.tipo}</span>
-                <span style={tagPill(modalidadeStyle)}>{lp.modalidade}</span>
-                <span style={tagPill(estadoStyle)}>{estadoLabel}</span>
-              </div>
+              <span style={tagPill(estadoStyle)}>{estadoLabel}</span>
+            </div>
             </div>
 
             <div style={rightBox}>
@@ -301,7 +286,9 @@ function DesativarLearningPathModal({
             </div>
           </div>
 
-          <span style={modalUserRole}>{learningPath.tipo}</span>
+          <span style={modalUserRole}>
+            {learningPath.estado === "ATIVO" ? "Ativa" : "Inativa"}
+          </span>
         </div>
 
         <div style={modalActions}>
@@ -393,8 +380,7 @@ function GestaoLearningPaths() {
       lp.descricao.toLowerCase().includes(texto) ||
       lp.areas.toLowerCase().includes(texto) ||
       lp.serviceLines.toLowerCase().includes(texto) ||
-      lp.tipo.toLowerCase().includes(texto) ||
-      lp.modalidade.toLowerCase().includes(texto)
+      lp.estado.toLowerCase().includes(texto)
     );
   });
 
@@ -462,8 +448,6 @@ function GestaoLearningPaths() {
     Descrição: lp.descricao,
     Áreas: lp.areas,
     "Service Lines": lp.serviceLines,
-    Tipo: lp.tipo,
-    Modalidade: lp.modalidade,
     Estado: lp.estado === "ATIVO" ? "Ativo" : "Inativo",
     "N.º Service Lines": lp.totalServiceLines,
     "N.º Inscritos": lp.inscritos,
@@ -477,8 +461,6 @@ function GestaoLearningPaths() {
     { wch: 70 },
     { wch: 70 },
     { wch: 70 },
-    { wch: 18 },
-    { wch: 16 },
     { wch: 12 },
     { wch: 18 },
     { wch: 16 },
@@ -525,8 +507,6 @@ function handlePDF() {
   const linhas = listaFiltrada.map((lp) => [
     lp.id,
     lp.nome,
-    lp.tipo,
-    lp.modalidade,
     lp.estado === "ATIVO" ? "Ativo" : "Inativo",
     lp.totalServiceLines,
     lp.inscritos,
@@ -540,8 +520,6 @@ function handlePDF() {
     head: [[
       "ID",
       "Learning Path",
-      "Tipo",
-      "Modalidade",
       "Estado",
       "SL",
       "Inscritos",
@@ -566,15 +544,13 @@ function handlePDF() {
     },
     columnStyles: {
       0: { cellWidth: 10 },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 18 },
-      5: { cellWidth: 10 },
-      6: { cellWidth: 16 },
-      7: { cellWidth: 48 },
-      8: { cellWidth: 48 },
-      9: { cellWidth: 68 },
+      1: { cellWidth: 35 },
+      2: { cellWidth: 18 },
+      3: { cellWidth: 10 },
+      4: { cellWidth: 16 },
+      5: { cellWidth: 55 },
+      6: { cellWidth: 55 },
+      7: { cellWidth: 85 },
     },
     margin: { top: 36, left: 8, right: 8 },
   });

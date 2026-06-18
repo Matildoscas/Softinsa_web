@@ -414,17 +414,16 @@ function CriarArea() {
   const [form, setForm] = useState({
     nome: "",
     descricao: "",
-    tipo: "",
     estado: "ATIVO",
     id_serviceline: "",
 
     niveis: ["A", "B", "C", "D", "E"].map((codigo) => ({
-        nome_nivel: codigo,
-        estado_nivel: "ATIVO",
-        id_badge_modelo: "",
-        badgeSelecionado: null,
+      nome_nivel: codigo,
+      estado_nivel: "ATIVO",
+      id_badge_modelo: "",
+      badgeSelecionado: null,
     })),
-    });
+  });
 
   const [serviceLines, setServiceLines] = useState([]);
   const [erros, setErros] = useState({});
@@ -447,8 +446,8 @@ function CriarArea() {
             setErroGeral("");
 
             const [serviceLinesRes, badgesRes] = await Promise.allSettled([
-            api.get("/servicelines"),
-            api.get("/badges/modelos-disponiveis"),
+              api.get("/servicelines/select"),
+              api.get("/badges/modelos-disponiveis"),
             ]);
 
             if (serviceLinesRes.status === "fulfilled") {
@@ -520,10 +519,6 @@ function CriarArea() {
         novosErros.descricao = "A descrição é obrigatória.";
     }
 
-    if (!form.tipo.trim()) {
-        novosErros.tipo = "O tipo é obrigatório.";
-    }
-
     if (!form.id_serviceline) {
         novosErros.id_serviceline = "Seleciona uma Service Line.";
     }
@@ -567,17 +562,16 @@ function CriarArea() {
         setSucesso("");
 
         await api.post("/areas", {
-        nome_area: form.nome.trim(),
-        descricao_area: form.descricao.trim(),
-        tipo_area: form.tipo.trim(),
-        estado_area: normalizarEstadoArea(form.estado),
-        id_serviceline: Number(form.id_serviceline),
+          nome_area: form.nome.trim(),
+          descricao_area: form.descricao.trim(),
+          estado_area: normalizarEstadoArea(form.estado),
+          id_serviceline: Number(form.id_serviceline),
 
-        niveis: form.niveis.map((nivel) => ({
+          niveis: form.niveis.map((nivel) => ({
             nome_nivel: nivel.nome_nivel,
             estado_nivel: "ATIVO",
             id_badge_modelo: Number(nivel.id_badge_modelo),
-        })),
+          })),
         });
 
         setSucesso("Área, níveis e requisitos criados com sucesso.");
@@ -727,26 +721,6 @@ function CriarArea() {
             </div>
 
             <div style={twoColumns}>
-              <div>
-                <label style={labelStyle}>
-                  Tipo de Área <span style={{ color: "#dc2626" }}>*</span>
-                </label>
-
-                <input
-                  value={form.tipo}
-                  onChange={(e) => set("tipo")(e.target.value)}
-                  placeholder="Ex: Tecnologia"
-                  style={inputStyle("tipo")}
-                  onFocus={(e) => {
-                    if (!erros.tipo) e.target.style.borderColor = "#2563eb";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = erros.tipo ? "#fca5a5" : "#d1d5db";
-                  }}
-                />
-
-                {erros.tipo && <div style={fieldError}>{erros.tipo}</div>}
-              </div>
 
               <div>
                 <label style={labelStyle}>
@@ -937,7 +911,7 @@ const fieldError = {
 
 const twoColumns = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  gridTemplateColumns: "1fr",
   gap: 18,
   marginBottom: 20,
 };

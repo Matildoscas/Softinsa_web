@@ -52,12 +52,6 @@ function normalizarArea(a) {
         "ATIVO"
     ),
 
-    tipo:
-      a.tipo_area ||
-      a.TIPO_AREA ||
-      a.tipo ||
-      "Tecnologia",
-
     serviceLine:
       a.nome_serviceline ||
       a.NOME_SERVICELINE ||
@@ -79,6 +73,7 @@ function normalizarArea(a) {
 
     inscritos: Number(
       a.total_inscritos ||
+        a.numero_consultores ||
         a.inscritos ||
         a.consultores ||
         0
@@ -104,7 +99,6 @@ function AreaCard({ area, onEditar, onDesativar }) {
   const estadoNormalizado = normalizarEstadoArea(area.estado);
   const estadoLabel = estadoNormalizado === "ATIVO" ? "Ativa" : "Inativa";
   const estadoStyle = tagStyle(estadoLabel);
-  const tipoStyle = tagStyle(area.tipo);
 
   return (
     <div style={areaCard}>
@@ -128,19 +122,7 @@ function AreaCard({ area, onEditar, onDesativar }) {
               <div style={areaDescription}>{area.descricao}</div>
 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <span
-                  style={{
-                    background: tipoStyle.bg,
-                    color: tipoStyle.color,
-                    borderRadius: 6,
-                    padding: "3px 12px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  {area.tipo}
-                </span>
-
+                
                 <span
                   style={{
                     background: estadoStyle.bg,
@@ -298,7 +280,7 @@ function GestaoAreas() {
       area.nome.toLowerCase().includes(texto) ||
       area.descricao.toLowerCase().includes(texto) ||
       area.serviceLine.toLowerCase().includes(texto) ||
-      area.tipo.toLowerCase().includes(texto)
+      area.estado.toLowerCase().includes(texto)
     );
   });
 
@@ -386,30 +368,28 @@ function GestaoAreas() {
     }
 
     const dadosExcel = areasFiltradas.map((area) => ({
-        ID: area.id,
-        "Nome da Área": area.nome,
-        Descrição: area.descricao,
-        Tipo: area.tipo,
-        Estado:
+      ID: area.id,
+      "Nome da Área": area.nome,
+      Descrição: area.descricao,
+      Estado:
         normalizarEstadoArea(area.estado) === "ATIVO"
-            ? "Ativa"
-            : "Inativa",
-        "Service Line": area.serviceLine,
-        "N.º de Níveis": area.niveis,
-        "N.º de Inscritos": area.inscritos,
+          ? "Ativa"
+          : "Inativa",
+      "Service Line": area.serviceLine,
+      "N.º de Níveis": area.niveis,
+      "N.º de Inscritos": area.inscritos,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
 
     worksheet["!cols"] = [
-        { wch: 8 },
-        { wch: 32 },
-        { wch: 70 },
-        { wch: 18 },
-        { wch: 12 },
-        { wch: 32 },
-        { wch: 14 },
-        { wch: 16 },
+      { wch: 8 },
+      { wch: 32 },
+      { wch: 70 },
+      { wch: 12 },
+      { wch: 32 },
+      { wch: 14 },
+      { wch: 16 },
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -451,29 +431,27 @@ function GestaoAreas() {
     doc.text(`Total: ${areasFiltradas.length} áreas`, 14, 29);
 
     const linhas = areasFiltradas.map((area) => [
-        area.id,
-        area.nome,
-        area.serviceLine,
-        area.tipo,
-        normalizarEstadoArea(area.estado) === "ATIVO"
+      area.id,
+      area.nome,
+      area.serviceLine,
+      normalizarEstadoArea(area.estado) === "ATIVO"
         ? "Ativa"
         : "Inativa",
-        area.niveis,
-        area.inscritos,
-        area.descricao,
+      area.niveis,
+      area.inscritos,
+      area.descricao,
     ]);
 
     autoTable(doc, {
         startY: 36,
         head: [[
-        "ID",
-        "Nome",
-        "Service Line",
-        "Tipo",
-        "Estado",
-        "Níveis",
-        "Inscritos",
-        "Descrição",
+          "ID",
+          "Nome",
+          "Service Line",
+          "Estado",
+          "Níveis",
+          "Inscritos",
+          "Descrição",
         ]],
         body: linhas,
         styles: {
@@ -491,14 +469,13 @@ function GestaoAreas() {
         fillColor: [248, 250, 252],
         },
         columnStyles: {
-        0: { cellWidth: 12 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 38 },
-        3: { cellWidth: 24 },
-        4: { cellWidth: 20 },
-        5: { cellWidth: 16 },
-        6: { cellWidth: 20 },
-        7: { cellWidth: 115 },
+          0: { cellWidth: 12 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 42 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 16 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 130 },
         },
         margin: { top: 36, left: 14, right: 14 },
     });
@@ -674,7 +651,9 @@ function DesativarAreaModal({ area, loading, onClose, onConfirm }) {
             </div>
           </div>
 
-          <span style={modalUserRole}>{area.tipo || "Área"}</span>
+          <span style={modalUserRole}>
+            {normalizarEstadoArea(area.estado) === "ATIVO" ? "Ativa" : "Inativa"}
+          </span>
         </div>
 
         <div style={modalActions}>

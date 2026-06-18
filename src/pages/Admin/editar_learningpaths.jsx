@@ -171,7 +171,6 @@ function EditarLearningPath() {
   const [form, setForm] = useState({
     nome: "",
     descricao: "",
-    tipo: "",
     estado: "ATIVO",
     id_servicelines: [],
   });
@@ -195,25 +194,27 @@ function EditarLearningPath() {
 
       const [lpRes, slRes] = await Promise.all([
         api.get(`/learningpaths/${id}`),
-        api.get("/servicelines"),
+        api.get("/servicelines/select"),
       ]);
 
       const lp = lpRes.data?.learningpath || lpRes.data;
 
-      const serviceLinesAssociadas =
-        Array.isArray(lp.serviceLines)
-          ? lp.serviceLines
-          : Array.isArray(lp.servicelines)
-            ? lp.servicelines
-            : Array.isArray(lp.service_lines)
-              ? lp.service_lines
-              : [];
+      const serviceLinesAssociadas = Array.isArray(lp.serviceLines)
+        ? lp.serviceLines
+        : Array.isArray(lp.servicelines)
+          ? lp.servicelines
+          : Array.isArray(lp.service_lines)
+            ? lp.service_lines
+            : [];
 
       setForm({
         nome: lp.nome_learningpaths || lp.nome || "",
         descricao: lp.descricao_learningpaths || lp.descricao || "",
-        tipo: lp.tipo_learningpaths || lp.tipo || "",
-        estado: normalizarEstado(lp.estado_learningpaths || lp.estado),
+        estado: normalizarEstado(
+          lp.estado_learningpath ||
+            lp.estado_learningpaths ||
+            lp.estado
+        ),
         id_servicelines: serviceLinesAssociadas.map((sl) =>
           sl.id_serviceline || sl.id || sl.ID_SERVICELINE
         ),
@@ -221,16 +222,15 @@ function EditarLearningPath() {
 
       const slData = slRes.data;
 
-      const lista =
-        Array.isArray(slData)
-          ? slData
-          : Array.isArray(slData.servicelines)
-            ? slData.servicelines
-            : Array.isArray(slData.serviceLines)
-              ? slData.serviceLines
-              : Array.isArray(slData.data)
-                ? slData.data
-                : [];
+      const lista = Array.isArray(slData)
+        ? slData
+        : Array.isArray(slData.servicelines)
+          ? slData.servicelines
+          : Array.isArray(slData.serviceLines)
+            ? slData.serviceLines
+            : Array.isArray(slData.data)
+              ? slData.data
+              : [];
 
       setServiceLines(lista.map(normalizarServiceLine));
     } catch (err) {
@@ -273,11 +273,10 @@ function EditarLearningPath() {
       novosErros.descricao = "A descrição é obrigatória.";
     }
 
-    if (!form.tipo.trim()) {
-      novosErros.tipo = "O tipo é obrigatório.";
-    }
-
-    if (!Array.isArray(form.id_servicelines) || form.id_servicelines.length === 0) {
+    if (
+      !Array.isArray(form.id_servicelines) ||
+      form.id_servicelines.length === 0
+    ) {
       novosErros.id_servicelines = "Seleciona pelo menos uma Service Line.";
     }
 
@@ -297,9 +296,7 @@ function EditarLearningPath() {
       await api.put(`/learningpaths/${id}`, {
         nome_learningpaths: form.nome.trim(),
         descricao_learningpaths: form.descricao.trim(),
-        tipo_learningpaths: form.tipo.trim(),
-        estado_learningpaths: normalizarEstado(form.estado),
-        modalidade: form.estado === "ATIVO" ? "Online" : "Offline",
+        estado_learningpath: normalizarEstado(form.estado),
         id_servicelines: form.id_servicelines.map(Number),
       });
 
@@ -372,7 +369,7 @@ function EditarLearningPath() {
               <h5 style={pageTitle}>Editar Learning Path</h5>
 
               <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-                Atualiza os dados e as Service Lines associadas
+                Atualiza os dados e as Service Lines associadas.
               </div>
             </div>
           </div>
@@ -408,7 +405,7 @@ function EditarLearningPath() {
                 {erros.nome && <div style={fieldError}>{erros.nome}</div>}
               </div>
 
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 24 }}>
                 <label style={labelStyle}>
                   Descrição <span style={{ color: "#dc2626" }}>*</span>
                 </label>
@@ -451,31 +448,7 @@ function EditarLearningPath() {
               </div>
 
               <div style={{ marginBottom: 24 }}>
-                <label style={labelStyle}>
-                  Tipo de Learning Path{" "}
-                  <span style={{ color: "#dc2626" }}>*</span>
-                </label>
-
-                <input
-                  value={form.tipo}
-                  onChange={(e) => set("tipo")(e.target.value)}
-                  placeholder="Ex: Tecnologia"
-                  style={inputStyle("tipo")}
-                  onFocus={(e) => {
-                    if (!erros.tipo) e.target.style.borderColor = "#2563eb";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = erros.tipo
-                      ? "#fca5a5"
-                      : "#d1d5db";
-                  }}
-                />
-
-                {erros.tipo && <div style={fieldError}>{erros.tipo}</div>}
-              </div>
-
-              <div style={{ marginBottom: 24 }}>
-                <label style={labelStyle}>Status</label>
+                <label style={labelStyle}>Estado</label>
 
                 <div style={{ display: "flex", gap: 10 }}>
                   <button
@@ -493,7 +466,7 @@ function EditarLearningPath() {
                           : "1.5px solid #d1d5db",
                     }}
                   >
-                    Offline (Inativo)
+                    Inativo
                   </button>
 
                   <button
@@ -510,7 +483,7 @@ function EditarLearningPath() {
                           : "1.5px solid #d1d5db",
                     }}
                   >
-                    Online (Ativo)
+                    Ativo
                   </button>
                 </div>
               </div>
@@ -533,7 +506,8 @@ function EditarLearningPath() {
                 )}
 
                 <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                  As áreas associadas são determinadas automaticamente pelas Service Lines escolhidas.
+                  As áreas associadas são determinadas automaticamente pelas
+                  Service Lines escolhidas.
                 </div>
               </div>
 

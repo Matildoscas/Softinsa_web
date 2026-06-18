@@ -41,114 +41,6 @@ function normalizarServiceLine(sl) {
   };
 }
 
-function SelectDropdown({
-  options,
-  value,
-  onChange,
-  placeholder,
-  erro,
-  disabled = false,
-}) {
-  const [aberto, setAberto] = useState(false);
-
-  const selecionado = options.find((opt) => String(opt.id) === String(value));
-
-  function selecionar(opt) {
-    onChange(opt.id);
-    setAberto(false);
-  }
-
-  return (
-    <div style={{ position: "relative" }}>
-      <div
-        onClick={() => {
-          if (!disabled) setAberto((v) => !v);
-        }}
-        style={{
-          height: 42,
-          border: `1px solid ${
-            erro ? "#fca5a5" : aberto ? "#2563eb" : "#d1d5db"
-          }`,
-          borderRadius: 8,
-          padding: "0 36px 0 12px",
-          cursor: disabled ? "not-allowed" : "pointer",
-          background: disabled ? "#f9fafb" : "white",
-          display: "flex",
-          alignItems: "center",
-          fontSize: 14,
-          color: selecionado ? "#111827" : "#9ca3af",
-          position: "relative",
-          userSelect: "none",
-          opacity: disabled ? 0.65 : 1,
-        }}
-      >
-        {selecionado ? selecionado.nome : placeholder}
-
-        <span
-          style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "#6b7280",
-          }}
-        >
-          <BiChevronDown
-            size={18}
-            style={{
-              transform: aberto ? "rotate(180deg)" : "none",
-              transition: "0.2s",
-            }}
-          />
-        </span>
-      </div>
-
-      {aberto && !disabled && (
-        <div style={dropdownBox}>
-          <div style={{ maxHeight: 220, overflowY: "auto" }}>
-            {options.length > 0 ? (
-              options.map((opt) => (
-                <div
-                  key={opt.id}
-                  onClick={() => selecionar(opt)}
-                  style={{
-                    padding: "10px 14px",
-                    fontSize: 13,
-                    color: "#374151",
-                    cursor: "pointer",
-                    background:
-                      String(value) === String(opt.id)
-                        ? "#eff6ff"
-                        : "transparent",
-                    fontWeight:
-                      String(value) === String(opt.id) ? 600 : 400,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (String(value) !== String(opt.id)) {
-                      e.currentTarget.style.background = "#f0f9ff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (String(value) !== String(opt.id)) {
-                      e.currentTarget.style.background = "transparent";
-                    }
-                  }}
-                >
-                  {opt.nome}
-                </div>
-              ))
-            ) : (
-              <div style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af" }}>
-                Sem opções disponíveis.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function MultiSelectDropdown({
   options,
   values,
@@ -164,7 +56,6 @@ function MultiSelectDropdown({
 
   function toggleOption(id) {
     const idString = String(id);
-
     const jaExiste = values.map(String).includes(idString);
 
     if (jaExiste) {
@@ -279,7 +170,6 @@ function CriarLearningPath() {
   const [form, setForm] = useState({
     nome: "",
     descricao: "",
-    tipo: "",
     estado: "ATIVO",
     id_servicelines: [],
   });
@@ -295,52 +185,43 @@ function CriarLearningPath() {
     carregarDadosAuxiliares();
   }, []);
 
-    async function carregarDadosAuxiliares() {
+  async function carregarDadosAuxiliares() {
     try {
-        setIsLoadingDados(true);
-        setErroGeral("");
+      setIsLoadingDados(true);
+      setErroGeral("");
 
-        const slRes = await api.get("/servicelines");
+      const slRes = await api.get("/servicelines/select");
 
-        const data = slRes.data;
+      const data = slRes.data;
 
-        const lista =
-        Array.isArray(data)
-            ? data
-            : Array.isArray(data.servicelines)
-            ? data.servicelines
-            : Array.isArray(data.serviceLines)
-                ? data.serviceLines
-                : Array.isArray(data.data)
-                ? data.data
-                : [];
+      const lista = Array.isArray(data)
+        ? data
+        : Array.isArray(data.servicelines)
+          ? data.servicelines
+          : Array.isArray(data.serviceLines)
+            ? data.serviceLines
+            : Array.isArray(data.data)
+              ? data.data
+              : [];
 
-        setServiceLines(lista.map(normalizarServiceLine));
+      setServiceLines(lista.map(normalizarServiceLine));
     } catch (err) {
-        console.error("Erro ao carregar Service Lines:", err);
-        console.error("STATUS:", err.response?.status);
-        console.error("BODY:", err.response?.data);
+      console.error("Erro ao carregar Service Lines:", err);
+      console.error("STATUS:", err.response?.status);
+      console.error("BODY:", err.response?.data);
 
-        setErroGeral("Não foi possível carregar as Service Lines.");
-        setServiceLines([]);
+      setErroGeral("Não foi possível carregar as Service Lines.");
+      setServiceLines([]);
     } finally {
-        setIsLoadingDados(false);
+      setIsLoadingDados(false);
     }
-    }
+  }
 
   const set = (field) => (value) => {
-    setForm((prev) => {
-      const novo = {
-        ...prev,
-        [field]: value,
-      };
-
-      if (field === "id_serviceline") {
-        novo.id_areas = "";
-      }
-
-      return novo;
-    });
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
 
     setErros((prev) => ({
       ...prev,
@@ -362,12 +243,11 @@ function CriarLearningPath() {
       novosErros.descricao = "A descrição é obrigatória.";
     }
 
-    if (!form.tipo.trim()) {
-      novosErros.tipo = "O tipo é obrigatório.";
-    }
-
-    if (!Array.isArray(form.id_servicelines) || form.id_servicelines.length === 0) {
-        novosErros.id_servicelines = "Seleciona pelo menos uma Service Line.";
+    if (
+      !Array.isArray(form.id_servicelines) ||
+      form.id_servicelines.length === 0
+    ) {
+      novosErros.id_servicelines = "Seleciona pelo menos uma Service Line.";
     }
 
     setErros(novosErros);
@@ -386,9 +266,7 @@ function CriarLearningPath() {
       await api.post("/learningpaths", {
         nome_learningpaths: form.nome.trim(),
         descricao_learningpaths: form.descricao.trim(),
-        tipo_learningpaths: form.tipo.trim(),
-        estado_learningpaths: normalizarEstado(form.estado),
-        modalidade: form.estado === "ATIVO" ? "Online" : "Offline",
+        estado_learningpath: normalizarEstado(form.estado),
         id_servicelines: form.id_servicelines.map(Number),
       });
 
@@ -461,7 +339,7 @@ function CriarLearningPath() {
               <h5 style={pageTitle}>Criar Learning Path</h5>
 
               <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-                Preenche todos os campos obrigatórios.
+                Preenche os dados do Learning Path e associa Service Lines.
               </div>
             </div>
           </div>
@@ -497,7 +375,7 @@ function CriarLearningPath() {
                   {erros.nome && <div style={fieldError}>{erros.nome}</div>}
                 </div>
 
-                <div style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: 24 }}>
                   <label style={labelStyle}>
                     Descrição <span style={required}>*</span>
                   </label>
@@ -540,38 +418,12 @@ function CriarLearningPath() {
                 </div>
 
                 <div style={{ marginBottom: 24 }}>
-                  <label style={labelStyle}>
-                    Tipo de Learning Path <span style={required}>*</span>
-                  </label>
-
-                  <input
-                    value={form.tipo}
-                    onChange={(e) => set("tipo")(e.target.value)}
-                    placeholder="Ex: Tecnologia"
-                    style={inputStyle("tipo")}
-                    onFocus={(e) => {
-                      if (!erros.tipo) e.target.style.borderColor = "#2563eb";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = erros.tipo
-                        ? "#fca5a5"
-                        : "#d1d5db";
-                    }}
-                  />
-
-                  {erros.tipo && <div style={fieldError}>{erros.tipo}</div>}
-                </div>
-
-                <div style={{ marginBottom: 24 }}>
                   <label style={labelStyle}>Estado</label>
 
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <button
                       type="button"
-                      onClick={() => {
-                        set("modalidade")("Offline");
-                        set("estado")("INATIVO");
-                      }}
+                      onClick={() => set("estado")("INATIVO")}
                       style={{
                         ...statusButton,
                         background:
@@ -584,15 +436,12 @@ function CriarLearningPath() {
                             : "1.5px solid #d1d5db",
                       }}
                     >
-                      Offline (Inativo)
+                      Inativo
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => {
-                        set("modalidade")("Online");
-                        set("estado")("ATIVO");
-                      }}
+                      onClick={() => set("estado")("ATIVO")}
                       style={{
                         ...statusButton,
                         background:
@@ -604,31 +453,32 @@ function CriarLearningPath() {
                             : "1.5px solid #d1d5db",
                       }}
                     >
-                      Online (Ativo)
+                      Ativo
                     </button>
                   </div>
                 </div>
 
                 <div style={{ marginBottom: 8 }}>
-                    <label style={labelStyle}>
-                        Service Lines <span style={{ color: "#dc2626" }}>*</span>
-                    </label>
+                  <label style={labelStyle}>
+                    Service Lines <span style={{ color: "#dc2626" }}>*</span>
+                  </label>
 
-                    <MultiSelectDropdown
-                        options={serviceLines}
-                        values={form.id_servicelines}
-                        onChange={set("id_servicelines")}
-                        placeholder="Selecione uma ou mais Service Lines"
-                        erro={erros.id_servicelines}
-                    />
+                  <MultiSelectDropdown
+                    options={serviceLines}
+                    values={form.id_servicelines}
+                    onChange={set("id_servicelines")}
+                    placeholder="Selecione uma ou mais Service Lines"
+                    erro={erros.id_servicelines}
+                  />
 
-                    {erros.id_servicelines && (
-                        <div style={fieldError}>{erros.id_servicelines}</div>
-                    )}
+                  {erros.id_servicelines && (
+                    <div style={fieldError}>{erros.id_servicelines}</div>
+                  )}
 
-                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                        As áreas associadas serão determinadas automaticamente pelas Service Lines escolhidas.
-                    </div>
+                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+                    As áreas associadas serão determinadas automaticamente pelas
+                    Service Lines escolhidas.
+                  </div>
                 </div>
               </div>
 
@@ -713,13 +563,6 @@ const fieldError = {
   fontSize: 11,
   color: "#dc2626",
   marginTop: 4,
-};
-
-const twoColumns = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: 20,
-  marginBottom: 8,
 };
 
 const statusButton = {

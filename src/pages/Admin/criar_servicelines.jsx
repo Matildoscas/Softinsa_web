@@ -28,6 +28,11 @@ function normalizarArea(a) {
       a.nome ||
       a.designacao ||
       "Área sem nome",
+
+    estado:
+      a.estado_area ||
+      a.ESTADO_AREA ||
+      "ATIVO",
   };
 }
 
@@ -180,7 +185,7 @@ function CriarServiceLine() {
     try {
       setIsLoadingAreas(true);
 
-      const res = await api.get("/areas");
+      const res = await api.get("/areas/select");
 
       const data = res.data;
 
