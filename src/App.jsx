@@ -42,6 +42,7 @@ import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx';
 import TM_Dashboard from './pages/TalentManager/TM_DashBoard.jsx';
 import TM_CatalogoBadges from './pages/TalentManager/CatalogoBadgesTM.jsx';
 import SolicitacoesTM from './pages/TalentManager/SolicitacoesTM.jsx';
+import AvaliacaoTM from './pages/TalentManager/AvaliacaoTM.jsx';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -98,7 +99,8 @@ function App() {
         <Route path="/talent_manager" element={<TM_Dashboard />} />
         <Route path="/tm/CatalogoBadges" element={<TM_CatalogoBadges/>} />
         <Route path="/tm/Solicitacoes" element={<SolicitacoesTM />} />
-
+        <Route path="/tm/avaliacao/:id" element={<AvaliacaoTM />} />
+        
         {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
