@@ -7,7 +7,7 @@ import api from '../../services/api.js';
 // Importação dos componentes estruturais (Atualizado para incluir o novo SidebarTM)
 import Header from '../../components/Header.jsx';
 import RightSidebar from '../../components/RightSidebar.jsx';
-import LeftSidebarTM from '../../components/LeftBarTM.jsx';
+import LeftBarTM from '../../components/LeftBarTM.jsx';
 
 function DashboardTM() {
     const navigate = useNavigate();
@@ -96,7 +96,7 @@ function DashboardTM() {
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 
                 {/* 🔄 Sidebar Dinâmico com destaque de rota ativa adicionado aqui */}
-                <LeftSidebarTM />
+                <LeftBarTM />
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
                     
@@ -125,7 +125,8 @@ function DashboardTM() {
                             <h5 className="mb-0 fw-bold">Área: {areaFocada.nome}</h5>
                             <small className="text-muted">Tem {areaFocada.total} consultores</small>
                         </div>
-                        <Button variant="outline-secondary" size="sm" className="d-flex align-items-center gap-2 rounded-3 bg-white">
+                        <Button variant="outline-secondary" size="sm" className="d-flex align-items-center gap-2 rounded-3 bg-white" 
+                                onClick={() => navigate('/tm/catalogo')}>
                             <BiMenu /> Ver Todos
                         </Button>
                     </div>

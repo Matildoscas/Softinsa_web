@@ -35,12 +35,13 @@ import CriarLearningPath from "./pages/Admin/criar_learningpaths.jsx";
 import EditarLearningPath from "./pages/Admin/editar_learningpaths.jsx";
 import InformacoesAvisos from "./pages/Admin/avisos_informacoes.jsx";
 import PoliticasRGPD from "./pages/Admin/politicas_rgpd.jsx";
-import EdicaoRGPD from "./pages/Admin/editar_politicas_rgpd.jsx";
 import ConfigurarNotificacoes from "./pages/Admin/config_notificacao.jsx";
 import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx'; 
 
 // Talent Manager
 import TM_Dashboard from './pages/TalentManager/TM_DashBoard.jsx';
+import TM_CatalogoBadges from './pages/TalentManager/CatalogoBadgesTM.jsx';
+import SolicitacoesTM from './pages/TalentManager/SolicitacoesTM.jsx';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -88,7 +89,6 @@ function App() {
         <Route path="/admin/learning-paths/editar/:id" element={<EditarLearningPath />} />
         <Route path="/admin/avisos" element={<InformacoesAvisos />} />
         <Route path="/admin/rgpd" element={<PoliticasRGPD />} />
-        <Route path="/admin/rgpd/editar" element={<EdicaoRGPD />} />
         <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
 
         <Route path="/perfil" element={<PaginaPerfil />} />
@@ -96,6 +96,8 @@ function App() {
 
         {/* Rotas para o Talent Manager */}
         <Route path="/talent_manager" element={<TM_Dashboard />} />
+        <Route path="/tm/CatalogoBadges" element={<TM_CatalogoBadges/>} />
+        <Route path="/tm/Solicitacoes" element={<SolicitacoesTM />} />
 
         {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
         <Route path="*" element={<Navigate to="/login" />} />

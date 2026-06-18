@@ -72,36 +72,39 @@ function LeftSidebarTM() {
                 {/* LINKS DO MENU */}
                 <nav>
                     {/* Página Inicial */}
-                    <div style={itemStyle(isActive('/tm/dashboard'))} onClick={() => navigate('/tm/dashboard')}>
-                        <BiChevronRight size={16} style={{ opacity: isActive('/tm/dashboard') ? 1 : 0.5 }} />
+                    <div style={itemStyle(isActive('/talent_manager'))} onClick={() => navigate('/talent_manager')}>
+                        <BiChevronRight size={16} style={{ opacity: isActive('/talent_manager') ? 1 : 0.5 }} />
                         <BiLayout size={18} />
                         <span>Página Inicial</span>
                     </div>
 
                     {/* Menu Pai: Badges (Corrigido o bug do duplo atributo style) */}
-                    <div style={{ ...itemStyle(false), cursor: 'default' }}>
-                        <BiChevronRight size={16} style={{ opacity: 0.5 }} />
+                    <div 
+                        style={itemStyle(isActive('/tm/CatalogoBadges'))} 
+                        onClick={() => navigate('/tm/CatalogoBadges')}
+                    >
+                        <BiChevronRight size={16} style={{ opacity: isActive('/tm/CatalogoBadges') ? 1 : 0.5 }} />
                         <BiMedal size={18} />
                         <span>Badges</span>
                     </div>
 
                     {/* Submenus de Badges (Com recuo) */}
-                    <div style={subItemStyle(isActive('/tm/solicitacoes'))} onClick={() => navigate('/tm/solicitacoes')}>
+                    <div style={subItemStyle(isActive('/tm/Solicitacoes'))} onClick={() => navigate('/tm/Solicitacoes')}>
                         Solicitação de Badges
                     </div>
-                    <div style={subItemStyle(isActive('/tm/historico'))} onClick={() => navigate('/tm/historico')}>
+                    <div style={subItemStyle(isActive('/tm/HistoricoCandidaturas'))} onClick={() => navigate('/tm/HistoricoCandidaturas')}>
                         Histórico de Candidaturas
                     </div>
-                    <div style={subItemStyle(isActive('/tm/expiracao'))} onClick={() => navigate('/tm/expiracao')}>
+                    <div style={subItemStyle(isActive('/tm/ExpiracaoBadges'))} onClick={() => navigate('/tm/ExpiracaoBadges')}>
                         Badges em Expiração
                     </div>
-                    <div style={subItemStyle(isActive('/tm/relatorios'))} onClick={() => navigate('/tm/relatorios')}>
+                    <div style={subItemStyle(isActive('/tm/Relatorios'))} onClick={() => navigate('/tm/Relatorios')}>
                         Relatórios
                     </div>
 
                     {/* Consultores */}
-                    <div style={{ ...itemStyle(isActive('/tm/consultores')), marginTop: '8px' }} onClick={() => navigate('/tm/consultores')}>
-                        <BiChevronRight size={16} style={{ opacity: isActive('/tm/consultores') ? 1 : 0.5 }} />
+                    <div style={{ ...itemStyle(isActive('/tm/Consultores')), marginTop: '8px' }} onClick={() => navigate('/tm/Consultores')}>
+                        <BiChevronRight size={16} style={{ opacity: isActive('/tm/Consultores') ? 1 : 0.5 }} />
                         <BiGroup size={18} />
                         <span>Consultores</span>
                     </div>
