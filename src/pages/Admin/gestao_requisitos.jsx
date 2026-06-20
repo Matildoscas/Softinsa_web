@@ -36,11 +36,6 @@ function normalizarRequisito(r) {
       r.DESCRICAO_REQUISITO ||
       "",
 
-    tipo_requisito:
-      r.tipo_requisito ||
-      r.TIPO_REQUISITO ||
-      "",
-
     links: Array.isArray(r.links)
       ? r.links.map((l) => ({
           id_link: l.id_link || l.ID_LINK || "",
@@ -101,7 +96,40 @@ function RequisitoCard({ requisito, aberto, onToggle }) {
   );
 }
 
+function obterCodigoNivel(nomeNivel) {
+  const nome = String(nomeNivel || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+
+  const mapa = {
+    A: "A",
+    JUNIOR: "A",
+
+    B: "B",
+    INTERMEDIO: "B",
+
+    C: "C",
+    SENIOR: "C",
+
+    D: "D",
+    ESPECIALISTA: "D",
+
+    E: "E",
+    "LIDER DE CONHECIMENTO": "E",
+  };
+
+  return mapa[nome] || "";
+}
+
 function normalizarBadge(b) {
+  const nomeNivel =
+    b.nome_nivel ||
+    b.NOME_NIVEL ||
+    b.nivel ||
+    "";
+
   return {
     id:
       b.id_badge_modelo ||
@@ -121,12 +149,16 @@ function normalizarBadge(b) {
       b.descricao ||
       "Sem descrição.",
 
-    pontos: Number(b.pontos || b.PONTOS || 0),
+    pontos: Number(
+      b.pontos ||
+      b.PONTOS ||
+      0
+    ),
 
     numero_requisitos: Number(
       b.numero_requisitos ||
-        b.NUMERO_REQUISITOS ||
-        0
+      b.NUMERO_REQUISITOS ||
+      0
     ),
 
     id_nivel:
@@ -134,10 +166,12 @@ function normalizarBadge(b) {
       b.ID_NIVEL ||
       null,
 
+    nome_nivel: nomeNivel,
+
     codigo_nivel:
       b.codigo_nivel ||
       b.CODIGO_NIVEL ||
-      "",
+      obterCodigoNivel(nomeNivel),
 
     requisitos: Array.isArray(b.requisitos)
       ? b.requisitos
@@ -163,76 +197,132 @@ function GestaoRequisitos() {
   const [aGuardarBadge, setAGuardarBadge] = useState(false);
 
   function codigoNivelAtual() {
-    const nome = String(nivel?.nome_nivel || "").trim().toUpperCase();
+    return obterCodigoNivel(nivel?.nome_nivel);
+  }
 
-    if (nome === "A") return "A";
-    if (nome === "B") return "B";
-    if (nome === "C") return "C";
-    if (nome === "D") return "D";
-    if (nome === "E") return "E";
+    const codigoAtual = codigoNivelAtual();
 
-    return "";
-    }
+    const badgesDoNivel = badgesDisponiveis.filter(
+      (badgeDisponivel) => {
+        const mesmoNivel =
+          String(badgeDisponivel.codigo_nivel || "")
+            .trim()
+            .toUpperCase() === codigoAtual;
 
-    const badgesDoNivel = badgesDisponiveis.filter((b) => {
-    return String(b.codigo_nivel || "").toUpperCase() === codigoNivelAtual();
-    });
+        const naoEAtual =
+          String(badgeDisponivel.id) !==
+          String(badge?.id_badge_modelo);
+
+        return mesmoNivel && naoEAtual;
+      }
+    );
 
   useEffect(() => {
     carregarDados();
   }, [idNivel]);
 
-    async function carregarDados() {
+async function carregarDados() {
+  try {
+    setIsLoading(true);
+    setErro("");
+
+    const reqRes = await api.get(
+      `/niveis/${idNivel}/requisitos`
+    );
+
+    const dados = reqRes.data;
+
+    setArea(dados.area || null);
+    setNivel(dados.nivel || null);
+    setBadge(dados.badge || null);
+
+    const listaRequisitos = Array.isArray(dados.requisitos)
+      ? dados.requisitos.map(normalizarRequisito)
+      : [];
+
+    setRequisitos(listaRequisitos);
+
+    if (listaRequisitos.length > 0) {
+      setAbertos({
+        [listaRequisitos[0].id]: true,
+      });
+    } else {
+      setAbertos({});
+    }
+
     try {
-        setIsLoading(true);
-        setErro("");
+      const badgesRes = await api.get(
+        "/badges/modelos-disponiveis",
+        {
+          params: {
+            excluirId:
+              dados.badge?.id_badge_modelo || undefined,
+          },
+        }
+      );
 
-        const [reqRes, badgesRes] = await Promise.all([
-        api.get(`/niveis/${idNivel}/requisitos`),
-        api.get("/badges/modelos-disponiveis"),
-        ]);
+      const badgesData = badgesRes.data;
 
-        const dados = reqRes.data;
+      const listaBadges = Array.isArray(badgesData)
+        ? badgesData
+        : Array.isArray(badgesData?.badges)
+          ? badgesData.badges
+          : Array.isArray(badgesData?.data)
+            ? badgesData.data
+            : [];
 
-        setArea(dados.area || null);
-        setNivel(dados.nivel || null);
-        setBadge(dados.badge || null);
+      const normalizados = listaBadges.map(normalizarBadge);
 
-        const lista = Array.isArray(dados.requisitos)
-        ? dados.requisitos.map(normalizarRequisito)
-        : [];
+      /*
+       * Proteção adicional no frontend:
+       * remove o badge atual e eventuais duplicados exatos.
+       */
+      const unicos = new Map();
 
-        setRequisitos(lista);
-
-        if (lista.length > 0) {
-        setAbertos({ [lista[0].id]: true });
+      normalizados.forEach((badgeDisponivel) => {
+        if (
+          String(badgeDisponivel.id) ===
+          String(dados.badge?.id_badge_modelo)
+        ) {
+          return;
         }
 
-        const badgesData = badgesRes.data;
+        const chave = [
+          badgeDisponivel.codigo_nivel,
+          badgeDisponivel.nome.trim().toLowerCase(),
+          badgeDisponivel.descricao.trim().toLowerCase(),
+          badgeDisponivel.pontos,
+        ].join("|");
 
-        const listaBadges =
-        Array.isArray(badgesData)
-            ? badgesData
-            : Array.isArray(badgesData.badges)
-            ? badgesData.badges
-            : Array.isArray(badgesData.data)
-                ? badgesData.data
-                : [];
+        if (!unicos.has(chave)) {
+          unicos.set(chave, badgeDisponivel);
+        }
+      });
 
-        setBadgesDisponiveis(listaBadges.map(normalizarBadge));
-    } catch (err) {
-        console.error("Erro ao carregar requisitos:", err);
-        console.error("STATUS:", err.response?.status);
-        console.error("BODY:", err.response?.data);
+      setBadgesDisponiveis(
+        Array.from(unicos.values())
+      );
+    } catch (badgeErr) {
+      console.error(
+        "Erro ao carregar badges disponíveis:",
+        badgeErr
+      );
 
-        setErro(
-        err.response?.data?.error ||
-            "Não foi possível carregar os requisitos."
-        );
-    } finally {
-        setIsLoading(false);
+      setBadgesDisponiveis([]);
     }
-    }
+  } catch (err) {
+    console.error("Erro ao carregar requisitos:", err);
+    console.error("STATUS:", err.response?.status);
+    console.error("BODY:", err.response?.data);
+
+    setErro(
+      err.response?.data?.error ||
+        "Não foi possível carregar os requisitos."
+    );
+  } finally {
+    setIsLoading(false);
+  }
+}
 
     async function guardarAlteracaoBadge() {
     if (!badgeSelecionadoId) {
@@ -471,7 +561,7 @@ function AlterarBadgeModal({
             <div style={badgePreviewMeta}>
               Pontos: <strong>{badgeSelecionado.pontos}</strong> ·
               Requisitos:{" "}
-              <strong>{badgeSelecionado.requisitos.length}</strong>
+              <strong>{badgeSelecionado.numero_requisitos}</strong>
             </div>
           </div>
         )}
