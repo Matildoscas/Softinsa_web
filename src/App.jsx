@@ -40,6 +40,8 @@ import GestaoBadges from "./pages/Admin/gestao_badges.jsx";
 import CriarBadge from "./pages/Admin/criar_badges.jsx";
 import EditarBadge from "./pages/Admin/editar_badges.jsx";
 
+import DashboardSll from "./pages/ServiceLineLeader/dashboard_sll.jsx";
+
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
   return (
@@ -90,6 +92,14 @@ function App() {
         <Route path="/admin/badges" element={<GestaoBadges />} />
         <Route path="/admin/badges/novo" element={<CriarBadge />} />
         <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
+
+        <Route path="/sll" element={<DashboardSll />} />
+        {/*<Route path="/sll/badges" element={<CatalogoBadgesSll />} />
+        <Route path="/sll/solicitacoes" element={<SolicitacoesSll />} />
+        <Route path="/sll/ranking" element={<RankingBadgesSll />} />
+        <Route path="/sll/certificados" element={<CertificadosSll />} />
+        <Route path="/sll/relatorios" element={<RelatoriosSll />} />
+        <Route path="/sll/consultores" element={<ConsultoresSll />} />*/}
 
       </Routes>
     </Router>

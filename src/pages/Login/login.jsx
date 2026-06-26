@@ -50,12 +50,38 @@ function LoginPage() {
 
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
-        const tipo = String(utilizadorSeguro.tipo_utilizador).toLowerCase();
+        const tipo = String(
+          utilizadorSeguro.tipo_utilizador || ""
+        )
+          .trim()
+          .toLowerCase();
 
-        if (tipo.includes("admin") || tipo.includes("administrador")) {
-          navigate("/admin");
+        console.log("TIPO DE UTILIZADOR DETETADO:", tipo);
+
+        if (
+          tipo.includes("administrador") ||
+          tipo === "admin"
+        ) {
+          navigate("/admin", { replace: true });
+        } else if (
+          tipo.includes("service line leader") ||
+          tipo === "sll" ||
+          tipo === "service line"
+        ) {
+          navigate("/sll", { replace: true });
+        } else if (
+          tipo.includes("talent manager") ||
+          tipo === "tm"
+        ) {
+          navigate("/tm", { replace: true });
+        } else if (
+          tipo.includes("consultor")
+        ) {
+          navigate("/pag_consultor", { replace: true });
         } else {
-          navigate("/pag_consultor");
+          setError(
+            `O tipo de utilizador "${utilizadorSeguro.tipo_utilizador}" não possui uma página associada.`
+          );
         }
       }
     } catch (err) {
