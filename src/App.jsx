@@ -41,6 +41,13 @@ import CriarBadge from "./pages/Admin/criar_badges.jsx";
 import EditarBadge from "./pages/Admin/editar_badges.jsx";
 
 import DashboardSll from "./pages/ServiceLineLeader/dashboard_sll.jsx";
+import CatalogoBadgesSll from "./pages/ServiceLineLeader/catalogo_badges_sll.jsx";
+import InformacaoBadgeSll from "./pages/ServiceLineLeader/informacao_badge_sll.jsx";
+import SolicitacoesBadgesSll from "./pages/ServiceLineLeader/solicitacoes_badges_sll.jsx";
+import DetalheSolicitacaoSll from "./pages/ServiceLineLeader/detalhe_solicitacao_sll.jsx";
+import RankingBadgesSll from "./pages/ServiceLineLeader/ranking_badges_sll.jsx";
+import HistoricoCandidaturasSll from "./pages/ServiceLineLeader/historico_candidaturas_sll.jsx";
+import GerarCertificadoSll from "./pages/ServiceLineLeader/gerar_certificado_sll.jsx";
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -94,11 +101,14 @@ function App() {
         <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
 
         <Route path="/sll" element={<DashboardSll />} />
-        {/*<Route path="/sll/badges" element={<CatalogoBadgesSll />} />
-        <Route path="/sll/solicitacoes" element={<SolicitacoesSll />} />
+        <Route path="/sll/badges" element={<CatalogoBadgesSll />} />
+        <Route path="/sll/badges/:id" element={<InformacaoBadgeSll />}/>
+        <Route path="/sll/solicitacoes" element={<SolicitacoesBadgesSll />} />
+        <Route path="/sll/solicitacoes/:idCandidatura" element={<DetalheSolicitacaoSll />}/>
         <Route path="/sll/ranking" element={<RankingBadgesSll />} />
-        <Route path="/sll/certificados" element={<CertificadosSll />} />
-        <Route path="/sll/relatorios" element={<RelatoriosSll />} />
+        <Route path="/sll/historico-candidaturas" element={<HistoricoCandidaturasSll />}/>
+        <Route path="/sll/certificados" element={<GerarCertificadoSll />} />
+        {/*<Route path="/sll/relatorios" element={<RelatoriosSll />} />
         <Route path="/sll/consultores" element={<ConsultoresSll />} />*/}
 
       </Routes>
