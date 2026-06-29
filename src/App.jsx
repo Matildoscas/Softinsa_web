@@ -48,6 +48,12 @@ import DetalheSolicitacaoSll from "./pages/ServiceLineLeader/detalhe_solicitacao
 import RankingBadgesSll from "./pages/ServiceLineLeader/ranking_badges_sll.jsx";
 import HistoricoCandidaturasSll from "./pages/ServiceLineLeader/historico_candidaturas_sll.jsx";
 import GerarCertificadoSll from "./pages/ServiceLineLeader/gerar_certificado_sll.jsx";
+import GerarRelatorioSll from "./pages/ServiceLineLeader/gerar_relatorio.jsx";
+import ListaConsultoresSll from "./pages/ServiceLineLeader/lista_consultores_sll.jsx";
+import InformacaoConsultorSll from "./pages/ServiceLineLeader/informacao_consultor_sll.jsx";
+import DefinicoesSllPage from "./pages/ServiceLineLeader/definicoes_sll.jsx";
+import NotificacoesSllPage from "./pages/ServiceLineLeader/notificacoes_sll.jsx";
+
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -108,8 +114,11 @@ function App() {
         <Route path="/sll/ranking" element={<RankingBadgesSll />} />
         <Route path="/sll/historico-candidaturas" element={<HistoricoCandidaturasSll />}/>
         <Route path="/sll/certificados" element={<GerarCertificadoSll />} />
-        {/*<Route path="/sll/relatorios" element={<RelatoriosSll />} />
-        <Route path="/sll/consultores" element={<ConsultoresSll />} />*/}
+        <Route path="/sll/relatorios" element={<GerarRelatorioSll />} />
+        <Route path="/sll/consultores" element={<ListaConsultoresSll />}/>
+        <Route path="/sll/consultores/:idConsultor" element={<InformacaoConsultorSll />}/>
+        <Route path="/sll/definicoes" element={<DefinicoesSllPage />}/>
+        <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
 
       </Routes>
     </Router>

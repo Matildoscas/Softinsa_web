@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 import {
   BiUserCircle,
@@ -40,6 +43,7 @@ function obterUtilizadorGuardado() {
 
 function PaginaPrincipalSll() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [activeTab, setActiveTab] =
     useState("Total Consultores");
@@ -329,17 +333,30 @@ function PaginaPrincipalSll() {
                   </div>
 
                   {consultores.length > 0 ? (
-                    consultores.map((consultor) => (
-                      <ConsultorCard
-                        key={consultor.id_utilizador}
-                        consultor={consultor}
-                        onVerPerfil={() =>
-                          navigate(
-                            `/sll/consultores/${consultor.id_utilizador}`
-                          )
-                        }
-                      />
-                    ))
+                    consultores.map((consultor, index) => {
+                      const idConsultor =
+                        consultor.id_utilizador ||
+                        consultor.ID_UTILIZADOR ||
+                        consultor.id;
+
+                      return (
+                        <ConsultorCard
+                          key={idConsultor || index}
+                          consultor={consultor}
+                          onVerPerfil={() =>
+                            navigate(
+                              `/sll/consultores/${consultor.id_utilizador}`,
+                              {
+                                state: {
+                                  voltarPara: location.pathname,
+                                  textoVoltar: "Voltar ao dashboard",
+                                },
+                              }
+                            )
+                          }
+                        />
+                      );
+                    })
                   ) : (
                     <div style={emptyBox}>
                       Ainda não existem consultores
