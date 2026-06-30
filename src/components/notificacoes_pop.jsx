@@ -52,6 +52,15 @@ function obterRotaNotificacoes(user) {
 
   if (
     tipo.includes(
+      "talent manager"
+    ) ||
+    tipo === "tm"
+  ) {
+    return "/tm/notificacoes";
+  }
+
+  if (
+    tipo.includes(
       "service line leader"
     ) ||
     tipo === "sll"

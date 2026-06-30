@@ -54,6 +54,9 @@ import InformacaoConsultorSll from "./pages/ServiceLineLeader/informacao_consult
 import DefinicoesSllPage from "./pages/ServiceLineLeader/definicoes_sll.jsx";
 import NotificacoesSllPage from "./pages/ServiceLineLeader/notificacoes_sll.jsx";
 
+import DashboardTm from "./pages/TalentManager/dashboard_tm.jsx";
+import CatalogoBadgesTm from "./pages/TalentManager/catalogo_badges_tm.jsx";
+
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -119,6 +122,10 @@ function App() {
         <Route path="/sll/consultores/:idConsultor" element={<InformacaoConsultorSll />}/>
         <Route path="/sll/definicoes" element={<DefinicoesSllPage />}/>
         <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
+
+        <Route path="/tm" element={<DashboardTm />} />
+        <Route path="/tm/badges" element={<CatalogoBadgesTm />}/>
+        {/*<Route path="/tm/badges/:idBadge" element={<InformacaoBadgeTm />}/>*/}
 
       </Routes>
     </Router>

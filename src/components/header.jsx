@@ -54,6 +54,12 @@ function obterRotasUtilizador(user) {
     .trim()
     .toLowerCase();
 
+  const isTm =
+  tipo.includes(
+    "talent manager"
+  ) ||
+  tipo === "tm";
+
   const isSll =
     tipo.includes(
       "service line leader"
@@ -64,6 +70,17 @@ function obterRotasUtilizador(user) {
     tipo.includes(
       "administrador"
     );
+
+    if (isTm) {
+    return {
+      inicio: "/tm",
+      perfil: "/tm/definicoes",
+      definicoes:
+        "/tm/definicoes",
+      notificacoes:
+        "/tm/notificacoes",
+    };
+  }
 
   if (isSll) {
     return {
