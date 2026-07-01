@@ -1422,16 +1422,19 @@ const catalogoInfo = {
 };
 
 const listaBadges = {
+  width: "100%",
   display: "flex",
   flexDirection: "column",
+  alignItems: "stretch",
   gap: 22,
-  maxWidth: 900,
-  margin: "0 auto",
+  margin: 0,
 };
 
 const badgeCard = {
+  width: "100%",
+  boxSizing: "border-box",
   borderRadius: 14,
-  padding: "12px 24px",
+  padding: "16px 24px",
   boxShadow:
     "0 3px 8px rgba(15,23,42,0.13)",
 };
@@ -1492,10 +1495,10 @@ const badgeNome = {
 };
 
 const badgeDescricao = {
+  width: "100%",
   fontSize: 13,
   color: "#64748b",
   lineHeight: 1.5,
-  maxWidth: 620,
 };
 
 const areasTexto = {

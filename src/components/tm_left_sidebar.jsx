@@ -1,5 +1,12 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  NavLink,
+  useLocation,
+} from "react-router-dom";
 
 import {
   BiGrid,
@@ -18,10 +25,26 @@ function TmLeftSidebar() {
     setBadgesAberto,
   ] = useState(true);
 
+  const location = useLocation();
+
   const [
     consultoresAberto,
     setConsultoresAberto,
-  ] = useState(false);
+  ] = useState(
+    location.pathname.startsWith(
+      "/tm/consultores"
+    )
+  );
+
+  useEffect(() => {
+    if (
+      location.pathname.startsWith(
+        "/tm/consultores"
+      )
+    ) {
+      setConsultoresAberto(true);
+    }
+  }, [location.pathname]);
 
   return (
     <aside style={container}>

@@ -56,6 +56,16 @@ import NotificacoesSllPage from "./pages/ServiceLineLeader/notificacoes_sll.jsx"
 
 import DashboardTm from "./pages/TalentManager/dashboard_tm.jsx";
 import CatalogoBadgesTm from "./pages/TalentManager/catalogo_badges_tm.jsx";
+import InformacaoBadgeTm from "./pages/TalentManager/informacao_badge_tm.jsx";
+import SolicitacoesBadgesTm from "./pages/TalentManager/solicitacoes_badges_tm.jsx";
+import AvaliacaoBadgeTm from "./pages/TalentManager/avaliacao_badge_tm.jsx";
+import InformacaoConsultorTm from "./pages/TalentManager/informacao_consultor_tm.jsx";
+import HistoricoCandidaturasTm from "./pages/TalentManager/historico_candidaturas_tm.jsx";
+import DetalheHistoricoTm from "./pages/TalentManager/detalhe_historico_tm.jsx";
+import BadgesExpiracaoTm from "./pages/TalentManager/badges_expiracao_tm.jsx";
+import DetalheExpiracaoBadgeTm from "./pages/TalentManager/detalhe_expiracao_badge_tm.jsx";
+import GerarRelatorioTm from "./pages/TalentManager/gerar_relatorio_tm.jsx";
+import ListaConsultoresTm from "./pages/TalentManager/lista_consultores_tm.jsx";
 
 
 function App() {
@@ -125,7 +135,16 @@ function App() {
 
         <Route path="/tm" element={<DashboardTm />} />
         <Route path="/tm/badges" element={<CatalogoBadgesTm />}/>
-        {/*<Route path="/tm/badges/:idBadge" element={<InformacaoBadgeTm />}/>*/}
+        <Route path="/tm/badges/:idBadge" element={<InformacaoBadgeTm />}/>
+        <Route path="/tm/solicitacoes" element={<SolicitacoesBadgesTm />}/>
+        <Route path="/tm/solicitacoes/:idCandidatura" element={<AvaliacaoBadgeTm />}/>
+        <Route path="/tm/consultores/:idConsultor" element={<InformacaoConsultorTm />}/>
+        <Route path="/tm/historico" element={<HistoricoCandidaturasTm />}/>
+        <Route path="/tm/historico/:idHistorico" element={<DetalheHistoricoTm />}/>
+        <Route path="/tm/expiracao" element={<BadgesExpiracaoTm />}/>
+        <Route path="/tm/expiracao/:idBadgeAtribuido" element={<DetalheExpiracaoBadgeTm />}/>
+        <Route path="/tm/relatorios" element={<GerarRelatorioTm />}/>
+        <Route path="/tm/consultores" element={<ListaConsultoresTm />}/>
 
       </Routes>
     </Router>
