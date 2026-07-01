@@ -27,7 +27,6 @@ function CriarConta() {
     id_areas: "",
     id_serviceline: "",
     estado_conta: "ATIVO",
-    notas: "",
   });
 
   const [areas, setAreas] = useState([]);
@@ -45,11 +44,6 @@ function CriarConta() {
   async function carregarDadosAuxiliares() {
     try {
         setIsLoadingDados(true);
-
-        /*const [areasRes, serviceLinesRes] = await Promise.allSettled([
-        api.get("/areas"),
-        api.get("/servicelines"),
-        ]);*/
 
         const [areasRes, serviceLinesRes] = await Promise.allSettled([
             api.get("/areas"),
@@ -178,7 +172,6 @@ function CriarConta() {
         id_serviceline: form.id_serviceline
           ? Number(form.id_serviceline)
           : null,
-        notas: form.notas.trim() || null,
       });
 
       setSucesso("Conta criada com sucesso.");
@@ -397,26 +390,6 @@ function CriarConta() {
                 </div>
               )}
             </div>
-
-            <Divider />
-
-            <div style={{ marginBottom: 28 }}>
-              <label style={fieldLabel}>Observações / Notas Internas</label>
-
-              <textarea
-                value={form.notas}
-                onChange={(e) => set("notas")(e.target.value)}
-                placeholder="Adicione notas sobre o utilizador..."
-                rows={5}
-                style={textareaStyle}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "#2563eb";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "#d1d5db";
-                }}
-              />
-            </div>
           </div>
 
           <div style={actionsGrid}>
@@ -598,21 +571,6 @@ const dividerStyle = {
   height: 1,
   background: "#f3f4f6",
   marginBottom: 24,
-};
-
-const textareaStyle = {
-  width: "100%",
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  padding: 14,
-  fontSize: 14,
-  color: "#111827",
-  resize: "vertical",
-  outline: "none",
-  boxSizing: "border-box",
-  fontFamily: "inherit",
-  lineHeight: 1.6,
-  marginTop: 8,
 };
 
 const actionsGrid = {

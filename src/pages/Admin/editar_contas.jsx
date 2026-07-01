@@ -87,11 +87,6 @@ function normalizarUtilizador(u) {
         u.TOTAL_PONTOS ||
         0
     ),
-
-    notas:
-      u.notas ||
-      u.NOTAS ||
-      "",
   };
 }
 
@@ -315,8 +310,6 @@ function EditarConta() {
         email: form.email,
         contacto: form.telefone,
         estado_conta: form.status === "Ativo" ? "ATIVO" : "INATIVA",
-        //tipo_utilizador: form.funcao,
-        notas: form.notas,
     });
 
       setSucesso("Conta atualizada com sucesso.");
@@ -497,24 +490,6 @@ function EditarConta() {
                   <StatBox label="Pontos" value={form.total_pontos} />
                 </div>
 
-                <div style={{ marginBottom: 28 }}>
-                  <label style={fieldLabel}>Observações / Notas Internas</label>
-
-                  <textarea
-                    value={form.notas || ""}
-                    onChange={(e) => set("notas")(e.target.value)}
-                    placeholder="Adicione notas sobre o utilizador..."
-                    rows={4}
-                    style={textareaStyle}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#2563eb";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                    }}
-                  />
-                </div>
-
                 <div style={actionsGrid}>
                   <button
                     onClick={handleGuardar}
@@ -682,20 +657,6 @@ const inputStyle = {
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
-};
-
-const textareaStyle = {
-  width: "100%",
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  padding: 12,
-  fontSize: 14,
-  color: "#111827",
-  resize: "vertical",
-  outline: "none",
-  boxSizing: "border-box",
-  fontFamily: "inherit",
-  marginTop: 6,
 };
 
 const formGrid = {
