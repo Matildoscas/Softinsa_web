@@ -4,6 +4,9 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api"; // Importa a instância do Axios configurada anteriormente
 import ImagemLogin from "../../assets/imagem_login.png";
+import {
+  definirUtilizadorAnalytics,
+} from "../../services/firebaseAnalytics";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,80 +19,195 @@ function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    // Validação básica igual ao Flutter [cite: 9]
-    if (!email || !password) {
-      setError("Preencha o email e a password!");
+    const emailNormalizado = email
+      .trim()
+      .replaceAll(" ", "")
+      .toLowerCase();
+
+    if (
+      !emailNormalizado ||
+      !password
+    ) {
+      setError(
+        "Preencha o email e a password!",
+      );
+
       return;
     }
 
     try {
-      // Chamada à API (Porta 3000 /auth/login) 
-      const response = await api.post("/auth/login", { email, password });
+      const response = await api.post(
+        "/auth/login",
+        {
+          email: emailNormalizado,
+          password,
+        },
+      );
 
-      console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
+      console.log(
+        "DADOS RECEBIDOS NO LOGIN:",
+        response.data,
+      );
 
       const data = response.data;
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
+      if (
+        !data?.token ||
+        !data?.user
+      ) {
+        setError(
+          "O servidor não devolveu os dados do utilizador.",
+        );
 
-        const utilizadorSeguro = {
-          id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
-          email: data.user?.email || data.user?.EMAIL,
-          nome: data.user?.nome_completo || data.user?.NOME_COMPLETO || data.user?.nome,
-          nome_completo: data.user?.nome_completo || data.user?.NOME_COMPLETO,
-          contacto: data.user?.contacto || data.user?.CONTACTO || "",
-          estado_conta: data.user?.estado_conta || data.user?.ESTADO_CONTA,
-          tipo_utilizador:
-            data.user?.tipo_utilizador ||
-            data.user?.TIPO_UTILIZADOR ||
-            data.user?.cargo ||
-            data.user?.CARGO ||
-            "",
-        };
-
-        localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
-
-        const tipo = String(
-          utilizadorSeguro.tipo_utilizador || ""
-        )
-          .trim()
-          .toLowerCase();
-
-        console.log("TIPO DE UTILIZADOR DETETADO:", tipo);
-
-        if (
-          tipo.includes("administrador") ||
-          tipo === "admin"
-        ) {
-          navigate("/admin", { replace: true });
-        } else if (
-          tipo.includes("service line leader") ||
-          tipo === "sll" ||
-          tipo === "service line"
-        ) {
-          navigate("/sll", { replace: true });
-        } else if (
-          tipo.includes("talent manager") ||
-          tipo === "tm"
-        ) {
-          navigate("/tm", { replace: true });
-        } else if (
-          tipo.includes("consultor")
-        ) {
-          navigate("/pag_consultor", { replace: true });
-        } else {
-          setError(
-            `O tipo de utilizador "${utilizadorSeguro.tipo_utilizador}" não possui uma página associada.`
-          );
-        }
+        return;
       }
+
+      const utilizadorSeguro = {
+        id_utilizador:
+          data.user.id_utilizador ??
+          data.user.ID_UTILIZADOR,
+
+        email:
+          data.user.email ??
+          data.user.EMAIL,
+
+        nome:
+          data.user.nome_completo ??
+          data.user.NOME_COMPLETO ??
+          data.user.nome ??
+          "",
+
+        nome_completo:
+          data.user.nome_completo ??
+          data.user.NOME_COMPLETO ??
+          "",
+
+        contacto:
+          data.user.contacto ??
+          data.user.CONTACTO ??
+          "",
+
+        estado_conta:
+          data.user.estado_conta ??
+          data.user.ESTADO_CONTA,
+
+        tipo_utilizador:
+          data.user.tipo_utilizador ??
+          data.user.TIPO_UTILIZADOR ??
+          data.user.cargo ??
+          data.user.CARGO ??
+          "",
+      };
+
+      localStorage.setItem(
+        "token",
+        data.token,
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(
+          utilizadorSeguro,
+        ),
+      );
+
+      // Só agora, depois do login correto,
+      // o Analytics é iniciado.
+      await definirUtilizadorAnalytics(
+        utilizadorSeguro.id_utilizador,
+      );
+
+      const tipo = String(
+        utilizadorSeguro.tipo_utilizador ??
+        "",
+      )
+        .trim()
+        .toLowerCase();
+
+      console.log(
+        "TIPO DE UTILIZADOR DETETADO:",
+        tipo,
+      );
+
+      if (
+        tipo.includes("administrador") ||
+        tipo === "admin"
+      ) {
+        navigate(
+          "/admin",
+          {
+            replace: true,
+          },
+        );
+
+        return;
+      }
+
+      if (
+        tipo.includes(
+          "service line leader",
+        ) ||
+        tipo === "sll" ||
+        tipo === "service line"
+      ) {
+        navigate(
+          "/sll",
+          {
+            replace: true,
+          },
+        );
+
+        return;
+      }
+
+      if (
+        tipo.includes("talent manager") ||
+        tipo === "tm"
+      ) {
+        navigate(
+          "/tm",
+          {
+            replace: true,
+          },
+        );
+
+        return;
+      }
+
+      if (
+        tipo.includes("consultor")
+      ) {
+        navigate(
+          "/pag_consultor",
+          {
+            replace: true,
+          },
+        );
+
+        return;
+      }
+
+      setError(
+        `O tipo de utilizador "${utilizadorSeguro.tipo_utilizador}" não possui uma página associada.`,
+      );
     } catch (err) {
-      // Tratamento de erros vindo do backend [cite: 16, 104]
-      if (err.response && err.response.status === 403) {
-        setError("Confirme o seu email antes de iniciar sessão.");
+      console.error(
+        "Erro no login:",
+        err,
+      );
+
+      if (
+        err.response?.status === 403
+      ) {
+        setError(
+          "Confirme o seu email antes de iniciar sessão.",
+        );
       } else {
-        setError(err.response?.data?.error || "Email ou password incorretos!");
+        setError(
+          err.response?.data?.error ??
+          err.response?.data?.message ??
+          "Email ou password incorretos!",
+        );
       }
     }
   };

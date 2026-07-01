@@ -17,6 +17,7 @@ import {
   BiUser,
   BiUserCircle,
   BiChevronRight,
+  BiCertification,
 } from "react-icons/bi";
 
 function TmLeftSidebar() {
@@ -99,6 +100,13 @@ function TmLeftSidebar() {
         <SubLink
           to="/tm/relatorios"
           label="Relatórios"
+        />
+        <SubLink
+          to="/tm/certificados"
+          label="Certificados"
+          icon={
+            <BiCertification size={18} />
+          }
         />
       </MenuGroup>
 

@@ -23,6 +23,10 @@ import NotificationPopover from "./notificacoes_pop";
 
 import logoImg from "../assets/logo.png";
 
+import {
+  limparUtilizadorAnalytics,
+} from "../services/firebaseAnalytics";
+
 function obterUtilizadorGuardado() {
   const storedUser =
     localStorage.getItem("user");
@@ -55,15 +59,16 @@ function obterRotasUtilizador(user) {
     .toLowerCase();
 
   const isTm =
-  tipo.includes(
-    "talent manager"
-  ) ||
-  tipo === "tm";
+    tipo.includes("talent manager") ||
+    tipo.includes("talentmanager") ||
+    tipo.includes("talent_manager") ||
+    tipo === "tm";
 
   const isSll =
-    tipo.includes(
-      "service line leader"
-    ) || tipo === "sll";
+    tipo.includes("service line leader") ||
+    tipo.includes("servicelineleader") ||
+    tipo.includes("service_line_leader") ||
+    tipo === "sll";
 
   const isAdmin =
     tipo.includes("admin") ||
@@ -72,15 +77,15 @@ function obterRotasUtilizador(user) {
     );
 
     if (isTm) {
-    return {
-      inicio: "/tm",
-      perfil: "/tm/definicoes",
-      definicoes:
-        "/tm/definicoes",
-      notificacoes:
-        "/tm/notificacoes",
-    };
-  }
+      return {
+        inicio: "/tm",
+        perfil: "/tm/perfil",
+        definicoes:
+          "/tm/definicoes",
+        notificacoes:
+          "/tm/notificacoes",
+      };
+    }
 
   if (isSll) {
     return {
@@ -122,19 +127,21 @@ function Header() {
   const rotas =
     obterRotasUtilizador(user);
 
-  function handleLogout() {
-    localStorage.removeItem(
-      "token"
-    );
+  const handleLogout = async () => {
+    await limparUtilizadorAnalytics();
 
-    localStorage.removeItem(
-      "user"
-    );
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("jwt");
+    localStorage.removeItem("user");
 
-    navigate("/login", {
-      replace: true,
-    });
-  }
+    navigate(
+      "/login",
+      {
+        replace: true,
+      },
+    );
+  };
 
   return (
     <Navbar
@@ -185,8 +192,12 @@ function Header() {
           placement="bottom-end"
           rootClose
           overlay={
-            <NotificationPopover />
-          }
+          <NotificationPopover
+            rotaNotificacoes={
+              rotas.notificacoes
+            }
+          />
+        }
         >
           <button
             type="button"

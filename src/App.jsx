@@ -66,6 +66,10 @@ import BadgesExpiracaoTm from "./pages/TalentManager/badges_expiracao_tm.jsx";
 import DetalheExpiracaoBadgeTm from "./pages/TalentManager/detalhe_expiracao_badge_tm.jsx";
 import GerarRelatorioTm from "./pages/TalentManager/gerar_relatorio_tm.jsx";
 import ListaConsultoresTm from "./pages/TalentManager/lista_consultores_tm.jsx";
+import NotificacoesTm from "./pages/TalentManager/notificacoes_tm.jsx";
+import DefinicoesTm from "./pages/TalentManager/definicoes_tm.jsx";
+import PerfilTm from "./pages/TalentManager/perfil_tm.jsx";
+import GerarCertificadoTm from "./pages/TalentManager/gerar_certificado_tm.jsx";
 
 
 function App() {
@@ -145,6 +149,10 @@ function App() {
         <Route path="/tm/expiracao/:idBadgeAtribuido" element={<DetalheExpiracaoBadgeTm />}/>
         <Route path="/tm/relatorios" element={<GerarRelatorioTm />}/>
         <Route path="/tm/consultores" element={<ListaConsultoresTm />}/>
+        <Route path="/tm/notificacoes" element={<NotificacoesTm />}/>
+        <Route path="/tm/definicoes" element={<DefinicoesTm />}/>
+        <Route path="/tm/perfil" element={<PerfilTm />}/>
+        <Route path="/tm/certificados" element={<GerarCertificadoTm />}/>
 
       </Routes>
     </Router>

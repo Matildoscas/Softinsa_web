@@ -4,8 +4,8 @@ import React, {
 } from "react";
 
 import {
-  Popover,
   ListGroup,
+  Popover,
   Spinner,
 } from "react-bootstrap";
 
@@ -17,72 +17,15 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import api from "../services/api";
-
-function obterUtilizadorGuardado() {
-  const storedUser =
-    localStorage.getItem("user");
-
-  if (!storedUser) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUser);
-  } catch (err) {
-    console.error(
-      "Erro ao ler utilizador:",
-      err
-    );
-
-    return null;
-  }
-}
-
-function obterRotaNotificacoes(user) {
-  const tipo = String(
-    user?.tipo_utilizador ||
-      user?.TIPO_UTILIZADOR ||
-      user?.cargo ||
-      user?.CARGO ||
-      ""
-  )
-    .trim()
-    .toLowerCase();
-
-  if (
-    tipo.includes(
-      "talent manager"
-    ) ||
-    tipo === "tm"
-  ) {
-    return "/tm/notificacoes";
-  }
-
-  if (
-    tipo.includes(
-      "service line leader"
-    ) ||
-    tipo === "sll"
-  ) {
-    return "/sll/notificacoes";
-  }
-
-  if (
-    tipo.includes("admin") ||
-    tipo.includes("administrador")
-  ) {
-    return "/admin/notificacoes";
-  }
-
-  return "/notificacoes";
-}
+import api from "../services/api.js";
 
 const NotificationPopover =
   React.forwardRef(
     (
       {
         style,
+        rotaNotificacoes =
+          "/notificacoes",
         ...props
       },
       ref
@@ -100,33 +43,34 @@ const NotificationPopover =
         setLoading,
       ] = useState(true);
 
-      const user =
-        obterUtilizadorGuardado();
-
-      const rotaNotificacoes =
-        obterRotaNotificacoes(user);
-
       useEffect(() => {
         carregarNotificacoes();
       }, []);
 
       async function carregarNotificacoes() {
-        const userAtual =
-          obterUtilizadorGuardado();
+        const storedUser =
+          localStorage.getItem(
+            "user"
+          );
 
-        const userId =
-          userAtual?.id_utilizador ||
-          userAtual?.ID_UTILIZADOR ||
-          userAtual?.id;
-
-        if (!userId) {
-          setNotifications([]);
+        if (!storedUser) {
           setLoading(false);
           return;
         }
 
         try {
-          setLoading(true);
+          const user =
+            JSON.parse(storedUser);
+
+          const userId =
+            user.id_utilizador ||
+            user.ID_UTILIZADOR ||
+            user.id;
+
+          if (!userId) {
+            setLoading(false);
+            return;
+          }
 
           const response =
             await api.get(
@@ -218,7 +162,7 @@ const NotificationPopover =
                       <ListGroup.Item
                         key={
                           notification.id_notificacoes ||
-                          notification.id ||
+                          notification.id_notificacao ||
                           index
                         }
                         className="py-3 border-bottom"
@@ -245,13 +189,24 @@ const NotificationPopover =
                                   "13px",
                               }}
                             >
-                              {notification.conteudo ||
-                                notification.CONTEUDO ||
-                                notification.tipo_notificacao ||
+                              {notification.tipo_notificacao ||
                                 "Notificação"}
                             </h6>
 
-                            <small className="text-muted d-block mb-1">
+                            <div
+                              style={{
+                                fontSize:
+                                  "12px",
+                                color:
+                                  "#475569",
+                              }}
+                            >
+                              {notification.conteudo ||
+                                notification.mensagem ||
+                                ""}
+                            </div>
+
+                            <small className="text-muted d-block mt-1">
                               {formatTime(
                                 notification.data_envio ||
                                   notification.DATA_ENVIO
@@ -277,7 +232,9 @@ const NotificationPopover =
                       rotaNotificacoes
                     )
                   }
-                  style={verTodasButton}
+                  style={
+                    verTodasButton
+                  }
                 >
                   Ver todas as
                   notificações
@@ -297,7 +254,7 @@ const verTodasButton = {
   border: "none",
   background: "transparent",
   color: "#0056b3",
-  fontSize: "0.875rem",
+  fontSize: 13,
   fontWeight: 700,
   cursor: "pointer",
   padding: 0,
