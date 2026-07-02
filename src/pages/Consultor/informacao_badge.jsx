@@ -10,6 +10,7 @@ import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/right_sidebar.jsx";
 import LeftSidebar from "../../components/left_sidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
 
 const niveis = ["A", "B", "C", "D", "E"];
 
@@ -179,7 +180,11 @@ function BadgeDetailPage() {
           <hr className="my-2" />
 
           <div style={heroCard}>
-            <div style={heroIconWrap}>🏅</div>
+            <BadgeImage
+              badge={badge}
+              nome={nome}
+              size={72}
+            />
             <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 10 }}>
               {badge.nome}
             </div>
@@ -351,7 +356,11 @@ function RelatedBadgeRow({ badge, onClick }) {
   return (
     <div style={{ ...relatedCard, cursor: "pointer" }} onClick={onClick}>
       <div style={relatedContent}>
-        <div style={relatedIcon}>🏅</div>
+        <BadgeImage
+          badge={badge}
+          nome={badge.nome}
+          size={72}
+        />
 
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>

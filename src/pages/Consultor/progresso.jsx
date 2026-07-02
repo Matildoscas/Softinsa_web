@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import Header from '../../components/header.jsx';
 import RightSidebar from '../../components/right_sidebar.jsx';
 import LeftSidebar from '../../components/left_sidebar.jsx';
+import BadgeImage from "../../components/badge_image.jsx";
 
 function ProgressoPage() {
     const navigate = useNavigate();
@@ -169,7 +170,11 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
                     flexShrink: 0,
                     border: '1px solid #e1e8ed'
                 }}>
-                    <span style={{ fontSize: 32 }}>🥇</span>
+                    <BadgeImage
+                    badge={badge}
+                    nome={nome}
+                    size={72}
+                    />
                 </div>
 
                 {/* 2. Textos do Badge (Título maior) */}

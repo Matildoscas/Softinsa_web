@@ -8,6 +8,7 @@ import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/right_sidebar.jsx";
 import LeftSidebar from "../../components/left_sidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
 
 function CatalogoBadgesPage() {
   const navigate = useNavigate();
@@ -350,7 +351,11 @@ function CatalogoBadgeRow({ badge, conquistado, conquistadoBadge, pendente, onCl
   return (
     <div style={{...badgeCard, cursor: "pointer", }} onClick={onClick}    >
       <div style={badgeContent}>
-        <div style={badgeIcon}>🏅</div>
+        <BadgeImage
+          badge={badge}
+          nome={nome}
+          size={72}
+        />
 
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 500, color: "#111827" }}>
@@ -406,18 +411,6 @@ const badgeContent = {
   display: "flex",
   alignItems: "center",
   gap: 18,
-};
-
-const badgeIcon = {
-  width: 72,
-  height: 72,
-  borderRadius: "50%",
-  background: "#eef6ff",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  flexShrink: 0,
-  fontSize: 28,
 };
 
 const pointsBox = {

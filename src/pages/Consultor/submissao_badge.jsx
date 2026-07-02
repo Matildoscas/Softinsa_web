@@ -8,6 +8,7 @@ import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/right_sidebar.jsx";
 import LeftSidebar from "../../components/left_sidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
 
 const niveis = ["A", "B", "C", "D", "E"];
 
@@ -433,7 +434,11 @@ function SubmeterEvidenciasPage() {
           <hr className="my-2" />
 
           <div style={heroCard}>
-            <div style={heroIconWrap}>🏅</div>
+            <BadgeImage
+              badge={badge}
+              nome={nome}
+              size={72}
+            />
 
             <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 10 }}>
               Submeter Evidências

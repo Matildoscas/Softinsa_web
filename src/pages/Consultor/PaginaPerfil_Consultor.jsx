@@ -8,6 +8,7 @@ import api from '../../services/api.js'; // Certifica-te que o caminho está cor
 import Header from '../../components/header.jsx';
 import RightSidebar from '../../components/right_sidebar.jsx';
 import LeftSidebar from '../../components/left_sidebar.jsx';
+import BadgeImage from "../../components/badge_image.jsx";
 
 function PaginaPerfil() {
     const navigate = useNavigate();
@@ -173,7 +174,11 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
                     display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0,
                     border: '1px solid #e1e8ed'
                 }}>
-                    <span style={{ fontSize: 32 }}>🥇</span>
+                    <BadgeImage
+                        badge={badge}
+                        nome={nome}
+                        size={72}
+                    />
                 </div>
 
                 <div style={{ flex: 1 }}>

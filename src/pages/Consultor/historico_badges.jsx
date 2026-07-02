@@ -8,6 +8,7 @@ import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/right_sidebar.jsx";
 import LeftSidebar from "../../components/left_sidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
 
 function HistoricoBadgesPage() {
   const navigate = useNavigate();
@@ -236,22 +237,11 @@ function HistoricoBadgeCard({ badge }) {
       }}
     >
       <div style={{ padding: "16px", display: "flex", alignItems: "center", gap: 18 }}>
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            background: estado.bgIcon,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexShrink: 0,
-            border: `1px solid ${estado.border}`,
-            fontSize: 28,
-          }}
-        >
-          🏅
-        </div>
+        <BadgeImage
+          badge={badge}
+          nome={nome}
+          size={72}
+        />
 
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
