@@ -14,6 +14,8 @@ import {
   BiSortAlt2,
   BiSpreadsheet,
   BiUserCircle,
+  BiPlus,
+  BiTargetLock,
 } from "react-icons/bi";
 
 import {
@@ -472,6 +474,24 @@ function ListaConsultoresTm() {
     );
   }
 
+  function abrirCriarDesafio(
+    consultor = null
+  ) {
+    navigate(
+      "/tm/desafios/novo",
+      {
+        state: {
+          idConsultor:
+            consultor?.id_utilizador ||
+            null,
+
+          voltarPara:
+            location.pathname,
+        },
+      }
+    );
+  }
+
   function gerarPdfConsultor(
     consultor
   ) {
@@ -717,32 +737,42 @@ function ListaConsultoresTm() {
 
           <div style={separador} />
 
-          <div style={cabecalhoPagina}>
-            <h1 style={titulo}>
-              Lista de Consultores
-            </h1>
+          <div style={cabecalhoLinha}>
+            <div style={cabecalhoPagina}>
+              <h1 style={titulo}>
+                Lista de Consultores
+              </h1>
 
-            <div style={subtitulo}>
-              Total de{" "}
-              {
-                consultoresFiltrados.length
-              }{" "}
-              {consultoresFiltrados.length ===
-              1
-                ? "consultor"
-                : "consultores"}
+              <div style={subtitulo}>
+                Total de{" "}
+                {consultoresFiltrados.length}{" "}
+                {consultoresFiltrados.length === 1
+                  ? "consultor"
+                  : "consultores"}
+              </div>
+
+              <div style={especializacaoTexto}>
+                Especialização:{" "}
+                <strong>
+                  {especializacao}
+                </strong>
+              </div>
+
+              <div style={regraTexto}>
+                {obterDescricaoEspecializacao()}
+              </div>
             </div>
 
-            <div style={especializacaoTexto}>
-              Especialização:{" "}
-              <strong>
-                {especializacao}
-              </strong>
-            </div>
-
-            <div style={regraTexto}>
-              {obterDescricaoEspecializacao()}
-            </div>
+            <button
+              type="button"
+              onClick={() =>
+                abrirCriarDesafio()
+              }
+              style={adicionarDesafioTopo}
+            >
+              <BiPlus size={19} />
+              Adicionar desafio
+            </button>
           </div>
 
           {/* PESQUISA */}
@@ -901,6 +931,11 @@ function ListaConsultoresTm() {
                         consultor
                       )
                     }
+                    onDesafio={() =>
+                      abrirCriarDesafio(
+                        consultor
+                      )
+                    }
                     onPdf={() =>
                       gerarPdfConsultor(
                         consultor
@@ -936,6 +971,7 @@ function ListaConsultoresTm() {
 function ConsultorCard({
   consultor,
   onPerfil,
+  onDesafio,
   onPdf,
   onExcel,
 }) {
@@ -1027,6 +1063,15 @@ function ConsultorCard({
             </div>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={onDesafio}
+          style={desafioButton}
+        >
+          <BiTargetLock size={18} />
+          Adicionar desafio
+        </button>
 
         <div style={acoes}>
           <button
@@ -1362,6 +1407,46 @@ const mensagemBox = {
   padding: 40,
   textAlign: "center",
   color: "#64748b",
+};
+
+const cabecalhoLinha = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 20,
+  marginBottom: 20,
+};
+
+const adicionarDesafioTopo = {
+  minHeight: 42,
+  border: "none",
+  borderRadius: 9,
+  background: "#2563eb",
+  color: "white",
+  padding: "9px 17px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const desafioButton = {
+  width: "100%",
+  minHeight: 41,
+  border: "none",
+  borderRadius: 8,
+  background: "#2563eb",
+  color: "white",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  fontSize: 11,
+  fontWeight: 700,
+  cursor: "pointer",
 };
 
 export default ListaConsultoresTm;

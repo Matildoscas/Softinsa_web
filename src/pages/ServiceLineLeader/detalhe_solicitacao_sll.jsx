@@ -9,15 +9,28 @@ import {
   BiBadge,
   BiBriefcase,
   BiCalendar,
+  BiCheckCircle,
   BiChevronDown,
   BiChevronUp,
   BiDownload,
   BiEnvelope,
   BiFile,
+  BiGift,
   BiLinkExternal,
   BiMedal,
+  BiTargetLock,
+  BiTimeFive,
   BiUserCircle,
+  BiXCircle,
 } from "react-icons/bi";
+
+import {
+  Alert,
+  Button,
+  Form,
+  Modal,
+  Spinner,
+} from "react-bootstrap";
 
 import {
   useNavigate,
@@ -209,6 +222,11 @@ function normalizarResposta(dados) {
     dados.pedido ||
     {};
 
+  const candidaturaSll =
+    dados.candidatura_sll ||
+    dados.candidaturaSll ||
+    {};
+
   const consultor =
     dados.consultor ||
     dados.utilizador ||
@@ -223,12 +241,25 @@ function normalizarResposta(dados) {
     badge.requisitos ||
     [];
 
+  const desafioRaw =
+    dados.desafio ||
+    dados.lembrete ||
+    null;
+
   return {
     candidatura: {
       id:
         candidatura.id_candidatura_pedido ||
         candidatura.id ||
         "",
+
+      id_candidatura_sll:
+      candidatura.id_candidatura_sll ??
+      candidaturaSll.id_candidatura_sll ??
+      dados.solicitacao?.id_candidatura_sll ??
+      dados.detalhe?.id_candidatura_sll ??
+      dados.id_candidatura_sll ??
+      null,
 
       data_submissao:
         candidatura.data_submissao ||
@@ -313,6 +344,72 @@ function normalizarResposta(dados) {
           normalizarRequisito
         )
       : [],
+
+    desafio:
+    desafioRaw?.id_lembrete
+      ? {
+          id_lembrete:
+            desafioRaw.id_lembrete,
+
+          titulo:
+            desafioRaw.titulo ||
+            desafioRaw.desafio_titulo ||
+            "Desafio de badge",
+
+          descricao:
+            desafioRaw.descricao ||
+            desafioRaw.desafio_descricao ||
+            "",
+
+          estado:
+            desafioRaw.estado ||
+            desafioRaw.estado_lembrete ||
+            "",
+
+          nome_tm:
+            desafioRaw.nome_tm ||
+            desafioRaw.nome_tm_desafio ||
+            "Talent Manager",
+
+          data_criacao:
+            desafioRaw.data_criacao ||
+            desafioRaw.desafio_data_criacao ||
+            null,
+
+          data_aceitacao:
+            desafioRaw.data_aceitacao ||
+            desafioRaw.desafio_data_aceitacao ||
+            null,
+
+          data_limite:
+            desafioRaw.data_limite ||
+            desafioRaw.desafio_data_limite ||
+            null,
+
+          data_submissao_objetivo:
+            desafioRaw.data_submissao_objetivo ||
+            candidatura.data_submissao ||
+            candidatura.data_submisao ||
+            null,
+
+          multiplicador_pontos:
+            Number(
+              desafioRaw.multiplicador_pontos ||
+              2
+            ),
+
+          pontos_bonus:
+            Number(
+              desafioRaw.pontos_bonus ||
+              0
+            ),
+
+          premio_atribuido:
+            Boolean(
+              desafioRaw.premio_atribuido
+            ),
+        }
+      : null,
   };
 }
 
@@ -376,6 +473,75 @@ function formatarTamanho(bytes) {
   ).toFixed(1)} MB`;
 }
 
+function calcularDiasUtilizados(
+  desafio
+) {
+  if (
+    !desafio?.data_submissao_objetivo
+  ) {
+    return null;
+  }
+
+  const inicio =
+    new Date(
+      desafio.data_aceitacao ||
+      desafio.data_criacao
+    );
+
+  const fim =
+    new Date(
+      desafio.data_submissao_objetivo
+    );
+
+  if (
+    Number.isNaN(inicio.getTime()) ||
+    Number.isNaN(fim.getTime())
+  ) {
+    return null;
+  }
+
+  const diferenca =
+    fim.getTime() -
+    inicio.getTime();
+
+  return Math.max(
+    1,
+    Math.ceil(
+      diferenca / 86400000
+    )
+  );
+}
+
+function cumpriuPrazoDesafio(
+  desafio
+) {
+  if (
+    !desafio?.data_limite ||
+    !desafio?.data_submissao_objetivo
+  ) {
+    return false;
+  }
+
+  const limite =
+    new Date(
+      desafio.data_limite
+    );
+
+  const submissao =
+    new Date(
+      desafio.data_submissao_objetivo
+    );
+
+  if (
+    Number.isNaN(limite.getTime()) ||
+    Number.isNaN(submissao.getTime())
+  ) {
+    return false;
+  }
+
+  return submissao <= limite;
+}
+
 /* =========================================================
    PÁGINA
 ========================================================= */
@@ -386,6 +552,26 @@ function DetalheSolicitacaoSll() {
   const {
     idCandidatura,
   } = useParams();
+
+  const [
+    isProcessing,
+    setIsProcessing,
+  ] = useState(false);
+
+  const [
+    mensagem,
+    setMensagem,
+  ] = useState("");
+
+  const [
+    mostrarRejeitar,
+    setMostrarRejeitar,
+  ] = useState(false);
+
+  const [
+    motivoRejeicao,
+    setMotivoRejeicao,
+  ] = useState("");
 
   const [dados, setDados] =
     useState(null);
@@ -401,67 +587,235 @@ function DetalheSolicitacaoSll() {
   }, [idCandidatura]);
 
   async function carregarDetalhe() {
-    const utilizador =
-      obterUtilizadorGuardado();
+  const utilizador =
+    obterUtilizadorGuardado();
 
-    const idUtilizadorSll =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+  const idUtilizadorSll =
+    utilizador?.id_utilizador ||
+    utilizador?.ID_UTILIZADOR ||
+    utilizador?.id;
 
-    if (!idUtilizadorSll) {
-      setErro(
-        "Não foi possível identificar o Service Line Leader."
-      );
+  if (!idUtilizadorSll) {
+    setErro(
+      "Não foi possível identificar o Service Line Leader."
+    );
 
-      setIsLoading(false);
-      return;
-    }
+    setIsLoading(false);
+    return;
+  }
 
-    try {
-      setIsLoading(true);
-      setErro("");
+  try {
+    setIsLoading(true);
+    setErro("");
 
-      const response = await api.get(
+    /*
+     * Carrega os dados visuais atuais:
+     * consultor, badge, requisitos e
+     * evidências.
+     */
+    const responseDetalhe =
+      await api.get(
         `/sll/${idUtilizadorSll}/solicitacoes/${idCandidatura}`
       );
 
-      console.log(
-        "DETALHE DA SOLICITAÇÃO:",
-        response.data
+    const dadosNormalizados =
+      normalizarResposta(
+        responseDetalhe.data
       );
 
-      setDados(
-        normalizarResposta(
-          response.data
-        )
-      );
-    } catch (err) {
-      console.error(
-        "Erro ao carregar detalhe da solicitação:",
-        err
-      );
+    /*
+     * Se o endpoint anterior não devolveu
+     * id_candidatura_sll, procuramo-lo
+     * diretamente pela relação:
+     *
+     * candidatura_pedido
+     * → candidatura_tm
+     * → candidatura_sll
+     */
+    if (
+      !dadosNormalizados
+        .candidatura
+        .id_candidatura_sll
+    ) {
+      const responseSll =
+        await api.get(
+          `/candidaturas/sll/${idUtilizadorSll}/pedido/${idCandidatura}`
+        );
 
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
+      dadosNormalizados
+        .candidatura
+        .id_candidatura_sll =
+          responseSll.data
+            .id_candidatura_sll;
 
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
-
-      setDados(null);
-
-      setErro(
-        err.response?.data?.error ||
-        "Não foi possível carregar os detalhes da solicitação."
-      );
-    } finally {
-      setIsLoading(false);
+      dadosNormalizados
+        .candidatura
+        .estado_sll =
+          responseSll.data
+            .estado_candidaturasll;
     }
+
+    console.log(
+      "DETALHE NORMALIZADO:",
+      dadosNormalizados
+    );
+
+    console.log(
+      "ID CANDIDATURA SLL:",
+      dadosNormalizados
+        .candidatura
+        .id_candidatura_sll
+    );
+
+    setDados(
+      dadosNormalizados
+    );
+  } catch (err) {
+    console.error(
+      "Erro ao carregar detalhe da solicitação:",
+      err
+    );
+
+    console.error(
+      "STATUS:",
+      err.response?.status
+    );
+
+    console.error(
+      "BODY:",
+      err.response?.data
+    );
+
+    setDados(null);
+
+    setErro(
+      err.response?.data?.error ||
+      "Não foi possível carregar os detalhes da solicitação."
+    );
+  } finally {
+    setIsLoading(false);
   }
+}
+
+  async function aprovarCandidatura() {
+  const idSll =
+    dados?.candidatura
+      ?.id_candidatura_sll ??
+    idCandidatura ??
+    null;
+
+  if (!idSll) {
+    setErro(
+      "Não foi possível identificar a candidatura do SLL."
+    );
+
+    return;
+  }
+
+  try {
+    setIsProcessing(true);
+    setErro("");
+    setMensagem("");
+
+    const response =
+      await api.put(
+        `/certificados/sll/aprovar/${idSll}`
+      );
+
+    setMensagem(
+      response.data?.message ||
+      "Candidatura aprovada com sucesso."
+    );
+
+    setTimeout(() => {
+      navigate(
+        "/sll/solicitacoes",
+        {
+          replace: true,
+        }
+      );
+    }, 1300);
+  } catch (err) {
+    console.error(
+      "Erro ao aprovar candidatura:",
+      err
+    );
+
+    setErro(
+      err.response?.data?.error ||
+      "Não foi possível aprovar a candidatura."
+    );
+  } finally {
+    setIsProcessing(false);
+  }
+}
+
+async function rejeitarCandidatura() {
+  const idSll =
+    dados?.candidatura
+      ?.id_candidatura_sll ??
+    idCandidatura ??
+    null;
+
+  if (!idSll) {
+    setErro(
+      "Não foi possível identificar a candidatura do SLL."
+    );
+
+    return;
+  }
+
+  if (!motivoRejeicao.trim()) {
+    setErro(
+      "Indica o motivo da rejeição."
+    );
+
+    return;
+  }
+
+  try {
+    setIsProcessing(true);
+    setErro("");
+    setMensagem("");
+
+    const response =
+      await api.put(
+        `/certificados/sll/rejeitar/${idSll}`,
+        {
+          motivo:
+            motivoRejeicao.trim(),
+        }
+      );
+
+    setMostrarRejeitar(false);
+
+    setMensagem(
+      response.data?.message ||
+      "Candidatura rejeitada."
+    );
+
+    setTimeout(() => {
+      navigate(
+        "/sll/solicitacoes",
+        {
+          replace: true,
+        }
+      );
+    }, 1300);
+  } catch (err) {
+    console.error(
+      "Erro ao rejeitar candidatura:",
+      err
+    );
+
+    setErro(
+      err.response?.data?.error ||
+      "Não foi possível rejeitar a candidatura."
+    );
+  } finally {
+    setIsProcessing(false);
+  }
+}
 
   const totalEvidencias =
     useMemo(() => {
@@ -475,6 +829,19 @@ function DetalheSolicitacaoSll() {
           requisito.documentos.length > 0
       ).length;
     }, [dados]);
+
+
+  const idCandidaturaSll =
+    dados?.candidatura
+      ?.id_candidatura_sll ||
+    null;
+
+  const podeDecidir =
+    Boolean(
+      idCandidaturaSll
+    ) &&
+    !isProcessing;
+
 
   return (
     <div style={pagina}>
@@ -503,6 +870,18 @@ function DetalheSolicitacaoSll() {
             </div>
           )}
 
+          {mensagem && (
+            <Alert
+              variant="success"
+              dismissible
+              onClose={() =>
+                setMensagem("")
+              }
+            >
+              {mensagem}
+            </Alert>
+          )}
+
           {isLoading ? (
             <div style={mensagemBox}>
               A carregar detalhes da
@@ -522,6 +901,13 @@ function DetalheSolicitacaoSll() {
                   dados.candidatura
                 }
               />
+
+              {dados.desafio && (
+                <DesafioCandidatura
+                  desafio={dados.desafio}
+                  badge={dados.badge}
+                />
+              )}
 
               <div style={cabecalhoRequisitos}>
                 <div>
@@ -573,6 +959,79 @@ function DetalheSolicitacaoSll() {
                   requisitos registados.
                 </div>
               )}
+
+            {!idCandidaturaSll && (
+              <Alert variant="warning">
+                O backend não devolveu o
+                identificador da candidatura SLL.
+                Confirma se o endpoint de detalhe
+                inclui
+                {" "}
+                <strong>
+                  id_candidatura_sll
+                </strong>
+                .
+              </Alert>
+            )}
+
+            <div style={decisaoCard}>
+              <div>
+                <h2 style={decisaoTitulo}>
+                  Decisão final do SLL
+                </h2>
+
+                <div style={decisaoTexto}>
+                  Confirma se as evidências cumprem
+                  todos os requisitos do badge.
+                </div>
+              </div>
+
+              <div style={decisaoAcoes}>
+                <Button
+                  type="button"
+                  variant="outline-danger"
+                  disabled={!podeDecidir}
+                  onClick={() => {
+                    setMotivoRejeicao("");
+                    setMostrarRejeitar(true);
+                    setErro("");
+                  }}
+                >
+                  <BiXCircle
+                    size={18}
+                    className="me-2"
+                  />
+                  Rejeitar
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="success"
+                  disabled={!podeDecidir}
+                  onClick={
+                    aprovarCandidatura
+                  }
+                >
+                  {isProcessing ? (
+                    <>
+                      <Spinner
+                        size="sm"
+                        className="me-2"
+                      />
+                      A aprovar...
+                    </>
+                  ) : (
+                    <>
+                      <BiCheckCircle
+                        size={18}
+                        className="me-2"
+                      />
+                      Aprovar candidatura
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
             </>
           ) : (
             !erro && (
@@ -585,7 +1044,248 @@ function DetalheSolicitacaoSll() {
 
         <SllRightSidebar />
       </div>
+
+      <Modal
+        show={mostrarRejeitar}
+        onHide={() =>
+          !isProcessing &&
+          setMostrarRejeitar(false)
+        }
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Rejeitar candidatura
+          </Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <p style={{ color: "#475569" }}>
+            Indica o motivo da rejeição. O
+            consultor será informado.
+          </p>
+
+          <Form.Group>
+            <Form.Label>
+              Motivo
+            </Form.Label>
+
+            <Form.Control
+              as="textarea"
+              rows={4}
+              value={motivoRejeicao}
+              onChange={(event) =>
+                setMotivoRejeicao(
+                  event.target.value
+                )
+              }
+              placeholder="Ex.: A evidência apresentada não comprova o requisito..."
+            />
+          </Form.Group>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            disabled={isProcessing}
+            onClick={() =>
+              setMostrarRejeitar(false)
+            }
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            variant="danger"
+            disabled={
+              isProcessing ||
+              !motivoRejeicao.trim()
+            }
+            onClick={
+              rejeitarCandidatura
+            }
+          >
+            {isProcessing
+              ? "A rejeitar..."
+              : "Confirmar rejeição"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
+  );
+}
+
+function DesafioCandidatura({
+  desafio,
+  badge,
+}) {
+  const diasUtilizados =
+    calcularDiasUtilizados(
+      desafio
+    );
+
+  const cumpriuPrazo =
+    cumpriuPrazoDesafio(
+      desafio
+    );
+
+  const pontosBase =
+    Number(
+      badge.pontos || 0
+    );
+
+  const pontosExtra =
+    cumpriuPrazo
+      ? pontosBase
+      : 0;
+
+  const totalPossivel =
+    pontosBase +
+    pontosExtra;
+
+  return (
+    <section style={desafioCard}>
+      <div style={desafioCabecalho}>
+        <div style={desafioIcone}>
+          <BiTargetLock
+            size={27}
+          />
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <div style={desafioEtiqueta}>
+            Candidatura resultante de
+            desafio
+          </div>
+
+          <h2 style={desafioTitulo}>
+            {desafio.titulo}
+          </h2>
+
+          <div style={desafioCriador}>
+            Proposto por{" "}
+            <strong>
+              {desafio.nome_tm}
+            </strong>
+          </div>
+        </div>
+
+        <span
+          style={{
+            ...prazoChip,
+
+            background:
+              cumpriuPrazo
+                ? "#dcfce7"
+                : "#fee2e2",
+
+            color:
+              cumpriuPrazo
+                ? "#166534"
+                : "#991b1b",
+          }}
+        >
+          {cumpriuPrazo
+            ? "Prazo cumprido"
+            : "Fora do prazo"}
+        </span>
+      </div>
+
+      {desafio.descricao && (
+        <p style={desafioDescricao}>
+          {desafio.descricao}
+        </p>
+      )}
+
+      <div style={desafioInformacaoGrid}>
+        <div style={desafioInfoItem}>
+          <BiCalendar size={18} />
+
+          <div>
+            <div style={desafioInfoLabel}>
+              Data limite
+            </div>
+
+            <div style={desafioInfoValor}>
+              {formatarData(
+                desafio.data_limite
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div style={desafioInfoItem}>
+          <BiTimeFive size={18} />
+
+          <div>
+            <div style={desafioInfoLabel}>
+              Tempo utilizado
+            </div>
+
+            <div style={desafioInfoValor}>
+              {diasUtilizados
+                ? `${diasUtilizados} ${
+                    diasUtilizados === 1
+                      ? "dia"
+                      : "dias"
+                  }`
+                : "Não disponível"}
+            </div>
+          </div>
+        </div>
+
+        <div style={desafioInfoItem}>
+          <BiCheckCircle size={18} />
+
+          <div>
+            <div style={desafioInfoLabel}>
+              Submetido em
+            </div>
+
+            <div style={desafioInfoValor}>
+              {formatarData(
+                desafio
+                  .data_submissao_objetivo
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={recompensaDesafio}>
+        <div style={recompensaTitulo}>
+          <BiGift size={19} />
+          Recompensa em caso de aprovação
+        </div>
+
+        <div style={recompensaValores}>
+          <span>
+            {pontosBase} pontos do badge
+          </span>
+
+          <strong>+</strong>
+
+          <span>
+            {pontosExtra} pontos extra
+          </span>
+
+          <strong>=</strong>
+
+          <span style={recompensaTotal}>
+            {totalPossivel} pontos
+          </span>
+        </div>
+
+        {!cumpriuPrazo && (
+          <div style={semBonusTexto}>
+            A candidatura pode ser
+            aprovada normalmente, mas não
+            atribuirá o bónus porque foi
+            submetida depois do prazo.
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1423,6 +2123,169 @@ const erroBox = {
   color: "#991b1b",
   marginBottom: 18,
   fontSize: 13,
+};
+
+const desafioCard = {
+  background: "#eff6ff",
+  border: "1px solid #93c5fd",
+  borderRadius: 13,
+  padding: "19px 22px",
+  marginBottom: 20,
+};
+
+const desafioCabecalho = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+};
+
+const desafioIcone = {
+  width: 52,
+  height: 52,
+  flexShrink: 0,
+  borderRadius: 12,
+  background: "white",
+  color: "#2563eb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const desafioEtiqueta = {
+  color: "#2563eb",
+  fontSize: 10,
+  fontWeight: 800,
+  textTransform: "uppercase",
+};
+
+const desafioTitulo = {
+  margin: "3px 0 0",
+  color: "#1e3a8a",
+  fontSize: 17,
+  fontWeight: 800,
+};
+
+const desafioCriador = {
+  marginTop: 3,
+  color: "#475569",
+  fontSize: 11,
+};
+
+const prazoChip = {
+  borderRadius: 999,
+  padding: "6px 12px",
+  fontSize: 10,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const desafioDescricao = {
+  margin: "15px 0 0",
+  color: "#475569",
+  fontSize: 12,
+  lineHeight: 1.6,
+};
+
+const desafioInformacaoGrid = {
+  marginTop: 16,
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(3, minmax(0, 1fr))",
+  gap: 12,
+};
+
+const desafioInfoItem = {
+  background: "white",
+  border: "1px solid #bfdbfe",
+  borderRadius: 9,
+  padding: "11px 13px",
+  color: "#2563eb",
+  display: "flex",
+  alignItems: "center",
+  gap: 9,
+};
+
+const desafioInfoLabel = {
+  color: "#94a3b8",
+  fontSize: 9,
+  textTransform: "uppercase",
+};
+
+const desafioInfoValor = {
+  marginTop: 2,
+  color: "#334155",
+  fontSize: 11,
+  fontWeight: 700,
+};
+
+const recompensaDesafio = {
+  marginTop: 15,
+  background: "white",
+  border: "1px solid #bfdbfe",
+  borderRadius: 10,
+  padding: "12px 14px",
+};
+
+const recompensaTitulo = {
+  color: "#1e40af",
+  display: "flex",
+  alignItems: "center",
+  gap: 7,
+  fontSize: 11,
+  fontWeight: 800,
+};
+
+const recompensaValores = {
+  marginTop: 9,
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  color: "#475569",
+  fontSize: 12,
+  flexWrap: "wrap",
+};
+
+const recompensaTotal = {
+  color: "#166534",
+  fontWeight: 800,
+};
+
+const semBonusTexto = {
+  marginTop: 8,
+  color: "#991b1b",
+  fontSize: 10,
+};
+
+const decisaoCard = {
+  marginTop: 24,
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 12,
+  padding: "18px 20px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 18,
+};
+
+const decisaoTitulo = {
+  margin: 0,
+  color: "#111827",
+  fontSize: 15,
+  fontWeight: 800,
+};
+
+const decisaoTexto = {
+  marginTop: 4,
+  color: "#64748b",
+  fontSize: 11,
+};
+
+const decisaoAcoes = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  flexWrap: "wrap",
 };
 
 export default DetalheSolicitacaoSll;

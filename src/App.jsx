@@ -70,6 +70,7 @@ import NotificacoesTm from "./pages/TalentManager/notificacoes_tm.jsx";
 import DefinicoesTm from "./pages/TalentManager/definicoes_tm.jsx";
 import PerfilTm from "./pages/TalentManager/perfil_tm.jsx";
 import GerarCertificadoTm from "./pages/TalentManager/gerar_certificado_tm.jsx";
+import CriarDesafioTm from "./pages/TalentManager/criar_desafio_tm.jsx";
 
 
 function App() {
@@ -153,6 +154,7 @@ function App() {
         <Route path="/tm/definicoes" element={<DefinicoesTm />}/>
         <Route path="/tm/perfil" element={<PerfilTm />}/>
         <Route path="/tm/certificados" element={<GerarCertificadoTm />}/>
+        <Route path="/tm/desafios/novo" element={<CriarDesafioTm />}/>
 
       </Routes>
     </Router>
