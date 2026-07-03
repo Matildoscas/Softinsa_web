@@ -11,6 +11,9 @@ import RightSidebar from "../../components/right_sidebar.jsx";
 import LeftSidebar from "../../components/left_sidebar.jsx";
 import api from "../../services/api.js";
 import BadgeImage from "../../components/badge_image.jsx";
+import {
+  obterBonusBadge,
+} from "../../utils/badgeBonus.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
 
@@ -28,32 +31,142 @@ function BadgeDetailPage() {
     const mapa = new Map();
 
     lista.forEach((linha) => {
-      const badgeId = Number(linha.id || linha.id_badge_modelo);
+      const badgeId = Number(
+        linha.id_badge_modelo ||
+        linha.id
+      );
+
+      if (!badgeId) {
+        return;
+      }
+
+      const imagem =
+        linha.imagem_url ??
+        linha.imagem ??
+        linha.url_imagem ??
+        linha.imagem_badge ??
+        null;
 
       if (!mapa.has(badgeId)) {
         mapa.set(badgeId, {
+          ...linha,
+
           id: badgeId,
-          nome: linha.nome || linha.nome_badge,
-          descricao: linha.descricao || linha.descricao_badge_modelo,
-          pontos: linha.pontos,
-          id_nivel: linha.id_nivel,
-          id_areas: linha.id_areas,
-          nome_area: linha.nome_area || linha.nome_areas || linha.area || "",
+
+          nome:
+            linha.nome ||
+            linha.nome_badge ||
+            "Badge",
+
+          descricao:
+            linha.descricao ||
+            linha.descricao_badge_modelo ||
+            "",
+
+          pontos:
+            Number(linha.pontos || 0),
+
+          id_nivel:
+            linha.id_nivel,
+
+          id_areas:
+            linha.id_areas,
+
+          nome_area:
+            linha.nome_area ||
+            linha.nome_areas ||
+            linha.area ||
+            "",
+
+          imagem,
+          imagem_url: imagem,
+          url_imagem: imagem,
+
           requisitos: [],
         });
       }
 
-      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
-        mapa.get(badgeId).requisitos.push({
-          id: linha.titulo || linha.nome_requisito || "Requisito",
-          titulo: linha.nome_requisito || linha.titulo || "Requisito",
-          descricao: linha.descricao_requisito || "",
-          link: linha.link_requisito || linha.link || "",
-        });
+      const badgeAgrupado =
+        mapa.get(badgeId);
+
+      const bonusLinha =
+        obterBonusBadge(linha);
+
+      const bonusAtual =
+        obterBonusBadge(
+          badgeAgrupado
+        );
+
+      badgeAgrupado.ganhou_bonus =
+        bonusAtual.ganhouBonus ||
+        bonusLinha.ganhouBonus;
+
+      badgeAgrupado.pontos_extra =
+        Math.max(
+          bonusAtual.pontosExtra,
+          bonusLinha.pontosExtra
+        );
+
+      /*
+      * Caso a primeira linha do badge não
+      * tenha imagem, mas outra linha tenha.
+      */
+      if (!badgeAgrupado.imagem && imagem) {
+        badgeAgrupado.imagem =
+          imagem;
+
+        badgeAgrupado.imagem_url =
+          imagem;
+
+        badgeAgrupado.url_imagem =
+          imagem;
+      }
+
+      if (
+        linha.titulo ||
+        linha.nome_requisito ||
+        linha.descricao_requisito
+      ) {
+        const idRequisito =
+          linha.id_requisito ||
+          linha.id_requisitos ||
+          linha.titulo ||
+          linha.nome_requisito;
+
+        const requisitoExiste =
+          badgeAgrupado.requisitos.some(
+            (requisito) =>
+              String(requisito.id) ===
+              String(idRequisito)
+          );
+
+        if (!requisitoExiste) {
+          badgeAgrupado.requisitos.push({
+            id:
+              idRequisito ||
+              "Requisito",
+
+            titulo:
+              linha.nome_requisito ||
+              linha.titulo ||
+              "Requisito",
+
+            descricao:
+              linha.descricao_requisito ||
+              "",
+
+            link:
+              linha.link_requisito ||
+              linha.link ||
+              "",
+          });
+        }
       }
     });
 
-    return Array.from(mapa.values());
+    return Array.from(
+      mapa.values()
+    );
   };
 
   useEffect(() => {
@@ -101,15 +214,53 @@ function BadgeDetailPage() {
             return;
         }
 
-        const relacionadosCalc = badgesAgrupados
-            .filter((b) => {
+        const relacionadosCalc =
+        badgesAgrupados
+          .filter((b) => {
             const mesmaArea =
-                Number(b.id_areas) === Number(badgeSelecionado.id_areas) ||
-                b.nome_area === badgeSelecionado.nome_area;
+              Number(b.id_areas) ===
+                Number(
+                  badgeSelecionado.id_areas
+                ) ||
+              b.nome_area ===
+                badgeSelecionado.nome_area;
 
-            return mesmaArea && Number(b.id) !== Number(badgeSelecionado.id);
-            })
-            .slice(0, 3);
+            return (
+              mesmaArea &&
+              Number(b.id) !==
+                Number(
+                  badgeSelecionado.id
+                )
+            );
+          })
+          .map((relacionado) => {
+            const conquistadoRelacionado =
+              conquistadosAgrupados.find(
+                (item) =>
+                  Number(item.id) ===
+                  Number(relacionado.id)
+              );
+
+            if (
+              !conquistadoRelacionado
+            ) {
+              return relacionado;
+            }
+
+            return {
+              ...relacionado,
+              ...conquistadoRelacionado,
+
+              requisitos:
+                relacionado.requisitos,
+
+              nome_area:
+                relacionado.nome_area ||
+                conquistadoRelacionado
+                  .nome_area,
+            };
+          })
+          .slice(0, 3);
 
         setBadge(badgeSelecionado);
         setRelacionados(relacionadosCalc);
@@ -159,6 +310,13 @@ function BadgeDetailPage() {
     );
   }
 
+  const {
+    ganhouBonus,
+    pontosExtra,
+  } = obterBonusBadge(
+    conquistadoBadge
+  );
+
   return (
     <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
@@ -179,10 +337,26 @@ function BadgeDetailPage() {
 
           <hr className="my-2" />
 
-          <div style={heroCard}>
+          <div
+            style={{
+              ...heroCard,
+
+              border: ganhouBonus
+                ? "2px solid #d4af37"
+                : heroCard.border,
+
+              background: ganhouBonus
+                ? "#fffdf4"
+                : heroCard.background,
+
+              boxShadow: ganhouBonus
+                ? "0 0 0 3px rgba(212,175,55,0.12)"
+                : "none",
+            }}
+          >
             <BadgeImage
               badge={badge}
-              nome={nome}
+              nome={badge.nome}
               size={72}
             />
             <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 10 }}>
@@ -194,6 +368,26 @@ function BadgeDetailPage() {
               </div>
             )}
           </div>
+
+          {ganhouBonus && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: "7px 14px",
+                background: "#fff7d6",
+                color: "#9a6b00",
+                border:
+                  "1px solid #f0d36b",
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              Desafio concluído em tempo recorde
+              {" • "}
+              +{pontosExtra} pontos extra
+            </div>
+          )}
 
           <div style={sectionCard}>
             <div style={sectionTitle}>Descrição</div>
@@ -474,17 +668,30 @@ const requisitoBody = {
 };
 
 const actionBtn = {
+  minWidth: 180,
+  height: 40,
+  padding: "0 16px",
+
   display: "flex",
   alignItems: "center",
-  border: "1.5px solid #d1d5db",
-  borderRadius: 999,
-  padding: "9px 20px",
+  justifyContent: "center",
+
+  border: "1px solid #d6dbe1",
+  borderRadius: 8,
+
+  background: "#f8f9fa",
+  color: "#344054",
+
   fontSize: 14,
   fontWeight: 500,
-  background: "white",
-  color: "#374151",
+
   cursor: "pointer",
-  boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+
+  boxShadow:
+    "0 1px 2px rgba(0, 0, 0, 0.05)",
+
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
 };
 
 const relatedCard = {

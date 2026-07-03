@@ -8,7 +8,10 @@ import api from '../../services/api.js'; // Garante que o caminho está correto
 import Header from '../../components/header.jsx';
 import RightSidebar from '../../components/right_sidebar.jsx';
 import LeftSidebar from '../../components/left_sidebar.jsx';
-//import ImagemBadge from '../../assets/Cybersecurity_Badge.png';
+import BadgeImage from "../../components/badge_image.jsx";
+import {
+  obterBonusBadge,
+} from "../../utils/badgeBonus.js";
 
 function ProgressoSection({ title, sub, children }) {
     return (
@@ -77,37 +80,120 @@ function ProgressoBadgeCard({ nome, descricao, pontos, progresso }) {
     );
 }
  
-function RankingCard({ nome, pontos, dataAtribuicao }) {
-    const dataFormatada = dataAtribuicao
-        ? new Date(dataAtribuicao).toLocaleDateString("pt-PT")
-        : null;
- 
-    return (
-        <div style={{
-            display: "flex", alignItems: "center", gap: 12,
-            border: "1px solid #e5e7eb", borderRadius: 10,
-            padding: "10px 14px", marginBottom: 8,
-        }}>
-            <div style={{
-                width: 42, height: 42, borderRadius: "50%",
-                background: "#f3f6f9", border: "1px solid #e1e8ed",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-                <BiMedal size={22} color="#3b6fd4" />
-            </div>
- 
-            <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{nome}</div>
-                <div style={{ fontSize: 11, color: "#2563eb", fontWeight: 500 }}>
-                    Ganhou +{pontos} pts
-                </div>
-            </div>
- 
-            {dataFormatada && (
-                <div style={{ fontSize: 11, color: "#9ca3af" }}>{dataFormatada}</div>
-            )}
+function RankingCard({
+  badge,
+  nome,
+  pontos,
+  dataAtribuicao,
+}) {
+  const {
+    ganhouBonus,
+    pontosExtra,
+  } = obterBonusBadge(badge);
+
+  const dataFormatada =
+    dataAtribuicao
+      ? new Date(
+          dataAtribuicao
+        ).toLocaleDateString(
+          "pt-PT"
+        )
+      : null;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+
+        border: ganhouBonus
+          ? "2px solid #d4af37"
+          : "1px solid #e5e7eb",
+
+        background: ganhouBonus
+          ? "#fffdf4"
+          : "white",
+
+        boxShadow: ganhouBonus
+          ? "0 0 0 2px rgba(212,175,55,0.10)"
+          : "none",
+
+        borderRadius: 10,
+        padding: "10px 14px",
+        marginBottom: 8,
+      }}
+    >
+      <BadgeImage
+        badge={badge}
+        size={42}
+        background={
+          ganhouBonus
+            ? "#fff7d6"
+            : "#f3f6f9"
+        }
+        borderColor={
+          ganhouBonus
+            ? "#d4af37"
+            : "#e1e8ed"
+        }
+      />
+
+      <div style={{ flex: 1 }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#111827",
+          }}
+        >
+          {nome}
         </div>
-    );
+
+        <div
+          style={{
+            fontSize: 11,
+            color: ganhouBonus
+              ? "#9a6b00"
+              : "#2563eb",
+            fontWeight: 600,
+          }}
+        >
+          {ganhouBonus
+            ? `${pontos} base + ${pontosExtra} extra`
+            : `Ganhou +${pontos} pts`}
+        </div>
+      </div>
+
+      {ganhouBonus && (
+        <span
+          style={{
+            background: "#fff7d6",
+            color: "#9a6b00",
+            border:
+              "1px solid #f0d36b",
+            borderRadius: 999,
+            padding: "3px 8px",
+            fontSize: 10,
+            fontWeight: 700,
+          }}
+        >
+          Desafio
+        </span>
+      )}
+
+      {dataFormatada && (
+        <div
+          style={{
+            fontSize: 11,
+            color: "#9ca3af",
+          }}
+        >
+          {dataFormatada}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ProgressoPage() {
@@ -170,10 +256,32 @@ function ProgressoPage() {
         setLoading(true);
 
         Promise.all([
-            api.get(`/badges/learningpaths/${userId}`),
-            api.get(`/badges/todos`),
-            api.get(`/badges/conquistados/${userId}`),
-            api.get(`/dashboard/${userId}`),
+        api
+            .get(
+            `/badges/progresso/${userId}`
+            )
+            .catch((err) => {
+            console.error(
+                "Erro apenas nas Learning Paths:",
+                err.response?.data
+            );
+
+            return {
+                data: [],
+            };
+            }),
+
+        api.get(
+            "/badges/todos"
+        ),
+
+        api.get(
+            `/badges/conquistados/${userId}`
+        ),
+
+        api.get(
+            `/utilizadores/dashboard/${userId}`
+        ),
         ])
         .then(([learningRes, todosRes, conquistadosRes, dashboardRes]) => {
             const learningPaths = Array.isArray(learningRes.data)
@@ -331,10 +439,32 @@ function ProgressoPage() {
                         </Card.Body>
                     </Card>
 
-                    <div className="text-center mb-4 d-flex justify-content-center gap-2">
-                        <Button onClick={() => navigate('/historico_badges')} variant="white" className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2" style={{ fontSize: 15, fontWeight: 600 }}>
-                            <BiBook size={20} /> Histórico de Badges
-                        </Button>
+                    <div
+                    className="
+                        d-flex
+                        justify-content-center
+                        mb-4
+                    "
+                    >
+                    <Button
+                        variant="light"
+                        onClick={() =>
+                        navigate("/historico_badges")
+                        }
+                        className="
+                        d-flex
+                        align-items-center
+                        justify-content-center
+                        gap-2
+                        "
+                        style={{
+                        ...navigationButtonStyle,
+                        minWidth: 210,
+                        }}
+                    >
+                        <BiBook size={18} />
+                        Histórico de Badges
+                    </Button>
                     </div>
 
                     <ProgressoSection
@@ -389,11 +519,24 @@ function ProgressoPage() {
                         {badgesConquistados.length > 0 ? (
                             badgesConquistados.map((b, i) => (
                                 <RankingCard
-                                key={b.id || i}
-                                nome={b.nome || b.nome_badge || "Badge"}
-                                pontos={b.pontos || 0}
-                                dataAtribuicao={b.data_atribuicao}
-                                />
+                                    key={
+                                        b.id ||
+                                        b.id_badge_modelo ||
+                                        i
+                                    }
+                                    badge={b}
+                                    nome={
+                                        b.nome ||
+                                        b.nome_badge ||
+                                        "Badge"
+                                    }
+                                    pontos={
+                                        Number(b.pontos || 0)
+                                    }
+                                    dataAtribuicao={
+                                        b.data_atribuicao
+                                    }
+                                    />
                             ))
                             ) : (
                             <p className="text-muted small">Ainda não há conquistas registadas.</p>
@@ -476,5 +619,25 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
         </div>
     );
 }
+
+const navigationButtonStyle = {
+  height: 40,
+  padding: "0 18px",
+
+  border: "1px solid #d6dbe1",
+  borderRadius: 8,
+
+  background: "#f8f9fa",
+  color: "#344054",
+
+  fontSize: 14,
+  fontWeight: 500,
+
+  boxShadow:
+    "0 1px 2px rgba(0, 0, 0, 0.05)",
+
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
+};
 
 export default ProgressoPage;

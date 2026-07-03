@@ -1,94 +1,375 @@
-import { useState, useEffect } from "react";
-import { Button, Spinner, Alert } from 'react-bootstrap';
-import { HiOutlineArrowLeft } from 'react-icons/hi';
-import { useNavigate } from 'react-router-dom';
+import {
+  useEffect,
+  useState,
+} from "react";
 
-import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
-import api from '../../services/api.js';
+import {
+  Alert,
+  Button,
+  Spinner,
+} from "react-bootstrap";
+
+import {
+  HiOutlineArrowLeft,
+} from "react-icons/hi";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import Header from "../../components/header.jsx";
+import RightSidebar from "../../components/right_sidebar.jsx";
+import LeftSidebar from "../../components/left_sidebar.jsx";
+
+import api from "../../services/api.js";
+
+import {
+  emitirAtualizacaoNotificacoes,
+  formatarTituloNotificacao,
+  notificacaoNaoLida,
+  ordenarNotificacoesRecentes,
+} from "../../utils/notificacoesUtils.js";
 
 function NotificacaoPage() {
   const navigate = useNavigate();
 
-  const [notificacoes, setNotificacoes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState(null);
+  const [
+    notificacoes,
+    setNotificacoes,
+  ] = useState([]);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    erro,
+    setErro,
+  ] = useState(null);
+
+  const [
+    userId,
+    setUserId,
+  ] = useState(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser =
+      localStorage.getItem("user");
 
     if (!storedUser) {
-      navigate("/login", { replace: true });
+      setLoading(false);
+
+      navigate("/login", {
+        replace: true,
+      });
+
       return;
     }
 
-    const user = JSON.parse(storedUser);
-    const userId = user.id_utilizador || user.ID_UTILIZADOR;
+    const user =
+      JSON.parse(storedUser);
 
-    if (!userId) {
-      navigate("/login", { replace: true });
+    const idUtilizador =
+      user.id_utilizador ||
+      user.ID_UTILIZADOR ||
+      user.id;
+
+    if (!idUtilizador) {
+      setLoading(false);
+
+      navigate("/login", {
+        replace: true,
+      });
+
       return;
     }
 
-    api.get(`/notificacoes/${userId}`)
+    setUserId(idUtilizador);
+    setLoading(true);
+    setErro(null);
+
+    api
+      .get(
+        `/notificacoes/${idUtilizador}`
+      )
       .then((res) => {
-        setNotificacoes(Array.isArray(res.data) ? res.data : []);
+        const data =
+          Array.isArray(res.data)
+            ? res.data
+            : [];
+
+        setNotificacoes(
+          ordenarNotificacoesRecentes(
+            data
+          )
+        );
       })
       .catch((err) => {
-        console.error("Erro ao carregar notificações:", err);
-        setErro("Não foi possível carregar as notificações.");
+        console.error(
+          "Erro ao carregar notificações:",
+          err
+        );
+
+        setErro(
+          "Não foi possível carregar as notificações."
+        );
       })
       .finally(() => {
         setLoading(false);
       });
   }, [navigate]);
 
+  async function marcarComoLida(
+    notificacao
+  ) {
+    const idNotificacao =
+      notificacao.id_notificacoes ||
+      notificacao.id_notificacao;
+
+    if (
+      !idNotificacao ||
+      !userId
+    ) {
+      return;
+    }
+
+    try {
+      setErro(null);
+
+      await api.patch(
+        `/notificacoes/${idNotificacao}/lida`,
+        {
+          id_utilizador:
+            userId,
+        }
+      );
+
+      setNotificacoes(
+        (anteriores) =>
+          anteriores.map(
+            (item) => {
+              const idItem =
+                item.id_notificacoes ||
+                item.id_notificacao;
+
+              if (
+                String(idItem) !==
+                String(
+                  idNotificacao
+                )
+              ) {
+                return item;
+              }
+
+              return {
+                ...item,
+
+                lida:
+                  true,
+
+                lido:
+                  true,
+
+                estado_leitura:
+                  "LIDA",
+
+                estado_notificacao:
+                  "LIDA",
+              };
+            }
+          )
+      );
+
+      emitirAtualizacaoNotificacoes();
+    } catch (err) {
+      console.error(
+        "Erro ao marcar notificação como lida:",
+        err
+      );
+
+      console.error(
+        "STATUS:",
+        err.response?.status
+      );
+
+      console.error(
+        "BODY:",
+        err.response?.data
+      );
+
+      setErro(
+        "Não foi possível marcar a notificação como lida."
+      );
+    }
+  }
+
   return (
-    <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        backgroundColor:
+          "#f0f2f5",
+
+        minHeight:
+          "100vh",
+
+        display:
+          "flex",
+
+        flexDirection:
+          "column",
+      }}
+    >
       <Header />
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div
+        style={{
+          display:
+            "flex",
+
+          flex:
+            1,
+
+          overflow:
+            "hidden",
+        }}
+      >
         <LeftSidebar />
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
+        <div
+          style={{
+            flex:
+              1,
+
+            overflowY:
+              "auto",
+
+            padding:
+              10,
+          }}
+        >
           <Button
             variant="link"
-            className="d-flex align-items-center text-decoration-none p-0 mb-3"
-            style={{ color: '#4A5568', fontSize: '1.1rem' }}
-            onClick={() => navigate('/pag_consultor')}
+            className="
+              d-flex
+              align-items-center
+              text-decoration-none
+              p-0
+              mb-3
+            "
+            style={{
+              color:
+                "#4A5568",
+
+              fontSize:
+                "1.1rem",
+            }}
+            onClick={() =>
+              navigate(
+                "/pag_consultor"
+              )
+            }
           >
             <HiOutlineArrowLeft className="me-1" />
-            <span style={{ fontWeight: '400' }}>Voltar</span>
+
+            <span
+              style={{
+                fontWeight:
+                  400,
+              }}
+            >
+              Voltar
+            </span>
           </Button>
 
-          <h5 className="mb-3">Notificações</h5>
+          <h5 className="mb-3">
+            Notificações
+          </h5>
 
           {loading && (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: 200 }}>
-              <Spinner animation="border" variant="primary" />
+            <div
+              className="
+                d-flex
+                justify-content-center
+                align-items-center
+              "
+              style={{
+                height:
+                  200,
+              }}
+            >
+              <Spinner
+                animation="border"
+                variant="primary"
+              />
             </div>
           )}
 
           {erro && (
-            <Alert variant="danger">{erro}</Alert>
-          )}
-
-          {!loading && !erro && notificacoes.length === 0 && (
-            <Alert variant="light" className="border">
-              Ainda não tem notificações.
+            <Alert variant="danger">
+              {erro}
             </Alert>
           )}
 
-          {!loading && !erro && notificacoes.map((n) => (
-            <NotificationCard
-              key={n.id_notificacoes}
-              title={n.tipo_notificacao || "Notificação"}
-              desc={n.conteudo || ""}
-              meta={n.estado_notificacao || "Enviada"}
-              time={formatarDataRelativa(n.data_envio)}
-            />
-          ))}
+          {!loading &&
+            !erro &&
+            notificacoes.length ===
+              0 && (
+              <Alert
+                variant="light"
+                className="border"
+              >
+                Ainda não tem
+                notificações.
+              </Alert>
+            )}
+
+          {!loading &&
+            notificacoes.map(
+              (n, index) => {
+                const naoLida =
+                  notificacaoNaoLida(
+                    n
+                  );
+
+                return (
+                  <NotificationCard
+                    key={
+                      n.id_notificacoes ||
+                      n.id_notificacao ||
+                      index
+                    }
+                    title={formatarTituloNotificacao(
+                      n.tipo_notificacao ||
+                        n.TIPO_NOTIFICACAO
+                    )}
+                    desc={
+                      n.conteudo ||
+                      n.CONTEUDO ||
+                      n.mensagem ||
+                      ""
+                    }
+                    meta={
+                      naoLida
+                        ? "Não lida"
+                        : "Lida"
+                    }
+                    time={formatarDataRelativa(
+                      n.data_envio ||
+                        n.DATA_ENVIO
+                    )}
+                    naoLida={
+                      naoLida
+                    }
+                    onMarcarComoLida={() =>
+                      marcarComoLida(
+                        n
+                      )
+                    }
+                  />
+                );
+              }
+            )}
         </div>
 
         <RightSidebar />
@@ -97,57 +378,217 @@ function NotificacaoPage() {
   );
 }
 
-function NotificationCard({ title, desc, meta, time }) {
+function NotificationCard({
+  title,
+  desc,
+  meta,
+  time,
+  naoLida,
+  onMarcarComoLida,
+}) {
   return (
-    <div className="d-flex bg-white border rounded px-4 py-3 mb-2 gap-3" style={{ alignItems: "stretch" }}>
-      <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: 80 }}>
+    <div
+      className="
+        d-flex
+        border
+        rounded
+        px-4
+        py-3
+        mb-2
+        gap-3
+      "
+      style={{
+        alignItems:
+          "stretch",
+
+        borderLeft:
+          naoLida
+            ? "4px solid #2563eb"
+            : "1px solid #dee2e6",
+
+        background:
+          naoLida
+            ? "#f8fbff"
+            : "white",
+      }}
+    >
+      <div
+        className="
+          d-flex
+          flex-column
+          align-items-center
+          gap-1
+        "
+        style={{
+          minWidth:
+            80,
+        }}
+      >
         <div
-          className="rounded-circle bg-secondary-subtle d-flex align-items-center justify-content-center"
-          style={{ width: 44, height: 44 }}
+          className="
+            rounded-circle
+            bg-secondary-subtle
+            d-flex
+            align-items-center
+            justify-content-center
+          "
+          style={{
+            width:
+              44,
+
+            height:
+              44,
+          }}
         >
           🔔
         </div>
 
-        <span className="text-muted text-center" style={{ fontSize: "0.72rem", lineHeight: 1.4 }}>
+        <span
+          className="
+            text-muted
+            text-center
+          "
+          style={{
+            fontSize:
+              "0.72rem",
+
+            lineHeight:
+              1.4,
+          }}
+        >
           {meta}
         </span>
 
-        <span className="text-secondary text-center" style={{ fontSize: "0.70rem" }}>
+        <span
+          className="
+            text-secondary
+            text-center
+          "
+          style={{
+            fontSize:
+              "0.70rem",
+          }}
+        >
           {time}
         </span>
       </div>
 
       <div className="border-start" />
 
-      <div className="flex-grow-1 d-flex flex-column justify-content-center">
-        <div className="fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>
+      <div
+        className="
+          flex-grow-1
+          d-flex
+          flex-column
+          justify-content-center
+        "
+      >
+        <div
+          className="
+            fw-semibold
+            text-dark
+          "
+          style={{
+            fontSize:
+              "0.9rem",
+          }}
+        >
           {title}
         </div>
-        <div className="text-muted" style={{ fontSize: "0.82rem" }}>
+
+        <div
+          className="text-muted"
+          style={{
+            fontSize:
+              "0.82rem",
+          }}
+        >
           {desc}
         </div>
+
+        {naoLida && (
+          <div
+            style={{
+              marginTop:
+                10,
+            }}
+          >
+            <Button
+              size="sm"
+              variant="outline-primary"
+              onClick={
+                onMarcarComoLida
+              }
+            >
+              Marcar como lida
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function formatarDataRelativa(data) {
-  if (!data) return "";
+function formatarDataRelativa(
+  data
+) {
+  if (!data) {
+    return "";
+  }
 
-  const agora = new Date();
-  const dataNotificacao = new Date(data);
-  const diffMs = agora - dataNotificacao;
+  const agora =
+    new Date();
 
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHoras = Math.floor(diffMin / 60);
-  const diffDias = Math.floor(diffHoras / 24);
+  const dataNotificacao =
+    new Date(data);
 
-  if (diffMin < 1) return "Agora mesmo";
-  if (diffMin < 60) return `${diffMin} minuto(s) atrás`;
-  if (diffHoras < 24) return `${diffHoras} hora(s) atrás`;
-  if (diffDias < 7) return `${diffDias} dia(s) atrás`;
+  if (
+    Number.isNaN(
+      dataNotificacao.getTime()
+    )
+  ) {
+    return "";
+  }
 
-  return dataNotificacao.toLocaleDateString();
+  const diffMs =
+    agora.getTime() -
+    dataNotificacao.getTime();
+
+  const diffMin =
+    Math.floor(
+      diffMs / 60000
+    );
+
+  const diffHoras =
+    Math.floor(
+      diffMin / 60
+    );
+
+  const diffDias =
+    Math.floor(
+      diffHoras / 24
+    );
+
+  if (diffMin < 1) {
+    return "Agora mesmo";
+  }
+
+  if (diffMin < 60) {
+    return `${diffMin} minuto(s) atrás`;
+  }
+
+  if (diffHoras < 24) {
+    return `${diffHoras} hora(s) atrás`;
+  }
+
+  if (diffDias < 7) {
+    return `${diffDias} dia(s) atrás`;
+  }
+
+  return dataNotificacao
+    .toLocaleDateString(
+      "pt-PT"
+    );
 }
 
 export default NotificacaoPage;

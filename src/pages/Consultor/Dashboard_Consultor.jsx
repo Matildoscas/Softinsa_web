@@ -432,10 +432,20 @@ function PaginaPrincipal() {
                         </Card.Body>
                     </Card>
 
-                    <div className="text-center mb-4">
-                        <Button variant="white" onClick={() => navigate('/catalogo-badges')} className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
-                            <BiGrid size={20} /> Catálogo de Badges
-                        </Button>
+                    <div
+                    className="d-flex justify-content-center mb-4"
+                    >
+                    <Button
+                        variant="light"
+                        onClick={() =>
+                        navigate("/catalogo-badges")
+                        }
+                        className="d-flex align-items-center justify-content-center gap-2"
+                        style={dashboardCatalogButton}
+                    >
+                        <BiGrid size={18} />
+                        Catálogo de Badges
+                    </Button>
                     </div>
 
                     {/* Seção: Badges com Progresso */}
@@ -749,5 +759,26 @@ function BadgeImage({ imageUrl, size = 70 }) {
         </div>
     );
 }
+
+const dashboardCatalogButton = {
+  minWidth: 220,
+  height: 40,
+  padding: "0 18px",
+
+  border: "1px solid #d6dbe1",
+  borderRadius: 8,
+
+  background: "#f8f9fa",
+  color: "#344054",
+
+  fontSize: 14,
+  fontWeight: 500,
+
+  boxShadow:
+    "0 1px 2px rgba(0, 0, 0, 0.05)",
+
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
+};
 
 export default PaginaPrincipal;
