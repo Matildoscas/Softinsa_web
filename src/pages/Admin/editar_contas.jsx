@@ -10,7 +10,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 
 import api from "../../services/api.js";
-import Header from "../../components/Header.jsx";
+import Header from "../../components/header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 
@@ -310,6 +310,7 @@ function EditarConta() {
         email: form.email,
         contacto: form.telefone,
         estado_conta: form.status === "Ativo" ? "ATIVO" : "INATIVA",
+        //tipo_utilizador: form.funcao,
     });
 
       setSucesso("Conta atualizada com sucesso.");

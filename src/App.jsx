@@ -1,14 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-// consultor
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
-import LoginPage from './pages/Login/Login.jsx';
-import RegisterPage from './pages/Login/Register.jsx';
-import AreaPage from './pages/Login/AreaRegister.jsx';
-import PaginaPrincipal from './pages/Consultor/DashboardConsultor.jsx';
-import PaginaPerfil from './pages/Consultor/PaginaPerfilConsultor.jsx';
-import NotificacaoPage from './pages/Consultor/Notificacao.jsx';
-import LembretePage from './pages/Consultor/Lembretes.jsx';
+import LoginPage from './pages/Login/login.jsx';
+import RegisterPage from './pages/Login/register.jsx';
+import AreaPage from './pages/Login/area_register.jsx';
+
+import PaginaPrincipal from './pages/Consultor/Dashboard_Consultor.jsx';
+import PaginaPerfil from './pages/Consultor/PaginaPerfil_Consultor.jsx';
+import NotificacaoPage from './pages/Consultor/notificacao.jsx';
+import LembretePage from './pages/Consultor/lembretes.jsx';
 import ProgressoPage from './pages/Consultor/progresso_consultor.jsx';
 import CatalogoBadgesPage from './pages/Consultor/catalogo_badges.jsx';
 import PaginaPrincipalAdmin from './pages/Admin/Dashboard_Admin.jsx';
@@ -19,10 +19,6 @@ import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
 
-//admin
-import GestaoBadges from "./pages/Admin/gestao_badges.jsx";
-import CriarBadge from "./pages/Admin/criar_badges.jsx";
-import EditarBadge from "./pages/Admin/editar_badges.jsx";
 import GestaoContas from "./pages/Admin/gestao_contas.jsx";
 import EditarConta from "./pages/Admin/editar_contas.jsx";
 import CriarConta from "./pages/Admin/criar_conta.jsx";
@@ -34,16 +30,48 @@ import CriarArea from "./pages/Admin/criar_areas.jsx";
 import EditarArea from "./pages/Admin/editar_areas.jsx";
 import GestaoRequisitos from "./pages/Admin/gestao_requisitos.jsx";
 import GestaoLearningPaths from "./pages/Admin/gestao_learningpaths.jsx";
-import CriarLearningPath from "./pages/Admin/criar_learningpaths.jsx";
+import CriarLearningPath from "./pages/admin/criar_learningpaths.jsx";
 import EditarLearningPath from "./pages/Admin/editar_learningpaths.jsx";
 import InformacoesAvisos from "./pages/Admin/avisos_informacoes.jsx";
 import PoliticasRGPD from "./pages/Admin/politicas_rgpd.jsx";
 import EdicaoRGPD from "./pages/Admin/editar_politicas_rgpd.jsx";
 import ConfigurarNotificacoes from "./pages/Admin/config_notificacao.jsx";
-import PaginaNotificacoes from './pages/Consultor/Notificacao.jsx'; 
+import GestaoBadges from "./pages/Admin/gestao_badges.jsx";
+import CriarBadge from "./pages/Admin/criar_badges.jsx";
+import EditarBadge from "./pages/Admin/editar_badges.jsx";
 
-// Talent Manager
-import TM_Dashboard from './pages/TalentManager/TM_DashBoard.jsx';
+import DashboardSll from "./pages/ServiceLineLeader/dashboard_sll.jsx";
+import CatalogoBadgesSll from "./pages/ServiceLineLeader/catalogo_badges_sll.jsx";
+import InformacaoBadgeSll from "./pages/ServiceLineLeader/informacao_badge_sll.jsx";
+import SolicitacoesBadgesSll from "./pages/ServiceLineLeader/solicitacoes_badges_sll.jsx";
+import DetalheSolicitacaoSll from "./pages/ServiceLineLeader/detalhe_solicitacao_sll.jsx";
+import RankingBadgesSll from "./pages/ServiceLineLeader/ranking_badges_sll.jsx";
+import HistoricoCandidaturasSll from "./pages/ServiceLineLeader/historico_candidaturas_sll.jsx";
+import GerarCertificadoSll from "./pages/ServiceLineLeader/gerar_certificado_sll.jsx";
+import GerarRelatorioSll from "./pages/ServiceLineLeader/gerar_relatorio.jsx";
+import ListaConsultoresSll from "./pages/ServiceLineLeader/lista_consultores_sll.jsx";
+import InformacaoConsultorSll from "./pages/ServiceLineLeader/informacao_consultor_sll.jsx";
+import DefinicoesSllPage from "./pages/ServiceLineLeader/definicoes_sll.jsx";
+import NotificacoesSllPage from "./pages/ServiceLineLeader/notificacoes_sll.jsx";
+
+import DashboardTm from "./pages/TalentManager/dashboard_tm.jsx";
+import CatalogoBadgesTm from "./pages/TalentManager/catalogo_badges_tm.jsx";
+import InformacaoBadgeTm from "./pages/TalentManager/informacao_badge_tm.jsx";
+import SolicitacoesBadgesTm from "./pages/TalentManager/solicitacoes_badges_tm.jsx";
+import AvaliacaoBadgeTm from "./pages/TalentManager/avaliacao_badge_tm.jsx";
+import InformacaoConsultorTm from "./pages/TalentManager/informacao_consultor_tm.jsx";
+import HistoricoCandidaturasTm from "./pages/TalentManager/historico_candidaturas_tm.jsx";
+import DetalheHistoricoTm from "./pages/TalentManager/detalhe_historico_tm.jsx";
+import BadgesExpiracaoTm from "./pages/TalentManager/badges_expiracao_tm.jsx";
+import DetalheExpiracaoBadgeTm from "./pages/TalentManager/detalhe_expiracao_badge_tm.jsx";
+import GerarRelatorioTm from "./pages/TalentManager/gerar_relatorio_tm.jsx";
+import ListaConsultoresTm from "./pages/TalentManager/lista_consultores_tm.jsx";
+import NotificacoesTm from "./pages/TalentManager/notificacoes_tm.jsx";
+import DefinicoesTm from "./pages/TalentManager/definicoes_tm.jsx";
+import PerfilTm from "./pages/TalentManager/perfil_tm.jsx";
+import GerarCertificadoTm from "./pages/TalentManager/gerar_certificado_tm.jsx";
+import CriarDesafioTm from "./pages/TalentManager/criar_desafio_tm.jsx";
+
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -58,7 +86,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
 
-        {/* Rotas do Consultor */}
+        // Rotas Consultor
         <Route path="/pag_consultor" element={<PaginaPrincipal />} />
         <Route path="/perfil_consultor" element={<PaginaPerfil />} />
         <Route path="/notificacoes" element={<NotificacaoPage />} />
@@ -71,9 +99,9 @@ function App() {
         <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
         <Route path="/certificado/:id" element={<CertificadoPage />} />
         <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
-        
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
+
         <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
         <Route path="/admin/contas" element={<GestaoContas />} />
         <Route path="/admin/contas/novo" element={<CriarConta />} />
@@ -92,18 +120,42 @@ function App() {
         <Route path="/admin/rgpd" element={<PoliticasRGPD />} />
         <Route path="/admin/rgpd/editar" element={<EdicaoRGPD />} />
         <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
-        <Route path="/admin/badges" element={<GestaoBadges/>} />
-        <Route path="/admin/badges/novo" element={<CriarBadge/>} />
+        <Route path="/admin/badges" element={<GestaoBadges />} />
+        <Route path="/admin/badges/novo" element={<CriarBadge />} />
         <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
 
-        <Route path="/perfil" element={<PaginaPerfil />} />
-        <Route path="/notificacoes" element={<PaginaNotificacoes />} />
+        <Route path="/sll" element={<DashboardSll />} />
+        <Route path="/sll/badges" element={<CatalogoBadgesSll />} />
+        <Route path="/sll/badges/:id" element={<InformacaoBadgeSll />}/>
+        <Route path="/sll/solicitacoes" element={<SolicitacoesBadgesSll />} />
+        <Route path="/sll/solicitacoes/:idCandidatura" element={<DetalheSolicitacaoSll />}/>
+        <Route path="/sll/ranking" element={<RankingBadgesSll />} />
+        <Route path="/sll/historico-candidaturas" element={<HistoricoCandidaturasSll />}/>
+        <Route path="/sll/certificados" element={<GerarCertificadoSll />} />
+        <Route path="/sll/relatorios" element={<GerarRelatorioSll />} />
+        <Route path="/sll/consultores" element={<ListaConsultoresSll />}/>
+        <Route path="/sll/consultores/:idConsultor" element={<InformacaoConsultorSll />}/>
+        <Route path="/sll/definicoes" element={<DefinicoesSllPage />}/>
+        <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
 
-        {/* Rotas para o Talent Manager */}
-        <Route path="/talent_manager" element={<TM_Dashboard />} />
+        <Route path="/tm" element={<DashboardTm />} />
+        <Route path="/tm/badges" element={<CatalogoBadgesTm />}/>
+        <Route path="/tm/badges/:idBadge" element={<InformacaoBadgeTm />}/>
+        <Route path="/tm/solicitacoes" element={<SolicitacoesBadgesTm />}/>
+        <Route path="/tm/solicitacoes/:idCandidatura" element={<AvaliacaoBadgeTm />}/>
+        <Route path="/tm/consultores/:idConsultor" element={<InformacaoConsultorTm />}/>
+        <Route path="/tm/historico" element={<HistoricoCandidaturasTm />}/>
+        <Route path="/tm/historico/:idHistorico" element={<DetalheHistoricoTm />}/>
+        <Route path="/tm/expiracao" element={<BadgesExpiracaoTm />}/>
+        <Route path="/tm/expiracao/:idBadgeAtribuido" element={<DetalheExpiracaoBadgeTm />}/>
+        <Route path="/tm/relatorios" element={<GerarRelatorioTm />}/>
+        <Route path="/tm/consultores" element={<ListaConsultoresTm />}/>
+        <Route path="/tm/notificacoes" element={<NotificacoesTm />}/>
+        <Route path="/tm/definicoes" element={<DefinicoesTm />}/>
+        <Route path="/tm/perfil" element={<PerfilTm />}/>
+        <Route path="/tm/certificados" element={<GerarCertificadoTm />}/>
+        <Route path="/tm/desafios/novo" element={<CriarDesafioTm />}/>
 
-        {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
-        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );

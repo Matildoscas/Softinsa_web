@@ -30,12 +30,18 @@ function normalizarEstadoServiceLine(estado) {
 function normalizarArea(a) {
   return {
     id: a.id_areas || a.ID_AREAS || a.id_area || a.id || "",
+
     nome:
       a.nome_area ||
       a.NOME_AREA ||
       a.nome ||
       a.designacao ||
       "Área sem nome",
+
+    estado:
+      a.estado_area ||
+      a.ESTADO_AREA ||
+      "ATIVO",
   };
 }
 
@@ -237,7 +243,7 @@ function EditarServiceLine() {
       setErroGeral("");
 
       const [areasRes, serviceLineRes] = await Promise.all([
-        api.get("/areas"),
+        api.get("/areas/select"),
         api.get(`/servicelines/${id}`),
       ]);
 

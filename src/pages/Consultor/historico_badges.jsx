@@ -8,6 +8,11 @@ import Header from "../../components/Header.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
+import {
+  obterBonusBadge,
+  removerBadgesDuplicados,
+} from "../../utils/badgeBonus.js";
 
 function HistoricoBadgesPage() {
   const navigate = useNavigate();
@@ -55,11 +60,14 @@ function HistoricoBadgesPage() {
 
     Promise.all([
       api.get(`/badges/conquistados/${userId}`),
-      api.get(`/dashboard/${userId}`),
+      api.get(`/utilizadores/dashboard/${userId}`),
     ])
       .then(([badgesRes, dashboardRes]) => {
         const badgesRaw = Array.isArray(badgesRes.data) ? badgesRes.data : [];
-        const badgesUnicos = removerDuplicados(badgesRaw);
+        const badgesUnicos =
+        removerBadgesDuplicados(
+          badgesRaw
+        );
 
         console.table(
             badgesRaw.map((b) => ({
@@ -161,9 +169,20 @@ function HistoricoBadgesPage() {
                     </div>
                   </div>
 
-                  <Link to="/progresso" style={{ ...cardStyleBase, cursor: "pointer", textDecoration: "none", color: "inherit" }}>
-                    <BiBook size={25} />
-                    <div style={{ fontWeight: 600 }}>Progresso</div>
+                  <Link
+                    to="/lembretes"
+                    style={{
+                      ...cardStyleBase,
+                      cursor: "pointer",
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    <BiUserCircle size={25} />
+
+                    <div style={{ fontWeight: 600 }}>
+                      Lembretes
+                    </div>
                   </Link>
                 </div>
               </div>
@@ -222,75 +241,218 @@ function HistoricoSection({ title, sub, children }) {
   );
 }
 
-function HistoricoBadgeCard({ badge }) {
-  const estado = obterEstadoBadge(badge);
+function HistoricoBadgeCard({
+  badge,
+}) {
+  const estado =
+    obterEstadoBadge(badge);
+
+  const {
+    ganhouBonus,
+    pontosExtra,
+  } = obterBonusBadge(badge);
 
   return (
     <div
       style={{
         background: "white",
-        border: "1px solid #e5e7eb",
+
+        border: ganhouBonus
+          ? "2px solid #d4af37"
+          : "1px solid #e5e7eb",
+
+        boxShadow: ganhouBonus
+          ? "0 0 0 3px rgba(212,175,55,0.12)"
+          : "none",
+
         borderRadius: 12,
         marginBottom: 12,
         overflow: "hidden",
       }}
     >
-      <div style={{ padding: "16px", display: "flex", alignItems: "center", gap: 18 }}>
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: "50%",
-            background: estado.bgIcon,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexShrink: 0,
-            border: `1px solid ${estado.border}`,
-            fontSize: 28,
-          }}
-        >
-          🏅
-        </div>
+      <div
+        style={{
+          padding: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 18,
+        }}
+      >
+        <BadgeImage
+          badge={badge}
+          size={64}
+          background={
+            ganhouBonus
+              ? "#fff7d6"
+              : estado.bgIcon
+          }
+          borderColor={
+            ganhouBonus
+              ? "#d4af37"
+              : estado.border
+          }
+          padding={6}
+        />
 
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
-              {badge.nome || badge.nome_badge || "Badge"}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 3,
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: "#111827",
+              }}
+            >
+              {badge.nome ||
+                badge.nome_badge ||
+                "Badge"}
             </div>
 
-            <Badge bg={estado.bootstrap}>
+            <Badge
+              bg={estado.bootstrap}
+            >
               {estado.texto}
             </Badge>
+
+            {ganhouBonus && (
+              <span
+                style={{
+                  background: "#fff7d6",
+                  color: "#9a6b00",
+                  border:
+                    "1px solid #f0d36b",
+                  borderRadius: 999,
+                  padding: "3px 9px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                Desafio concluído
+              </span>
+            )}
           </div>
 
-          <div style={{ fontSize: 12, color: "#6b7280", maxWidth: 700 }}>
-            {badge.descricao || badge.descricao_badge_modelo || ""}
+          <div
+            style={{
+              fontSize: 12,
+              color: "#6b7280",
+              maxWidth: 700,
+            }}
+          >
+            {badge.descricao ||
+              badge.descricao_badge_modelo ||
+              ""}
           </div>
         </div>
 
-        <div style={{ border: "1.5px solid #d1d5db", borderRadius: 10, padding: "7px 12px", textAlign: "center", minWidth: 62 }}>
-          <div style={{ fontSize: 10, fontWeight: 600 }}>Pontos</div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>{badge.pontos || 0}</div>
+        <div
+          style={{
+            border: ganhouBonus
+              ? "1.5px solid #d4af37"
+              : "1.5px solid #d1d5db",
+
+            background: ganhouBonus
+              ? "#fffdf4"
+              : "white",
+
+            borderRadius: 10,
+            padding: "7px 12px",
+            textAlign: "center",
+            minWidth: 78,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: ganhouBonus
+                ? "#9a6b00"
+                : "#111827",
+            }}
+          >
+            Pontos
+          </div>
+
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+            }}
+          >
+            {badge.pontos || 0}
+          </div>
+
+          {ganhouBonus &&
+            pontosExtra > 0 && (
+              <div
+                style={{
+                  color: "#d4a017",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                +{pontosExtra} extra
+              </div>
+            )}
         </div>
       </div>
 
       <div
         style={{
-          borderTop: "1px solid #e5e7eb",
+          borderTop:
+            "1px solid #e5e7eb",
           padding: "10px 16px",
-          backgroundColor: "#fafafa",
+
+          backgroundColor:
+            ganhouBonus
+              ? "#fffdf4"
+              : "#fafafa",
+
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           gap: 12,
           flexWrap: "wrap",
           fontSize: 12,
           color: "#6b7280",
         }}
       >
-        <DataInfo label="Conquistado" value={formatarData(badge.data_atribuicao)} />
-        <DataInfo label="Validade" value={formatarData(badge.data_validade)} />
-        <DataInfo label="Estado" value={badge.estado_badge_atribuido || estado.texto} />
+        <DataInfo
+          label="Conquistado"
+          value={formatarData(
+            badge.data_atribuicao
+          )}
+        />
+
+        <DataInfo
+          label="Validade"
+          value={formatarData(
+            badge.data_validade
+          )}
+        />
+
+        <DataInfo
+          label="Estado"
+          value={
+            badge.estado_badge_atribuido ||
+            estado.texto
+          }
+        />
+
+        {ganhouBonus && (
+          <DataInfo
+            label="Bónus do desafio"
+            value={`+${pontosExtra} pontos`}
+          />
+        )}
       </div>
     </div>
   );

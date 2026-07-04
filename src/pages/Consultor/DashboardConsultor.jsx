@@ -126,15 +126,56 @@ function normalizarImagemSrc(imagem) {
     return null;
 }
 
+function normalizarBooleano(valor) {
+    if (typeof valor === "boolean") {
+        return valor;
+    }
+
+    if (typeof valor === "number") {
+        return valor === 1;
+    }
+
+    const texto = String(valor ?? "")
+        .trim()
+        .toLowerCase();
+
+    return [
+        "true",
+        "t",
+        "1",
+        "sim",
+        "yes",
+    ].includes(texto);
+}
+
 function normalizarBadge(badge) {
     const imagemSrc = normalizarImagemSrc(
-        badge.imagem_url || badge.imagem || badge.url_imagem
+        badge.imagem_url ||
+        badge.imagem ||
+        badge.url_imagem
     );
+
+    const pontosExtra = Number(
+        badge.pontos_extra ??
+        badge.pontos_bonus ??
+        0
+    );
+
+    const ganhouBonus =
+        normalizarBooleano(
+            badge.ganhou_bonus ??
+            badge.premio_atribuido
+        ) ||
+        pontosExtra > 0;
 
     return {
         ...badge,
+
         imagem_url: imagemSrc,
         imagem: imagemSrc,
+
+        ganhou_bonus: ganhouBonus,
+        pontos_extra: pontosExtra,
     };
 }
 
@@ -174,37 +215,157 @@ function PaginaPrincipal() {
         Promise.all([
             api.get(`/badges/conquistados/${userId}`),
             api.get(`/badges/recomendados/${userId}`),
-            api.get(`/dashboard/${userId}`)
+            api.get(
+            `/utilizadores/dashboard/${userId}`
+            )
         ])
-            .then(([progressoRes, recomendadosRes, dashboardRes]) => {
-                const progressoNormalizado = progressoRes.data.map(normalizarBadge);
-                const recomendadosNormalizados = recomendadosRes.data.map(normalizarBadge);
-
-                console.log("BADGES CONQUISTADOS:", progressoNormalizado);
-                console.log("BADGES RECOMENDADOS:", recomendadosNormalizados);
-
-                const badgesUnicos = progressoNormalizado.filter(
-                    (badge, index, self) => {
-                        const idBadge = badge.id || badge.id_badge_modelo || badge.badge_id;
-
-                        return index === self.findIndex((b) => {
-                            const outroId = b.id || b.id_badge_modelo || b.badge_id;
-                            return outroId === idBadge;
-                        });
-                    }
+            .then(
+            ([
+                progressoRes,
+                recomendadosRes,
+                dashboardRes,
+            ]) => {
+                console.log(
+                    "BADGES CONQUISTADOS — API:",
+                    progressoRes.data
                 );
 
-                setProgressoBadges(badgesUnicos);
-                setRecomendados(recomendadosNormalizados);
+                const progressoNormalizado =
+                    Array.isArray(
+                        progressoRes.data
+                    )
+                        ? progressoRes.data.map(
+                            normalizarBadge
+                        )
+                        : [];
 
-                setProgressoBadges(badgesUnicos);
-                setRecomendados(recomendadosRes.data);
+                console.table(
+                    progressoNormalizado.map(
+                        (badge) => ({
+                            id:
+                                badge.id_badge_modelo ||
+                                badge.id,
+
+                            nome:
+                                badge.nome_badge ||
+                                badge.nome,
+
+                            ganhou_bonus:
+                                badge.ganhou_bonus,
+
+                            pontos_extra:
+                                badge.pontos_extra,
+
+                            pontos_base:
+                                badge.pontos,
+                        })
+                    )
+                );
+
+                const recomendadosNormalizados =
+                    Array.isArray(
+                        recomendadosRes.data
+                    )
+                        ? recomendadosRes.data.map(
+                            normalizarBadge
+                        )
+                        : [];
+
+                const badgesUnicos =
+                    Array.from(
+                        progressoNormalizado.reduce(
+                            (mapa, badge) => {
+                                const idBadge =
+                                    badge.id ||
+                                    badge.id_badge_modelo ||
+                                    badge.badge_id;
+
+                                const chave =
+                                    String(idBadge);
+
+                                const existente =
+                                    mapa.get(chave);
+
+                                if (!existente) {
+                                    mapa.set(
+                                        chave,
+                                        badge
+                                    );
+
+                                    return mapa;
+                                }
+
+                                mapa.set(chave, {
+                                    ...existente,
+                                    ...badge,
+
+                                    ganhou_bonus:
+                                        Boolean(
+                                            existente.ganhou_bonus
+                                        ) ||
+                                        Boolean(
+                                            badge.ganhou_bonus
+                                        ),
+
+                                    pontos_extra:
+                                        Math.max(
+                                            Number(
+                                                existente.pontos_extra ||
+                                                0
+                                            ),
+
+                                            Number(
+                                                badge.pontos_extra ||
+                                                0
+                                            )
+                                        ),
+                                });
+
+                                return mapa;
+                            },
+                            new Map()
+                        ).values()
+                    );
+
+                console.table(
+                    badgesUnicos.map(
+                        (badge) => ({
+                            nome:
+                                badge.nome_badge ||
+                                badge.nome,
+
+                            ganhou_bonus:
+                                badge.ganhou_bonus,
+
+                            pontos_extra:
+                                badge.pontos_extra,
+                        })
+                    )
+                );
+
+                setProgressoBadges(
+                    badgesUnicos
+                );
+
+                setRecomendados(
+                    recomendadosNormalizados
+                );
 
                 setStats({
-                    total_badges: Number(dashboardRes.data.total_badges || 0),
-                    total_pontos: Number(dashboardRes.data.total_pontos || 0)
+                    total_badges: Number(
+                        dashboardRes.data
+                            .total_badges ||
+                        0
+                    ),
+
+                    total_pontos: Number(
+                        dashboardRes.data
+                            .total_pontos ||
+                        0
+                    ),
                 });
-            })
+            }
+        )
             .catch(err => {
                 console.error("Erro ao carregar dados:", err);
                 console.error("STATUS:", err.response?.status);
@@ -267,10 +428,20 @@ function PaginaPrincipal() {
                         </Card.Body>
                     </Card>
 
-                    <div className="text-center mb-4">
-                        <Button variant="white" onClick={() => navigate('/catalogo-badges')} className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2 mx-auto" style={{ fontSize: 15, fontWeight: 600 }}>
-                            <BiGrid size={20} /> Catálogo de Badges
-                        </Button>
+                    <div
+                    className="d-flex justify-content-center mb-4"
+                    >
+                    <Button
+                        variant="light"
+                        onClick={() =>
+                        navigate("/catalogo-badges")
+                        }
+                        className="d-flex align-items-center justify-content-center gap-2"
+                        style={dashboardCatalogButton}
+                    >
+                        <BiGrid size={18} />
+                        Catálogo de Badges
+                    </Button>
                     </div>
 
                     {/* Seção: Badges com Progresso */}
@@ -289,6 +460,8 @@ function PaginaPrincipal() {
                                     imageUrl={b.imagem_url || b.imagem || b.url_imagem}
                                     progress={b.progress || b.progresso || 0}
                                     conquistado={true}
+                                    ganhouBonus={b.ganhou_bonus}
+                                    pontosExtra={b.pontos_extra}
                                     onClick={() => navigate(`/badge-detalhe/${b.id || b.id_badge_modelo}`)}
                                     dateConquered={
                                         b.data_atribuicao
@@ -365,17 +538,24 @@ function BadgeCard({
     progress, 
     dateConquered, 
     conquistado = false, 
+    ganhouBonus = false,
+    pontosExtra = 0,
     onClick 
 }) {
     return (
         <div 
             style={{ 
                 background: "white", 
-                border: "1px solid #e5e7eb", 
+                border: ganhouBonus
+                    ? "2px solid #d4af37"
+                    : "1px solid #e5e7eb",
                 borderRadius: 12, 
                 marginBottom: 10, 
                 overflow: 'hidden', 
-                cursor: 'pointer' 
+                cursor: 'pointer',
+                boxShadow: ganhouBonus
+                    ? "0 0 0 3px rgba(212, 175, 55, 0.12)"
+                    : "none"
             }} 
             onClick={onClick}
         >
@@ -383,8 +563,26 @@ function BadgeCard({
                 <BadgeImage imageUrl={imageUrl} size={70} />
 
                 <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>
-                        {name}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>
+                            {name}
+                        </div>
+
+                        {ganhouBonus && (
+                            <span
+                                style={{
+                                    background: "#fff7d6",
+                                    color: "#9a6b00",
+                                    border: "1px solid #f0d36b",
+                                    borderRadius: 999,
+                                    padding: "4px 10px",
+                                    fontSize: 11,
+                                    fontWeight: 700
+                                }}
+                            >
+                                Tempo recorde
+                            </span>
+                        )}
                     </div>
 
                     <div style={{ fontSize: 12, color: '#6b7280' }}>
@@ -420,15 +618,42 @@ function BadgeCard({
 
                 <div 
                     style={{ 
-                        border: '1.5px solid #d1d5db', 
+                        border: ganhouBonus
+                            ? "1.5px solid #d4af37"
+                            : "1.5px solid #d1d5db",
                         borderRadius: 10, 
-                        padding: '5px 10px', 
+                        padding: '8px 12px', 
                         textAlign: 'center', 
-                        minWidth: 60 
+                        minWidth: 78,
+                        background: ganhouBonus ? "#fffdf4" : "white"
                     }}
                 >
-                    <div style={{ fontSize: 10, fontWeight: 600 }}>Pontos</div>
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>{points}</div>
+                    <div
+                        style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: ganhouBonus ? "#9a6b00" : "#111827"
+                        }}
+                    >
+                        Pontos
+                    </div>
+
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
+                        {points}
+                    </div>
+
+                    {ganhouBonus && pontosExtra > 0 && (
+                        <div
+                            style={{
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: "#d4a017",
+                                marginTop: 2
+                            }}
+                        >
+                            +{pontosExtra} extra
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -437,14 +662,17 @@ function BadgeCard({
                     style={{
                         borderTop: "1px solid #e5e7eb",
                         padding: "6px",
-                        backgroundColor: "#fafafa",
+                        backgroundColor: ganhouBonus ? "#fffdf4" : "#fafafa",
                         textAlign: "center",
                         fontSize: 11,
-                        color: conquistado ? "#2E7D32" : "#65696f",
+                        color: ganhouBonus ? "#9a6b00" : (conquistado ? "#2E7D32" : "#65696f"),
                         fontWeight: 600,
                     }}
                 >
                     {dateConquered}
+                    {ganhouBonus && pontosExtra > 0
+                        ? ` • Recebeste +${pontosExtra} pontos extra`
+                        : ""}
                 </div>
             )}
         </div>
@@ -526,5 +754,26 @@ function BadgeImage({ imageUrl, size = 70 }) {
         </div>
     );
 }
+
+const dashboardCatalogButton = {
+  minWidth: 220,
+  height: 40,
+  padding: "0 18px",
+
+  border: "1px solid #d6dbe1",
+  borderRadius: 8,
+
+  background: "#f8f9fa",
+  color: "#344054",
+
+  fontSize: 14,
+  fontWeight: 500,
+
+  boxShadow:
+    "0 1px 2px rgba(0, 0, 0, 0.05)",
+
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
+};
 
 export default PaginaPrincipal;
