@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Navbar, Nav, Form, OverlayTrigger, Popover } from 'react-bootstrap';
 import { BiFace, BiLoader, BiBook, BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
-import logoImg from './assets/logo.png';
+import logoImg from '../../assets/logo.png';
 import { useNavigate, Link } from 'react-router-dom';
-import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
+import Header from '../../components/Header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 import BadgeImage from "../../components/badge_image.jsx";
 
 function ProgressoPage() {

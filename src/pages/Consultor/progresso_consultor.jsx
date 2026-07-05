@@ -5,9 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js'; // Garante que o caminho está correto
 
 // Importação dos teus componentes estruturais
-import Header from '../../components/header.jsx';
-import RightSidebar from '../../components/right_sidebar.jsx';
-import LeftSidebar from '../../components/left_sidebar.jsx';
+import Header from '../../components/Header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 import BadgeImage from "../../components/badge_image.jsx";
 import {
   obterBonusBadge,

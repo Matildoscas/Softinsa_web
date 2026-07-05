@@ -36,9 +36,9 @@ import {
 
 import api from "../../services/api.js";
 
-import Header from "../../components/header.jsx";
-import RightSidebar from "../../components/right_sidebar.jsx";
-import LeftSidebar from "../../components/left_sidebar.jsx";
+import Header from "../../components/Header.jsx";
+import RightSidebar from "../../components/RightSidebar.jsx";
+import LeftSidebar from "../../components/LeftSidebar.jsx";
 
 function construirRotaSubmissaoBadge(
   idBadgeModelo

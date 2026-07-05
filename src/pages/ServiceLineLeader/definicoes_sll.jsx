@@ -21,7 +21,7 @@ import {
   BiChevronRight,
 } from "react-icons/bi";
 
-import Header from "../../components/header.jsx";
+import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
 import SllRightSidebar from "../../components/sll_right_sidebar.jsx";
 

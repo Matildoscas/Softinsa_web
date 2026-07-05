@@ -19,7 +19,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import NotificationPopover from "./notificacoes_pop";
+import NotificationPopover from "./NotificacoesPop.jsx";
 
 import logoImg from "../assets/logo.png";
 

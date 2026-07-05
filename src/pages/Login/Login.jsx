@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, InputGroup, Alert } from "react-bootstrap";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api"; // Importa a instância do Axios configurada anteriormente
+import api from "../../services/api.js"; // Importa a instância do Axios configurada anteriormente
 import ImagemLogin from "../../assets/imagem_login.png";
 import {
   definirUtilizadorAnalytics,

@@ -29,7 +29,7 @@ import {
 
 import api from "../../services/api.js";
 
-import Header from "../../components/header.jsx";
+import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
