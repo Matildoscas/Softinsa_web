@@ -443,7 +443,7 @@ function obterEstadoVisual(estado) {
   }
 
   return {
-    label: "Aguardar validação do TM",
+    label: "Aguardar validação do SLL",
     background: "#fef3c7",
     color: "#92400e",
     border: "#fde68a",

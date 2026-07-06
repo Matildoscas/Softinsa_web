@@ -142,6 +142,10 @@ function CatalogoBadgesSll() {
   const [badges, setBadges] = useState([]);
   const [serviceLine, setServiceLine] =
     useState(null);
+  const [serviceLines, setServiceLines] =
+    useState([]);
+  const [serviceLineId, setServiceLineId] =
+    useState(null);
 
   const [pesquisa, setPesquisa] =
     useState("");
@@ -159,8 +163,35 @@ function CatalogoBadgesSll() {
     useState("");
 
   useEffect(() => {
-    carregarBadges();
+    carregarServiceLines();
   }, []);
+
+  useEffect(() => {
+    carregarBadges();
+  }, [serviceLineId]);
+
+  /* =======================================================
+     CARREGAR SERVICE LINES
+  ======================================================= */
+
+  async function carregarServiceLines() {
+    try {
+      const response = await api.get(
+        "/servicelines/select"
+      );
+
+      if (
+        Array.isArray(response.data)
+      ) {
+        setServiceLines(response.data);
+      }
+    } catch (err) {
+      console.error(
+        "Erro ao carregar Service Lines:",
+        err
+      );
+    }
+  }
 
   /* =======================================================
      CARREGAR BADGES
@@ -188,9 +219,13 @@ function CatalogoBadgesSll() {
       setIsLoading(true);
       setErro("");
 
-      const response = await api.get(
-        `/sll/${idUtilizador}/badges`
-      );
+      let endpoint = `/sll/${idUtilizador}/badges`;
+
+      if (serviceLineId) {
+        endpoint += `?id_serviceline=${serviceLineId}`;
+      }
+
+      const response = await api.get(endpoint);
 
       console.log(
         "CATÁLOGO SLL:",
@@ -668,6 +703,46 @@ function CatalogoBadgesSll() {
             <div style={filtroCampo}>
               <label style={filtroLabel}>
                 <BiFilterAlt size={16} />
+                Service Line
+              </label>
+
+              <select
+                value={serviceLineId || ""}
+                onChange={(event) =>
+                  setServiceLineId(
+                    event.target.value
+                      ? Number(
+                          event.target.value
+                        )
+                      : null
+                  )
+                }
+                style={selectFiltro}
+              >
+                <option value="">
+                  Minha Service Line
+                </option>
+
+                {serviceLines.map(
+                  (sl) => (
+                    <option
+                      key={
+                        sl.id_serviceline
+                      }
+                      value={
+                        sl.id_serviceline
+                      }
+                    >
+                      {sl.nome_serviceline}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
+            <div style={filtroCampo}>
+              <label style={filtroLabel}>
+                <BiFilterAlt size={16} />
                 Filtrar por
               </label>
 
@@ -797,8 +872,9 @@ function CatalogoBadgesSll() {
             </div>
           ) : (
             <div style={loadingBox}>
-              Não foram encontrados badges
-              nesta Service Line.
+              {serviceLineId
+                ? "Não foram encontrados badges nesta Service Line."
+                : "Não foram encontrados badges."}
             </div>
           )}
         </main>
@@ -1237,7 +1313,7 @@ const pesquisaInput = {
 const filtrosContainer = {
   display: "grid",
   gridTemplateColumns:
-    "repeat(2, minmax(0, 1fr))",
+    "repeat(auto-fit, minmax(220px, 1fr))",
   gap: 16,
   background: "white",
   border: "1px solid #e5e7eb",

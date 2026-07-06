@@ -81,6 +81,11 @@ function normalizarSolicitacao(
 
     data_submissao:
       solicitacao.data_submissao ||
+      solicitacao.data_submisao ||
+      null,
+
+    data_rececao_sll:
+      solicitacao.data_rececao_sll ||
       null,
 
     estado:
@@ -124,15 +129,40 @@ function formatarData(data) {
     return "Data não disponível";
   }
 
-  const date = new Date(data);
-
-  if (Number.isNaN(date.getTime())) {
+  const valor = String(data).trim();
+  if (!valor) {
     return "Data não disponível";
   }
 
-  return date.toLocaleDateString(
-    "pt-PT"
-  );
+  const tryParse = (input) => {
+    const date = new Date(input);
+    return Number.isNaN(date.getTime())
+      ? null
+      : date;
+  };
+
+  let date = tryParse(valor);
+
+  if (!date) {
+    const iso = valor.replace(/\s+/g, "T");
+    date = tryParse(iso);
+  }
+
+  if (!date) {
+    const semMilissegundos = valor.replace(/\.\d+/, "");
+    date = tryParse(semMilissegundos);
+  }
+
+  if (!date) {
+    const apenasData = valor.split(" ")[0];
+    date = tryParse(apenasData);
+  }
+
+  if (!date) {
+    return "Data não disponível";
+  }
+
+  return date.toLocaleDateString("pt-PT");
 }
 
 function SolicitacoesBadgesSll() {
@@ -289,10 +319,12 @@ function SolicitacoesBadgesSll() {
         ) {
           return (
             new Date(
-              a.data_submissao
+              a.data_rececao_sll ||
+                a.data_submissao
             ) -
             new Date(
-              b.data_submissao
+              b.data_rececao_sll ||
+                b.data_submissao
             )
           );
         }
@@ -319,10 +351,12 @@ function SolicitacoesBadgesSll() {
 
         return (
           new Date(
-            b.data_submissao
+            b.data_rececao_sll ||
+              b.data_submissao
           ) -
           new Date(
-            a.data_submissao
+            a.data_rececao_sll ||
+              a.data_submissao
           )
         );
       });
@@ -404,6 +438,8 @@ function SolicitacoesBadgesSll() {
               solicitacao.nome_nivel,
               solicitacao.nome_area,
               formatarData(
+                solicitacao
+                  .data_rececao_sll ||
                 solicitacao
                   .data_submissao
               ),
@@ -488,6 +524,8 @@ function SolicitacoesBadgesSll() {
           solicitacao.nome_area,
 
           formatarData(
+            solicitacao
+              .data_rececao_sll ||
             solicitacao
               .data_submissao
           ),
@@ -825,6 +863,8 @@ function SolicitacaoCard({
           <div style={dataTexto}>
             Solicitado em{" "}
             {formatarData(
+              solicitacao
+                .data_rececao_sll ||
               solicitacao
                 .data_submissao
             )}
