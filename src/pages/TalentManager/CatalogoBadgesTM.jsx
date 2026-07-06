@@ -5,8 +5,8 @@ import { HiOutlineArrowLeft } from "react-icons/hi";
 import { BiMedal, BiSearch, BiChevronDown } from "react-icons/bi";
 
 // Componentes estruturais do teu projeto
-import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/RightSidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import RightSidebar from "../../components/TM_RightBar.jsx";
 import LeftBarTM from "../../components/LeftBarTM.jsx";
 import api from "../../services/api.js";
 

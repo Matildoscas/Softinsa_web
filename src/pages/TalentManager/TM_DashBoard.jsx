@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Card, Button, Row, Col, Spinner } from 'react-bootstrap';
+import { Card, Button, Row, Col, Spinner, Form } from 'react-bootstrap';
 import { BiMedal, BiUserCircle, BiTime, BiGroup, BiBriefcase, BiMenu } from 'react-icons/bi';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api.js'; 
 
-// Importação dos componentes estruturais (Atualizado para incluir o novo SidebarTM)
-import Header from '../../components/Header.jsx';
-import RightSidebar from '../../components/RightSidebar.jsx';
+// Importação dos componentes estruturais
+import Header from '../../components/TM_Header.jsx';
+import RightSidebar from '../../components/TM_RightBar.jsx';
 import LeftBarTM from '../../components/LeftBarTM.jsx';
 
 function DashboardTM() {
@@ -15,8 +15,11 @@ function DashboardTM() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     
-    // Estados dinâmicos que recebem os dados simulados/reais do SQL
-    const [topConsultores, setTopConsultores] = useState([]);
+    // Estados dinâmicos atualizados para os dois rankings separados
+    const [topConsultoresArea, setTopConsultoresArea] = useState([]);
+    const [topConsultoresSL, setTopConsultoresSL] = useState([]);
+    const [escopoRanking, setEscopoRanking] = useState("area"); // Controla o Dropdown: "area" ou "serviceline"
+    
     const [statsTM, setStatsTM] = useState({
         consultores_online: 0,
         badges_totais: 0,
@@ -43,37 +46,25 @@ function DashboardTM() {
             const userData = JSON.parse(storedUser);
             setUser(userData);
             
-            // 🚀 CARREGAMENTO DOS DADOS DO TEU SCRIPT SQL (Via Fallback Seguro)
-            setTimeout(() => {
-                setTopConsultores([
-                    { id: 5, nome: "Eduardo Ramos", area: "LowCode (Outsystems)", email: "eduardo@softinsa.pt", badges: 3 },
-                    { id: 6, nome: "Filipa Santos", area: "DevSecOps & IT Automation", email: "filipa@softinsa.pt", badges: 1 }
-                ]);
+            const userId = userData.id_utilizador || userData.id;
 
-                setStatsTM({
-                    consultores_online: 5, 
-                    badges_totais: 15,     
-                    sll_online: 2,
-                    badges_atribuidos_mes: 6, 
-                    candidaturas_ativas: 3,   
-                    candidaturas_por_ver: 1,  
-                    total_consultores: 12,
-                    crescimento_consultores: "+8%"
+            // Chamada à API que traz os dois rankings calculados
+            api.get(`/utilizadores/tm/dashboard/${userId}`)
+                .then((response) => {
+                    const dadosDoBanco = response.data;
+
+                    if (dadosDoBanco.topConsultoresArea) setTopConsultoresArea(dadosDoBanco.topConsultoresArea);
+                    if (dadosDoBanco.topConsultoresServiceLine) setTopConsultoresSL(dadosDoBanco.topConsultoresServiceLine);
+                    if (dadosDoBanco.statsTM) setStatsTM(dadosDoBanco.statsTM);
+                    if (dadosDoBanco.areaFocada) setAreaFocada(dadosDoBanco.areaFocada);
+                    if (dadosDoBanco.dadosGrafico) setDadosGrafico(dadosDoBanco.dadosGrafico);
+
+                    setLoading(false);
+                })
+                .catch((error) => {
+                    console.error("Erro ao carregar dados do dashboard:", error);
+                    setLoading(false);
                 });
-
-                setAreaFocada({ 
-                    nome: "LowCode (Outsystems)", 
-                    total: 5 
-                });
-
-                setDadosGrafico([
-                    { label: "LowCode", value: 5, color: "#0d6efd", max: 15 },
-                    { label: "DevSecOps", value: 4, color: "#4ade80", max: 15 },
-                    { label: "Talent Mgmt", value: 3, color: "#000000", max: 15 }
-                ]);
-
-                setLoading(false);
-            }, 300); // Carrega rapidamente em 300ms
 
         } catch (parseError) {
             console.error("Erro ao ler o utilizador do localStorage:", parseError);
@@ -94,8 +85,6 @@ function DashboardTM() {
             <Header />
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                
-                {/* 🔄 Sidebar Dinâmico com destaque de rota ativa adicionado aqui */}
                 <LeftBarTM />
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
@@ -109,7 +98,7 @@ function DashboardTM() {
                                 </h4>
                                 <div className="d-flex gap-4">
                                     <TopStatBox icon={<BiUserCircle size={24}/>} title="Consultores" value={`${statsTM.consultores_online} consultores online`} />
-                                    <TopStatBox icon={<BiMedal size={24}/>} title="Badges" value={`Tem ${statsTM.badges_totais} badges`} />
+                                    <TopStatBox icon={<BiMedal size={24}/>} title="Badges" value={`Tem ${statsTM.badges_totais} badges Aprovados`} />
                                     <TopStatBox icon={<BiBriefcase size={24}/>} title="Service Line Liders" value={`${statsTM.sll_online} sll online`} />
                                 </div>
                             </div>
@@ -119,11 +108,17 @@ function DashboardTM() {
                         </Card.Body>
                     </Card>
 
-                    {/* CABEÇALHO DA ÁREA */}
+                    {/* CABEÇALHO DINÂMICO (ÁREA OU SERVICE LINE) */}
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h5 className="mb-0 fw-bold">Área: {areaFocada.nome}</h5>
-                            <small className="text-muted">Tem {areaFocada.total} consultores</small>
+                            <h5 className="mb-0 fw-bold">
+                                {escopoRanking === "area" 
+                                    ? `Área: ${areaFocada.nome}` 
+                                    : `Service Line: ${areaFocada.serviceline_nome || "Sem Nome"}`}
+                            </h5>
+                            <small className="text-muted">
+                                Tem {escopoRanking === "area" ? areaFocada.total : (areaFocada.serviceline_total || 0)} consultores
+                            </small>
                         </div>
                         <Button variant="outline-secondary" size="sm" className="d-flex align-items-center gap-2 rounded-3 bg-white" 
                                 onClick={() => navigate('/tm/catalogo')}>
@@ -132,15 +127,41 @@ function DashboardTM() {
                     </div>
 
                     <Row className="mb-4">
-                        {/* LISTA TOP 3 CONSULTORES */}
+                        {/* LISTA DE CONSULTORES COM FILTRO POR DROPDOWN */}
                         <Col lg={8}>
-                            <h6 className="mb-3 fw-bold text-secondary">Top 3 este mês:</h6>
-                            {topConsultores.length > 0 ? (
-                                topConsultores.map((consultor) => (
-                                    <ConsultorCard key={consultor.id} data={consultor} />
-                                ))
+                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h6 className="mb-0 fw-bold text-secondary">Classificação de Consultores</h6>
+                                
+                                {/* Dropdown de seleção de escopo */}
+                                <Form.Select 
+                                    size="sm" 
+                                    className="rounded-3 border shadow-sm" 
+                                    style={{ width: '240px', fontWeight: 500, cursor: 'pointer' }}
+                                    value={escopoRanking}
+                                    onChange={(e) => setEscopoRanking(e.target.value)}
+                                >
+                                    <option value="area">Ver Top da Área</option>
+                                    <option value="serviceline">Ver Top da Service Line</option>
+                                </Form.Select>
+                            </div>
+
+                            {/* Renderização Condicional baseada na seleção do Dropdown */}
+                            {escopoRanking === "area" ? (
+                                topConsultoresArea.length > 0 ? (
+                                    topConsultoresArea.map((consultor) => (
+                                        <ConsultorCard key={consultor.id} data={consultor} />
+                                    ))
+                                ) : (
+                                    <p className="text-muted small bg-white p-4 rounded-4 border shadow-sm text-center">Nenhum consultor com badges atribuídos nesta área.</p>
+                                )
                             ) : (
-                                <p className="text-muted small">Nenhum consultor com badges atribuídos este mês.</p>
+                                topConsultoresSL.length > 0 ? (
+                                    topConsultoresSL.map((consultor) => (
+                                        <ConsultorCard key={consultor.id} data={consultor} />
+                                    ))
+                                ) : (
+                                    <p className="text-muted small bg-white p-4 rounded-4 border shadow-sm text-center">Nenhum consultor com badges atribuídos nesta Service Line.</p>
+                                )
                             )}
                         </Col>
 
@@ -189,7 +210,7 @@ function DashboardTM() {
     );
 }
 
-// Componentes auxiliares de UI preservados
+// Componentes auxiliares de UI mantidos e intactos
 function TopStatBox({ icon, title, value }) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.15)', padding: '10px 16px', borderRadius: 10 }}>

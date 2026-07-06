@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Container, Row, Col, Card, Form, Button, InputGroup, Alert } from "react-bootstrap";
+import { Container, Row, Col, Card, Form, Button, InputGroup, Alert, Spinner } from "react-bootstrap";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api"; 
@@ -10,6 +10,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -20,6 +21,8 @@ function LoginPage() {
       setError("Preencha o email e a password!");
       return;
     }
+
+    setLoading(true);
 
     try {
       // Chamada à API
@@ -34,9 +37,8 @@ function LoginPage() {
 
         const apiUser = response.data.user;
 
-        // CORREÇÃO: LER EM MINÚSCULAS CONFORME VEM NO CONSOLE LOG
         const userEmail = apiUser.email || apiUser.email_utilizador || apiUser.EMAIL_SOFTINSA;
-        const userCargo = apiUser.cargo || 'TALENT_MANAGER'; // Forçamos TALENT_MANAGER temporariamente para teste
+        const userCargo = apiUser.cargo || 'TALENT_MANAGER'; 
 
         const utilizadorSeguro = {
           id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
@@ -49,7 +51,6 @@ function LoginPage() {
 
         console.log("UTILIZADOR SEGURO:", utilizadorSeguro);
 
-        // Salva os dados limpos do utilizador
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
         const tipo = String(utilizadorSeguro.tipo_utilizador || "")
@@ -69,11 +70,11 @@ function LoginPage() {
       }
     } catch (err) {
       console.error("Erro na tentativa de login:", err);
+      setLoading(false);
       
       if (err.response && err.response.status === 403) {
         setError("Confirme o seu email antes de iniciar sessão.");
       } else {
-        // Puxa dinamicamente a mensagem de erro tratada no teu backend
         setError(err.response?.data?.message || err.response?.data?.error || "Email ou password incorretos!");
       }
     }
@@ -105,6 +106,7 @@ function LoginPage() {
                       placeholder="Email" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading} // 🔒 Bloqueia o campo durante o loading
                     />
                   </InputGroup>
                 </Form.Group>
@@ -117,16 +119,22 @@ function LoginPage() {
                       placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading} // 🔒 Bloqueia o campo durante o loading
                     />
-                    <InputGroup.Text style={{ cursor: 'pointer' }} onClick={() => setShowPassword(!showPassword)}>
+                    <InputGroup.Text 
+                      style={{ cursor: loading ? 'not-allowed' : 'pointer' }} 
+                      onClick={() => !loading && setShowPassword(!showPassword)}
+                    >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </InputGroup.Text>
                   </InputGroup>
                 </Form.Group>
 
+                {/* 🏁 BOTÃO DINÂMICO COM ANIMAÇÃO */}
                 <Button 
                   type="submit"
                   variant="primary" 
+                  disabled={loading} // 🔒 Desativa o clique para evitar duplo envio
                   className="w-100 d-flex align-items-center justify-content-center gap-2 mb-5" 
                   style={{ 
                     backgroundColor: '#1d61ff', 
@@ -134,10 +142,26 @@ function LoginPage() {
                     borderRadius: '8px', 
                     height: '50px',
                     fontSize: '1rem',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    opacity: loading ? 0.7 : 1 // Efeito visual de desativado
                   }}
                 >
-                  Entrar <ArrowRight size={18} />
+                  {loading ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                      />
+                      <span>A iniciar sessão...</span>
+                    </>
+                  ) : (
+                    <>
+                      Entrar <ArrowRight size={18} />
+                    </>
+                  )}
                 </Button>
 
                 <div className="text-center">
@@ -146,14 +170,16 @@ function LoginPage() {
                     Registar
                   </a>
                 </div>
-                  <Button
-                    type="button"
-                    variant="outline-primary"
-                    className="w-100 mt-3"
-                    onClick={() => navigate("/galeria-badges")}
-                  >
-                    Ver galeria de badges
-                  </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline-primary"
+                  className="w-100 mt-3"
+                  disabled={loading} 
+                  onClick={() => navigate("/galeria-badges")}
+                >
+                  Ver galeria de badges
+                </Button>
               </Form>
             </Card.Body>
           </Card>

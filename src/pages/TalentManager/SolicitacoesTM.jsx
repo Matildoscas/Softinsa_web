@@ -5,8 +5,8 @@ import { HiOutlineArrowLeft } from "react-icons/hi";
 import { BiSearch, BiUserCircle, BiTimeFive, BiHistory } from "react-icons/bi";
 
 // Componentes estruturais do teu ecossistema
-import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/RightSidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import RightSidebar from "../../components/TM_RightBar.jsx";
 import LeftBarTM from "../../components/LeftBarTM.jsx";
 import api from "../../services/api.js";
 
@@ -149,7 +149,7 @@ function SolicitacaoBadges() {
                     <CandidaturaPedidoRow
                       key={idPedido}
                       pedido={pedido}
-                      onClick={() => navigate(`/tm/avaliar/${idPedido}`)}
+                      onClick={() => navigate(`/tm/avaliacao-solicitacao/${idPedido}`)}
                     />
                   );
                 })}
@@ -249,10 +249,20 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
         </span>
         
         <button 
+          type="button"
           style={isEmAvaliacao ? btnContinuar : btnAvaliar} 
           onClick={onClick}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = isEmAvaliacao ? '#2563ebcc' : '#2563EB';
+            e.currentTarget.style.color = '#ffffff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = isEmAvaliacao ? '#ffffff' : '#2563EB';
+            e.currentTarget.style.color = isEmAvaliacao ? '#2563EB' : '#ffffff';
+          }}
         >
           {isEmAvaliacao ? "Continuar Avaliação" : "Avaliar"}
+          
         </button>
       </div>
     </div>

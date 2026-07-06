@@ -46,6 +46,11 @@ import TM_Dashboard from './pages/TalentManager/TM_DashBoard.jsx';
 import TM_CatalogoBadges from './pages/TalentManager/CatalogoBadgesTM.jsx';
 import SolicitacoesTM from './pages/TalentManager/SolicitacoesTM.jsx';
 import AvaliacaoTM from './pages/TalentManager/AvaliacaoTM.jsx';
+import AvaliacaoSolicitacaoTM from './pages/TalentManager/AvaliacaoSolicitacaoTM.jsx';
+import HistoricoCandidaturasTM from './pages/TalentManager/HistoricoCandidaturasTM.jsx';
+import DetalhesHistoricoTM from './pages/TalentManager/DetalhesHistoricoTM.jsx';
+import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';
+import TM_Definicoes from './pages/TalentManager/TM_Definicoes.jsx';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -105,6 +110,12 @@ function App() {
         <Route path="/tm/CatalogoBadges" element={<TM_CatalogoBadges/>} />
         <Route path="/tm/Solicitacoes" element={<SolicitacoesTM />} />
         <Route path="/tm/avaliacao/:id" element={<AvaliacaoTM />} />
+        <Route path="/tm/avaliacao-solicitacao/:id" element={<AvaliacaoSolicitacaoTM />} />
+        <Route path="/tm/HistoricoCandidaturas" element={<HistoricoCandidaturasTM />} />
+        <Route path="/tm/detalhes-historico/:id" element={<DetalhesHistoricoTM />} />
+        <Route path="/tm/perfil" element={<TM_Perfil />} />
+        <Route path="/tm/definicoes" element={<TM_Definicoes />} />
+
         
         {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
         <Route path="*" element={<Navigate to="/login" />} />
