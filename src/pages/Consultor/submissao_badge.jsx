@@ -34,24 +34,106 @@ function SubmeterEvidenciasPage() {
   const [comentario, setComentario] = useState("");
   const [loading, setLoading] = useState(true);
   const [submeterLoading, setSubmeterLoading] = useState(false);
+  const [
+    autorizaPublicacaoBadge,
+    setAutorizaPublicacaoBadge,
+  ] = useState(false);
+
+  const [
+    linkedinPublicacaoBadge,
+    setLinkedinPublicacaoBadge,
+  ] = useState("");
 
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
 
     lista.forEach((linha) => {
-      const badgeId = Number(linha.id || linha.id_badge_modelo);
+    const badgeId = Number(
+      linha.id_badge_modelo ||
+      linha.id
+    );
 
-      if (!mapa.has(badgeId)) {
-        mapa.set(badgeId, {
-          id: badgeId,
-          nome: linha.nome || linha.nome_badge,
-          descricao: linha.descricao || linha.descricao_badge_modelo,
-          pontos: linha.pontos,
-          id_nivel: linha.id_nivel,
-          id_areas: linha.id_areas,
-          nome_area: linha.nome_area || linha.nome_areas || linha.area || "",
-          requisitos: [],
-        });
+    if (!badgeId) {
+      return;
+    }
+
+    const imagem =
+      linha.imagem ??
+      linha.imagem_url ??
+      linha.url_imagem ??
+      linha.imagem_badge ??
+      null;
+
+    if (!mapa.has(badgeId)) {
+      mapa.set(badgeId, {
+        ...linha,
+
+        id: badgeId,
+        id_badge_modelo:
+          badgeId,
+
+        nome:
+          linha.nome ||
+          linha.nome_badge ||
+          "Badge",
+
+        descricao:
+          linha.descricao ||
+          linha.descricao_badge_modelo ||
+          "",
+
+        pontos:
+          Number(
+            linha.pontos || 0
+          ),
+
+        id_nivel:
+          linha.id_nivel,
+
+        id_areas:
+          linha.id_areas,
+
+        nome_area:
+          linha.nome_area ||
+          linha.nome_areas ||
+          linha.area ||
+          "",
+
+        imagem,
+        imagem_url:
+          imagem,
+        url_imagem:
+          imagem,
+        imagem_badge:
+          imagem,
+
+        requisitos: [],
+      });
+    }
+
+      const badgeAgrupado =
+        mapa.get(badgeId);
+
+      /*
+      * Caso a primeira linha não tenha
+      * imagem, mas outra linha do mesmo
+      * badge tenha.
+      */
+      if (
+        !badgeAgrupado.imagem &&
+        imagem
+      ) {
+        badgeAgrupado.imagem =
+          imagem;
+
+        badgeAgrupado.imagem_url =
+          imagem;
+
+        badgeAgrupado.url_imagem =
+          imagem;
+
+        badgeAgrupado.imagem_badge =
+          imagem;
       }
 
       if (
@@ -61,11 +143,10 @@ function SubmeterEvidenciasPage() {
       ) {
         const idRequisito =
           linha.id_requisito ||
-          linha.id_requisitos ||
-          linha.id;
+          linha.id_requisitos;
 
         const requisitosAtuais =
-          mapa.get(badgeId).requisitos;
+          badgeAgrupado.requisitos;
 
         const requisitoJaExiste =
           requisitosAtuais.some(
@@ -79,6 +160,9 @@ function SubmeterEvidenciasPage() {
         if (!requisitoJaExiste) {
           requisitosAtuais.push({
             id_requisito:
+              idRequisito,
+
+            id_requisitos:
               idRequisito,
 
             titulo:
@@ -103,8 +187,9 @@ function SubmeterEvidenciasPage() {
         }
       }
     });
-
-    return Array.from(mapa.values());
+    return Array.from(
+      mapa.values()
+    );
   };
 
   useEffect(() => {
@@ -257,6 +342,19 @@ function SubmeterEvidenciasPage() {
     formData.append(
       "comentario",
       comentario
+    );
+
+    formData.append(
+      "autoriza_publicacao_badge",
+      autorizaPublicacaoBadge
+        ? "true"
+        : "false"
+    );
+
+    formData.append(
+      "linkedin_publicacao_badge",
+      linkedinPublicacaoBadge
+        .trim()
     );
 
     if (idLembrete) {
@@ -436,7 +534,6 @@ function SubmeterEvidenciasPage() {
           <div style={heroCard}>
             <BadgeImage
               badge={badge}
-              nome={nome}
               size={72}
             />
 
@@ -509,6 +606,95 @@ function SubmeterEvidenciasPage() {
                 fontSize: 13,
               }}
             />
+          </div>
+          <div style={consentimentoCard}>
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: "#111827",
+                marginBottom: 8,
+              }}
+            >
+              Publicação e partilha do badge
+            </div>
+
+            <div
+              style={{
+                fontSize: 13,
+                color: "#475569",
+                lineHeight: 1.55,
+                marginBottom: 12,
+              }}
+            >
+              Esta autorização permite que,
+              caso o badge seja aprovado,
+              o teu nome apareça na galeria
+              pública como consultor que
+              conquistou este badge. Também
+              poderás associar um link de
+              LinkedIn à publicação.
+            </div>
+
+            <Form.Check
+              type="checkbox"
+              id="autoriza-publicacao-badge"
+              checked={autorizaPublicacaoBadge}
+              onChange={(event) =>
+                setAutorizaPublicacaoBadge(
+                  event.target.checked
+                )
+              }
+              label="Autorizo a publicação e partilha pública deste badge caso seja aprovado."
+              style={{
+                fontSize: 13,
+                color: "#111827",
+                fontWeight: 500,
+                marginBottom: 12,
+              }}
+            />
+
+            {autorizaPublicacaoBadge && (
+              <div>
+                <Form.Label
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#374151",
+                  }}
+                >
+                  Link LinkedIn opcional
+                </Form.Label>
+
+                <Form.Control
+                  type="url"
+                  placeholder="https://www.linkedin.com/in/o-teu-perfil"
+                  value={linkedinPublicacaoBadge}
+                  onChange={(event) =>
+                    setLinkedinPublicacaoBadge(
+                      event.target.value
+                    )
+                  }
+                  style={{
+                    height: 40,
+                    borderRadius: 8,
+                    fontSize: 13,
+                  }}
+                />
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#64748b",
+                    marginTop: 6,
+                  }}
+                >
+                  Este link só será mostrado
+                  publicamente se o badge for
+                  aprovado.
+                </div>
+              </div>
+            )}
           </div>
 
           <div
@@ -688,6 +874,15 @@ function getRequisitoKey(
     index
   );
 }
+
+const consentimentoCard = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 10,
+  padding: 18,
+  marginTop: 18,
+  marginBottom: 18,
+};
 
 const heroCard = {
   background: "white",

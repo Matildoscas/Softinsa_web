@@ -1,6 +1,37 @@
 export const EVENTO_NOTIFICACOES_ATUALIZADAS =
   "notificacoes-atualizadas";
 
+export function obterIdNotificacao(notificacao) {
+  return (
+    notificacao?.id_notificacoes ||
+    notificacao?.id_notificacao ||
+    notificacao?.ID_NOTIFICACOES ||
+    notificacao?.ID_NOTIFICACAO ||
+    null
+  );
+}
+
+export function obterTipoNotificacao(notificacao) {
+  return String(
+    notificacao?.tipo_notificacao ||
+      notificacao?.TIPO_NOTIFICACAO ||
+      notificacao?.tipo ||
+      ""
+  )
+    .trim()
+    .toUpperCase();
+}
+
+export function obterConteudoNotificacao(notificacao) {
+  return (
+    notificacao?.conteudo ||
+    notificacao?.CONTEUDO ||
+    notificacao?.mensagem ||
+    notificacao?.MENSAGEM ||
+    ""
+  );
+}
+
 export function notificacaoNaoLida(notificacao) {
   if (!notificacao) {
     return false;
@@ -32,6 +63,47 @@ export function notificacaoNaoLida(notificacao) {
     "TRUE",
     "1",
   ].includes(estado);
+}
+
+export function isNotificacaoMarco(notificacaoOuTipo) {
+  const tipo =
+    typeof notificacaoOuTipo === "string"
+      ? notificacaoOuTipo
+      : obterTipoNotificacao(notificacaoOuTipo);
+
+  return String(tipo || "")
+    .trim()
+    .toUpperCase()
+    .startsWith("MARCO_");
+}
+
+export function obterIconeMarco(notificacaoOuTipo) {
+  const tipo =
+    typeof notificacaoOuTipo === "string"
+      ? notificacaoOuTipo
+      : obterTipoNotificacao(notificacaoOuTipo);
+
+  const tipoNormalizado = String(tipo || "")
+    .trim()
+    .toUpperCase();
+
+  if (tipoNormalizado === "MARCO_PRIMEIRO_BADGE") {
+    return "🎉";
+  }
+
+  if (tipoNormalizado === "MARCO_5_BADGES") {
+    return "🔥";
+  }
+
+  if (tipoNormalizado === "MARCO_10_BADGES") {
+    return "🚀";
+  }
+
+  if (tipoNormalizado === "MARCO_NIVEL_E") {
+    return "🏆";
+  }
+
+  return "✨";
 }
 
 export function formatarTituloNotificacao(tipo) {
@@ -69,6 +141,18 @@ export function formatarTituloNotificacao(tipo) {
 
     LEMBRETE:
       "Lembrete",
+
+    MARCO_PRIMEIRO_BADGE:
+      "Primeiro badge conquistado!",
+
+    MARCO_5_BADGES:
+      "5 badges conquistados!",
+
+    MARCO_10_BADGES:
+      "10 badges conquistados!",
+
+    MARCO_NIVEL_E:
+      "Primeiro badge de nível E!",
   };
 
   if (titulos[tipoNormalizado]) {
@@ -93,24 +177,38 @@ export function ordenarNotificacoesRecentes(lista) {
   return [...lista].sort((a, b) => {
     const dataA = new Date(
       a.data_envio ||
-      a.DATA_ENVIO ||
-      0
+        a.DATA_ENVIO ||
+        0
     ).getTime();
 
     const dataB = new Date(
       b.data_envio ||
-      b.DATA_ENVIO ||
-      0
+        b.DATA_ENVIO ||
+        0
     ).getTime();
 
     return dataB - dataA;
   });
 }
 
-export function emitirAtualizacaoNotificacoes() {
+export function filtrarNotificacoesMarco(lista) {
+  return ordenarNotificacoesRecentes(
+    Array.isArray(lista)
+      ? lista.filter(isNotificacaoMarco)
+      : []
+  );
+}
+
+export function emitirAtualizacaoNotificacoes(
+  detalhe = null
+) {
   window.dispatchEvent(
-    new Event(
-      EVENTO_NOTIFICACOES_ATUALIZADAS
+    new CustomEvent(
+      EVENTO_NOTIFICACOES_ATUALIZADAS,
+      {
+        detail:
+          detalhe,
+      }
     )
   );
 }

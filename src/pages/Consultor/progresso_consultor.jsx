@@ -1,4 +1,8 @@
-import { useState, useEffect } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Image, Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
 import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu, BiBook } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
@@ -12,6 +16,15 @@ import BadgeImage from "../../components/badge_image.jsx";
 import {
   obterBonusBadge,
 } from "../../utils/badgeBonus.js";
+import {
+  EVENTO_NOTIFICACOES_ATUALIZADAS,
+  filtrarNotificacoesMarco,
+  formatarTituloNotificacao,
+  obterConteudoNotificacao,
+  obterIconeMarco,
+  obterIdNotificacao,
+  obterTipoNotificacao,
+} from "../../utils/notificacoesUtils.js";
 
 function ProgressoSection({ title, sub, children }) {
     return (
@@ -233,6 +246,54 @@ function ProgressoPage() {
         return nivel >= 1 && nivel <= 4;
     };
 
+    const [
+    marcos,
+    setMarcos,
+    ] = useState([]);
+
+    const [
+    userId,
+    setUserId,
+    ] = useState(null);
+
+    const carregarMarcos =
+        useCallback(
+            async (
+            idUtilizador
+            ) => {
+            if (!idUtilizador) {
+                setMarcos([]);
+                return;
+            }
+
+            try {
+                const response =
+                await api.get(
+                    `/notificacoes/${idUtilizador}`
+                );
+
+                const lista =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
+
+                setMarcos(
+                filtrarNotificacoesMarco(
+                    lista
+                )
+                );
+            } catch (err) {
+                console.error(
+                "[PROGRESSO] Erro ao carregar marcos:",
+                err
+                );
+
+                setMarcos([]);
+            }
+            },
+            []
+        );
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
 
@@ -246,6 +307,9 @@ function ProgressoPage() {
         setUser(userData);
 
         const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+
+        setUserId(userId);
+        carregarMarcos(userId);
 
         if (!userId) {
             setLoading(false);
@@ -384,7 +448,35 @@ function ProgressoPage() {
             .finally(() => {
             setLoading(false);
             });
-        }, [navigate]);
+    }, [navigate, carregarMarcos]);
+
+    useEffect(() => {
+        if (!userId) {
+            return undefined;
+        }
+
+        const atualizar =
+            () => {
+            carregarMarcos(
+                userId
+            );
+            };
+
+        window.addEventListener(
+            EVENTO_NOTIFICACOES_ATUALIZADAS,
+            atualizar
+        );
+
+        return () => {
+            window.removeEventListener(
+            EVENTO_NOTIFICACOES_ATUALIZADAS,
+            atualizar
+            );
+        };
+        }, [
+        userId,
+        carregarMarcos,
+    ]);
 
     if (loading) {
         return (
@@ -510,6 +602,15 @@ function ProgressoPage() {
                         </div>
                     </ProgressoSection>
 
+                    <ProgressoSection
+                        title="Marcos alcançados"
+                        sub={`${marcos.length} marco(s) registado(s) no teu percurso`}
+                        >
+                        <TimelineMarcos
+                            marcos={marcos}
+                        />
+                    </ProgressoSection>
+
  
                     {/* Ranking de Conquistas */}
                     <ProgressoSection
@@ -562,6 +663,97 @@ const cardStyleBase = {
     fontSize: 12, 
     textAlign: 'left'
 };
+
+function TimelineMarcos({
+  marcos,
+}) {
+  const lista =
+    Array.isArray(marcos)
+      ? marcos
+      : [];
+
+  if (lista.length === 0) {
+    return (
+      <div style={timelineEmpty}>
+        Ainda não existem marcos alcançados.
+        Continua a conquistar badges para desbloquear celebrações.
+      </div>
+    );
+  }
+
+  return (
+    <div style={timelineWrap}>
+      {lista.map(
+        (marco, index) => {
+          const tipo =
+            obterTipoNotificacao(
+              marco
+            );
+
+          const data =
+            marco.data_envio ||
+            marco.DATA_ENVIO ||
+            null;
+
+          return (
+            <div
+              key={
+                obterIdNotificacao(
+                  marco
+                ) || index
+              }
+              style={timelineItem}
+            >
+              <div style={timelineLine}>
+                <div style={timelineIcon}>
+                  {obterIconeMarco(
+                    tipo
+                  )}
+                </div>
+
+                {index <
+                  lista.length - 1 && (
+                  <div style={timelineBar} />
+                )}
+              </div>
+
+              <div style={timelineContent}>
+                <div style={timelineTitle}>
+                  {formatarTituloNotificacao(
+                    tipo
+                  )}
+                </div>
+
+                <div style={timelineText}>
+                  {obterConteudoNotificacao(
+                    marco
+                  )}
+                </div>
+
+                {data && (
+                  <div style={timelineDate}>
+                    {new Date(
+                      data
+                    ).toLocaleDateString(
+                      "pt-PT",
+                      {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+      )}
+    </div>
+  );
+}
 
 // --- COMPONENTES AUXILIARES (BadgeSection e BadgeCard) ---
 // (Mantive a estrutura visual que enviaste, apenas injetando as props)
@@ -619,6 +811,87 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
         </div>
     );
 }
+
+const timelineWrap = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 0,
+};
+
+const timelineItem = {
+  display: "grid",
+  gridTemplateColumns: "48px 1fr",
+  gap: 12,
+};
+
+const timelineLine = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+};
+
+const timelineIcon = {
+  width: 38,
+  height: 38,
+  borderRadius: "50%",
+  background: "#2563eb",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 20,
+  boxShadow:
+    "0 8px 18px rgba(37, 99, 235, 0.25)",
+  zIndex: 1,
+};
+
+const timelineBar = {
+  width: 2,
+  flex: 1,
+  minHeight: 34,
+  background: "#dbeafe",
+  marginTop: 4,
+  marginBottom: 4,
+};
+
+const timelineContent = {
+  background:
+    "linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)",
+  border: "1px solid #dbeafe",
+  borderRadius: 12,
+  padding: "12px 14px",
+  marginBottom: 12,
+};
+
+const timelineTitle = {
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#111827",
+  marginBottom: 4,
+};
+
+const timelineText = {
+  fontSize: 13,
+  color: "#475569",
+  lineHeight: 1.45,
+};
+
+const timelineDate = {
+  fontSize: 11,
+  color: "#64748b",
+  marginTop: 8,
+  fontWeight: 600,
+};
+
+const timelineEmpty = {
+  padding: 18,
+  textAlign: "center",
+  borderRadius: 12,
+  background: "#f8fafc",
+  color: "#64748b",
+  fontSize: 13,
+  border: "1px dashed #cbd5e1",
+};
 
 const navigationButtonStyle = {
   height: 40,

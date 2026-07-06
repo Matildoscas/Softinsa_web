@@ -17,90 +17,341 @@ function GaleriaBadgesPage() {
 
   const areasPorPagina = 3;
 
+  const normalizarArray = (valor) => {
+  if (Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (typeof valor === "string") {
+    try {
+      const convertido =
+        JSON.parse(valor);
+
+      return Array.isArray(convertido)
+        ? convertido
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
   const normalizarBadgesComRequisitos = (lista) => {
     const mapa = new Map();
 
     lista.forEach((linha) => {
-      const badgeId = Number(linha.id || linha.id_badge_modelo);
+      const badgeId = Number(
+        linha.id ||
+        linha.id_badge_modelo
+      );
 
-      if (!badgeId) return;
+      if (!badgeId) {
+        return;
+      }
+
+      const consultoresPublicos =
+        normalizarArray(
+          linha.consultores_publicos
+        );
 
       if (!mapa.has(badgeId)) {
         mapa.set(badgeId, {
           id: badgeId,
-          nome: linha.nome || linha.nome_badge,
-          descricao: linha.descricao || linha.descricao_badge_modelo,
-          pontos: Number(linha.pontos || 0),
-          id_nivel: linha.id_nivel,
-          id_areas: linha.id_areas,
+
+          id_badge_modelo:
+            badgeId,
+
+          nome:
+            linha.nome ||
+            linha.nome_badge ||
+            "Badge",
+
+          nome_badge:
+            linha.nome_badge ||
+            linha.nome ||
+            "Badge",
+
+          descricao:
+            linha.descricao ||
+            linha.descricao_badge_modelo ||
+            "",
+
+          descricao_badge_modelo:
+            linha.descricao_badge_modelo ||
+            linha.descricao ||
+            "",
+
+          pontos:
+            Number(
+              linha.pontos || 0
+            ),
+
+          id_nivel:
+            linha.id_nivel,
+
+          id_areas:
+            linha.id_areas,
+
           nome_area:
             linha.nome_area ||
             linha.nome_areas ||
             linha.area ||
             "Área não definida",
+
+          imagem:
+            linha.imagem_url ||
+            linha.imagem ||
+            linha.url_imagem ||
+            null,
+
+          imagem_url:
+            linha.imagem_url ||
+            linha.imagem ||
+            linha.url_imagem ||
+            null,
+
+          total_consultores_publicos:
+            Number(
+              linha.total_consultores_publicos ||
+              consultoresPublicos.length ||
+              0
+            ),
+
+          consultores_publicos:
+            consultoresPublicos,
+
           requisitos: [],
         });
       }
 
-      const badgeAtual = mapa.get(badgeId);
+      const badgeAtual =
+        mapa.get(badgeId);
 
-      // Caso 1: API já vem com requisitos agrupados
-      if (Array.isArray(linha.requisitos)) {
-        linha.requisitos.forEach((req) => {
-          const reqId =
-            req.id_requisito ||
-            req.id_requisitos ||
-            req.titulo ||
-            req.nome;
+      const totalLinha =
+        Number(
+          linha.total_consultores_publicos ||
+          consultoresPublicos.length ||
+          0
+        );
 
-          const jaExiste = badgeAtual.requisitos.some(
-            (r) =>
-              String(r.id_requisito || r.id || r.titulo) === String(reqId)
+      if (
+        totalLinha >
+        Number(
+          badgeAtual.total_consultores_publicos ||
+          0
+        )
+      ) {
+        badgeAtual.total_consultores_publicos =
+          totalLinha;
+      }
+
+      if (
+        consultoresPublicos.length >
+        0
+      ) {
+        const idsExistentes =
+          new Set(
+            badgeAtual
+              .consultores_publicos
+              .map((consultor) =>
+                String(
+                  consultor.id_utilizador
+                )
+              )
           );
 
-          if (!jaExiste) {
-            badgeAtual.requisitos.push({
-              id_requisito: req.id_requisito || req.id_requisitos || null,
-              id: req.titulo || req.nome || "Requisito",
-              titulo: req.nome || req.nome_requisito || req.titulo || "Requisito",
-              descricao:
-                req.descricao ||
-                req.descricao_requisito ||
-                "",
-              link: req.link_requisito || req.link || "",
-            });
+        consultoresPublicos.forEach(
+          (consultor) => {
+            const idConsultor =
+              String(
+                consultor.id_utilizador
+              );
+
+            if (
+              !idsExistentes.has(
+                idConsultor
+              )
+            ) {
+              badgeAtual
+                .consultores_publicos
+                .push(consultor);
+
+              idsExistentes.add(
+                idConsultor
+              );
+            }
           }
-        });
+        );
+      }
+
+      /*
+      * Caso 1:
+      * A API já vem com requisitos agrupados.
+      */
+      if (
+        Array.isArray(
+          linha.requisitos
+        )
+      ) {
+        linha.requisitos.forEach(
+          (req) => {
+            const reqId =
+              req.id_requisito ||
+              req.id_requisitos ||
+              req.titulo ||
+              req.nome;
+
+            const jaExiste =
+              badgeAtual
+                .requisitos
+                .some(
+                  (r) =>
+                    String(
+                      r.id_requisito ||
+                      r.id ||
+                      r.titulo
+                    ) ===
+                    String(reqId)
+                );
+
+            if (!jaExiste) {
+              const links =
+                normalizarArray(
+                  req.links ||
+                  req.link ||
+                  req.link_requisito ||
+                  []
+                );
+
+              badgeAtual
+                .requisitos
+                .push({
+                  id_requisito:
+                    req.id_requisito ||
+                    req.id_requisitos ||
+                    null,
+
+                  id_requisitos:
+                    req.id_requisitos ||
+                    req.id_requisito ||
+                    null,
+
+                  id:
+                    req.id_requisito ||
+                    req.id_requisitos ||
+                    req.titulo ||
+                    req.nome ||
+                    "Requisito",
+
+                  titulo:
+                    req.nome ||
+                    req.nome_requisito ||
+                    req.titulo ||
+                    "Requisito",
+
+                  descricao:
+                    req.descricao ||
+                    req.descricao_requisito ||
+                    "",
+
+                  links,
+
+                  link:
+                    req.link_requisito ||
+                    req.link ||
+                    links[0] ||
+                    "",
+                });
+            }
+          }
+        );
 
         return;
       }
 
-      // Caso 2: API vem linha a linha com requisitos
-      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
+      /*
+      * Caso 2:
+      * A API vem linha a linha.
+      */
+      if (
+        linha.titulo ||
+        linha.nome_requisito ||
+        linha.descricao_requisito
+      ) {
         const reqId =
           linha.id_requisito ||
           linha.id_requisitos ||
           linha.titulo ||
           linha.nome_requisito;
 
-        const jaExiste = badgeAtual.requisitos.some(
-          (r) =>
-            String(r.id_requisito || r.id || r.titulo) === String(reqId)
-        );
+        const jaExiste =
+          badgeAtual
+            .requisitos
+            .some(
+              (r) =>
+                String(
+                  r.id_requisito ||
+                  r.id ||
+                  r.titulo
+                ) ===
+                String(reqId)
+            );
 
         if (!jaExiste) {
-          badgeAtual.requisitos.push({
-            id_requisito: linha.id_requisito || linha.id_requisitos || null,
-            id: linha.titulo || linha.nome_requisito || "Requisito",
-            titulo: linha.nome_requisito || linha.titulo || "Requisito",
-            descricao: linha.descricao_requisito || "",
-            link: linha.link_requisito || linha.link || "",
-          });
+          const links =
+            normalizarArray(
+              linha.links ||
+              linha.link_requisito ||
+              linha.link ||
+              []
+            );
+
+          badgeAtual
+            .requisitos
+            .push({
+              id_requisito:
+                linha.id_requisito ||
+                linha.id_requisitos ||
+                null,
+
+              id_requisitos:
+                linha.id_requisitos ||
+                linha.id_requisito ||
+                null,
+
+              id:
+                linha.id_requisito ||
+                linha.id_requisitos ||
+                linha.titulo ||
+                linha.nome_requisito ||
+                "Requisito",
+
+              titulo:
+                linha.nome_requisito ||
+                linha.titulo ||
+                "Requisito",
+
+              descricao:
+                linha.descricao_requisito ||
+                "",
+
+              links,
+
+              link:
+                linha.link_requisito ||
+                linha.link ||
+                links[0] ||
+                "",
+            });
         }
       }
     });
 
-    return Array.from(mapa.values());
+    return Array.from(
+      mapa.values()
+    );
   };
 
   useEffect(() => {
@@ -272,13 +523,108 @@ function PublicHeader({ onLogin, onRegister }) {
   );
 }
 
-function BadgeGalleryCard({ badge, onClick }) {
-  return (
-    <div style={badgeCard} onClick={onClick}>
-      <div style={badgeIcon}>🏅</div>
+function BadgeGalleryCard({
+  badge,
+  onClick,
+}) {
+  const nome =
+    badge.nome ||
+    badge.nome_badge ||
+    "Badge";
 
-      <div style={badgeName}>
-        {badge.nome || "Badge"}
+  const descricao =
+    badge.descricao ||
+    badge.descricao_badge_modelo ||
+    "";
+
+  const imagem =
+    badge.imagem_url ||
+    badge.imagem ||
+    badge.url_imagem ||
+    null;
+
+  const totalConsultores =
+    Number(
+      badge.total_consultores_publicos ||
+      0
+    );
+
+  const temConsultores =
+    totalConsultores > 0;
+
+  const textoConsultores =
+    temConsultores
+      ? `${totalConsultores} consultor${
+          totalConsultores === 1
+            ? ""
+            : "es"
+        } público${
+          totalConsultores === 1
+            ? ""
+            : "s"
+        }`
+      : "Ainda sem consultores públicos";
+
+  return (
+    <div
+      style={badgeCard}
+      onClick={onClick}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.transform =
+          "translateY(-3px)";
+
+        event.currentTarget.style.boxShadow =
+          "0 12px 24px rgba(37, 99, 235, 0.16)";
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.transform =
+          "translateY(0)";
+
+        event.currentTarget.style.boxShadow =
+          "0 6px 15px rgba(15, 23, 42, 0.08)";
+      }}
+    >
+      <div style={badgeCardTop}>
+        <div style={badgeImageCircle}>
+          {imagem ? (
+            <img
+              src={imagem}
+              alt={nome}
+              style={badgeImage}
+            />
+          ) : (
+            <span style={badgeEmoji}>
+              🏅
+            </span>
+          )}
+        </div>
+
+        <div style={badgeMainInfo}>
+          <div style={badgeName}>
+            {nome}
+          </div>
+
+          <div style={badgeDescription}>
+            {descricao ||
+              "Ver detalhes deste badge"}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          ...badgePublicFooter,
+
+          ...(temConsultores
+            ? badgePublicFooterActive
+            : badgePublicFooterEmpty),
+        }}
+      >
+        <BiUser size={14} />
+
+        <span>
+          {textoConsultores}
+        </span>
       </div>
     </div>
   );
@@ -286,6 +632,17 @@ function BadgeGalleryCard({ badge, onClick }) {
 
 function BadgePublicModal({ badge, show, onClose }) {
   if (!badge) return null;
+
+  const nome =
+    badge.nome ||
+    badge.nome_badge ||
+    "Badge";
+
+  const imagem =
+    badge.imagem_url ||
+    badge.imagem ||
+    badge.url_imagem ||
+    null;
 
   return (
     <Modal
@@ -303,10 +660,22 @@ function BadgePublicModal({ badge, show, onClose }) {
 
       <Modal.Body style={{ background: "#f7f7f7", padding: 24 }}>
         <div style={heroBadgeCard}>
-          <div style={heroIconWrap}>🏅</div>
+          <div style={heroIconWrap}>
+            {imagem ? (
+              <img
+                src={imagem}
+                alt={nome}
+                style={heroBadgeImage}
+              />
+            ) : (
+              <span style={badgeEmoji}>
+                🏅
+              </span>
+            )}
+          </div>
 
           <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 10 }}>
-            {badge.nome}
+            {nome}
           </div>
 
           {badge.nome_area && (
@@ -350,6 +719,17 @@ function BadgePublicModal({ badge, show, onClose }) {
             </div>
           )}
         </div>
+        <ConsultoresPublicosSection
+          badge={badge}
+          consultores={
+            badge.consultores_publicos ||
+            []
+          }
+          total={
+            badge.total_consultores_publicos ||
+            0
+          }
+        />
       </Modal.Body>
 
       <Modal.Footer style={{ borderTop: "1px solid #e5e7eb" }}>
@@ -397,45 +777,103 @@ function NivelSelector({ nivelAtual }) {
   );
 }
 
-function RequisitoRow({ req, defaultOpen }) {
-  const [open, setOpen] = useState(defaultOpen || false);
+function RequisitoRow({
+  req,
+  defaultOpen,
+}) {
+  const [open, setOpen] =
+    useState(defaultOpen || false);
+
+  const idRequisito =
+    req.id_requisito ||
+    req.id_requisitos ||
+    req.id ||
+    "";
+
+  const links =
+    Array.isArray(req.links)
+      ? req.links
+      : req.link
+        ? [req.link]
+        : [];
 
   return (
     <div style={requisitoCard}>
-      <div style={requisitoHeader} onClick={() => setOpen((v) => !v)}>
+      <div
+        style={requisitoHeader}
+        onClick={() =>
+          setOpen((v) => !v)
+        }
+      >
         <div>
-          <span style={{ fontWeight: 700, color: "#111827" }}>
-            Requisito {req.id}
+          <span
+            style={{
+              fontWeight: 700,
+              color: "#111827",
+            }}
+          >
+            Requisito{" "}
+            {idRequisito}
           </span>
+
           {" - "}
-          <span style={{ color: "#4470AF", fontWeight: 500 }}>
+
+          <span
+            style={{
+              color: "#4470AF",
+              fontWeight: 600,
+            }}
+          >
             {req.titulo}
           </span>
         </div>
 
         {open ? (
-          <BiChevronUp size={22} color="#6b7280" />
+          <BiChevronUp
+            size={22}
+            color="#6b7280"
+          />
         ) : (
-          <BiChevronDown size={22} color="#6b7280" />
+          <BiChevronDown
+            size={22}
+            color="#6b7280"
+          />
         )}
       </div>
 
       {open && (
         <div style={requisitoBody}>
-          <span style={{ fontWeight: 700 }}>{req.id}</span>
-          {" - "}
-          {req.descricao || "Sem descrição."}
+          <div
+            style={{
+              marginBottom:
+                links.length > 0
+                  ? 10
+                  : 0,
+            }}
+          >
+            {req.descricao ||
+              "Sem descrição."}
+          </div>
 
-          {req.link && (
-            <div style={{ marginTop: 4 }}>
-              <a
-                href={req.link}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "#4470AF", fontSize: 13 }}
-              >
-                {req.link}
-              </a>
+          {links.length > 0 && (
+            <div style={linksBox}>
+              <div style={linksTitle}>
+                Links do curso
+              </div>
+
+              {links.map(
+                (link, index) => (
+                  <a
+                    key={`${link}-${index}`}
+                    href={link}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={cursoLink}
+                  >
+                    {link}
+                  </a>
+                )
+              )}
             </div>
           )}
         </div>
@@ -502,6 +940,178 @@ function nivelParaLetra(idNivel) {
   return "";
 }
 
+function ConsultoresPublicosSection({
+  badge,
+  consultores,
+  total,
+}) {
+  const navigate =
+    useNavigate();
+
+  const lista =
+    Array.isArray(consultores)
+      ? consultores
+      : [];
+
+  const idBadge =
+    badge?.id ||
+    badge?.id_badge_modelo;
+
+  return (
+    <div style={sectionCard}>
+      <div style={sectionTitle}>
+        Consultores que conquistaram
+      </div>
+
+      <div
+        style={{
+          fontSize: 13,
+          color: "#475569",
+          marginTop: 8,
+          marginBottom: 12,
+        }}
+      >
+        {Number(total || 0) === 0
+          ? "Ainda não existem consultores com publicação autorizada para este badge."
+          : `${total} consultor${
+              Number(total) === 1
+                ? ""
+                : "es"
+            } autorizaram a publicação deste badge.`}
+      </div>
+
+      {lista.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          {lista.map(
+            (consultor, index) => {
+              const idUtilizador =
+                consultor.id_utilizador ||
+                consultor.id ||
+                consultor.ID_UTILIZADOR;
+
+              return (
+                <div
+                  key={
+                    idUtilizador ||
+                    index
+                  }
+                  style={consultorPublicoRow}
+                >
+                  <div style={consultorAvatar}>
+                    <BiUser size={20} />
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "#111827",
+                      }}
+                    >
+                      {consultor.nome_completo ||
+                        "Consultor"}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#64748b",
+                      }}
+                    >
+                      {consultor.nome_area ||
+                        "Sem área associada"}
+                    </div>
+
+                    {consultor.data_atribuicao && (
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "#94a3b8",
+                          marginTop: 2,
+                        }}
+                      >
+                        Conquistado a{" "}
+                        {new Date(
+                          consultor.data_atribuicao
+                        ).toLocaleDateString(
+                          "pt-PT"
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={consultorActions}>
+                    {idUtilizador &&
+                      idBadge && (
+                        <button
+                          type="button"
+                          style={verBadgeButton}
+                          onClick={(event) => {
+                            event.stopPropagation();
+
+                            navigate(
+                              `/badges/${idUtilizador}/${idBadge}`
+                            );
+                          }}
+                        >
+                          Ver badge público
+                        </button>
+                      )}
+
+                    {consultor.linkedin_url && (
+                      <button
+                        type="button"
+                        style={linkedinButton}
+                        onClick={(event) => {
+                          event.stopPropagation();
+
+                          window.open(
+                            consultor.linkedin_url,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        }}
+                      >
+                        LinkedIn
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const consultorActions = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
+};
+
+const verBadgeButton = {
+  border: "1px solid #bfdbfe",
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  borderRadius: 8,
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
 const page = {
   minHeight: "100vh",
   background: "#f7f7f7",
@@ -552,22 +1162,43 @@ const registerButton = {
 
 const main = {
   width: "100%",
+
   maxWidth: 1500,
+
   margin: "0 auto",
-  padding: "32px 32px 60px",
+
+  padding:
+    "clamp(18px, 3vw, 32px) clamp(16px, 3vw, 32px) 60px",
 };
 
 const heroCard = {
   background: "#4470AF",
+
   borderRadius: 12,
+
   minHeight: 150,
-  padding: "26px 38px",
+
+  padding:
+    "clamp(22px, 3vw, 32px) clamp(22px, 4vw, 38px)",
+
   color: "white",
+
   display: "flex",
+
   alignItems: "center",
-  justifyContent: "space-between",
-  boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
-  marginBottom: 48,
+
+  justifyContent:
+    "space-between",
+
+  gap: 24,
+
+  flexWrap: "wrap",
+
+  boxShadow:
+    "0 10px 22px rgba(0,0,0,0.18)",
+
+  marginBottom:
+    "clamp(32px, 5vw, 48px)",
 };
 
 const heroTitle = {
@@ -578,8 +1209,12 @@ const heroTitle = {
 
 const heroStats = {
   display: "flex",
+
   alignItems: "center",
-  gap: 70,
+
+  gap: "18px 52px",
+
+  flexWrap: "wrap",
 };
 
 const heroStatItem = {
@@ -620,7 +1255,9 @@ const heroUserCircle = {
 
 const contentWrapper = {
   width: "100%",
+
   maxWidth: 1320,
+
   margin: "0 auto",
 };
 
@@ -629,30 +1266,16 @@ const areaSection = {
 };
 
 const areaTitle = {
-  fontSize: 21,
+  fontSize:
+    "clamp(18px, 2.2vw, 21px)",
+
   fontWeight: 800,
+
   color: "#111827",
+
   marginBottom: 20,
-};
 
-const badgeGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-  gap: "24px 34px",
-};
-
-const badgeCard = {
-  height: 104,
-  background: "white",
-  border: "1.5px solid #4470AF",
-  borderRadius: 8,
-  display: "flex",
-  alignItems: "center",
-  gap: 14,
-  padding: "0 16px",
-  cursor: "pointer",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-  transition: "transform 0.15s ease, box-shadow 0.15s ease",
+  lineHeight: 1.2,
 };
 
 const badgeIcon = {
@@ -665,15 +1288,6 @@ const badgeIcon = {
   justifyContent: "center",
   fontSize: 28,
   flexShrink: 0,
-};
-
-const badgeName = {
-  flex: 1,
-  fontSize: 15,
-  fontWeight: 600,
-  color: "#111827",
-  textAlign: "center",
-  lineHeight: 1.15,
 };
 
 const paginationWrapper = {
@@ -730,15 +1344,16 @@ const heroBadgeCard = {
 };
 
 const heroIconWrap = {
-  width: 90,
-  height: 90,
+  width: 92,
+  height: 92,
   borderRadius: "50%",
   background: "#eef3fb",
   border: "2px solid #dbe3ef",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 42,
+  overflow: "hidden",
+  padding: 6,
 };
 
 const pointsPill = {
@@ -815,6 +1430,265 @@ const center = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+};
+
+const badgePublicInfo = {
+  marginTop: 8,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 5,
+  fontSize: 12,
+  color: "#4470AF",
+  fontWeight: 600,
+};
+
+const consultorPublicoRow = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: "10px 12px",
+};
+
+const consultorAvatar = {
+  width: 38,
+  height: 38,
+  borderRadius: "50%",
+  background: "#eff6ff",
+  color: "#2563eb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const linkedinButton = {
+  border: "1px solid #0a66c2",
+  background: "#0a66c2",
+  color: "white",
+  borderRadius: 8,
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const badgeGrid = {
+  display: "grid",
+
+  /*
+   * Responsivo:
+   * - desktop: 4 cards por linha
+   * - tablet: 2 ou 3
+   * - telemóvel: 1
+   */
+  gridTemplateColumns:
+    "repeat(auto-fit, minmax(260px, 1fr))",
+
+  gap: "24px 28px",
+
+  alignItems: "stretch",
+};
+
+const badgeCard = {
+  background: "white",
+
+  border:
+    "1.5px solid #4470AF",
+
+  borderRadius: 12,
+
+  minHeight: 158,
+
+  overflow: "hidden",
+
+  cursor: "pointer",
+
+  display: "flex",
+
+  flexDirection: "column",
+
+  justifyContent:
+    "space-between",
+
+  boxShadow:
+    "0 6px 15px rgba(15, 23, 42, 0.08)",
+
+  transition:
+    "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+};
+
+const badgeCardTop = {
+  flex: 1,
+
+  display: "grid",
+
+  gridTemplateColumns:
+    "76px minmax(0, 1fr)",
+
+  alignItems: "center",
+
+  gap: 18,
+
+  padding: "18px 18px 14px",
+};
+
+const badgeImageCircle = {
+  width: 70,
+
+  height: 70,
+
+  borderRadius: "50%",
+
+  background: "#f1f5f9",
+
+  border:
+    "1px solid #dbeafe",
+
+  display: "flex",
+
+  alignItems: "center",
+
+  justifyContent: "center",
+
+  overflow: "hidden",
+
+  flexShrink: 0,
+};
+
+const badgeImage = {
+  width: "100%",
+
+  height: "100%",
+
+  objectFit: "cover",
+
+  borderRadius: "50%",
+};
+
+const badgeEmoji = {
+  fontSize: 28,
+};
+
+const badgeMainInfo = {
+  minWidth: 0,
+
+  display: "flex",
+
+  flexDirection: "column",
+
+  justifyContent: "center",
+};
+
+const badgeName = {
+  fontSize: 15,
+
+  fontWeight: 800,
+
+  color: "#020617",
+
+  lineHeight: 1.16,
+
+  textAlign: "left",
+
+  display: "-webkit-box",
+
+  WebkitLineClamp: 3,
+
+  WebkitBoxOrient: "vertical",
+
+  overflow: "hidden",
+};
+
+const badgeDescription = {
+  marginTop: 7,
+
+  fontSize: 12,
+
+  lineHeight: 1.35,
+
+  color: "#64748b",
+
+  display: "-webkit-box",
+
+  WebkitLineClamp: 2,
+
+  WebkitBoxOrient: "vertical",
+
+  overflow: "hidden",
+};
+
+const badgePublicFooter = {
+  borderTop:
+    "1px solid #dbeafe",
+
+  minHeight: 42,
+
+  padding:
+    "9px 12px",
+
+  display: "flex",
+
+  alignItems: "center",
+
+  justifyContent: "center",
+
+  gap: 6,
+
+  textAlign: "center",
+
+  fontSize: 12,
+
+  fontWeight: 700,
+
+  lineHeight: 1.35,
+};
+
+const badgePublicFooterActive = {
+  background: "#eff6ff",
+
+  color: "#1d4ed8",
+};
+
+const badgePublicFooterEmpty = {
+  background: "#f8fafc",
+
+  color: "#64748b",
+};
+
+const heroBadgeImage = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  borderRadius: "50%",
+};
+
+const linksBox = {
+  marginTop: 10,
+  padding: "10px 12px",
+  borderRadius: 8,
+  background: "#eff6ff",
+  border: "1px solid #dbeafe",
+};
+
+const linksTitle = {
+  fontSize: 12,
+  fontWeight: 700,
+  color: "#1e3a8a",
+  marginBottom: 6,
+};
+
+const cursoLink = {
+  display: "block",
+  fontSize: 13,
+  color: "#2563eb",
+  fontWeight: 600,
+  textDecoration: "none",
+  marginTop: 4,
+  overflowWrap: "anywhere",
 };
 
 export default GaleriaBadgesPage;

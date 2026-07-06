@@ -27,6 +27,26 @@ function BadgeDetailPage() {
   const [conquistado, setConquistado] = useState(false);
   const [conquistadoBadge, setConquistadoBadge] = useState(null);
 
+  const [
+    consentimento,
+    setConsentimento,
+  ] = useState({
+    existe: false,
+    aceite: false,
+    pode_publicar: false,
+    consentimento: null,
+  });
+
+  const [
+    linkedinUrl,
+    setLinkedinUrl,
+  ] = useState("");
+
+  const [
+    consentimentoLoading,
+    setConsentimentoLoading,
+  ] = useState(false);
+
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
 
@@ -185,8 +205,20 @@ function BadgeDetailPage() {
     Promise.all([
         api.get("/badges/todos"),
         api.get(`/badges/conquistados/${userId}`),
+        api
+        .get(
+          `/consentimentos-badge/${userId}/${id}`
+        )
+        .catch(() => ({
+          data: {
+            existe: false,
+            aceite: false,
+            pode_publicar: false,
+            consentimento: null,
+          },
+        }))
     ])
-        .then(([todosRes, conquistadosRes]) => {
+        .then(([todosRes, conquistadosRes,  consentimentoRes]) => {
         const dados = Array.isArray(todosRes.data) ? todosRes.data : [];
         const badgesAgrupados = removerDuplicadosComRequisitos(dados);
 
@@ -207,6 +239,24 @@ function BadgeDetailPage() {
 
         setConquistado(!!badgeConquistado);
         setConquistadoBadge(badgeConquistado || null);
+        const dadosConsentimento =
+          consentimentoRes?.data || {
+            existe: false,
+            aceite: false,
+            pode_publicar: false,
+            consentimento: null,
+          };
+
+        setConsentimento(
+          dadosConsentimento
+        );
+
+        setLinkedinUrl(
+          dadosConsentimento
+            ?.consentimento
+            ?.linkedin_url ||
+            ""
+        );
 
         if (!badgeSelecionado) {
             setBadge(null);
@@ -317,6 +367,278 @@ function BadgeDetailPage() {
     conquistadoBadge
   );
 
+  const obterUserId = () => {
+  const storedUser =
+    localStorage.getItem("user");
+
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    const userData =
+      JSON.parse(storedUser);
+
+    return (
+      userData.id_utilizador ||
+      userData.ID_UTILIZADOR ||
+      userData.id ||
+      null
+    );
+  } catch {
+    return null;
+  }
+};
+
+const autorizarPublicacao =
+  async () => {
+    if (!badge) {
+      return;
+    }
+
+    const userId =
+      obterUserId();
+
+    if (!userId) {
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    try {
+      setConsentimentoLoading(
+        true
+      );
+
+      const response =
+        await api.post(
+          "/consentimentos-badge/autorizar",
+          {
+            id_utilizador:
+              userId,
+
+            id_badge_modelo:
+              badge.id,
+
+            id_candidatura_pedido:
+              conquistadoBadge
+                ?.id_candidatura_pedido ||
+              null,
+
+            linkedin_url:
+              linkedinUrl.trim(),
+          }
+        );
+
+      const atualizado =
+        await api.get(
+          `/consentimentos-badge/${userId}/${badge.id}`
+        );
+
+      setConsentimento(
+        atualizado.data
+      );
+
+      setLinkedinUrl(
+        atualizado.data
+          ?.consentimento
+          ?.linkedin_url ||
+        ""
+      );
+
+      alert(
+        response.data?.message ||
+        "Publicação autorizada."
+      );
+    } catch (err) {
+      console.error(
+        "Erro ao autorizar publicação:",
+        err
+      );
+
+      alert(
+        err.response?.data?.error ||
+        "Não foi possível autorizar a publicação."
+      );
+    } finally {
+      setConsentimentoLoading(
+        false
+      );
+    }
+  };
+
+const revogarPublicacao =
+  async () => {
+    if (!badge) {
+      return;
+    }
+
+    const userId =
+      obterUserId();
+
+    if (!userId) {
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Tens a certeza que queres revogar a publicação pública deste badge?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setConsentimentoLoading(
+        true
+      );
+
+      await api.post(
+        "/consentimentos-badge/revogar",
+        {
+          id_utilizador:
+            userId,
+
+          id_badge_modelo:
+            badge.id,
+        }
+      );
+
+      const atualizado =
+        await api.get(
+          `/consentimentos-badge/${userId}/${badge.id}`
+        );
+
+      setConsentimento(
+        atualizado.data
+      );
+
+      alert(
+        "Autorização revogada com sucesso."
+      );
+    } catch (err) {
+      console.error(
+        "Erro ao revogar publicação:",
+        err
+      );
+
+      alert(
+        err.response?.data?.error ||
+        "Não foi possível revogar a autorização."
+      );
+    } finally {
+      setConsentimentoLoading(
+        false
+      );
+    }
+  };
+
+  const partilharLinkedin =
+    () => {
+      if (
+        !consentimento
+          ?.pode_publicar
+      ) {
+        alert(
+          "Para partilhar este badge publicamente, tens de autorizar a publicação RGPD deste badge."
+        );
+
+        return;
+      }
+
+      const texto =
+        encodeURIComponent(
+          `Conquistei o badge ${badge.nome} na Softinsa Badges.`
+        );
+
+      const url =
+        encodeURIComponent(
+          window.location.href
+        );
+
+      window.open(
+        `https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${texto}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    };
+
+    const obterUrlPublicaBadge =
+  () => {
+    const userId =
+      obterUserId();
+
+    const idBadge =
+      badge?.id ||
+      badge?.id_badge_modelo ||
+      id;
+
+    if (
+      !userId ||
+      !idBadge
+    ) {
+      return "";
+    }
+
+    return `${window.location.origin}/badges/${userId}/${idBadge}`;
+  };
+
+const copiarLinkPublico =
+  async () => {
+    const url =
+      obterUrlPublicaBadge();
+
+    if (!url) {
+      alert(
+        "Não foi possível gerar o link público."
+      );
+
+      return;
+    }
+
+    try {
+      await navigator
+        .clipboard
+        .writeText(url);
+
+      alert(
+        "Link público copiado."
+      );
+    } catch {
+      alert(
+        "Não foi possível copiar o link."
+      );
+    }
+  };
+
+const abrirBadgePublico =
+  () => {
+    const userId =
+      obterUserId();
+
+    const idBadge =
+      badge?.id ||
+      badge?.id_badge_modelo ||
+      id;
+
+    if (
+      !userId ||
+      !idBadge
+    ) {
+      return;
+    }
+
+    navigate(
+      `/badges/${userId}/${idBadge}`
+    );
+  };
+
   return (
     <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
@@ -418,33 +740,229 @@ function BadgeDetailPage() {
 
           <div style={{ display: "flex", justifyContent: "center", gap: 14, marginBottom: 32, flexWrap: "wrap" }}>
             {conquistado ? (
-                <>
-                <button style={actionBtn}>
-                    <FaLinkedinIn size={16} color="#0077b5" style={{ marginRight: 8 }} />
-                    Partilhar badge no LinkedIn
-                </button>
+  <>
+    <div style={consentimentoInfoBox}>
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: "#111827",
+          marginBottom: 6,
+        }}
+      >
+        Publicação pública deste badge
+      </div>
 
-                <button
-                  style={actionBtn}
-                  onClick={() => navigate(`/certificado/${badge.id}`)}
-                >
-                  <HiOutlineDownload size={17} style={{ marginRight: 8 }} />
-                  Obter certificado
-                </button>
+      <div
+        style={{
+          fontSize: 13,
+          color:
+            consentimento?.pode_publicar
+              ? "#166534"
+              : "#92400e",
+          marginBottom: 10,
+        }}
+      >
+        {consentimento?.pode_publicar
+          ? "Autorizada. Este badge pode aparecer publicamente associado ao teu nome."
+          : "Não autorizada. Este badge está privado e não aparece associado ao teu nome na galeria pública."}
+      </div>
 
-                <button style={actionBtn}>
-                    <HiOutlineMail size={17} style={{ marginRight: 8 }} />
-                    Adicionar Badge à Assinatura
-                </button>
-                </>
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="url"
+          placeholder="Link LinkedIn opcional"
+          value={linkedinUrl}
+          onChange={(event) =>
+            setLinkedinUrl(
+              event.target.value
+            )
+          }
+          style={linkedinInput}
+        />
+
+        <button
+          type="button"
+          style={{
+            ...actionBtn,
+            background:
+              "#0a66c2",
+            color:
+              "white",
+            border:
+              "1.5px solid #0a66c2",
+          }}
+          disabled={
+            consentimentoLoading
+          }
+          onClick={
+            autorizarPublicacao
+          }
+        >
+          {consentimentoLoading
+            ? "A guardar..."
+            : consentimento?.pode_publicar
+              ? "Atualizar autorização"
+              : "Autorizar publicação"}
+        </button>
+
+        {consentimento?.pode_publicar && (
+          <button
+            type="button"
+            style={{
+              ...actionBtn,
+              color:
+                "#b91c1c",
+              border:
+                "1.5px solid #fecaca",
+            }}
+            disabled={
+              consentimentoLoading
+            }
+            onClick={
+              revogarPublicacao
+            }
+          >
+            Revogar
+          </button>
+        )}
+      </div>
+    </div>
+
+    {consentimento?.pode_publicar && (
+      <div style={publicLinkBox}>
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 800,
+            color: "#111827",
+            marginBottom: 6,
+          }}
+        >
+          Link público do badge
+        </div>
+
+        <div
+          style={{
+            fontSize: 13,
+            color: "#64748b",
+            marginBottom: 10,
+            lineHeight: 1.45,
+          }}
+        >
+          Este link pode ser partilhado fora da plataforma.
+        </div>
+
+        <div style={publicLinkRow}>
+          <input
+            readOnly
+            value={obterUrlPublicaBadge()}
+            style={publicLinkInput}
+          />
+
+          <button
+            type="button"
+            style={publicLinkButton}
+            onClick={copiarLinkPublico}
+          >
+            Copiar
+          </button>
+
+          <button
+            type="button"
+            style={publicLinkButtonSecondary}
+            onClick={abrirBadgePublico}
+          >
+            Abrir
+          </button>
+        </div>
+      </div>
+    )}
+
+    <button
+      style={actionBtn}
+      onClick={
+        partilharLinkedin
+      }
+    >
+      <FaLinkedinIn
+        size={16}
+        color="#0077b5"
+        style={{
+          marginRight: 8,
+        }}
+      />
+      Partilhar badge no LinkedIn
+    </button>
+
+    <button
+      style={actionBtn}
+      onClick={() =>
+        navigate(
+          `/certificado/${badge.id}`
+        )
+      }
+    >
+      <HiOutlineDownload
+        size={17}
+        style={{
+          marginRight: 8,
+        }}
+      />
+      Obter certificado
+    </button>
+
+    <button
+      style={actionBtn}
+      onClick={() => {
+        if (
+          !consentimento?.pode_publicar
+        ) {
+          alert(
+            "Para usar este badge na assinatura pública, autoriza primeiro a publicação deste badge."
+          );
+
+          return;
+        }
+
+        alert(
+          "Assinatura com badge pronta para ser implementada."
+        );
+      }}
+    >
+      <HiOutlineMail
+        size={17}
+        style={{
+          marginRight: 8,
+        }}
+      />
+      Adicionar Badge à Assinatura
+    </button>
+  </>
             ) : (
-                <button
+              <button
                 style={actionBtn}
-                onClick={() => navigate(`/submeter-evidencias/${badge.id}`)}
-                >
-                <BiMedal size={18} style={{ marginRight: 8 }} />
+                onClick={() =>
+                  navigate(
+                    `/submeter-evidencias/${badge.id}`
+                  )
+                }
+              >
+                <BiMedal
+                  size={18}
+                  style={{
+                    marginRight: 8,
+                  }}
+                />
                 Submeter Evidências
-                </button>
+              </button>
             )}
             </div>
 
@@ -592,6 +1110,53 @@ function nivelParaLetra(idNivel) {
   return "";
 }
 
+const publicLinkBox = {
+  width: "100%",
+  background: "#f8fafc",
+  border: "1px solid #dbeafe",
+  borderRadius: 10,
+  padding: 16,
+  marginBottom: 8,
+};
+
+const publicLinkRow = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  flexWrap: "wrap",
+};
+
+const publicLinkInput = {
+  flex: 1,
+  minWidth: 260,
+  height: 38,
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  padding: "0 10px",
+  fontSize: 12,
+  color: "#475569",
+  background: "white",
+};
+
+const publicLinkButton = {
+  height: 38,
+  border: "none",
+  borderRadius: 8,
+  background: "#2563eb",
+  color: "white",
+  padding: "0 14px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const publicLinkButtonSecondary = {
+  ...publicLinkButton,
+  background: "white",
+  color: "#2563eb",
+  border: "1px solid #bfdbfe",
+};
+
 const heroCard = {
   background: "white",
   border: "1px solid #dbe3ef",
@@ -647,6 +1212,27 @@ const requisitoCard = {
   borderRadius: 10,
   marginBottom: 10,
   overflow: "hidden",
+};
+
+const consentimentoInfoBox = {
+  width: "100%",
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 10,
+  padding: 16,
+  marginBottom: 8,
+};
+
+const linkedinInput = {
+  height: 38,
+  minWidth: 260,
+  flex: 1,
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  padding: "0 12px",
+  fontSize: 13,
+  color: "#374151",
+  outline: "none",
 };
 
 const requisitoHeader = {

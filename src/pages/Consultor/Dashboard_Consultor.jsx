@@ -1,5 +1,16 @@
-import { useState, useEffect } from "react";
-import { Card, Button, Spinner } from 'react-bootstrap';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  Card,
+  Button,
+  Spinner,
+  Modal,
+} from "react-bootstrap";
 import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js'; // Garante que o caminho está correto
@@ -8,7 +19,18 @@ import api from '../../services/api.js'; // Garante que o caminho está correto
 import Header from '../../components/header.jsx';
 import RightSidebar from '../../components/right_sidebar.jsx';
 import LeftSidebar from '../../components/left_sidebar.jsx';
-//import ImagemBadge from '../../assets/Cybersecurity_Badge.png';
+
+import {
+  EVENTO_NOTIFICACOES_ATUALIZADAS,
+  emitirAtualizacaoNotificacoes,
+  filtrarNotificacoesMarco,
+  formatarTituloNotificacao,
+  notificacaoNaoLida,
+  obterConteudoNotificacao,
+  obterIconeMarco,
+  obterIdNotificacao,
+  obterTipoNotificacao,
+} from "../../utils/notificacoesUtils.js";
 
 function detetarMimeImagem(bytes) {
     if (!bytes || bytes.length < 4) return "image/png";
@@ -149,6 +171,54 @@ function normalizarBooleano(valor) {
     ].includes(texto);
 }
 
+function obterChaveMarcosCelebrados(idUtilizador) {
+    return `marcos_celebrados_${idUtilizador}`;
+}
+
+function obterMarcosCelebrados(idUtilizador) {
+    if (!idUtilizador) {
+        return new Set();
+    }
+
+    try {
+        const guardado = localStorage.getItem(
+            obterChaveMarcosCelebrados(idUtilizador)
+        );
+
+        const lista = guardado
+            ? JSON.parse(guardado)
+            : [];
+
+        return new Set(
+            Array.isArray(lista)
+                ? lista.map(String)
+                : []
+        );
+    } catch {
+        return new Set();
+    }
+}
+
+function guardarMarcoCelebrado(idUtilizador, idNotificacao) {
+    if (!idUtilizador || !idNotificacao) {
+        return;
+    }
+
+    const celebrados =
+        obterMarcosCelebrados(idUtilizador);
+
+    celebrados.add(
+        String(idNotificacao)
+    );
+
+    localStorage.setItem(
+        obterChaveMarcosCelebrados(idUtilizador),
+        JSON.stringify(
+            Array.from(celebrados)
+        )
+    );
+}
+
 function normalizarBadge(badge) {
     const imagemSrc = normalizarImagemSrc(
         badge.imagem_url ||
@@ -190,6 +260,124 @@ function PaginaPrincipal() {
     const [loading, setLoading] = useState(true);
 
     const [stats, setStats] = useState({ total_badges: 0, total_pontos: 0 });
+    const [
+    userId,
+    setUserId,
+    ] = useState(null);
+
+    const [
+    marcos,
+    setMarcos,
+    ] = useState([]);
+
+    const [
+    marcoCelebracao,
+    setMarcoCelebracao,
+    ] = useState(null);
+
+    const [
+    mostrarCelebracao,
+    setMostrarCelebracao,
+    ] = useState(false);
+
+    const marcosMostradosRef =
+    useRef(new Set());
+
+    const carregarMarcos =
+        useCallback(
+            async (
+            idUtilizador,
+            {
+                mostrarModal =
+                false,
+            } = {}
+            ) => {
+            if (!idUtilizador) {
+                setMarcos([]);
+                return;
+            }
+
+            try {
+                const response =
+                await api.get(
+                    `/notificacoes/${idUtilizador}`
+                );
+
+                const lista =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
+
+                const marcosEncontrados =
+                filtrarNotificacoesMarco(
+                    lista
+                );
+
+                setMarcos(
+                marcosEncontrados
+                );
+
+                if (!mostrarModal) {
+                return;
+                }
+
+                const marcosCelebrados =
+                    obterMarcosCelebrados(
+                        idUtilizador
+                    );
+
+                const novoMarcoNaoLido =
+                    marcosEncontrados.find(
+                        (notificacao) => {
+                            const id =
+                                String(
+                                    obterIdNotificacao(
+                                        notificacao
+                                    )
+                                );
+
+                            return (
+                                notificacaoNaoLida(
+                                    notificacao
+                                ) &&
+                                !marcosMostradosRef
+                                    .current
+                                    .has(id) &&
+                                !marcosCelebrados
+                                    .has(id)
+                            );
+                        }
+                    );
+
+                if (novoMarcoNaoLido) {
+                const id =
+                    String(
+                    obterIdNotificacao(
+                        novoMarcoNaoLido
+                    )
+                    );
+
+                marcosMostradosRef
+                    .current
+                    .add(id);
+
+                setMarcoCelebracao(
+                    novoMarcoNaoLido
+                );
+
+                setMostrarCelebracao(
+                    true
+                );
+                }
+            } catch (err) {
+                console.error(
+                "[MARCOS] Erro ao carregar marcos:",
+                err
+                );
+            }
+            },
+            []
+        );
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -204,6 +392,7 @@ function PaginaPrincipal() {
         setUser(userData);
 
         const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+        setUserId(userId);
 
         if (!userId) {
             console.error("ID do utilizador não encontrado:", userData);
@@ -366,6 +555,14 @@ function PaginaPrincipal() {
                         0
                     ),
                 });
+
+                carregarMarcos(
+                userId,
+                {
+                    mostrarModal:
+                    true,
+                }
+                );
             }
         )
             .catch(err => {
@@ -377,7 +574,39 @@ function PaginaPrincipal() {
                 setLoading(false);
             });
 
-    }, [navigate]);
+    }, [navigate, carregarMarcos]);
+
+    useEffect(() => {
+        if (!userId) {
+            return undefined;
+        }
+
+        const atualizar =
+            () => {
+            carregarMarcos(
+                userId,
+                {
+                mostrarModal:
+                    true,
+                }
+            );
+            };
+
+        window.addEventListener(
+            EVENTO_NOTIFICACOES_ATUALIZADAS,
+            atualizar
+        );
+
+        return () => {
+            window.removeEventListener(
+            EVENTO_NOTIFICACOES_ATUALIZADAS,
+            atualizar
+            );
+        };
+        }, [
+        userId,
+        carregarMarcos,
+    ]);
 
     if (loading) {
         return (
@@ -386,6 +615,91 @@ function PaginaPrincipal() {
             </div>
         );
     }
+
+    const fecharCelebracao =
+        async () => {
+            const notificacao =
+            marcoCelebracao;
+
+            setMostrarCelebracao(
+            false
+            );
+
+            setMarcoCelebracao(
+            null
+            );
+
+            const idNotificacao =
+            obterIdNotificacao(
+                notificacao
+            );
+
+            if (idNotificacao && userId) {
+                guardarMarcoCelebrado(
+                    userId,
+                    idNotificacao
+                );
+
+                marcosMostradosRef
+                    .current
+                    .add(
+                        String(idNotificacao)
+                    );
+            }
+
+            if (
+            !idNotificacao ||
+            !userId
+            ) {
+            return;
+            }
+
+            try {
+            await api.patch(
+                `/notificacoes/${idNotificacao}/lida`,
+                {
+                id_utilizador:
+                    userId,
+                }
+            );
+
+            setMarcos(
+                (anteriores) =>
+                anteriores.map(
+                    (item) => {
+                    const idItem =
+                        obterIdNotificacao(
+                        item
+                        );
+
+                    if (
+                        String(idItem) !==
+                        String(idNotificacao)
+                    ) {
+                        return item;
+                    }
+
+                    return {
+                        ...item,
+                        lida: true,
+                        lido: true,
+                        estado_leitura:
+                        "LIDA",
+                        estado_notificacao:
+                        "LIDA",
+                    };
+                    }
+                )
+            );
+
+            emitirAtualizacaoNotificacoes();
+            } catch (err) {
+            console.error(
+                "[MARCOS] Erro ao marcar marco como visto:",
+                err
+            );
+            }
+        };
 
     return (
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -448,6 +762,10 @@ function PaginaPrincipal() {
                     </Button>
                     </div>
 
+                    <MarcosDashboard
+                        marcos={marcos}
+                    />
+
                     {/* Seção: Badges com Progresso */}
                     <BadgeSection 
                         title="Badges Obtidos" 
@@ -499,6 +817,12 @@ function PaginaPrincipal() {
 
                 <RightSidebar />
             </div>
+
+            <MarcoCelebracaoModal
+                show={mostrarCelebracao}
+                marco={marcoCelebracao}
+                onClose={fecharCelebracao}
+            />
         </div>
     );
 }
@@ -760,6 +1084,162 @@ function BadgeImage({ imageUrl, size = 70 }) {
     );
 }
 
+function MarcosDashboard({
+  marcos,
+}) {
+  const lista =
+    Array.isArray(marcos)
+      ? marcos.slice(0, 3)
+      : [];
+
+  if (lista.length === 0) {
+    return null;
+  }
+
+  return (
+    <div style={marcosBox}>
+      <div style={marcosHeader}>
+        <div>
+          <div style={marcosTitle}>
+            Marcos alcançados
+          </div>
+
+          <div style={marcosSubtitle}>
+            Celebrações importantes do teu percurso.
+          </div>
+        </div>
+
+        <span style={marcosCount}>
+          {marcos.length}
+        </span>
+      </div>
+
+      <div style={marcosGrid}>
+        {lista.map(
+          (marco, index) => (
+            <MarcoMiniCard
+              key={
+                obterIdNotificacao(
+                  marco
+                ) || index
+              }
+              marco={marco}
+            />
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MarcoMiniCard({
+  marco,
+}) {
+  const tipo =
+    obterTipoNotificacao(
+      marco
+    );
+
+  return (
+    <div style={marcoMiniCard}>
+      <div style={marcoMiniIcon}>
+        {obterIconeMarco(tipo)}
+      </div>
+
+      <div style={{ flex: 1 }}>
+        <div style={marcoMiniTitle}>
+          {formatarTituloNotificacao(
+            tipo
+          )}
+        </div>
+
+        <div style={marcoMiniText}>
+          {obterConteudoNotificacao(
+            marco
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarcoCelebracaoModal({
+  show,
+  marco,
+  onClose,
+}) {
+  if (!marco) {
+    return null;
+  }
+
+  const tipo =
+    obterTipoNotificacao(
+      marco
+    );
+
+  return (
+    <Modal
+      show={show}
+      onHide={onClose}
+      centered
+      backdrop="static"
+      contentClassName="marco-celebracao-content"
+    >
+      <div style={celebracaoContainer}>
+        <button
+          type="button"
+          onClick={onClose}
+          style={celebracaoCloseButton}
+          aria-label="Fechar celebração"
+        >
+          ×
+        </button>
+
+        <div style={celebracaoTopGlow} />
+
+        <div style={celebracaoIcon}>
+          {obterIconeMarco(tipo)}
+        </div>
+
+        <div style={celebracaoBadge}>
+          Marco alcançado
+        </div>
+
+        <h4 style={celebracaoTitle}>
+          {formatarTituloNotificacao(
+            tipo
+          )}
+        </h4>
+
+        <p style={celebracaoText}>
+          {obterConteudoNotificacao(
+            marco
+          )}
+        </p>
+
+        <Button
+          onClick={onClose}
+          style={celebracaoButton}
+        >
+          Celebrar!
+        </Button>
+      </div>
+
+      <style>
+        {`
+          .marco-celebracao-content {
+            border: none !important;
+            border-radius: 28px !important;
+            overflow: hidden !important;
+            background: transparent !important;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.35) !important;
+          }
+        `}
+      </style>
+    </Modal>
+  );
+}
+
 const dashboardCatalogButton = {
   minWidth: 220,
   height: 40,
@@ -779,6 +1259,195 @@ const dashboardCatalogButton = {
 
   transition:
     "background-color 0.15s ease, border-color 0.15s ease",
+};
+
+const marcosBox = {
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 18,
+  marginBottom: 24,
+  boxShadow:
+    "0 2px 8px rgba(15, 23, 42, 0.04)",
+};
+
+const marcosHeader = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 14,
+};
+
+const marcosTitle = {
+  fontSize: 15,
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const marcosSubtitle = {
+  fontSize: 12,
+  color: "#64748b",
+  marginTop: 2,
+};
+
+const marcosCount = {
+  minWidth: 28,
+  height: 28,
+  borderRadius: 999,
+  background: "#eff6ff",
+  color: "#2563eb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 13,
+  fontWeight: 800,
+};
+
+const marcosGrid = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 12,
+};
+
+const marcoMiniCard = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  border: "1px solid #dbeafe",
+  background:
+    "linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)",
+  borderRadius: 12,
+  padding: 14,
+};
+
+const marcoMiniIcon = {
+  width: 42,
+  height: 42,
+  borderRadius: "50%",
+  background: "#2563eb",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 22,
+  flexShrink: 0,
+};
+
+const marcoMiniTitle = {
+  fontSize: 13,
+  fontWeight: 800,
+  color: "#111827",
+  marginBottom: 4,
+};
+
+const marcoMiniText = {
+  fontSize: 12,
+  color: "#475569",
+  lineHeight: 1.35,
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+};
+
+const celebracaoContainer = {
+  position: "relative",
+  textAlign: "center",
+  padding: "42px 34px 34px",
+  background:
+    "radial-gradient(circle at top, #dbeafe 0%, #ffffff 48%, #f8fafc 100%)",
+  borderRadius: 28,
+  overflow: "hidden",
+};
+
+const celebracaoTopGlow = {
+  position: "absolute",
+  top: -90,
+  left: "50%",
+  transform: "translateX(-50%)",
+  width: 220,
+  height: 220,
+  borderRadius: "50%",
+  background:
+    "rgba(37, 99, 235, 0.16)",
+  filter: "blur(4px)",
+  pointerEvents: "none",
+};
+
+const celebracaoCloseButton = {
+  position: "absolute",
+  top: 16,
+  right: 18,
+  width: 32,
+  height: 32,
+  borderRadius: "50%",
+  border: "none",
+  background: "rgba(15, 23, 42, 0.06)",
+  color: "#475569",
+  fontSize: 24,
+  lineHeight: "28px",
+  cursor: "pointer",
+  zIndex: 2,
+};
+
+const celebracaoIcon = {
+  position: "relative",
+  zIndex: 1,
+  width: 104,
+  height: 104,
+  borderRadius: "50%",
+  background:
+    "linear-gradient(135deg, #2563eb, #60a5fa)",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 52,
+  margin: "0 auto 18px",
+  boxShadow:
+    "0 18px 40px rgba(37, 99, 235, 0.32)",
+  border: "6px solid rgba(255, 255, 255, 0.75)",
+};
+
+const celebracaoBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "5px 12px",
+  borderRadius: 999,
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  fontSize: 12,
+  fontWeight: 800,
+  marginBottom: 12,
+};
+
+const celebracaoTitle = {
+  fontSize: 24,
+  fontWeight: 900,
+  color: "#0f172a",
+  marginBottom: 10,
+  lineHeight: 1.2,
+};
+
+const celebracaoText = {
+  fontSize: 14,
+  color: "#475569",
+  lineHeight: 1.65,
+  margin: "0 auto 26px",
+  maxWidth: 390,
+};
+
+const celebracaoButton = {
+  background:
+    "linear-gradient(135deg, #2563eb, #1d4ed8)",
+  border: "none",
+  borderRadius: 999,
+  padding: "11px 28px",
+  fontWeight: 800,
+  boxShadow:
+    "0 12px 24px rgba(37, 99, 235, 0.25)",
 };
 
 export default PaginaPrincipal;

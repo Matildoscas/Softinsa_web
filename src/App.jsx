@@ -4,6 +4,8 @@ import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
 import LoginPage from './pages/Login/login.jsx';
 import RegisterPage from './pages/Login/register.jsx';
 import AreaPage from './pages/Login/area_register.jsx';
+import BadgePublicoIndividualPage from './pages/Galeria_Pública/BadgePublicoIndividual.jsx';
+import VerificarCertificadoPage from './pages/Galeria_Pública/VerificarCertificado.jsx';
 
 import PaginaPrincipal from './pages/Consultor/Dashboard_Consultor.jsx';
 import PaginaPerfil from './pages/Consultor/PaginaPerfil_Consultor.jsx';
@@ -78,11 +80,14 @@ function App() {
   return (
     <Router>
       <Routes>
+        
+        // Rotas públicas
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/galeria-badges" element={<GaleriaBadgesPage />} />
+        <Route path="/badges/:userId/:badgeId" element={<BadgePublicoIndividualPage />}/>
+        <Route path="/verificar/:codigo" element={<VerificarCertificadoPage />}/>
 
-        // Rotas públicas
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
 

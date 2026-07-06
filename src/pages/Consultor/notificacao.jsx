@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -28,6 +29,7 @@ import {
   formatarTituloNotificacao,
   notificacaoNaoLida,
   ordenarNotificacoesRecentes,
+  EVENTO_NOTIFICACOES_ATUALIZADAS,
 } from "../../utils/notificacoesUtils.js";
 
 function NotificacaoPage() {
@@ -53,72 +55,162 @@ function NotificacaoPage() {
     setUserId,
   ] = useState(null);
 
+  const carregarNotificacoes =
+    useCallback(
+      async (
+        idUtilizador,
+        {
+          silencioso =
+            false,
+        } = {}
+      ) => {
+        if (!idUtilizador) {
+          return;
+        }
+
+        try {
+          if (!silencioso) {
+            setLoading(true);
+          }
+
+          setErro(null);
+
+          const response =
+            await api.get(
+              `/notificacoes/${idUtilizador}`
+            );
+
+          const data =
+            Array.isArray(
+              response.data
+            )
+              ? response.data
+              : [];
+
+          setNotificacoes(
+            ordenarNotificacoesRecentes(
+              data
+            )
+          );
+        } catch (err) {
+          console.error(
+            "Erro ao carregar notificações:",
+            err
+          );
+
+          setErro(
+            "Não foi possível carregar as notificações."
+          );
+        } finally {
+          if (!silencioso) {
+            setLoading(false);
+          }
+        }
+      },
+      []
+    );
+
   useEffect(() => {
     const storedUser =
-      localStorage.getItem("user");
+      localStorage.getItem(
+        "user"
+      );
 
     if (!storedUser) {
       setLoading(false);
 
-      navigate("/login", {
-        replace: true,
-      });
+      navigate(
+        "/login",
+        {
+          replace: true,
+        }
+      );
 
       return;
     }
 
-    const user =
-      JSON.parse(storedUser);
+    try {
+      const user =
+        JSON.parse(
+          storedUser
+        );
 
-    const idUtilizador =
-      user.id_utilizador ||
-      user.ID_UTILIZADOR ||
-      user.id;
+      const idUtilizador =
+        user.id_utilizador ||
+        user.ID_UTILIZADOR ||
+        user.id;
 
-    if (!idUtilizador) {
+      if (!idUtilizador) {
+        setLoading(false);
+
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      setUserId(
+        idUtilizador
+      );
+
+      carregarNotificacoes(
+        idUtilizador
+      );
+    } catch (err) {
+      console.error(
+        "Utilizador inválido:",
+        err
+      );
+
       setLoading(false);
 
-      navigate("/login", {
-        replace: true,
-      });
+      navigate(
+        "/login",
+        {
+          replace: true,
+        }
+      );
+    }
+  }, [
+    navigate,
+    carregarNotificacoes,
+  ]);
 
-      return;
+  useEffect(() => {
+    if (!userId) {
+      return undefined;
     }
 
-    setUserId(idUtilizador);
-    setLoading(true);
-    setErro(null);
-
-    api
-      .get(
-        `/notificacoes/${idUtilizador}`
-      )
-      .then((res) => {
-        const data =
-          Array.isArray(res.data)
-            ? res.data
-            : [];
-
-        setNotificacoes(
-          ordenarNotificacoesRecentes(
-            data
-          )
+    const atualizar =
+      () => {
+        carregarNotificacoes(
+          userId,
+          {
+            silencioso:
+              true,
+          }
         );
-      })
-      .catch((err) => {
-        console.error(
-          "Erro ao carregar notificações:",
-          err
-        );
+      };
 
-        setErro(
-          "Não foi possível carregar as notificações."
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [navigate]);
+    window.addEventListener(
+      EVENTO_NOTIFICACOES_ATUALIZADAS,
+      atualizar
+    );
+
+    return () => {
+      window.removeEventListener(
+        EVENTO_NOTIFICACOES_ATUALIZADAS,
+        atualizar
+      );
+    };
+  }, [
+    userId,
+    carregarNotificacoes,
+  ]);
 
   async function marcarComoLida(
     notificacao

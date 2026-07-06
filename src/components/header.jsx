@@ -19,6 +19,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import useNotificacoesRealtime from
+  "../hooks/useNotificacoesRealtime.js";
+
 import NotificationPopover from "./notificacoes_pop";
 
 import logoImg from "../assets/logo.png";
@@ -124,6 +127,18 @@ function Header() {
   const user =
     obterUtilizadorGuardado();
 
+  const userId =
+    user?.id_utilizador ||
+    user?.ID_UTILIZADOR ||
+    user?.id ||
+    null;
+
+  const {
+    totalNaoLidas,
+  } = useNotificacoesRealtime(
+    userId
+  );
+
   const rotas =
     obterRotasUtilizador(user);
 
@@ -201,13 +216,29 @@ function Header() {
         >
           <button
             type="button"
-            style={notificationButton}
-            aria-label="Notificações"
+            style={
+              notificationButton
+            }
+            aria-label={
+              `Notificações: ${totalNaoLidas} não lidas`
+            }
           >
             <BiBell
               size={18}
               color="white"
             />
+
+            {totalNaoLidas > 0 && (
+              <span
+                style={
+                  notificationBadge
+                }
+              >
+                {totalNaoLidas > 99
+                  ? "99+"
+                  : totalNaoLidas}
+              </span>
+            )}
           </button>
         </OverlayTrigger>
 
@@ -275,6 +306,56 @@ function Header() {
     </Navbar>
   );
 }
+
+const notificationBadge = {
+  position:
+    "absolute",
+
+  top:
+    -5,
+
+  right:
+    -6,
+
+  minWidth:
+    18,
+
+  height:
+    18,
+
+  padding:
+    "0 5px",
+
+  borderRadius:
+    999,
+
+  background:
+    "#dc2626",
+
+  color:
+    "white",
+
+  border:
+    "2px solid white",
+
+  display:
+    "flex",
+
+  alignItems:
+    "center",
+
+  justifyContent:
+    "center",
+
+  fontSize:
+    9,
+
+  fontWeight:
+    700,
+
+  lineHeight:
+    1,
+};
 
 const searchContainer = {
   position: "relative",
