@@ -331,7 +331,15 @@ function GestaoBadges() {
       await api.delete(`/badges/admin/${badgeAEliminar.id}`);
 
       setLista((prev) =>
-        prev.filter((badge) => Number(badge.id) !== Number(badgeAEliminar.id))
+        prev.map((badge) =>
+          Number(badge.id) === Number(badgeAEliminar.id)
+            ? {
+                ...badge,
+                estado: "INATIVO",
+                estado_badge_modelo: "INATIVO",
+              }
+            : badge
+        )
       );
 
       setSucesso("Badge desativado com sucesso.");
@@ -671,7 +679,7 @@ function BadgeCard({ badge, onEditar, onEliminar }) {
 
                 <button onClick={onEliminar} style={deleteButton}>
                   <BiTrash size={15} />
-                  Eliminar
+                  Desativar
                 </button>
               </div>
             </div>
@@ -738,7 +746,7 @@ function ConfirmDeleteModal({ badge, loading, onClose, onConfirm }) {
     <div style={modalOverlay}>
       <div style={modalCard}>
         <div style={modalHeader}>
-          <h6 style={modalTitle}>Eliminar badge</h6>
+          <h6 style={modalTitle}>Desativar badge</h6>
 
           <button onClick={onClose} style={closeButton} disabled={loading}>
             <BiX size={22} />
@@ -746,7 +754,7 @@ function ConfirmDeleteModal({ badge, loading, onClose, onConfirm }) {
         </div>
 
         <p style={modalText}>
-          Tens a certeza que queres eliminar/desativar o badge{" "}
+          Tens a certeza que queres desativar o badge{" "}
           <strong>{badge.nome}</strong>?
         </p>
 
@@ -764,7 +772,7 @@ function ConfirmDeleteModal({ badge, loading, onClose, onConfirm }) {
             }}
             disabled={loading}
           >
-            {loading ? "A eliminar..." : "Eliminar"}
+            {loading ? "A desativar..." : "Desativar"}
           </button>
         </div>
       </div>

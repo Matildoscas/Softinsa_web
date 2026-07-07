@@ -295,11 +295,6 @@ function EditarConta() {
       return;
     }
 
-    if (!form.email.trim()) {
-      setErro("O email é obrigatório.");
-      return;
-    }
-
     try {
       setAGuardar(true);
       setErro("");
@@ -307,7 +302,6 @@ function EditarConta() {
 
       await api.put(`/utilizadores/${form.id}/admin`, {
         nome_completo: form.nome_completo,
-        email: form.email,
         contacto: form.telefone,
         estado_conta: form.status === "Ativo" ? "ATIVO" : "INATIVA",
         //tipo_utilizador: form.funcao,
@@ -434,9 +428,9 @@ function EditarConta() {
                   <FormField
                     label="Email"
                     value={form.email}
-                    onChange={set("email")}
                     placeholder="email@softinsa.pt"
                     type="email"
+                    readOnly
                   />
 
                   <FormField
