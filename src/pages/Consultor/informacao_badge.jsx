@@ -11,6 +11,7 @@ import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import api from "../../services/api.js";
 import BadgeImage from "../../components/badge_image.jsx";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 import {
   obterBonusBadge,
 } from "../../utils/badgeBonus.js";
@@ -394,6 +395,8 @@ function BadgeDetailPage() {
             <p style={{ fontSize: 13, color: "#374151", marginTop: 8, marginBottom: 0, lineHeight: 1.65 }}>
               {badge.descricao || "Sem descrição disponível."}
             </p>
+
+            <DebugBadgePanel badge={badge} />
           </div>
 
           <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
@@ -563,6 +566,8 @@ function RelatedBadgeRow({ badge, onClick }) {
           <div style={{ fontSize: 12, color: "#4470AF", marginTop: 2 }}>
             {badge.nome_area || "Área não definida"}
           </div>
+
+          <DebugBadgePanel badge={badge} />
         </div>
 
         <div style={pointsBox}>

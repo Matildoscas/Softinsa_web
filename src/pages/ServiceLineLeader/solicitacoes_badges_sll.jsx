@@ -26,6 +26,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -60,6 +61,11 @@ function normalizarSolicitacao(
         .id_candidatura_pedido ||
       solicitacao.id ||
       "",
+
+    id_candidatura_sll:
+      solicitacao
+        .id_candidatura_sll ||
+      null,
 
     id_badge_modelo:
       solicitacao.id_badge_modelo ||
@@ -121,6 +127,8 @@ function normalizarSolicitacao(
     pontos: Number(
       solicitacao.pontos || 0
     ),
+
+    debug: solicitacao.debug || null,
   };
 }
 
@@ -786,6 +794,8 @@ function SolicitacoesBadgesSll() {
                   <SolicitacaoCard
                     key={
                       solicitacao
+                        .id_candidatura_sll ||
+                      solicitacao
                         .id_candidatura_pedido
                     }
                     solicitacao={
@@ -793,7 +803,13 @@ function SolicitacoesBadgesSll() {
                     }
                     onDetalhes={() =>
                       navigate(
-                        `/sll/solicitacoes/${solicitacao.id_candidatura_pedido}`
+                        `/sll/solicitacoes/${solicitacao.id_candidatura_pedido}${
+                          solicitacao.id_candidatura_sll
+                            ? `?sid=${encodeURIComponent(
+                                solicitacao.id_candidatura_sll
+                              )}`
+                            : ""
+                        }`
                       )
                     }
                   />
@@ -901,6 +917,8 @@ function SolicitacaoCard({
             )}
           </span>
         </div>
+
+        <DebugBadgePanel badge={solicitacao} variant="solicitacao" />
 
         <button
           type="button"

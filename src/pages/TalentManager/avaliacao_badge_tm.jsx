@@ -28,6 +28,7 @@ import {
 } from "react-router-dom";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
@@ -629,6 +630,8 @@ function AvaliacaoBadgeTm() {
                         ?.data_submisao
                     )}
                   </div>
+
+                  <DebugBadgePanel badge={badge} />
                 </div>
 
                 <button

@@ -31,6 +31,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -370,6 +371,8 @@ function normalizarBadge(badge, index) {
         badge.imagem ||
         badge.imagem_url
       ),
+
+    debug: badge.debug || null,
   };
 }
 
@@ -1412,6 +1415,8 @@ function BadgeCard({ badge }) {
             badge.data_conquista
           )}
         </div>
+
+        <DebugBadgePanel badge={badge} />
       </div>
     </article>
   );

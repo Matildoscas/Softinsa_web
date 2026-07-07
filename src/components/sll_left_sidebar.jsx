@@ -12,6 +12,7 @@ import {
   BiUserCircle,
   BiChevronRight,
 } from "react-icons/bi";
+import DebugSidebarSwitch from "./DebugSidebarSwitch.jsx";
 
 function SllLeftSidebar() {
   const [badgesAberto, setBadgesAberto] = useState(true);
@@ -93,6 +94,8 @@ function SllLeftSidebar() {
           label="Lista de consultores"
         />
       </MenuGroup>
+
+      <DebugSidebarSwitch />
     </aside>
   );
 }

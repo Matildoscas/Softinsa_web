@@ -22,6 +22,7 @@ import {
 } from "react-router-dom";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
@@ -141,6 +142,8 @@ function normalizarBadge(badge) {
       badge.tempo_expiracao ||
       badge.TEMPO_EXPIRACAO ||
       null,
+
+    debug: badge.debug || null,
   };
 }
 
@@ -1166,6 +1169,8 @@ function BadgeCard({
             Área:{" "}
             {badge.nome_areas}
           </div>
+
+          <DebugBadgePanel badge={badge} />
 
           <span
             style={{

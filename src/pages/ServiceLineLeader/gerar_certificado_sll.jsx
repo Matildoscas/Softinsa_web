@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -116,6 +117,8 @@ function normalizarBadge(badge) {
     imagem:
       badge.imagem ||
       null,
+
+    debug: badge.debug || null,
   };
 }
 
@@ -1402,6 +1405,8 @@ async function enviarParaTm() {
                         .data_conquista
                     )}
                   </div>
+
+                  <DebugBadgePanel badge={badgeSelecionado} />
                 </div>
               </div>
             )}

@@ -34,10 +34,16 @@ import {
 
 import {
   useNavigate,
+  useLocation,
   useParams,
 } from "react-router-dom";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
+import {
+  getDebugModeEnabled,
+  getDebugSwitchVisible,
+} from "../../services/debugMode.js";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -161,14 +167,184 @@ function normalizarDocumentos(documentos) {
     }));
 }
 
+function normalizarEstadoValor(estado) {
+  return String(
+    estado || ""
+  )
+    .trim()
+    .toUpperCase();
+}
+
+function estadoEhAprovado(estado) {
+  const valor =
+    normalizarEstadoValor(estado);
+
+  return (
+    valor.startsWith("APROV") ||
+    valor.startsWith("VALID")
+  );
+}
+
+function estadoEhRejeitado(estado) {
+  const valor =
+    normalizarEstadoValor(estado);
+
+  return (
+    valor.startsWith("REJEIT") ||
+    valor.startsWith("RECUS")
+  );
+}
+
+function resolverEstadoEvidenciaUi(evidencia) {
+  const estadoSll =
+    evidencia?.estado_evidencia_sll;
+
+  const estadoTm =
+    evidencia?.estado_evidencia_tm;
+
+  const estadoAtual =
+    evidencia?.estado_evidencia;
+
+  if (
+    estadoEhAprovado(estadoSll) ||
+    estadoEhRejeitado(estadoSll)
+  ) {
+    return estadoSll;
+  }
+
+  if (normalizarEstadoValor(estadoTm)) {
+    return estadoTm;
+  }
+
+  if (normalizarEstadoValor(estadoAtual)) {
+    return estadoAtual;
+  }
+
+  if (normalizarEstadoValor(estadoSll)) {
+    return estadoSll;
+  }
+
+  return "PENDENTE";
+}
+
+function calcularEstadoRequisitoUi(
+  evidencias
+) {
+  if (
+    !Array.isArray(evidencias) ||
+    evidencias.length === 0
+  ) {
+    return "SEM_EVIDENCIA";
+  }
+
+  const estadosTm =
+    evidencias.map((evidencia) =>
+      normalizarEstadoValor(
+        evidencia?.estado_evidencia_tm
+      )
+    );
+
+  if (
+    estadosTm.some((estadoTm) =>
+      estadoEhRejeitado(estadoTm)
+    )
+  ) {
+    return "REJEITADA";
+  }
+
+  if (
+    estadosTm.length > 0 &&
+    estadosTm.every(
+      (estadoTm) =>
+        estadoTm &&
+        estadoEhAprovado(estadoTm)
+    )
+  ) {
+    return "APROVADA";
+  }
+
+  const estadosResolvidos =
+    evidencias.map(
+      resolverEstadoEvidenciaUi
+    );
+
+  if (
+    estadosResolvidos.some((estado) =>
+      estadoEhRejeitado(estado)
+    )
+  ) {
+    return "REJEITADA";
+  }
+
+  if (
+    estadosResolvidos.every((estado) =>
+      estadoEhAprovado(estado)
+    )
+  ) {
+    return "APROVADA";
+  }
+
+  return "PENDENTE";
+}
+
+function resolverEstadoRequisitoUi(
+  requisito,
+  evidencias
+) {
+  const estadoBackend =
+    requisito?.estado_evidencia ||
+    requisito?.estado ||
+    "";
+
+  if (normalizarEstadoValor(estadoBackend)) {
+    return estadoBackend;
+  }
+
+  return calcularEstadoRequisitoUi(
+    evidencias
+  );
+}
+
 function normalizarRequisito(
   requisito,
   index
 ) {
+  const evidenciasOriginais =
+    Array.isArray(
+      requisito.evidencias
+    )
+      ? requisito.evidencias
+      : [];
+
+  const evidencias =
+    evidenciasOriginais.map(
+      (item) => ({
+        ...item,
+        estado_evidencia:
+          item.estado_evidencia ||
+          resolverEstadoEvidenciaUi(
+            item
+          ),
+      })
+    );
+
   const evidencia =
     requisito.evidencia ||
     requisito.evidencia_apresentada ||
     null;
+
+  const descricoesEvidencia =
+    [
+      ...new Set(
+        evidencias
+          .map((item) =>
+            String(
+              item.descricao || ""
+            ).trim()
+          )
+          .filter(Boolean)
+      ),
+    ];
 
   return {
     id:
@@ -193,11 +369,15 @@ function normalizarRequisito(
       "Sem descrição.",
 
     estado:
-      requisito.estado_evidencia ||
-      requisito.estado ||
-      "AGUARDAR_TM",
+      resolverEstadoRequisitoUi(
+        requisito,
+        evidencias
+      ) || "AGUARDAR_TM",
 
     descricao_evidencia:
+      descricoesEvidencia.join(
+        " | "
+      ) ||
       evidencia?.descricao ||
       requisito.descricao_evidencia ||
       requisito.evidencia_descricao ||
@@ -213,6 +393,8 @@ function normalizarRequisito(
       requisito.ficheiros ||
       []
     ),
+
+    evidencias,
   };
 }
 
@@ -264,6 +446,17 @@ function normalizarResposta(dados) {
       data_submissao:
         candidatura.data_submissao ||
         candidatura.data_submisao ||
+        null,
+
+      estado_candidaturatm:
+        candidatura.estado_candidaturatm ||
+        dados.estado_candidaturatm ||
+        null,
+
+      estado_candidaturasll:
+        candidatura.estado_candidaturasll ||
+        candidaturaSll.estado_candidaturasll ||
+        dados.estado_candidaturasll ||
         null,
 
       estado:
@@ -423,7 +616,7 @@ function obterEstadoVisual(estado) {
     valor.includes("VALID")
   ) {
     return {
-      label: "Aprovada pelo TM",
+      label: "Aprovada",
       background: "#dcfce7",
       color: "#166534",
       border: "#bbf7d0",
@@ -443,10 +636,48 @@ function obterEstadoVisual(estado) {
   }
 
   return {
-    label: "Aguardar validação do SLL",
+    label: "Pendente",
     background: "#fef3c7",
     color: "#92400e",
     border: "#fde68a",
+  };
+}
+
+function obterEstadoCandidaturaVisual(estado) {
+  const valor = String(
+    estado || ""
+  ).toUpperCase();
+
+  if (
+    valor.includes("REJEIT") ||
+    valor.includes("RECUS")
+  ) {
+    return {
+      label: "Rejeitada",
+      background: "#fee2e2",
+      color: "#991b1b",
+      border: "#fecaca",
+    };
+  }
+
+  if (
+    valor.includes("APROV") ||
+    valor.includes("VALID") ||
+    valor.includes("SLL")
+  ) {
+    return {
+      label: "Aguardar validação do SLL",
+      background: "#fef3c7",
+      color: "#92400e",
+      border: "#fde68a",
+    };
+  }
+
+  return {
+    label: "Aguardar validação do Talent Manager",
+    background: "#dbeafe",
+    color: "#1e3a8a",
+    border: "#bfdbfe",
   };
 }
 
@@ -548,10 +779,25 @@ function cumpriuPrazoDesafio(
 
 function DetalheSolicitacaoSll() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     idCandidatura,
   } = useParams();
+
+  const idCandidaturaSllQuery =
+    useMemo(() => {
+      const params =
+        new URLSearchParams(
+          location.search || ""
+        );
+
+      const sid = String(
+        params.get("sid") || ""
+      ).trim();
+
+      return sid || null;
+    }, [location.search]);
 
   const [
     isProcessing,
@@ -581,6 +827,33 @@ function DetalheSolicitacaoSll() {
 
   const [erro, setErro] =
     useState("");
+
+  const [debugAtivo, setDebugAtivo] =
+    useState(
+      getDebugSwitchVisible() &&
+        getDebugModeEnabled()
+    );
+
+  useEffect(() => {
+    const onDebugChanged = () => {
+      setDebugAtivo(
+        getDebugSwitchVisible() &&
+          getDebugModeEnabled()
+      );
+    };
+
+    window.addEventListener(
+      "debug-mode-changed",
+      onDebugChanged
+    );
+
+    return () => {
+      window.removeEventListener(
+        "debug-mode-changed",
+        onDebugChanged
+      );
+    };
+  }, []);
 
   useEffect(() => {
     carregarDetalhe();
@@ -615,7 +888,10 @@ function DetalheSolicitacaoSll() {
      */
     const responseDetalhe =
       await api.get(
-        `/sll/${idUtilizadorSll}/solicitacoes/${idCandidatura}`
+        `/sll/${idUtilizadorSll}/solicitacoes/${
+          idCandidaturaSllQuery ||
+          idCandidatura
+        }`
       );
 
     const dadosNormalizados =
@@ -637,22 +913,36 @@ function DetalheSolicitacaoSll() {
         .candidatura
         .id_candidatura_sll
     ) {
-      const responseSll =
-        await api.get(
-          `/candidaturas/sll/${idUtilizadorSll}/pedido/${idCandidatura}`
-        );
+      try {
+        const responseSll =
+          await api.get(
+            `/candidaturas/sll/${idUtilizadorSll}/pedido/${idCandidatura}`
+          );
 
-      dadosNormalizados
-        .candidatura
-        .id_candidatura_sll =
-          responseSll.data
-            .id_candidatura_sll;
+        dadosNormalizados
+          .candidatura
+          .id_candidatura_sll =
+            responseSll.data
+              .id_candidatura_sll;
 
-      dadosNormalizados
-        .candidatura
-        .estado_sll =
-          responseSll.data
-            .estado_candidaturasll;
+        dadosNormalizados
+          .candidatura
+          .estado_sll =
+            responseSll.data
+              .estado_candidaturasll;
+      } catch (fallbackErr) {
+        if (fallbackErr?.response?.status === 404) {
+          console.warn(
+            "[SLL] Candidatura ainda sem registo em candidatura_sll; a página continuará em modo leitura.",
+            {
+              idCandidatura,
+              idUtilizadorSll,
+            }
+          );
+        } else {
+          throw fallbackErr;
+        }
+      }
     }
 
     console.log(
@@ -830,16 +1120,133 @@ async function rejeitarCandidatura() {
       ).length;
     }, [dados]);
 
+  const alertaAprovacaoTm =
+    useMemo(() => {
+      if (!dados) {
+        return {
+          mostrar: false,
+          total: 0,
+          aprovadosTm: 0,
+        };
+      }
+
+      const requisitos =
+        Array.isArray(
+          dados.requisitos
+        )
+          ? dados.requisitos
+          : [];
+
+      const total =
+        requisitos.length;
+
+      const aprovadosTm =
+        requisitos.filter(
+          (requisito) => {
+            const evidencias =
+              Array.isArray(
+                requisito.evidencias
+              )
+                ? requisito.evidencias
+                : [];
+
+            if (
+              evidencias.length === 0
+            ) {
+              return false;
+            }
+
+            return evidencias.every(
+              (evidencia) =>
+                estadoEhAprovado(
+                  evidencia
+                    .estado_evidencia_tm
+                )
+            );
+          }
+        ).length;
+
+      const estadoSll =
+        normalizarEstadoValor(
+          dados?.candidatura
+            ?.estado_candidaturasll ||
+            dados?.candidatura
+              ?.estado_sll
+        );
+
+      const estadoCandidatura =
+        normalizarEstadoValor(
+          dados?.candidatura
+            ?.estado
+        );
+
+      const sllJaDecidiu =
+        estadoSll.includes(
+          "APROV"
+        ) ||
+        estadoSll.includes(
+          "REJEIT"
+        ) ||
+        estadoSll.includes(
+          "RECUS"
+        ) ||
+        estadoCandidatura.includes(
+          "APROV"
+        ) ||
+        estadoCandidatura.includes(
+          "REJEIT"
+        ) ||
+        estadoCandidatura.includes(
+          "RECUS"
+        );
+
+      return {
+        mostrar:
+          total > 0 &&
+          aprovadosTm === total &&
+          !sllJaDecidiu,
+        total,
+        aprovadosTm,
+      };
+    }, [dados]);
+
 
   const idCandidaturaSll =
     dados?.candidatura
       ?.id_candidatura_sll ||
     null;
 
+  const sllJaFinalizou =
+    useMemo(() => {
+      const estadoSll =
+        normalizarEstadoValor(
+          dados?.candidatura
+            ?.estado_candidaturasll ||
+            dados?.candidatura
+              ?.estado_sll
+        );
+
+      const estadoPedido =
+        normalizarEstadoValor(
+          dados?.candidatura
+            ?.estado
+        );
+
+      return (
+        estadoSll.includes("APROV") ||
+        estadoSll.includes("REJEIT") ||
+        estadoSll.includes("RECUS") ||
+        estadoPedido.includes("APROV") ||
+        estadoPedido.includes("REJEIT") ||
+        estadoPedido.includes("RECUS")
+      );
+    }, [dados]);
+
   const podeDecidir =
     Boolean(
       idCandidaturaSll
     ) &&
+    !sllJaFinalizou &&
     !isProcessing;
 
 
@@ -900,6 +1307,25 @@ async function rejeitarCandidatura() {
                 candidatura={
                   dados.candidatura
                 }
+                debugEvidencias={
+                  dados.requisitos.flatMap(
+                    (
+                      requisito
+                    ) =>
+                      (
+                        requisito.evidencias ||
+                        []
+                      ).map(
+                        (evidencia) => ({
+                          ...evidencia,
+                          id_requisitos:
+                            requisito.id,
+                          nome_requisito:
+                            requisito.titulo,
+                        })
+                      )
+                  )
+                }
               />
 
               {dados.desafio && (
@@ -925,13 +1351,79 @@ async function rejeitarCandidatura() {
                   </div>
                 </div>
 
-                <EstadoCandidatura
-                  estado={
-                    dados.candidatura
-                      .estado
-                  }
-                />
+                <div style={estadoLateralBox}>
+                  <EstadoCandidatura
+                    estado={
+                      dados
+                        .candidatura
+                        .estado
+                    }
+                  />
+
+                  {alertaAprovacaoTm.mostrar && (
+                    <span
+                      style={
+                        avisoTmAprovado
+                      }
+                    >
+                      TM validou {
+                        alertaAprovacaoTm.aprovadosTm
+                      }
+                      /
+                      {
+                        alertaAprovacaoTm.total
+                      } requisitos. Falta aprovação final do SLL.
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {debugAtivo && (
+                <div style={debugEvidenciasCard}>
+                  <div style={debugEvidenciasTitulo}>
+                    Debug Evidências
+                  </div>
+
+                  <div style={debugEvidenciasSubtitulo}>
+                    Estados diretos da API para validar TM/SLL por evidência.
+                  </div>
+
+                  <pre style={debugEvidenciasJson}>
+                    {JSON.stringify(
+                      dados.requisitos.flatMap(
+                        (
+                          requisito
+                        ) =>
+                          (
+                            requisito.evidencias ||
+                            []
+                          ).map(
+                            (evidencia) => ({
+                              id_evidencia:
+                                evidencia.id_evidencia,
+                              id_requisito:
+                                requisito.id,
+                              requisito:
+                                requisito.titulo,
+                              estado_requisito:
+                                requisito.estado,
+                              estado_evidencia:
+                                evidencia.estado_evidencia,
+                              estado_evidencia_tm:
+                                evidencia.estado_evidencia_tm,
+                              estado_evidencia_sll:
+                                evidencia.estado_evidencia_sll,
+                              data_submissao:
+                                evidencia.data_submissao,
+                            })
+                          )
+                      ),
+                      null,
+                      2
+                    )}
+                  </pre>
+                </div>
+              )}
 
               {dados.requisitos.length >
               0 ? (
@@ -962,15 +1454,13 @@ async function rejeitarCandidatura() {
 
             {!idCandidaturaSll && (
               <Alert variant="warning">
-                O backend não devolveu o
-                identificador da candidatura SLL.
-                Confirma se o endpoint de detalhe
-                inclui
-                {" "}
-                <strong>
-                  id_candidatura_sll
-                </strong>
-                .
+                Esta candidatura ainda não está
+                disponível para decisão final do
+                SLL, porque não existe registo
+                ativo na fase SLL.
+                Aguarda a transição da candidatura
+                para esta fase para aprovar ou
+                rejeitar.
               </Alert>
             )}
 
@@ -1396,6 +1886,7 @@ function InfoPerfil({
 function BadgeSolicitado({
   badge,
   candidatura,
+  debugEvidencias = [],
 }) {
   return (
     <section style={badgeCard}>
@@ -1447,6 +1938,18 @@ function BadgeSolicitado({
             )}
           </span>
         </div>
+
+        <DebugBadgePanel
+          badge={{
+            ...badge,
+            id_candidatura_pedido:
+              candidatura?.id,
+            estado_candidatura_pedido:
+              candidatura?.estado,
+          }}
+          variant="solicitacao"
+          evidencias={debugEvidencias}
+        />
       </div>
     </section>
   );
@@ -1460,7 +1963,9 @@ function EstadoCandidatura({
   estado,
 }) {
   const visual =
-    obterEstadoVisual(estado);
+    obterEstadoCandidaturaVisual(
+      estado
+    );
 
   return (
     <span
@@ -1943,6 +2448,61 @@ const estadoCandidatura = {
   fontSize: 11,
   fontWeight: 700,
   whiteSpace: "nowrap",
+};
+
+const estadoLateralBox = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  gap: 8,
+};
+
+const avisoTmAprovado = {
+  display: "inline-flex",
+  alignItems: "center",
+  borderRadius: 10,
+  padding: "6px 10px",
+  background: "#fef3c7",
+  border: "1px solid #fcd34d",
+  color: "#92400e",
+  fontSize: 11,
+  fontWeight: 700,
+  lineHeight: 1.35,
+  textAlign: "right",
+  maxWidth: 380,
+};
+
+const debugEvidenciasCard = {
+  marginBottom: 12,
+  background: "#f8fafc",
+  border: "1px dashed #cbd5e1",
+  borderRadius: 10,
+  padding: "10px 12px",
+};
+
+const debugEvidenciasTitulo = {
+  fontSize: 12,
+  fontWeight: 800,
+  color: "#0f172a",
+  marginBottom: 4,
+};
+
+const debugEvidenciasSubtitulo = {
+  fontSize: 11,
+  color: "#475569",
+  marginBottom: 8,
+};
+
+const debugEvidenciasJson = {
+  margin: 0,
+  maxHeight: 280,
+  overflow: "auto",
+  background: "#0f172a",
+  color: "#e2e8f0",
+  borderRadius: 8,
+  padding: "10px 12px",
+  fontSize: 10,
+  lineHeight: 1.35,
 };
 
 const requisitoCard = {

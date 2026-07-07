@@ -9,6 +9,7 @@ import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import api from "../../services/api.js";
 import BadgeImage from "../../components/badge_image.jsx";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 import {obterBonusBadge, removerBadgesDuplicados,} from "../../utils/badgeBonus.js";
 
 function MeusBadgesPage() {
@@ -623,6 +624,8 @@ function CatalogoBadgeRow({
                 {area}
               </div>
             )}
+
+            <DebugBadgePanel badge={badge} />
           </div>
         </div>
 

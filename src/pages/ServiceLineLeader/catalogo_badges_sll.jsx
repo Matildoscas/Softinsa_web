@@ -22,6 +22,7 @@ import { autoTable } from "jspdf-autotable";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -129,6 +130,8 @@ function normalizarBadge(badge) {
       badge.tempo_expiracao ||
       badge.TEMPO_EXPIRACAO ||
       null,
+
+    debug: badge.debug || null,
   };
 }
 
@@ -969,6 +972,8 @@ function BadgeCard({
           <div style={areasTexto}>
             Áreas: {badge.nome_areas}
           </div>
+
+          <DebugBadgePanel badge={badge} />
 
           <span
             style={{

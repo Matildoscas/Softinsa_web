@@ -36,6 +36,9 @@ api.interceptors.response.use(
 export default api;
 */
 import axios from 'axios';
+import {
+  resolveDebugEnabledForRequest,
+} from './debugMode.js';
 
 const api = axios.create({
   // 🛑 COMENTADO TEMPORARIAMENTE (Para não apagar o link da Render):
@@ -54,6 +57,14 @@ api.interceptors.request.use(
     // 2. Se o token existir, injeta-o no cabeçalho com o padrão "Bearer token"
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (resolveDebugEnabledForRequest()) {
+      config.headers['x-debug-mode'] = 'true';
+      config.headers['x-debug-scope'] = 'sll';
+    } else if (config.headers['x-debug-mode']) {
+      delete config.headers['x-debug-mode'];
+      delete config.headers['x-debug-scope'];
     }
     
     return config;

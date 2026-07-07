@@ -21,6 +21,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -161,6 +162,8 @@ function normalizarCandidatura(
           .numero_requisitos_faltantes ||
           0
       ),
+
+    debug: candidatura.debug || null,
   };
 }
 
@@ -790,6 +793,8 @@ function HistoricoCard({
             <span style={areaBadge}>
               {candidatura.nome_area}
             </span>
+
+            <DebugBadgePanel badge={candidatura} variant="solicitacao" />
           </div>
         </div>
 

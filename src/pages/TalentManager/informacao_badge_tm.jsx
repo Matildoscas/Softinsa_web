@@ -18,6 +18,7 @@ import {
 } from "react-router-dom";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
@@ -221,6 +222,8 @@ function normalizarBadge(badge) {
     tempo_expiracao:
       badge.tempo_expiracao ||
       null,
+
+    debug: badge.debug || null,
 
     requisitos:
       Array.isArray(
@@ -514,6 +517,8 @@ function InformacaoBadgeTm() {
                       .descricao_badge_modelo
                   }
                 </p>
+
+                <DebugBadgePanel badge={badge} />
               </section>
 
               <section style={sectionCard}>

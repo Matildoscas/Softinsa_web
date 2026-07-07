@@ -17,6 +17,7 @@ import {
 } from "react-router-dom";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -184,6 +185,8 @@ function normalizarBadge(badge) {
     nome_serviceline:
       badge.nome_serviceline ||
       "Service Line",
+
+    debug: badge.debug || null,
 
     requisitos: Array.isArray(
       badge.requisitos
@@ -365,6 +368,8 @@ function InformacaoBadgeSll() {
                       .descricao_badge_modelo
                   }
                 </p>
+
+                <DebugBadgePanel badge={badge} />
               </section>
 
               <section style={sectionCard}>

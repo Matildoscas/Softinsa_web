@@ -28,6 +28,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
@@ -979,6 +980,8 @@ function BadgeCard({ badge }) {
           badge.data_atribuicao
         )}
       </div>
+
+      <DebugBadgePanel badge={badge} />
     </article>
   );
 }
