@@ -12,6 +12,9 @@ import api from "../../services/api.js";
 import Header from "../../components/header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function normalizarRequisito(r) {
   return {
@@ -365,6 +368,148 @@ async function carregarDados() {
     }));
   }
 
+  function prepararDadosExportacao() {
+    return requisitos.map((req, index) => ({
+      ID: req.id || index + 1,
+      Área: area?.nome_area || "Área não definida",
+      Nível: nivel?.nome_nivel || "-",
+      Badge:
+        badge?.nome_badge ||
+        badge?.nome ||
+        "Sem badge associado",
+      "Nome do Requisito": req.nome_requisito,
+      Título: req.titulo,
+      Descrição: req.descricao_requisito,
+      Links:
+        req.links && req.links.length > 0
+          ? req.links
+              .map((link) => link.url || link)
+              .filter(Boolean)
+              .join(" | ")
+          : "Sem links",
+    }));
+  }
+
+  function handleExcel() {
+    const dados = prepararDadosExportacao();
+
+    if (dados.length === 0) {
+      alert("Não existem requisitos para exportar.");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(dados);
+
+    worksheet["!cols"] = [
+      { wch: 8 },
+      { wch: 28 },
+      { wch: 16 },
+      { wch: 36 },
+      { wch: 36 },
+      { wch: 18 },
+      { wch: 70 },
+      { wch: 80 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Requisitos"
+    );
+
+    const dataHoje = new Date()
+      .toLocaleDateString("pt-PT")
+      .replaceAll("/", "-");
+
+    XLSX.writeFile(
+      workbook,
+      `requisitos_nivel_${nivel?.nome_nivel || idNivel}_${dataHoje}.xlsx`
+    );
+  }
+
+  function handlePDF() {
+    const dados = prepararDadosExportacao();
+
+    if (dados.length === 0) {
+      alert("Não existem requisitos para exportar.");
+      return;
+    }
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const dataHoje = new Date().toLocaleDateString("pt-PT");
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("SOFTINSA - Gestão de Requisitos", 14, 16);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Exportado em: ${dataHoje}`, 14, 23);
+    doc.text(`Área: ${area?.nome_area || "Área não definida"}`, 14, 29);
+    doc.text(`Nível: ${nivel?.nome_nivel || "-"}`, 14, 35);
+    doc.text(
+      `Badge: ${badge?.nome_badge || badge?.nome || "Sem badge associado"}`,
+      14,
+      41
+    );
+    doc.text(`Total de requisitos: ${dados.length}`, 14, 47);
+
+    autoTable(doc, {
+      startY: 54,
+      head: [[
+        "ID",
+        "Nome",
+        "Título",
+        "Descrição",
+        "Links",
+      ]],
+      body: dados.map((req) => [
+        req.ID,
+        req["Nome do Requisito"],
+        req.Título,
+        req.Descrição,
+        req.Links,
+      ]),
+      styles: {
+        fontSize: 7,
+        cellPadding: 2,
+        overflow: "linebreak",
+        valign: "top",
+      },
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 110 },
+        4: { cellWidth: 78 },
+      },
+      margin: { top: 54, left: 14, right: 14 },
+    });
+
+    const dataFicheiro = new Date()
+      .toLocaleDateString("pt-PT")
+      .replaceAll("/", "-");
+
+    doc.save(
+      `requisitos_nivel_${nivel?.nome_nivel || idNivel}_${dataFicheiro}.pdf`
+    );
+  }
+
   return (
     <div
       style={{
@@ -419,6 +564,16 @@ async function carregarDados() {
                   <div style={{ fontSize: 13, color: "#374151" }}>
                     Abaixo pode visualizar todos os requisitos associados ao badge deste nível.
                   </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={handleExcel} style={excelButton}>
+                    📊 Excel
+                  </button>
+
+                  <button onClick={handlePDF} style={pdfButton}>
+                    📄 PDF
+                  </button>
                 </div>
               </div>
 
@@ -594,6 +749,34 @@ function AlterarBadgeModal({
     </div>
   );
 }
+
+const excelButton = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  background: "#16a34a",
+  color: "white",
+  border: "none",
+  borderRadius: 8,
+  padding: "7px 16px",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
+const pdfButton = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  background: "#dc2626",
+  color: "white",
+  border: "none",
+  borderRadius: 8,
+  padding: "7px 16px",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+};
 
 const backButton = {
   background: "none",

@@ -6,6 +6,9 @@ import {
   BiBook,
   BiBuildings,
   BiChevronDown,
+  BiPlus,
+  BiTrash,
+  BiX,
 } from "react-icons/bi";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -15,6 +18,15 @@ import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 
 function normalizarEstadoArea(estado) {
+  const e = String(estado || "").trim().toUpperCase();
+
+  if (e === "ATIVO" || e === "ATIVA" || e === "ACTIVE") return "ATIVO";
+  if (e === "INATIVO" || e === "INATIVA" || e === "INACTIVE") return "INATIVO";
+
+  return "ATIVO";
+}
+
+function normalizarEstadoNivel(estado) {
   const e = String(estado || "").trim().toUpperCase();
 
   if (e === "ATIVO" || e === "ATIVA" || e === "ACTIVE") return "ATIVO";
@@ -208,7 +220,9 @@ function SelectDropdown({ options, value, onChange, placeholder, erro }) {
   );
 }
 
-function NivelCard({ nivel, areaId, onEditarRequisitos }) {
+function NivelCard({ nivel, areaId, onEditarRequisitos, onEditarNivel, onDesativarNivel }) {
+  const estadoNormalizado = normalizarEstadoNivel(nivel.estado_nivel);
+  const estaInativo = estadoNormalizado === "INATIVO";
   return (
     <div style={nivelCard}>
       <div style={nivelCodeBox}>{nivel.codigo_nivel}</div>
@@ -216,6 +230,16 @@ function NivelCard({ nivel, areaId, onEditarRequisitos }) {
       <div style={nivelTitle}>
         Nível {nivel.codigo_nivel} — {nivel.nome_nivel}
       </div>
+
+      <span
+        style={{
+          ...nivelEstadoBadge,
+          background: estaInativo ? "#fee2e2" : "#dcfce7",
+          color: estaInativo ? "#b91c1c" : "#15803d",
+        }}
+      >
+        {estaInativo ? "Inativo" : "Ativo"}
+      </span>
 
       <div
         style={{
@@ -252,6 +276,31 @@ function NivelCard({ nivel, areaId, onEditarRequisitos }) {
         <BiEdit size={15} />
         Editar requisitos
       </button>
+
+      <div style={nivelActionsRow}>
+        <button
+          type="button"
+          onClick={() => onEditarNivel(nivel)}
+          style={nivelSmallButton}
+        >
+          <BiEdit size={14} />
+          Editar nível
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onDesativarNivel(nivel)}
+          disabled={estaInativo}
+          style={{
+            ...nivelDangerButton,
+            opacity: estaInativo ? 0.45 : 1,
+            cursor: estaInativo ? "not-allowed" : "pointer",
+          }}
+        >
+          <BiTrash size={14} />
+          Desativar
+        </button>
+      </div>
     </div>
   );
 }
@@ -274,6 +323,22 @@ function EditarArea() {
   const [sucesso, setSucesso] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [aGuardar, setAGuardar] = useState(false);
+  const [modalNivelAberto, setModalNivelAberto] = useState(false);
+  const [modoNivel, setModoNivel] = useState("criar");
+  const [nivelSelecionado, setNivelSelecionado] = useState(null);
+
+  const [formNivel, setFormNivel] = useState({
+    nome_nivel: "",
+    estado_nivel: "ATIVO",
+  });
+
+  const [erroNivel, setErroNivel] = useState("");
+  const [aGuardarNivel, setAGuardarNivel] = useState(false);
+
+  const [modalDesativarNivelAberta, setModalDesativarNivelAberta] =
+    useState(false);
+
+  const [aDesativarNivel, setADesativarNivel] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -418,6 +483,166 @@ function EditarArea() {
 
   function handleEditarRequisitos(nivel) {
     navigate(`/admin/niveis/${nivel.id_nivel}/requisitos`);
+  }
+
+  function abrirCriarNivel() {
+    setModoNivel("criar");
+    setNivelSelecionado(null);
+    setFormNivel({
+      nome_nivel: "",
+      estado_nivel: "ATIVO",
+    });
+    setErroNivel("");
+    setModalNivelAberto(true);
+  }
+
+  function abrirEditarNivel(nivel) {
+    setModoNivel("editar");
+    setNivelSelecionado(nivel);
+    setFormNivel({
+      nome_nivel: nivel.nome_nivel || "",
+      estado_nivel: normalizarEstadoNivel(nivel.estado_nivel),
+    });
+    setErroNivel("");
+    setModalNivelAberto(true);
+  }
+
+  function fecharModalNivel() {
+    if (aGuardarNivel) return;
+
+    setModalNivelAberto(false);
+    setNivelSelecionado(null);
+    setErroNivel("");
+  }
+
+  async function guardarNivel() {
+    if (!formNivel.nome_nivel.trim()) {
+      setErroNivel("O nome do nível é obrigatório.");
+      return;
+    }
+
+    try {
+      setAGuardarNivel(true);
+      setErroNivel("");
+      setErroGeral("");
+      setSucesso("");
+
+      if (modoNivel === "criar") {
+        const res = await api.post(`/areas/${id}/niveis`, {
+          nome_nivel: formNivel.nome_nivel.trim(),
+          estado_nivel: normalizarEstadoNivel(formNivel.estado_nivel),
+        });
+
+        const novoNivel = res.data?.nivel || res.data;
+
+        setNiveis((prev) => [
+          ...prev,
+          normalizarNivel(novoNivel, prev.length),
+        ]);
+
+        setSucesso("Nível criado com sucesso.");
+      } else {
+        const res = await api.put(`/niveis/${nivelSelecionado.id_nivel}`, {
+          nome_nivel: formNivel.nome_nivel.trim(),
+          estado_nivel: normalizarEstadoNivel(formNivel.estado_nivel),
+        });
+
+        const nivelAtualizado = res.data?.nivel || res.data;
+
+        setNiveis((prev) =>
+          prev.map((nivel, index) =>
+            String(nivel.id_nivel) === String(nivelSelecionado.id_nivel)
+              ? normalizarNivel(
+                  {
+                    ...nivel,
+                    ...nivelAtualizado,
+                    nome_nivel:
+                      nivelAtualizado.nome_nivel ||
+                      formNivel.nome_nivel.trim(),
+                    estado_nivel:
+                      nivelAtualizado.estado_nivel ||
+                      normalizarEstadoNivel(formNivel.estado_nivel),
+                  },
+                  index
+                )
+              : nivel
+          )
+        );
+
+        setSucesso("Nível updated com sucesso.");
+      }
+
+      fecharModalNivel();
+    } catch (err) {
+      console.error("Erro ao guardar nível:", err);
+      console.error("STATUS:", err.response?.status);
+      console.error("BODY:", err.response?.data);
+
+      setErroNivel(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Não foi possível guardar o nível."
+      );
+    } finally {
+      setAGuardarNivel(false);
+    }
+  }
+
+  function abrirModalDesativarNivel(nivel) {
+    if (normalizarEstadoNivel(nivel.estado_nivel) === "INATIVO") {
+      return;
+    }
+
+    setNivelSelecionado(nivel);
+    setModalDesativarNivelAberta(true);
+  }
+
+  function fecharModalDesativarNivel() {
+    if (aDesativarNivel) return;
+
+    setNivelSelecionado(null);
+    setModalDesativarNivelAberta(false);
+  }
+
+  async function confirmarDesativarNivel() {
+    if (!nivelSelecionado) return;
+
+    try {
+      setADesativarNivel(true);
+      setErroGeral("");
+      setSucesso("");
+
+      await api.put(`/niveis/${nivelSelecionado.id_nivel}/desativar`);
+
+      setNiveis((prev) =>
+        prev.map((nivel, index) =>
+          String(nivel.id_nivel) === String(nivelSelecionado.id_nivel)
+            ? normalizarNivel(
+                {
+                  ...nivel,
+                  estado_nivel: "INATIVO",
+                },
+                index
+              )
+            : nivel
+        )
+      );
+
+      setSucesso("Nível desativado com sucesso.");
+      fecharModalDesativarNivel();
+    } catch (err) {
+      console.error("Erro ao desativar nível:", err);
+      console.error("STATUS:", err.response?.status);
+      console.error("BODY:", err.response?.data);
+
+      setErroGeral(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Não foi possível desativar o nível."
+      );
+    } finally {
+      setADesativarNivel(false);
+    }
   }
 
   const inputStyle = (campo) => ({
@@ -653,6 +878,14 @@ function EditarArea() {
                     Seleciona um nível para editar os seus requisitos.
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={abrirCriarNivel}
+                  style={addNivelButton}
+                >
+                  <BiPlus size={17} />
+                  Adicionar nível
+                </button>
               </div>
 
               {niveis.length > 0 ? (
@@ -663,6 +896,8 @@ function EditarArea() {
                       nivel={nivel}
                       areaId={id}
                       onEditarRequisitos={handleEditarRequisitos}
+                        onEditarNivel={abrirEditarNivel}
+                        onDesativarNivel={abrirModalDesativarNivel}
                     />
                   ))}
                 </div>
@@ -676,6 +911,236 @@ function EditarArea() {
         </div>
 
         <AdminRightSidebar />
+      </div>
+
+      {modalNivelAberto && (
+        <NivelModal
+          modo={modoNivel}
+          formNivel={formNivel}
+          setFormNivel={setFormNivel}
+          erro={erroNivel}
+          loading={aGuardarNivel}
+          onClose={fecharModalNivel}
+          onGuardar={guardarNivel}
+        />
+      )}
+
+      {modalDesativarNivelAberta && (
+        <DesativarNivelModal
+          nivel={nivelSelecionado}
+          loading={aDesativarNivel}
+          onClose={fecharModalDesativarNivel}
+          onConfirm={confirmarDesativarNivel}
+        />
+      )}
+
+    </div>
+  );
+}
+
+function NivelModal({
+  modo,
+  formNivel,
+  setFormNivel,
+  erro,
+  loading,
+  onClose,
+  onGuardar,
+}) {
+  const titulo =
+    modo === "criar" ? "Adicionar nível" : "Editar nível";
+
+  return (
+    <div style={modalOverlay}>
+      <div style={modalCard}>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          style={modalCloseButton}
+        >
+          <BiX size={22} />
+        </button>
+
+        <h3 style={modalTitle}>{titulo}</h3>
+
+        <p style={modalText}>
+          Define o nome e o estado do nível desta área.
+        </p>
+
+        {erro && <div style={errorBox}>{erro}</div>}
+
+        <div style={{ marginBottom: 18, textAlign: "left" }}>
+          <label style={labelStyle}>
+            Nome do nível <span style={{ color: "#dc2626" }}>*</span>
+          </label>
+
+          <input
+            value={formNivel.nome_nivel}
+            onChange={(e) =>
+              setFormNivel((prev) => ({
+                ...prev,
+                nome_nivel: e.target.value,
+              }))
+            }
+            placeholder="Ex: A, B, C, Iniciante, Intermédio..."
+            style={{
+              width: "100%",
+              height: 42,
+              border: "1px solid #d1d5db",
+              borderRadius: 8,
+              padding: "0 14px",
+              fontSize: 14,
+              color: "#111827",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 22, textAlign: "left" }}>
+          <label style={labelStyle}>Estado</label>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="button"
+              onClick={() =>
+                setFormNivel((prev) => ({
+                  ...prev,
+                  estado_nivel: "INATIVO",
+                }))
+              }
+              style={{
+                ...statusButton,
+                background:
+                  formNivel.estado_nivel === "INATIVO"
+                    ? "#fee2e2"
+                    : "white",
+                color:
+                  formNivel.estado_nivel === "INATIVO"
+                    ? "#b91c1c"
+                    : "#6b7280",
+                border:
+                  formNivel.estado_nivel === "INATIVO"
+                    ? "1.5px solid #fca5a5"
+                    : "1.5px solid #d1d5db",
+              }}
+            >
+              Inativo
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFormNivel((prev) => ({
+                  ...prev,
+                  estado_nivel: "ATIVO",
+                }))
+              }
+              style={{
+                ...statusButton,
+                background:
+                  formNivel.estado_nivel === "ATIVO"
+                    ? "#16a34a"
+                    : "white",
+                color:
+                  formNivel.estado_nivel === "ATIVO"
+                    ? "white"
+                    : "#6b7280",
+                border:
+                  formNivel.estado_nivel === "ATIVO"
+                    ? "1.5px solid #16a34a"
+                    : "1.5px solid #d1d5db",
+              }}
+            >
+              Ativo
+            </button>
+          </div>
+        </div>
+
+        <div style={modalActions}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            style={modalCancelButton}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={onGuardar}
+            disabled={loading}
+            style={{
+              ...modalConfirmButtonBlue,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "A guardar..." : "Guardar nível"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesativarNivelModal({
+  nivel,
+  loading,
+  onClose,
+  onConfirm,
+}) {
+  if (!nivel) return null;
+
+  return (
+    <div style={modalOverlay}>
+      <div style={modalCard}>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          style={modalCloseButton}
+        >
+          <BiX size={22} />
+        </button>
+
+        <h3 style={modalTitle}>Desativar nível?</h3>
+
+        <p style={modalText}>
+          O nível <strong>{nivel.nome_nivel}</strong> será marcado como{" "}
+          <strong>Inativo</strong>.
+        </p>
+
+        <p style={modalSubText}>
+          Esta ação não elimina o nível da base de dados. Os registos e
+          associações ficam guardados para consulta administrativa.
+        </p>
+
+        <div style={modalActions}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            style={modalCancelButton}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              ...modalConfirmButtonRed,
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "A desativar..." : "Sim, desativar nível"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -912,6 +1377,161 @@ const successBox = {
   color: "#166534",
   fontSize: 13,
   marginBottom: 16,
+};
+
+const addNivelButton = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  background: "#2563eb",
+  color: "white",
+  border: "none",
+  borderRadius: 8,
+  padding: "9px 16px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const nivelEstadoBadge = {
+  alignSelf: "flex-start",
+  borderRadius: 999,
+  padding: "3px 10px",
+  fontSize: 11,
+  fontWeight: 800,
+};
+
+const nivelActionsRow = {
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap",
+};
+
+const nivelSmallButton = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  background: "white",
+  color: "#2563eb",
+  border: "1px solid #bfdbfe",
+  borderRadius: 8,
+  padding: "8px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const nivelDangerButton = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  background: "white",
+  color: "#dc2626",
+  border: "1px solid #fecaca",
+  borderRadius: 8,
+  padding: "8px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
+const modalOverlay = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(15, 23, 42, 0.55)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+  padding: 20,
+};
+
+const modalCard = {
+  position: "relative",
+  width: "100%",
+  maxWidth: 460,
+  background: "white",
+  borderRadius: 18,
+  padding: "28px 28px 24px",
+  boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)",
+  border: "1px solid #e5e7eb",
+  textAlign: "center",
+};
+
+const modalCloseButton = {
+  position: "absolute",
+  top: 14,
+  right: 14,
+  width: 32,
+  height: 32,
+  borderRadius: "50%",
+  border: "1px solid #e5e7eb",
+  background: "white",
+  color: "#6b7280",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+};
+
+const modalTitle = {
+  fontSize: 20,
+  fontWeight: 800,
+  color: "#111827",
+  margin: "0 0 8px",
+};
+
+const modalText = {
+  fontSize: 14,
+  color: "#374151",
+  margin: "0 0 8px",
+  lineHeight: 1.5,
+};
+
+const modalSubText = {
+  fontSize: 12,
+  color: "#6b7280",
+  margin: "0 0 18px",
+  lineHeight: 1.5,
+};
+
+const modalActions = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 10,
+};
+
+const modalCancelButton = {
+  border: "1px solid #d1d5db",
+  background: "white",
+  color: "#374151",
+  borderRadius: 10,
+  padding: "9px 15px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const modalConfirmButtonBlue = {
+  border: "none",
+  background: "#2563eb",
+  color: "white",
+  borderRadius: 10,
+  padding: "9px 15px",
+  fontSize: 13,
+  fontWeight: 700,
+};
+
+const modalConfirmButtonRed = {
+  border: "none",
+  background: "#dc2626",
+  color: "white",
+  borderRadius: 10,
+  padding: "9px 15px",
+  fontSize: 13,
+  fontWeight: 700,
 };
 
 export default EditarArea;
