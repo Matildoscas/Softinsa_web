@@ -65,7 +65,7 @@ function AvaliacaoSolicitacaoTM() {
           evidenciaTexto: linha.descricao_evidencia,
           documento: linha.nome_ficheiro,
           caminhoFicheiro: linha.caminho_ficheiro, // Guardamos o caminho para poder visualizar
-          estado: linha.estado_evidencia || 'SEM_EVIDENCIA'
+          estado: linha.estado_evidencia_tm || 'SEM_EVIDENCIA'
         }));
 
         setRequisitos(requisitosTratados);
@@ -105,7 +105,7 @@ function AvaliacaoSolicitacaoTM() {
       setAvaliandoId(idEvidencia); // Ativa o loading para este botão específico
       await api.post("/candidaturas/tm/avaliar-evidencia", {
         id_evidencia: idEvidencia,
-        estado: "APROVADO"
+        estado_evidencia_tm: "APROVADO"
       });
       
       setAtualizarDados(prev => prev + 1); 
@@ -132,7 +132,7 @@ function AvaliacaoSolicitacaoTM() {
       setAvaliandoId(idEvidencia); // Ativa o loading
       await api.post("/candidaturas/tm/avaliar-evidencia", {
         id_evidencia: idEvidencia,
-        estado: "REJEITADA",
+        estado_evidencia_tm: "REJEITADA",
         id_candidatura_pedido: idCandidaturaPedido,
         comentarios: motivo
       });
@@ -177,7 +177,7 @@ function AvaliacaoSolicitacaoTM() {
     
     await api.post("/candidaturas/tm/finalizar-avaliacao", {
       id_candidatura_pedido: Number(id), 
-      estado: "APROVADO",        
+      estado_evidencia_tm: "APROVADO",        
       comentarios: "Todos os requisitos foram validados e aprovados com sucesso."
     });
 
