@@ -47,6 +47,7 @@ import SolicitacoesBadgesSll from "./pages/ServiceLineLeader/solicitacoes_badges
 import DetalheSolicitacaoSll from "./pages/ServiceLineLeader/detalhe_solicitacao_sll.jsx";
 import RankingBadgesSll from "./pages/ServiceLineLeader/ranking_badges_sll.jsx";
 import HistoricoCandidaturasSll from "./pages/ServiceLineLeader/historico_candidaturas_sll.jsx";
+import StatusCandidaturasSll from "./pages/ServiceLineLeader/status_candidaturas_sll.jsx";
 import GerarCertificadoSll from "./pages/ServiceLineLeader/gerar_certificado_sll.jsx";
 import GerarRelatorioSll from "./pages/ServiceLineLeader/gerar_relatorio.jsx";
 import ListaConsultoresSll from "./pages/ServiceLineLeader/lista_consultores_sll.jsx";
@@ -131,6 +132,7 @@ function App() {
         <Route path="/sll/solicitacoes/:idCandidatura" element={<DetalheSolicitacaoSll />}/>
         <Route path="/sll/ranking" element={<RankingBadgesSll />} />
         <Route path="/sll/historico-candidaturas" element={<HistoricoCandidaturasSll />}/>
+        <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSll />}/>
         <Route path="/sll/certificados" element={<GerarCertificadoSll />} />
         <Route path="/sll/relatorios" element={<GerarRelatorioSll />} />
         <Route path="/sll/consultores" element={<ListaConsultoresSll />}/>

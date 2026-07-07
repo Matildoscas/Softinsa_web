@@ -81,6 +81,10 @@ function normalizarConsultor(
       consultor.total_badges || 0
     ),
 
+    total_pontos: Number(
+      consultor.total_pontos || 0
+    ),
+
     posicao: Number(
       consultor.posicao ||
       index + 1
@@ -105,10 +109,15 @@ function RankingBadgesSll() {
     total_consultores: 0,
     total_badges: 0,
     media_badges: 0,
+    total_pontos: 0,
+    media_pontos: 0,
   });
 
-  const [ordenacao, setOrdenacao] =
+  const [abaRanking, setAbaRanking] =
     useState("BADGES");
+
+  const [ordenacao, setOrdenacao] =
+    useState("VALOR");
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -174,6 +183,14 @@ function RankingBadgesSll() {
         media_badges: Number(
           dados.media_badges || 0
         ),
+
+        total_pontos: Number(
+          dados.total_pontos || 0
+        ),
+
+        media_pontos: Number(
+          dados.media_pontos || 0
+        ),
       });
     } catch (err) {
       console.error(
@@ -215,6 +232,18 @@ function RankingBadgesSll() {
         );
       }
 
+      if (abaRanking === "PONTOS") {
+        return lista.sort(
+          (a, b) =>
+            b.total_pontos -
+              a.total_pontos ||
+            a.nome_completo.localeCompare(
+              b.nome_completo,
+              "pt"
+            )
+        );
+      }
+
       return lista.sort(
         (a, b) =>
           b.total_badges -
@@ -224,7 +253,7 @@ function RankingBadgesSll() {
             "pt"
           )
       );
-    }, [ranking, ordenacao]);
+    }, [ranking, ordenacao, abaRanking]);
 
   /* =======================================================
      PDF
@@ -250,7 +279,9 @@ function RankingBadgesSll() {
       pdf.setFontSize(18);
 
       pdf.text(
-        "Ranking de Badges",
+        abaRanking === "PONTOS"
+          ? "Ranking de Pontos"
+          : "Ranking de Badges",
         14,
         16
       );
@@ -275,7 +306,9 @@ function RankingBadgesSll() {
       );
 
       pdf.text(
-        `Média de badges: ${resumo.media_badges}`,
+        abaRanking === "PONTOS"
+          ? `Média de pontos: ${resumo.media_pontos}`
+          : `Média de badges: ${resumo.media_badges}`,
         14,
         35
       );
@@ -289,17 +322,21 @@ function RankingBadgesSll() {
             "Consultor",
             "Email",
             "Área",
-            "Badges",
+            abaRanking === "PONTOS"
+              ? "Pontos"
+              : "Badges",
           ],
         ],
 
         body: rankingOrdenado.map(
-          (consultor) => [
-            consultor.posicao,
+          (consultor, index) => [
+            index + 1,
             consultor.nome_completo,
             consultor.email,
             consultor.nome_area,
-            consultor.total_badges,
+            abaRanking === "PONTOS"
+              ? consultor.total_pontos
+              : consultor.total_badges,
           ]
         ),
 
@@ -353,7 +390,9 @@ function RankingBadgesSll() {
       });
 
       pdf.save(
-        "ranking_badges_service_line.pdf"
+        abaRanking === "PONTOS"
+          ? "ranking_pontos_service_line.pdf"
+          : "ranking_badges_service_line.pdf"
       );
     } catch (err) {
       console.error(
@@ -377,17 +416,21 @@ function RankingBadgesSll() {
       "Consultor",
       "Email",
       "Área",
-      "Badges",
+      abaRanking === "PONTOS"
+        ? "Pontos"
+        : "Badges",
     ];
 
     const linhas =
       rankingOrdenado.map(
-        (consultor) => [
-          consultor.posicao,
+        (consultor, index) => [
+          index + 1,
           consultor.nome_completo,
           consultor.email,
           consultor.nome_area,
-          consultor.total_badges,
+          abaRanking === "PONTOS"
+            ? consultor.total_pontos
+            : consultor.total_badges,
         ]
       );
 
@@ -425,7 +468,9 @@ function RankingBadgesSll() {
     link.href = url;
 
     link.download =
-      "ranking_badges_service_line.csv";
+      abaRanking === "PONTOS"
+        ? "ranking_pontos_service_line.csv"
+        : "ranking_badges_service_line.csv";
 
     document.body.appendChild(
       link
@@ -461,7 +506,7 @@ function RankingBadgesSll() {
           <div style={cabecalhoPagina}>
             <div>
               <h1 style={titulo}>
-                Ranking de Badges
+                Rankings
               </h1>
 
               <div style={subtitulo}>
@@ -506,6 +551,40 @@ function RankingBadgesSll() {
             </div>
           </div>
 
+          <div style={abasContainer}>
+            <button
+              type="button"
+              onClick={() => {
+                setAbaRanking("BADGES");
+                setOrdenacao("VALOR");
+              }}
+              style={{
+                ...abaButton,
+                ...(abaRanking === "BADGES"
+                  ? abaButtonAtiva
+                  : null),
+              }}
+            >
+              Ranking de Badges
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAbaRanking("PONTOS");
+                setOrdenacao("VALOR");
+              }}
+              style={{
+                ...abaButton,
+                ...(abaRanking === "PONTOS"
+                  ? abaButtonAtiva
+                  : null),
+              }}
+            >
+              Ranking de Pontos
+            </button>
+          </div>
+
           <div style={ordenacaoContainer}>
             <span style={ordenacaoLabel}>
               Ordenar por:
@@ -514,23 +593,25 @@ function RankingBadgesSll() {
             <button
               type="button"
               onClick={() =>
-                setOrdenacao("BADGES")
+                setOrdenacao("VALOR")
               }
               style={{
                 ...ordenacaoButton,
 
                 background:
-                  ordenacao === "BADGES"
+                  ordenacao === "VALOR"
                     ? "#2563eb"
                     : "#f1f5f9",
 
                 color:
-                  ordenacao === "BADGES"
+                  ordenacao === "VALOR"
                     ? "white"
                     : "#475569",
               }}
             >
-              Badges
+              {abaRanking === "PONTOS"
+                ? "Pontos"
+                : "Badges"}
             </button>
 
             <button
@@ -571,13 +652,22 @@ function RankingBadgesSll() {
             <>
               <div style={listaRanking}>
                 {rankingOrdenado.map(
-                  (consultor) => (
+                  (
+                    consultor,
+                    index
+                  ) => (
                     <RankingCard
                       key={
                         consultor.id_utilizador
                       }
                       consultor={
                         consultor
+                      }
+                      posicao={
+                        index + 1
+                      }
+                      tipoRanking={
+                        abaRanking
                       }
                     />
                   )
@@ -586,8 +676,10 @@ function RankingBadgesSll() {
 
               <ResumoRanking
                 resumo={resumo}
+                tipoRanking={abaRanking}
                 primeiro={
-                  ranking[0] || null
+                  rankingOrdenado[0] ||
+                  null
                 }
               />
             </>
@@ -612,9 +704,11 @@ function RankingBadgesSll() {
 
 function RankingCard({
   consultor,
+  posicao,
+  tipoRanking,
 }) {
   const estilo = obterEstiloPosicao(
-    consultor.posicao
+    posicao
   );
 
   return (
@@ -638,9 +732,7 @@ function RankingCard({
           color: estilo.posicaoColor,
         }}
       >
-        {estilo.medalha || (
-          `#${consultor.posicao}`
-        )}
+        {estilo.medalha || `#${posicao}`}
       </div>
 
       <div style={avatar}>
@@ -656,7 +748,7 @@ function RankingCard({
             {consultor.nome_completo}
           </span>
 
-          {consultor.posicao === 1 && (
+          {posicao === 1 && (
             <BiAward
               size={18}
               color="#f59e0b"
@@ -677,13 +769,18 @@ function RankingCard({
       <div style={badgesQuantidade}>
         <div style={numeroBadges}>
           <BiMedal size={19} />
-          {consultor.total_badges}
+          {tipoRanking === "PONTOS"
+            ? consultor.total_pontos
+            : consultor.total_badges}
         </div>
 
         <div style={badgesLabel}>
-          {consultor.total_badges === 1
-            ? "badge"
-            : "badges"}
+          {tipoRanking === "PONTOS"
+            ? "pontos"
+            : consultor.total_badges ===
+                1
+              ? "badge"
+              : "badges"}
         </div>
       </div>
     </article>
@@ -738,6 +835,7 @@ function obterEstiloPosicao(
 
 function ResumoRanking({
   resumo,
+  tipoRanking,
   primeiro,
 }) {
   return (
@@ -760,24 +858,45 @@ function ResumoRanking({
         />
 
         <ResumoItem
-          label="Total de badges"
+          label={
+            tipoRanking === "PONTOS"
+              ? "Total de pontos"
+              : "Total de badges"
+          }
           value={
-            resumo.total_badges
+            tipoRanking ===
+            "PONTOS"
+              ? resumo.total_pontos
+              : resumo.total_badges
           }
         />
 
         <ResumoItem
-          label="Média de badges"
+          label={
+            tipoRanking === "PONTOS"
+              ? "Média de pontos"
+              : "Média de badges"
+          }
           value={
-            resumo.media_badges
+            tipoRanking ===
+            "PONTOS"
+              ? resumo.media_pontos
+              : resumo.media_badges
           }
         />
 
         <ResumoItem
-          label="Mais badges"
+          label={
+            tipoRanking === "PONTOS"
+              ? "Mais pontos"
+              : "Mais badges"
+          }
           value={
             primeiro
-              ? primeiro.total_badges
+              ? tipoRanking ===
+                "PONTOS"
+                ? primeiro.total_pontos
+                : primeiro.total_badges
               : 0
           }
         />
@@ -870,6 +989,30 @@ const totalTexto = {
   marginTop: 6,
   fontSize: 13,
   color: "#374151",
+};
+
+const abasContainer = {
+  display: "flex",
+  justifyContent: "center",
+  gap: 8,
+  marginBottom: 12,
+};
+
+const abaButton = {
+  border: "1px solid #d1d5db",
+  borderRadius: 999,
+  background: "white",
+  color: "#334155",
+  padding: "8px 14px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const abaButtonAtiva = {
+  border: "1px solid #2563eb",
+  background: "#eff6ff",
+  color: "#1d4ed8",
 };
 
 const acoesTopo = {

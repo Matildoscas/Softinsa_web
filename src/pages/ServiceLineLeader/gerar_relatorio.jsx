@@ -1,17 +1,14 @@
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
 
 import {
   BiArrowBack,
-  BiCheck,
   BiFile,
   BiMedal,
   BiSave,
-  BiSend,
   BiUser,
   BiX,
 } from "react-icons/bi";
@@ -20,7 +17,6 @@ import {
   Line,
   LineChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -118,8 +114,10 @@ function GerarRelatorioSll() {
 
   const pdfRelatorioRef = useRef(null);
 
-  const [areas, setAreas] =
-    useState([]);
+  const [
+    areaUtilizador,
+    setAreaUtilizador,
+  ] = useState(null);
 
   const [
     serviceLine,
@@ -136,30 +134,19 @@ function GerarRelatorioSll() {
   const [dataFim, setDataFim] =
     useState(obterDataHoje());
 
-  const [idArea, setIdArea] =
-    useState("");
-
   const [
     relatorio,
     setRelatorio,
   ] = useState(null);
 
   const [
-    graficoSelecionado,
-    setGraficoSelecionado,
-  ] = useState("SUBMETIDAS");
-
-  const [isLoading, setIsLoading] =
-    useState(true);
+    isLoading,
+    setIsLoading,
+  ] = useState(true);
 
   const [
     isGenerating,
     setIsGenerating,
-  ] = useState(false);
-
-  const [
-    isSendingTm,
-    setIsSendingTm,
   ] = useState(false);
 
   const [erro, setErro] =
@@ -204,33 +191,21 @@ function GerarRelatorioSll() {
         dados.serviceLine || null
       );
 
-      const lista = Array.isArray(
-        dados.areas
-      )
-        ? dados.areas
-        : [];
-
-      setAreas(lista);
-
-      if (lista.length === 1) {
-        setIdArea(
-          String(
-            lista[0].id_areas
-          )
-        );
-      }
+      setAreaUtilizador(
+        dados.area_utilizador ||
+          null
+      );
     } catch (err) {
       console.error(
-        "Erro ao carregar áreas:",
+        "Erro ao carregar contexto:",
         err
       );
 
       setErro(
         err.response?.data?.error ||
-          "Não foi possível carregar as áreas."
+          "Não foi possível carregar o contexto do relatório."
       );
-
-      setAreas([]);
+      setAreaUtilizador(null);
     } finally {
       setIsLoading(false);
     }
@@ -239,11 +214,18 @@ function GerarRelatorioSll() {
   async function gerarRelatorio() {
     if (
       !dataInicio ||
-      !dataFim ||
-      !idArea
+      !dataFim
     ) {
       setErro(
-        "Seleciona o período e a área."
+        "Seleciona o período."
+      );
+
+      return;
+    }
+
+    if (!areaUtilizador?.id_areas) {
+      setErro(
+        "O utilizador não tem área associada para gerar relatório."
       );
 
       return;
@@ -277,17 +259,12 @@ function GerarRelatorioSll() {
       const response = await api.post(
         `/sll/${idUtilizador}/relatorios/gerar`,
         {
-          id_area: idArea,
           data_inicio: dataInicio,
           data_fim: dataFim,
         }
       );
 
       setRelatorio(response.data);
-
-      setGraficoSelecionado(
-        "SUBMETIDAS"
-      );
     } catch (err) {
       console.error(
         "Erro ao gerar relatório:",
@@ -302,56 +279,6 @@ function GerarRelatorioSll() {
       setIsGenerating(false);
     }
   }
-
-  /* =======================================================
-     CONFIGURAÇÃO DO GRÁFICO
-  ======================================================= */
-
-  const graficoConfig =
-    useMemo(() => {
-      if (
-        graficoSelecionado ===
-        "APROVADAS"
-      ) {
-        return {
-          atual:
-            "aprovadas_atual",
-
-          anterior:
-            "aprovadas_anterior",
-
-          titulo:
-            "Total de badges aprovadas",
-        };
-      }
-
-      if (
-        graficoSelecionado ===
-        "REJEITADAS"
-      ) {
-        return {
-          atual:
-            "rejeitadas_atual",
-
-          anterior:
-            "rejeitadas_anterior",
-
-          titulo:
-            "Total de badges recusadas",
-        };
-      }
-
-      return {
-        atual:
-          "submetidas_atual",
-
-        anterior:
-          "submetidas_anterior",
-
-        titulo:
-          "Total de badges submetidas",
-      };
-    }, [graficoSelecionado]);
 
   /* =======================================================
      GERAR PDF
@@ -494,37 +421,6 @@ function GerarRelatorioSll() {
     }
     }
 
-  /* =======================================================
-     ENVIAR PARA TM
-  ======================================================= */
-
-  async function enviarParaTm() {
-    if (!relatorio) {
-      setErro(
-        "Gera primeiro o relatório."
-      );
-
-      return;
-    }
-
-    try {
-      setIsSendingTm(true);
-      setErro("");
-
-      /*
-       * A integração real com o Talent Manager
-       * será adicionada quando for criada a página
-       * e o fluxo dos relatórios do TM.
-       */
-
-      setMensagem(
-        "Relatório preparado para envio ao Talent Manager."
-      );
-    } finally {
-      setIsSendingTm(false);
-    }
-  }
-
   return (
     <div style={pagina}>
       <Header />
@@ -552,7 +448,7 @@ function GerarRelatorioSll() {
                 style={cabecalhoPagina}
               >
                 <h1 style={titulo}>
-                  Gerar relatório
+                  Gerar relatório de badges atribuídos
                 </h1>
 
                 <div style={subtitulo}>
@@ -629,47 +525,6 @@ function GerarRelatorioSll() {
                       />
                     </div>
                   </div>
-
-                  <div style={campo}>
-                    <label style={label}>
-                      Área
-                    </label>
-
-                    <select
-                      value={idArea}
-                      onChange={(event) =>
-                        setIdArea(
-                          event.target
-                            .value
-                        )
-                      }
-                      disabled={isLoading}
-                      style={input}
-                    >
-                      <option value="">
-                        {isLoading
-                          ? "A carregar áreas..."
-                          : "Selecionar área"}
-                      </option>
-
-                      {areas.map(
-                        (area) => (
-                          <option
-                            key={
-                              area.id_areas
-                            }
-                            value={
-                              area.id_areas
-                            }
-                          >
-                            {
-                              area.nome_area
-                            }
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
                 </div>
 
                 <button
@@ -677,7 +532,8 @@ function GerarRelatorioSll() {
                   onClick={gerarRelatorio}
                   disabled={
                     isGenerating ||
-                    !idArea ||
+                    !areaUtilizador
+                      ?.id_areas ||
                     !dataInicio ||
                     !dataFim
                   }
@@ -686,7 +542,8 @@ function GerarRelatorioSll() {
 
                     opacity:
                       isGenerating ||
-                      !idArea ||
+                      !areaUtilizador
+                        ?.id_areas ||
                       !dataInicio ||
                       !dataFim
                         ? 0.55
@@ -694,7 +551,8 @@ function GerarRelatorioSll() {
 
                     cursor:
                       isGenerating ||
-                      !idArea ||
+                      !areaUtilizador
+                        ?.id_areas ||
                       !dataInicio ||
                       !dataFim
                         ? "not-allowed"
@@ -718,7 +576,7 @@ function GerarRelatorioSll() {
               >
                 <div>
                   <h1 style={titulo}>
-                    Relatório
+                    Relatório de badges atribuídos
                   </h1>
 
                   <div style={subtitulo}>
@@ -787,7 +645,7 @@ function GerarRelatorioSll() {
 
                     <div style={informacaoDocumento}>
                     <h2 style={tituloDocumento}>
-                        Relatório de Badges
+                      Relatório de Badges Atribuídos
                     </h2>
 
                     <div style={detalhesDocumento}>
@@ -797,13 +655,6 @@ function GerarRelatorioSll() {
                             relatorio.serviceLine
                             ?.nome_serviceline
                         }
-                        </strong>
-                    </div>
-
-                    <div style={detalhesDocumento}>
-                        Área:{" "}
-                        <strong>
-                        {relatorio.area?.nome_area}
                         </strong>
                     </div>
 
@@ -829,51 +680,9 @@ function GerarRelatorioSll() {
 
                 <div style={linhaDocumento} />
 
-                {/* ABAS DO GRÁFICO */}
-
                 <div style={graficoTopo}>
-                    <div style={abasGrafico}>
-                    <GraficoTab
-                        ativo={
-                        graficoSelecionado ===
-                        "SUBMETIDAS"
-                        }
-                        onClick={() =>
-                        setGraficoSelecionado(
-                            "SUBMETIDAS"
-                        )
-                        }
-                    >
-                        Total Badges Submetidas
-                    </GraficoTab>
-
-                    <GraficoTab
-                        ativo={
-                        graficoSelecionado ===
-                        "APROVADAS"
-                        }
-                        onClick={() =>
-                        setGraficoSelecionado(
-                            "APROVADAS"
-                        )
-                        }
-                    >
-                        Total badges aprovadas
-                    </GraficoTab>
-
-                    <GraficoTab
-                        ativo={
-                        graficoSelecionado ===
-                        "REJEITADAS"
-                        }
-                        onClick={() =>
-                        setGraficoSelecionado(
-                            "REJEITADAS"
-                        )
-                        }
-                    >
-                        Total badges recusadas
-                    </GraficoTab>
+                  <div style={tituloGraficoUnico}>
+                    Badges atribuídos por mês
                     </div>
 
                     <div style={legenda}>
@@ -939,9 +748,7 @@ function GerarRelatorioSll() {
 
                         <Line
                         type="monotone"
-                        dataKey={
-                            graficoConfig.atual
-                        }
+                        dataKey="atribuidas_atual"
                         name="Este período"
                         stroke="#111827"
                         strokeWidth={2}
@@ -955,9 +762,7 @@ function GerarRelatorioSll() {
 
                         <Line
                         type="monotone"
-                        dataKey={
-                            graficoConfig.anterior
-                        }
+                        dataKey="atribuidas_anterior"
                         name="Ano anterior"
                         stroke="#93c5fd"
                         strokeWidth={2}
@@ -978,24 +783,24 @@ function GerarRelatorioSll() {
                 <div style={cardsResumo}>
                     <ResumoCard
                     icon={
-                        <BiCheck size={48} />
+                    <BiMedal size={48} />
                     }
                     valor={
                         relatorio.resumo
-                        ?.total_aprovadas || 0
+                    ?.total_atribuidas || 0
                     }
-                    label="Badges aprovadas"
+                  label="Badges atribuídos no período"
                     />
 
                     <ResumoCard
                     icon={
-                        <BiMedal size={48} />
+                    <BiUser size={48} />
                     }
                     valor={
                         relatorio.resumo
-                        ?.total_atribuidas || 0
+                    ?.total_aprovadas || 0
                     }
-                    label="Badges atribuídos neste período"
+                  label="Candidaturas aprovadas"
                     />
 
                     <ResumoCard
@@ -1031,7 +836,7 @@ function GerarRelatorioSll() {
 
                 <div style={informacaoPdf}>
                 <h1 style={tituloPdf}>
-                    Relatório de Badges
+                  Relatório de Badges Atribuídos
                 </h1>
 
                 <div style={detalhePdf}>
@@ -1041,13 +846,6 @@ function GerarRelatorioSll() {
                         relatorio.serviceLine
                         ?.nome_serviceline
                     }
-                    </strong>
-                </div>
-
-                <div style={detalhePdf}>
-                    Área:{" "}
-                    <strong>
-                    {relatorio.area?.nome_area}
                     </strong>
                 </div>
 
@@ -1099,48 +897,34 @@ function GerarRelatorioSll() {
 
             <div style={graficosPdfGrid}>
                 <GraficoPdf
-                titulo="Badges submetidas"
+              titulo="Badges atribuídos"
                 dados={relatorio.grafico}
-                dataKeyAtual="submetidas_atual"
-                dataKeyAnterior="submetidas_anterior"
-                />
-
-                <GraficoPdf
-                titulo="Badges aprovadas"
-                dados={relatorio.grafico}
-                dataKeyAtual="aprovadas_atual"
-                dataKeyAnterior="aprovadas_anterior"
-                />
-
-                <GraficoPdf
-                titulo="Badges recusadas"
-                dados={relatorio.grafico}
-                dataKeyAtual="rejeitadas_atual"
-                dataKeyAnterior="rejeitadas_anterior"
+              dataKeyAtual="atribuidas_atual"
+              dataKeyAnterior="atribuidas_anterior"
                 />
             </div>
 
             <div style={resumosPdfGrid}>
                 <ResumoCard
                 icon={
-                    <BiCheck size={42} />
+                  <BiMedal size={42} />
                 }
                 valor={
                     relatorio.resumo
-                    ?.total_aprovadas || 0
+                  ?.total_atribuidas || 0
                 }
-                label="Badges aprovadas"
+                label="Badges atribuídos"
                 />
 
                 <ResumoCard
                 icon={
-                    <BiMedal size={42} />
+                  <BiUser size={42} />
                 }
                 valor={
                     relatorio.resumo
-                    ?.total_atribuidas || 0
+                  ?.total_aprovadas || 0
                 }
-                label="Badges atribuídos"
+                label="Candidaturas aprovadas"
                 />
 
                 <ResumoCard
@@ -1154,7 +938,7 @@ function GerarRelatorioSll() {
             </div>
 
             <div style={totalPdf}>
-                Total de candidaturas submetidas:{" "}
+                Total de candidaturas submetidas no período: {" "}
                 <strong>
                 {relatorio.resumo
                     ?.total_submetidas || 0}
@@ -1165,19 +949,6 @@ function GerarRelatorioSll() {
               <div
                 style={acoesRelatorio}
               >
-                <button
-                  type="button"
-                  onClick={enviarParaTm}
-                  disabled={isSendingTm}
-                  style={enviarButton}
-                >
-                  <BiSend size={18} />
-
-                  {isSendingTm
-                    ? "A enviar..."
-                    : "Enviar para TM"}
-                </button>
-
                 <button
                   type="button"
                   onClick={gerarPdf}
@@ -1200,36 +971,6 @@ function GerarRelatorioSll() {
 /* =========================================================
    COMPONENTES
 ========================================================= */
-
-function GraficoTab({
-  ativo,
-  onClick,
-  children,
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        ...graficoTab,
-
-        color: ativo
-          ? "#111827"
-          : "#9ca3af",
-
-        borderBottom: ativo
-          ? "2px solid #2563eb"
-          : "2px solid transparent",
-
-        fontWeight: ativo
-          ? 700
-          : 400,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 function GraficoPdf({
   titulo,
@@ -1431,7 +1172,7 @@ const cardTitulo = {
 const formGrid = {
   display: "grid",
   gridTemplateColumns:
-    "repeat(2, minmax(0, 1fr))",
+    "minmax(0, 1fr)",
   gap: 32,
 };
 
@@ -1515,18 +1256,10 @@ const graficoTopo = {
   flexWrap: "wrap",
 };
 
-const abasGrafico = {
-  display: "flex",
-  alignItems: "center",
-  gap: 2,
-};
-
-const graficoTab = {
-  border: "none",
-  background: "transparent",
-  padding: "9px 14px",
-  fontSize: 12,
-  cursor: "pointer",
+const tituloGraficoUnico = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#111827",
 };
 
 const legenda = {
@@ -1603,22 +1336,6 @@ const acoesRelatorio = {
   display: "flex",
   justifyContent: "flex-end",
   gap: 12,
-};
-
-const enviarButton = {
-  minHeight: 42,
-  border: "none",
-  borderRadius: 9,
-  background: "#2563eb",
-  color: "white",
-  padding: "9px 18px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 7,
-  fontSize: 13,
-  fontWeight: 700,
-  cursor: "pointer",
 };
 
 const pdfButton = {
@@ -1774,8 +1491,7 @@ const legendaPdf = {
 
 const graficosPdfGrid = {
   display: "grid",
-  gridTemplateColumns:
-    "repeat(3, 1fr)",
+  gridTemplateColumns: "1fr",
   gap: 18,
   alignItems: "stretch",
 };

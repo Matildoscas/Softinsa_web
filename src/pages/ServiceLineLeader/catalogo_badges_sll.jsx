@@ -148,7 +148,7 @@ function CatalogoBadgesSll() {
   const [serviceLines, setServiceLines] =
     useState([]);
   const [serviceLineId, setServiceLineId] =
-    useState(null);
+    useState("MINE");
 
   const [pesquisa, setPesquisa] =
     useState("");
@@ -224,7 +224,12 @@ function CatalogoBadgesSll() {
 
       let endpoint = `/sll/${idUtilizador}/badges`;
 
-      if (serviceLineId) {
+      if (serviceLineId === "ALL") {
+        endpoint += "?scope=all";
+      } else if (
+        serviceLineId &&
+        serviceLineId !== "MINE"
+      ) {
         endpoint += `?id_serviceline=${serviceLineId}`;
       }
 
@@ -710,20 +715,18 @@ function CatalogoBadgesSll() {
               </label>
 
               <select
-                value={serviceLineId || ""}
+                value={serviceLineId || "MINE"}
                 onChange={(event) =>
-                  setServiceLineId(
-                    event.target.value
-                      ? Number(
-                          event.target.value
-                        )
-                      : null
-                  )
+                  setServiceLineId(event.target.value)
                 }
                 style={selectFiltro}
               >
-                <option value="">
+                <option value="MINE">
                   Minha Service Line
+                </option>
+
+                <option value="ALL">
+                  Todas as Service Lines
                 </option>
 
                 {serviceLines.map(
@@ -733,7 +736,9 @@ function CatalogoBadgesSll() {
                         sl.id_serviceline
                       }
                       value={
-                        sl.id_serviceline
+                        String(
+                          sl.id_serviceline
+                        )
                       }
                     >
                       {sl.nome_serviceline}
@@ -830,8 +835,7 @@ function CatalogoBadgesSll() {
 
           <div style={serviceLineInfoRow}>
             <div style={serviceLineInfo}>
-              Catálogo limitado à Service
-              Line:{" "}
+              Catálogo atualmente em:{" "}
               <strong>
                 {serviceLine
                   ?.nome_serviceline ||
@@ -875,7 +879,8 @@ function CatalogoBadgesSll() {
             </div>
           ) : (
             <div style={loadingBox}>
-              {serviceLineId
+              {serviceLineId &&
+              serviceLineId !== "MINE"
                 ? "Não foram encontrados badges nesta Service Line."
                 : "Não foram encontrados badges."}
             </div>

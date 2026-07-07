@@ -57,8 +57,13 @@ function SllLeftSidebar() {
         />
 
         <SubLink
+          to="/sll/status-candidaturas"
+          label="Status de Candidaturas"
+        />
+
+        <SubLink
           to="/sll/ranking"
-          label="Ranking de badges"
+          label="Rankings"
         />
       </MenuGroup>
 

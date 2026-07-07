@@ -206,8 +206,15 @@ function ListaConsultoresSll() {
     setConsultores,
   ] = useState([]);
 
-  const [areas, setAreas] =
-    useState([]);
+  const [
+    serviceLines,
+    setServiceLines,
+  ] = useState([]);
+
+  const [
+    serviceLineId,
+    setServiceLineId,
+  ] = useState("MINE");
 
   const [
     serviceLine,
@@ -216,9 +223,6 @@ function ListaConsultoresSll() {
 
   const [pesquisa, setPesquisa] =
     useState("");
-
-  const [filtroArea, setFiltroArea] =
-    useState("TODAS");
 
   const [ordenacao, setOrdenacao] =
     useState("NOME_ASC");
@@ -230,8 +234,31 @@ function ListaConsultoresSll() {
     useState("");
 
   useEffect(() => {
-    carregarConsultores();
+    carregarServiceLines();
   }, []);
+
+  useEffect(() => {
+    carregarConsultores();
+  }, [serviceLineId]);
+
+  async function carregarServiceLines() {
+    try {
+      const response = await api.get(
+        "/servicelines/select"
+      );
+
+      if (
+        Array.isArray(response.data)
+      ) {
+        setServiceLines(response.data);
+      }
+    } catch (err) {
+      console.error(
+        "Erro ao carregar Service Lines:",
+        err
+      );
+    }
+  }
 
   async function carregarConsultores() {
     const utilizador =
@@ -255,8 +282,17 @@ function ListaConsultoresSll() {
       setIsLoading(true);
       setErro("");
 
+      let endpoint = `/sll/${idUtilizador}/consultores`;
+
+      if (
+        serviceLineId &&
+        serviceLineId !== "MINE"
+      ) {
+        endpoint += `?id_serviceline=${serviceLineId}`;
+      }
+
       const response = await api.get(
-        `/sll/${idUtilizador}/consultores`
+        endpoint
       );
 
       const dados = response.data;
@@ -274,12 +310,6 @@ function ListaConsultoresSll() {
         : [];
 
       setConsultores(lista);
-
-      setAreas(
-        Array.isArray(dados.areas)
-          ? dados.areas
-          : []
-      );
     } catch (err) {
       console.error(
         "Erro ao carregar consultores:",
@@ -297,7 +327,6 @@ function ListaConsultoresSll() {
       );
 
       setConsultores([]);
-      setAreas([]);
 
       setErro(
         err.response?.data?.error ||
@@ -329,17 +358,6 @@ function ListaConsultoresSll() {
                 .includes(
                   termoPesquisa
                 )
-          );
-      }
-
-      if (filtroArea !== "TODAS") {
-        resultado =
-          resultado.filter(
-            (consultor) =>
-              String(
-                consultor.id_areas
-              ) ===
-              String(filtroArea)
           );
       }
 
@@ -396,9 +414,161 @@ function ListaConsultoresSll() {
     }, [
       consultores,
       pesquisa,
-      filtroArea,
       ordenacao,
     ]);
+
+  async function gerarPdfListaConsultores() {
+    try {
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const nomeServiceLine =
+        serviceLine?.nome_serviceline ||
+        "Service Line";
+
+      pdf.setFont(
+        "helvetica",
+        "bold"
+      );
+      pdf.setFontSize(18);
+      pdf.text(
+        "Lista de Consultores",
+        14,
+        16
+      );
+
+      pdf.setFont(
+        "helvetica",
+        "normal"
+      );
+      pdf.setFontSize(10);
+      pdf.text(
+        `Service Line: ${nomeServiceLine}`,
+        14,
+        23
+      );
+      pdf.text(
+        `Total: ${consultoresFiltrados.length} consultor(es)`,
+        14,
+        29
+      );
+
+      autoTable(pdf, {
+        startY: 36,
+        head: [[
+          "Nome",
+          "Email",
+          "Area",
+          "Service Line",
+          "Badges",
+          "Estado",
+        ]],
+        body: consultoresFiltrados.map(
+          (consultor) => [
+            consultor.nome_completo,
+            consultor.email,
+            consultor.nome_area,
+            consultor.nome_serviceline,
+            consultor.total_badges,
+            consultor.estado_conta,
+          ]
+        ),
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+          overflow: "linebreak",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252],
+        },
+      });
+
+      pdf.save(
+        `consultores_${limparNomeFicheiro(nomeServiceLine)}.pdf`
+      );
+    } catch (err) {
+      console.error(
+        "Erro ao gerar PDF da lista:",
+        err
+      );
+
+      setErro(
+        "Nao foi possivel gerar o PDF da lista."
+      );
+    }
+  }
+
+  function gerarExcelListaConsultores() {
+    const cabecalho = [
+      "Nome",
+      "Email",
+      "Area",
+      "Service Line",
+      "Badges",
+      "Estado",
+    ];
+
+    const linhas = consultoresFiltrados.map(
+      (consultor) => [
+        consultor.nome_completo,
+        consultor.email,
+        consultor.nome_area,
+        consultor.nome_serviceline,
+        consultor.total_badges,
+        consultor.estado_conta,
+      ]
+    );
+
+    const csv = [
+      cabecalho,
+      ...linhas,
+    ]
+      .map((linha) =>
+        linha
+          .map((valor) => {
+            const texto = String(
+              valor ?? ""
+            ).replace(/"/g, '""');
+
+            return `"${texto}"`;
+          })
+          .join(";")
+      )
+      .join("\n");
+
+    const blob = new Blob(
+      ["\uFEFF" + csv],
+      {
+        type:
+          "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+    link.download =
+      `consultores_${limparNomeFicheiro(serviceLine?.nome_serviceline || "service_line")}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  }
 
   async function gerarPdfConsultor(
     consultor
@@ -697,29 +867,51 @@ function ListaConsultoresSll() {
           <div style={separador} />
 
           <div style={cabecalhoPagina}>
-            <h1 style={titulo}>
-              Consultores da Plataforma
-            </h1>
+            <div>
+              <h1 style={titulo}>
+                Consultores da Plataforma
+              </h1>
 
-            <div style={subtitulo}>
-              Service Line:{" "}
-              <strong>
-                {serviceLine
-                  ?.nome_serviceline ||
-                  "Service Line"}
-              </strong>
+              <div style={subtitulo}>
+                Service Line:{" "}
+                <strong>
+                  {serviceLine
+                    ?.nome_serviceline ||
+                    "Service Line"}
+                </strong>
+              </div>
+
+              <div style={totalTexto}>
+                Total de{" "}
+                {
+                  consultoresFiltrados
+                    .length
+                }{" "}
+                {consultoresFiltrados
+                  .length === 1
+                  ? "consultor"
+                  : "consultores"}
+              </div>
             </div>
 
-            <div style={totalTexto}>
-              Total de{" "}
-              {
-                consultoresFiltrados
-                  .length
-              }{" "}
-              {consultoresFiltrados
-                .length === 1
-                ? "consultor"
-                : "consultores"}
+            <div style={acoesTopo}>
+              <button
+                type="button"
+                onClick={gerarExcelListaConsultores}
+                style={excelButton}
+              >
+                <BiSpreadsheet size={17} />
+                Excel
+              </button>
+
+              <button
+                type="button"
+                onClick={gerarPdfListaConsultores}
+                style={pdfButton}
+              >
+                <BiFile size={17} />
+                PDF
+              </button>
             </div>
           </div>
 
@@ -749,32 +941,34 @@ function ListaConsultoresSll() {
                   <BiFilterAlt
                     size={16}
                   />
-                  Filtrar por
+                  Service Line
                 </label>
 
                 <select
-                  value={filtroArea}
+                  value={serviceLineId}
                   onChange={(event) =>
-                    setFiltroArea(
+                    setServiceLineId(
                       event.target.value
                     )
                   }
                   style={inputFiltro}
                 >
-                  <option value="TODAS">
-                    Todas as áreas
+                  <option value="MINE">
+                    Minha Service Line
                   </option>
 
-                  {areas.map((area) => (
+                  {serviceLines.map((sl) => (
                     <option
                       key={
-                        area.id_areas
+                        sl.id_serviceline
                       }
                       value={
-                        area.id_areas
+                        String(
+                          sl.id_serviceline
+                        )
                       }
                     >
-                      {area.nome_area}
+                      {sl.nome_serviceline}
                     </option>
                   ))}
                 </select>
@@ -868,8 +1062,8 @@ function ListaConsultoresSll() {
           ) : (
             <div style={mensagemBox}>
               Não foram encontrados
-              consultores nesta Service
-              Line.
+              consultores para esta
+              Service Line.
             </div>
           )}
         </main>
@@ -1011,6 +1205,10 @@ const separador = {
 const cabecalhoPagina = {
   maxWidth: 920,
   margin: "0 auto 18px",
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "space-between",
+  gap: 16,
 };
 
 const titulo = {
@@ -1031,6 +1229,44 @@ const totalTexto = {
   marginTop: 3,
   fontSize: 12,
   color: "#475569",
+};
+
+const acoesTopo = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+};
+
+const excelButton = {
+  minWidth: 96,
+  height: 40,
+  border: "none",
+  borderRadius: 8,
+  background: "#16a34a",
+  color: "white",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const pdfButton = {
+  minWidth: 90,
+  height: 40,
+  border: "none",
+  borderRadius: 8,
+  background: "#dc2626",
+  color: "white",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
 };
 
 const filtrosArea = {

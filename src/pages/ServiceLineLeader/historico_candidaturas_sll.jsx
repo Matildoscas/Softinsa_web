@@ -9,16 +9,20 @@ import {
   BiBadge,
   BiCheck,
   BiEnvelope,
+  BiFile,
   BiFilterAlt,
   BiSearch,
   BiShow,
   BiSortAlt2,
+  BiSpreadsheet,
   BiTimeFive,
   BiUserCircle,
   BiX,
 } from "react-icons/bi";
 
 import { useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import { autoTable } from "jspdf-autotable";
 
 import api from "../../services/api.js";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
@@ -226,6 +230,24 @@ function normalizarTexto(valor) {
     )
     .trim()
     .toUpperCase();
+}
+
+function limparNomeFicheiro(valor) {
+  return String(valor || "historico")
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .replace(
+      /[^a-zA-Z0-9]+/g,
+      "_"
+    )
+    .replace(
+      /^_+|_+$/g,
+      ""
+    )
+    .toLowerCase();
 }
 
 /* =========================================================
@@ -547,6 +569,185 @@ function HistoricoCandidaturasSll() {
       ordenacao,
     ]);
 
+  function exportarExcelHistorico() {
+    const cabecalho = [
+      "Consultor",
+      "Email",
+      "Badge",
+      "Area",
+      "Nivel",
+      "Estado",
+      "Fase",
+      "Solicitado em",
+      "Avaliado em",
+    ];
+
+    const linhas =
+      candidaturasFiltradas.map(
+        (candidatura) => [
+          candidatura.nome_completo,
+          candidatura.email,
+          candidatura.nome_badge,
+          candidatura.nome_area,
+          candidatura.codigo_nivel ||
+            candidatura.nome_nivel,
+          obterEstadoVisual(
+            candidatura.estado_atual
+          ).label,
+          candidatura.fase_atual,
+          formatarData(
+            candidatura.data_submissao
+          ),
+          formatarDataHora(
+            candidatura.data_avaliacao_sll ||
+              candidatura.data_entrada_historico
+          ),
+        ]
+      );
+
+    const csv = [
+      cabecalho,
+      ...linhas,
+    ]
+      .map((linha) =>
+        linha
+          .map((valor) => {
+            const texto = String(
+              valor ?? ""
+            ).replace(/"/g, '""');
+
+            return `"${texto}"`;
+          })
+          .join(";")
+      )
+      .join("\n");
+
+    const blob = new Blob(
+      ["\uFEFF" + csv],
+      {
+        type:
+          "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+    link.download = `historico_candidaturas_${limparNomeFicheiro(
+      serviceLine?.nome_serviceline ||
+        "service_line"
+    )}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function gerarPdfHistorico() {
+    try {
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const nomeServiceLine =
+        serviceLine?.nome_serviceline ||
+        "Service Line";
+
+      pdf.setFont(
+        "helvetica",
+        "bold"
+      );
+      pdf.setFontSize(18);
+      pdf.text(
+        "Historico de Candidaturas",
+        14,
+        16
+      );
+
+      pdf.setFont(
+        "helvetica",
+        "normal"
+      );
+      pdf.setFontSize(10);
+      pdf.text(
+        `Service Line: ${nomeServiceLine}`,
+        14,
+        23
+      );
+      pdf.text(
+        `Total: ${candidaturasFiltradas.length} candidatura(s)`,
+        14,
+        29
+      );
+
+      autoTable(pdf, {
+        startY: 36,
+        head: [[
+          "Consultor",
+          "Badge",
+          "Area",
+          "Estado",
+          "Fase",
+          "Solicitado",
+          "Avaliado",
+        ]],
+        body: candidaturasFiltradas.map(
+          (candidatura) => [
+            candidatura.nome_completo,
+            candidatura.nome_badge,
+            candidatura.nome_area,
+            obterEstadoVisual(
+              candidatura.estado_atual
+            ).label,
+            candidatura.fase_atual,
+            formatarData(
+              candidatura.data_submissao
+            ),
+            formatarDataHora(
+              candidatura.data_avaliacao_sll ||
+                candidatura.data_entrada_historico
+            ),
+          ]
+        ),
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+          overflow: "linebreak",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252],
+        },
+      });
+
+      pdf.save(
+        `historico_candidaturas_${limparNomeFicheiro(nomeServiceLine)}.pdf`
+      );
+    } catch (err) {
+      console.error(
+        "Erro ao gerar PDF do historico:",
+        err
+      );
+
+      setErro(
+        "Nao foi possivel gerar o PDF do historico."
+      );
+    }
+  }
+
   return (
     <div style={pagina}>
       <Header />
@@ -571,29 +772,51 @@ function HistoricoCandidaturasSll() {
           <div style={separador} />
 
           <div style={cabecalhoPagina}>
-            <h1 style={titulo}>
-              Histórico de Candidaturas
-            </h1>
+            <div>
+              <h1 style={titulo}>
+                Histórico de Candidaturas
+              </h1>
 
-            <div style={subtitulo}>
-              Service Line:{" "}
-              <strong>
-                {serviceLine
-                  ?.nome_serviceline ||
-                  "Service Line"}
-              </strong>
+              <div style={subtitulo}>
+                Service Line: {" "}
+                <strong>
+                  {serviceLine
+                    ?.nome_serviceline ||
+                    "Service Line"}
+                </strong>
+              </div>
+
+              <div style={totalTexto}>
+                Total de {" "}
+                {
+                  candidaturasFiltradas
+                    .length
+                }{" "}
+                {candidaturasFiltradas
+                  .length === 1
+                  ? "candidatura"
+                  : "candidaturas"}
+              </div>
             </div>
 
-            <div style={totalTexto}>
-              Total de{" "}
-              {
-                candidaturasFiltradas
-                  .length
-              }{" "}
-              {candidaturasFiltradas
-                .length === 1
-                ? "candidatura"
-                : "candidaturas"}
+            <div style={acoesTopo}>
+              <button
+                type="button"
+                onClick={exportarExcelHistorico}
+                style={excelButton}
+              >
+                <BiSpreadsheet size={17} />
+                Excel
+              </button>
+
+              <button
+                type="button"
+                onClick={gerarPdfHistorico}
+                style={pdfButton}
+              >
+                <BiFile size={17} />
+                PDF
+              </button>
             </div>
           </div>
 
@@ -965,6 +1188,10 @@ const separador = {
 };
 
 const cabecalhoPagina = {
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "space-between",
+  gap: 16,
   marginBottom: 18,
 };
 
@@ -985,6 +1212,44 @@ const totalTexto = {
   marginTop: 3,
   color: "#374151",
   fontSize: 13,
+};
+
+const acoesTopo = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+};
+
+const excelButton = {
+  minWidth: 96,
+  height: 40,
+  border: "none",
+  borderRadius: 8,
+  background: "#16a34a",
+  color: "white",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const pdfButton = {
+  minWidth: 90,
+  height: 40,
+  border: "none",
+  borderRadius: 8,
+  background: "#dc2626",
+  color: "white",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
 };
 
 const filtrosArea = {
