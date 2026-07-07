@@ -27,9 +27,6 @@ import {
 import {
   Alert,
   Button,
-  Form,
-  Modal,
-  Spinner,
 } from "react-bootstrap";
 
 import {
@@ -164,6 +161,10 @@ function normalizarDocumentos(documentos) {
         documento.tipo ||
         documento.mimetype ||
         "",
+
+      estado_evidencia:
+        documento.estado_evidencia ||
+        "",
     }));
 }
 
@@ -199,25 +200,11 @@ function resolverEstadoEvidenciaUi(evidencia) {
   const estadoSll =
     evidencia?.estado_evidencia_sll;
 
-  const estadoTm =
-    evidencia?.estado_evidencia_tm;
-
-  const estadoAtual =
-    evidencia?.estado_evidencia;
-
   if (
     estadoEhAprovado(estadoSll) ||
     estadoEhRejeitado(estadoSll)
   ) {
     return estadoSll;
-  }
-
-  if (normalizarEstadoValor(estadoTm)) {
-    return estadoTm;
-  }
-
-  if (normalizarEstadoValor(estadoAtual)) {
-    return estadoAtual;
   }
 
   if (normalizarEstadoValor(estadoSll)) {
@@ -235,32 +222,6 @@ function calcularEstadoRequisitoUi(
     evidencias.length === 0
   ) {
     return "SEM_EVIDENCIA";
-  }
-
-  const estadosTm =
-    evidencias.map((evidencia) =>
-      normalizarEstadoValor(
-        evidencia?.estado_evidencia_tm
-      )
-    );
-
-  if (
-    estadosTm.some((estadoTm) =>
-      estadoEhRejeitado(estadoTm)
-    )
-  ) {
-    return "REJEITADA";
-  }
-
-  if (
-    estadosTm.length > 0 &&
-    estadosTm.every(
-      (estadoTm) =>
-        estadoTm &&
-        estadoEhAprovado(estadoTm)
-    )
-  ) {
-    return "APROVADA";
   }
 
   const estadosResolvidos =
@@ -291,15 +252,6 @@ function resolverEstadoRequisitoUi(
   requisito,
   evidencias
 ) {
-  const estadoBackend =
-    requisito?.estado_evidencia ||
-    requisito?.estado ||
-    "";
-
-  if (normalizarEstadoValor(estadoBackend)) {
-    return estadoBackend;
-  }
-
   return calcularEstadoRequisitoUi(
     evidencias
   );
@@ -321,7 +273,6 @@ function normalizarRequisito(
       (item) => ({
         ...item,
         estado_evidencia:
-          item.estado_evidencia ||
           resolverEstadoEvidenciaUi(
             item
           ),
@@ -661,6 +612,18 @@ function obterEstadoCandidaturaVisual(estado) {
   }
 
   if (
+    valor.includes("FINAL") &&
+    valor.includes("APROV")
+  ) {
+    return {
+      label: "Aprovada",
+      background: "#dcfce7",
+      color: "#166534",
+      border: "#bbf7d0",
+    };
+  }
+
+  if (
     valor.includes("APROV") ||
     valor.includes("VALID") ||
     valor.includes("SLL")
@@ -828,6 +791,21 @@ function DetalheSolicitacaoSll() {
   const [erro, setErro] =
     useState("");
 
+  const [
+    decisoesPendentes,
+    setDecisoesPendentes,
+  ] = useState({});
+
+  const [
+    aGuardarDecisoes,
+    setAGuardarDecisoes,
+  ] = useState(false);
+
+  const [
+    erroGuardarDecisoes,
+    setErroGuardarDecisoes,
+  ] = useState("");
+
   const [debugAtivo, setDebugAtivo] =
     useState(
       getDebugSwitchVisible() &&
@@ -956,6 +934,9 @@ function DetalheSolicitacaoSll() {
         .candidatura
         .id_candidatura_sll
     );
+
+    setDecisoesPendentes({});
+    setErroGuardarDecisoes("");
 
     setDados(
       dadosNormalizados
@@ -1216,6 +1197,21 @@ async function rejeitarCandidatura() {
       ?.id_candidatura_sll ||
     null;
 
+  const emAvaliacaoSll =
+    useMemo(() => {
+      const estadoPedido =
+        normalizarEstadoValor(
+          dados?.candidatura
+            ?.estado
+        );
+
+      return (
+        estadoPedido ===
+          "AGUARDA_SLL" ||
+        estadoPedido.includes("SLL")
+      );
+    }, [dados]);
+
   const sllJaFinalizou =
     useMemo(() => {
       const estadoSll =
@@ -1242,12 +1238,98 @@ async function rejeitarCandidatura() {
       );
     }, [dados]);
 
+  const podeAvaliarEvidencias =
+    emAvaliacaoSll &&
+    !sllJaFinalizou &&
+    !isProcessing;
+
   const podeDecidir =
     Boolean(
       idCandidaturaSll
     ) &&
     !sllJaFinalizou &&
     !isProcessing;
+
+  const temDecisoesPendentes =
+    Object.keys(decisoesPendentes)
+      .length > 0;
+
+  function definirDecisaoEvidencia(
+    evidencia,
+    estado
+  ) {
+    const chave = String(
+      evidencia?.id_evidencia ||
+        ""
+    );
+
+    if (!chave) {
+      return;
+    }
+
+    const estadoPersistido =
+      normalizarEstadoValor(
+        evidencia?.estado_evidencia_sll
+      );
+
+    setDecisoesPendentes((prev) => {
+      // Se a decisão escolhida é igual à já guardada, removemos qualquer alteração pendente.
+      if (estadoPersistido === estado) {
+        if (!prev[chave]) {
+          return prev;
+        }
+
+        const copia = { ...prev };
+        delete copia[chave];
+        return copia;
+      }
+
+      if (prev[chave] === estado) {
+        const copia = { ...prev };
+        delete copia[chave];
+        return copia;
+      }
+
+      return {
+        ...prev,
+        [chave]: estado,
+      };
+    });
+  }
+
+  async function confirmarAvaliacoes() {
+    if (!temDecisoesPendentes) {
+      return;
+    }
+
+    try {
+      setAGuardarDecisoes(true);
+      setErroGuardarDecisoes("");
+
+      for (const [
+        idEvidencia,
+        estado,
+      ] of Object.entries(
+        decisoesPendentes
+      )) {
+        // Guardamos de forma sequencial para evitar concorrência em inserções auxiliares do backend.
+        await api.put(
+          `/sll/evidencias/${idEvidencia}/avaliar`,
+          { estado }
+        );
+      }
+
+      setDecisoesPendentes({});
+      await carregarDetalhe();
+    } catch (err) {
+      setErroGuardarDecisoes(
+        err.response?.data?.error ||
+          "Erro ao guardar as avaliações."
+      );
+    } finally {
+      setAGuardarDecisoes(false);
+    }
+  }
 
 
   return (
@@ -1440,7 +1522,20 @@ async function rejeitarCandidatura() {
                         requisito
                       }
                       abertoInicial={
+                        podeAvaliarEvidencias ||
                         index === 0
+                      }
+                      podeAvaliar={
+                        podeAvaliarEvidencias
+                      }
+                      decisoesPendentes={
+                        decisoesPendentes
+                      }
+                      onDefinirDecisao={
+                        definirDecisaoEvidencia
+                      }
+                      desativado={
+                        aGuardarDecisoes
                       }
                     />
                   )
@@ -1452,76 +1547,41 @@ async function rejeitarCandidatura() {
                 </div>
               )}
 
-            {!idCandidaturaSll && (
-              <Alert variant="warning">
-                Esta candidatura ainda não está
-                disponível para decisão final do
-                SLL, porque não existe registo
-                ativo na fase SLL.
-                Aguarda a transição da candidatura
-                para esta fase para aprovar ou
-                rejeitar.
-              </Alert>
-            )}
-
-            <div style={decisaoCard}>
-              <div>
-                <h2 style={decisaoTitulo}>
-                  Decisão final do SLL
-                </h2>
-
-                <div style={decisaoTexto}>
-                  Confirma se as evidências cumprem
-                  todos os requisitos do badge.
-                </div>
-              </div>
-
-              <div style={decisaoAcoes}>
-                <Button
-                  type="button"
-                  variant="outline-danger"
-                  disabled={!podeDecidir}
-                  onClick={() => {
-                    setMotivoRejeicao("");
-                    setMostrarRejeitar(true);
-                    setErro("");
-                  }}
-                >
-                  <BiXCircle
-                    size={18}
-                    className="me-2"
-                  />
-                  Rejeitar
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="success"
-                  disabled={!podeDecidir}
-                  onClick={
-                    aprovarCandidatura
-                  }
-                >
-                  {isProcessing ? (
-                    <>
-                      <Spinner
-                        size="sm"
-                        className="me-2"
-                      />
-                      A aprovar...
-                    </>
-                  ) : (
-                    <>
-                      <BiCheckCircle
-                        size={18}
-                        className="me-2"
-                      />
-                      Aprovar candidatura
-                    </>
+              {podeAvaliarEvidencias && (
+                <div style={requisitoAvaliacaoBox}>
+                  {erroGuardarDecisoes && (
+                    <p
+                      style={{
+                        color: "#dc2626",
+                        fontSize: 13,
+                        margin: "0 0 8px",
+                      }}
+                    >
+                      {erroGuardarDecisoes}
+                    </p>
                   )}
-                </Button>
-              </div>
-            </div>
+
+                  <Button
+                    variant="primary"
+                    disabled={
+                      !temDecisoesPendentes ||
+                      aGuardarDecisoes
+                    }
+                    onClick={
+                      confirmarAvaliacoes
+                    }
+                  >
+                    <BiCheckCircle
+                      size={17}
+                      className="me-2"
+                    />
+                    {aGuardarDecisoes
+                      ? "A guardar avaliações..."
+                      : `Confirmar avaliação de ${Object.keys(decisoesPendentes).length} evidência${Object.keys(decisoesPendentes).length !== 1 ? "s" : ""}`}
+                  </Button>
+                </div>
+              )}
+
             </>
           ) : (
             !erro && (
@@ -1534,73 +1594,6 @@ async function rejeitarCandidatura() {
 
         <SllRightSidebar />
       </div>
-
-      <Modal
-        show={mostrarRejeitar}
-        onHide={() =>
-          !isProcessing &&
-          setMostrarRejeitar(false)
-        }
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            Rejeitar candidatura
-          </Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <p style={{ color: "#475569" }}>
-            Indica o motivo da rejeição. O
-            consultor será informado.
-          </p>
-
-          <Form.Group>
-            <Form.Label>
-              Motivo
-            </Form.Label>
-
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={motivoRejeicao}
-              onChange={(event) =>
-                setMotivoRejeicao(
-                  event.target.value
-                )
-              }
-              placeholder="Ex.: A evidência apresentada não comprova o requisito..."
-            />
-          </Form.Group>
-        </Modal.Body>
-
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            disabled={isProcessing}
-            onClick={() =>
-              setMostrarRejeitar(false)
-            }
-          >
-            Cancelar
-          </Button>
-
-          <Button
-            variant="danger"
-            disabled={
-              isProcessing ||
-              !motivoRejeicao.trim()
-            }
-            onClick={
-              rejeitarCandidatura
-            }
-          >
-            {isProcessing
-              ? "A rejeitar..."
-              : "Confirmar rejeição"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }
@@ -1992,23 +1985,29 @@ function EstadoCandidatura({
 function RequisitoCard({
   requisito,
   abertoInicial,
+  podeAvaliar,
+  decisoesPendentes,
+  onDefinirDecisao,
+  desativado,
 }) {
   const [aberto, setAberto] =
     useState(abertoInicial);
 
   const estadoVisual =
-    obterEstadoVisual(
-      requisito.estado
-    );
+    obterEstadoVisual(requisito.estado);
+
+  const evidencias = Array.isArray(
+    requisito.evidencias
+  )
+    ? requisito.evidencias
+    : [];
 
   return (
     <article style={requisitoCard}>
       <button
         type="button"
         onClick={() =>
-          setAberto(
-            (valor) => !valor
-          )
+          setAberto((v) => !v)
         }
         style={requisitoHeader}
       >
@@ -2032,112 +2031,212 @@ function RequisitoCard({
           <span
             style={{
               ...estadoRequisito,
-
-              background:
-                estadoVisual.background,
-
-              color:
-                estadoVisual.color,
+              background: estadoVisual.background,
+              color: estadoVisual.color,
             }}
           >
             {estadoVisual.label}
           </span>
 
           {aberto ? (
-            <BiChevronUp
-              size={21}
-              color="#64748b"
-            />
+            <BiChevronUp size={21} color="#64748b" />
           ) : (
-            <BiChevronDown
-              size={21}
-              color="#64748b"
-            />
+            <BiChevronDown size={21} color="#64748b" />
           )}
         </div>
       </button>
 
       {aberto && (
         <div style={requisitoBody}>
-          <BlocoInformacao
-            titulo="Descrição do requisito"
-          >
+          <BlocoInformacao titulo="Descrição do requisito">
             <p style={textoNormal}>
               {requisito.descricao}
             </p>
 
-            {requisito.links.length >
-              0 && (
+            {requisito.links.length > 0 && (
               <div style={linksWrapper}>
-                {requisito.links.map(
-                  (link, index) => (
-                    <a
-                      key={
-                        link.id_link ||
-                        `${link.url}-${index}`
-                      }
-                      href={link.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={linkExterno}
-                    >
-                      <BiLinkExternal
-                        size={15}
-                      />
-
-                      {link.url}
-                    </a>
-                  )
-                )}
+                {requisito.links.map((link, index) => (
+                  <a
+                    key={link.id_link || `${link.url}-${index}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={linkExterno}
+                  >
+                    <BiLinkExternal size={15} />
+                    {link.url}
+                  </a>
+                ))}
               </div>
             )}
           </BlocoInformacao>
 
-          <BlocoInformacao
-            titulo="Evidência apresentada"
-          >
-            {requisito
-              .descricao_evidencia ? (
-              <p style={textoNormal}>
-                {
-                  requisito
-                    .descricao_evidencia
-                }
-              </p>
-            ) : (
-              <p style={textoVazio}>
-                Ainda não existe uma
-                descrição de evidência
-                associada a este
-                requisito.
-              </p>
-            )}
-          </BlocoInformacao>
+          <BlocoInformacao titulo="Evidências">
+            {evidencias.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {evidencias.map((ev) => {
+                  const chave = String(ev.id_evidencia);
+                  const estadoEv = obterEstadoVisual(
+                    ev.estado_evidencia
+                  );
+                  const decisaoLocal =
+                    decisoesPendentes[chave];
+                  const estadoSllPersistido =
+                    normalizarEstadoValor(
+                      ev.estado_evidencia_sll
+                    );
 
-          <BlocoInformacao
-            titulo="Documentos"
-          >
-            {requisito.documentos
-              .length > 0 ? (
-              <div style={documentosLista}>
-                {requisito.documentos.map(
-                  (documento) => (
-                    <DocumentoCard
-                      key={
-                        documento.id
-                      }
-                      documento={
-                        documento
-                      }
-                    />
-                  )
-                )}
+                  return (
+                    <div key={ev.id_evidencia} style={evidenciaRow}>
+                      <div style={evidenciaEsquerda}>
+                        <BiFile size={16} color="#64748b" />
+
+                        <span style={evidenciaNome}>
+                          {ev.nome_ficheiro || "Documento"}
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: "2px 9px",
+                            borderRadius: 20,
+                            background: estadoEv.background,
+                            color: estadoEv.color,
+                            border: `1px solid ${estadoEv.border}`,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {estadoEv.label}
+                        </span>
+
+                        {decisaoLocal && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              padding: "2px 9px",
+                              borderRadius: 20,
+                              background:
+                                decisaoLocal === "APROVADO"
+                                  ? "#dcfce7"
+                                  : "#fee2e2",
+                              color:
+                                decisaoLocal === "APROVADO"
+                                  ? "#15803d"
+                                  : "#dc2626",
+                              border:
+                                decisaoLocal === "APROVADO"
+                                  ? "1px solid #bbf7d0"
+                                  : "1px solid #fecaca",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            →{" "}
+                            {decisaoLocal === "APROVADO"
+                              ? "Aprovar"
+                              : "Rejeitar"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={evidenciaDireita}>
+                        {ev.url && (
+                          <button
+                            type="button"
+                            title="Abrir ficheiro"
+                            onClick={() =>
+                              window.open(
+                                ev.url,
+                                "_blank",
+                                "noopener,noreferrer"
+                              )
+                            }
+                            style={evidenciaMiniBtn}
+                          >
+                            <BiDownload size={14} />
+                          </button>
+                        )}
+
+                        {podeAvaliar && (
+                          <>
+                            <button
+                              type="button"
+                              title="Rejeitar"
+                              disabled={
+                                desativado
+                              }
+                              onClick={() =>
+                                onDefinirDecisao(
+                                  ev,
+                                  "REJEITADO"
+                                )
+                              }
+                              style={{
+                                ...evidenciaMiniBtn,
+                                background:
+                                  decisaoLocal === "REJEITADO"
+                                    ? "#dc2626"
+                                    : "#fff",
+                                color:
+                                  decisaoLocal === "REJEITADO"
+                                    ? "#fff"
+                                    : "#dc2626",
+                                border: "1px solid #dc2626",
+                                opacity:
+                                  estadoSllPersistido ===
+                                    "REJEITADO" &&
+                                  !decisaoLocal
+                                    ? 0.5
+                                    : 1,
+                              }}
+                            >
+                              <BiXCircle size={14} />
+                            </button>
+
+                            <button
+                              type="button"
+                              title="Aprovar"
+                              disabled={
+                                desativado
+                              }
+                              onClick={() =>
+                                onDefinirDecisao(
+                                  ev,
+                                  "APROVADO"
+                                )
+                              }
+                              style={{
+                                ...evidenciaMiniBtn,
+                                background:
+                                  decisaoLocal === "APROVADO"
+                                    ? "#15803d"
+                                    : "#fff",
+                                color:
+                                  decisaoLocal === "APROVADO"
+                                    ? "#fff"
+                                    : "#15803d",
+                                border: "1px solid #15803d",
+                                opacity:
+                                  estadoSllPersistido ===
+                                    "APROVADO" &&
+                                  !decisaoLocal
+                                    ? 0.5
+                                    : 1,
+                              }}
+                            >
+                              <BiCheckCircle size={14} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p style={textoVazio}>
-                Não existem documentos
-                associados a este
-                requisito.
+                Não existem evidências associadas a este requisito.
               </p>
             )}
           </BlocoInformacao>
@@ -2210,16 +2309,38 @@ function DocumentoCard({
         </div>
       </div>
 
-      {documento.url && (
-        <button
-          type="button"
-          onClick={abrirDocumento}
-          style={visualizarButton}
-        >
-          <BiDownload size={16} />
-          Visualizar
-        </button>
-      )}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {documento.estado_evidencia && (() => {
+          const ev = obterEstadoVisual(documento.estado_evidencia);
+          return (
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                padding: "3px 10px",
+                borderRadius: 20,
+                background: ev.background,
+                color: ev.color,
+                border: `1px solid ${ev.border}`,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {ev.label}
+            </span>
+          );
+        })()}
+
+        {documento.url && (
+          <button
+            type="button"
+            onClick={abrirDocumento}
+            style={visualizarButton}
+          >
+            <BiDownload size={16} />
+            Visualizar
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -2564,6 +2685,68 @@ const requisitoBody = {
   borderTop: "1px solid #e5e7eb",
   background: "#fafbfc",
   padding: "16px 18px",
+};
+
+const requisitoAvaliacaoBox = {
+  marginTop: 14,
+  paddingTop: 14,
+  borderTop: "1px solid #e5e7eb",
+};
+
+const requisitoAvaliacaoBotoes = {
+  display: "flex",
+  gap: 10,
+};
+
+const evidenciaRow = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  padding: "7px 10px",
+  borderRadius: 8,
+  background: "#fff",
+  border: "1px solid #e5e7eb",
+};
+
+const evidenciaEsquerda = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  flexWrap: "wrap",
+  flex: 1,
+  minWidth: 0,
+};
+
+const evidenciaNome = {
+  fontSize: 12,
+  color: "#374151",
+  fontWeight: 500,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  maxWidth: 220,
+};
+
+const evidenciaDireita = {
+  display: "flex",
+  alignItems: "center",
+  gap: 5,
+  flexShrink: 0,
+};
+
+const evidenciaMiniBtn = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 28,
+  height: 28,
+  borderRadius: 6,
+  border: "1px solid #e5e7eb",
+  background: "#fff",
+  color: "#64748b",
+  cursor: "pointer",
+  padding: 0,
 };
 
 const blocoInformacao = {

@@ -124,6 +124,11 @@ function normalizarCandidatura(
         .data_entrada_historico ||
       null,
 
+    data_avaliacao_sll:
+      candidatura
+        .data_avaliacao_sll ||
+      null,
+
     estado_pedido:
       candidatura
         .estado_candidatura_pedido ||
@@ -188,6 +193,30 @@ function formatarData(data) {
   );
 }
 
+function formatarDataHora(data) {
+  if (!data) {
+    return "Data não disponível";
+  }
+
+  const date = new Date(data);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Data não disponível";
+  }
+
+  return date.toLocaleString(
+    "pt-PT",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }
+  );
+}
+
 function normalizarTexto(valor) {
   return String(valor || "")
     .normalize("NFD")
@@ -207,9 +236,10 @@ function obterEstadoVisual(estado) {
   const valor =
     normalizarTexto(estado);
 
+  // APROVADO_FINAL → aprovado com badge emitido
   if (
-    valor.includes("APROV") ||
-    valor.includes("VALID")
+    valor.includes("FINAL") &&
+    valor.includes("APROV")
   ) {
     return {
       tipo: "APROVADO",
@@ -221,13 +251,14 @@ function obterEstadoVisual(estado) {
     };
   }
 
+  // REJEITADO_TM / REJEITADO_SLL / REJEITADO_FINAL
   if (
     valor.includes("REJEIT") ||
     valor.includes("RECUS")
   ) {
     return {
       tipo: "RECUSADO",
-      label: "Recusado",
+      label: "Rejeitado",
       background: "#fee2e2",
       color: "#dc2626",
       border: "#fecaca",
@@ -235,9 +266,38 @@ function obterEstadoVisual(estado) {
     };
   }
 
+  // AGUARDA_SLL ou TM aprovado sem decisão SLL → Em Validação
   if (
-    valor.includes("CANCEL")
+    valor.includes("SLL") ||
+    (valor.includes("APROV") &&
+      !valor.includes("FINAL"))
   ) {
+    return {
+      tipo: "AVALIACAO",
+      label: "Em Validação",
+      background: "#dbeafe",
+      color: "#1d4ed8",
+      border: "#bfdbfe",
+      icon: <BiTimeFive size={17} />,
+    };
+  }
+
+  // AGUARDA_TM → Submetido
+  if (
+    valor.includes("TM") ||
+    valor.includes("AGUARDA")
+  ) {
+    return {
+      tipo: "SUBMETIDO",
+      label: "Submetido",
+      background: "#f0f9ff",
+      color: "#0369a1",
+      border: "#bae6fd",
+      icon: <BiTimeFive size={17} />,
+    };
+  }
+
+  if (valor.includes("CANCEL")) {
     return {
       tipo: "CANCELADO",
       label: "Cancelado",
@@ -829,6 +889,16 @@ function HistoricoCard({
           {formatarData(
             candidatura
               .data_submissao
+          )}
+        </span>
+
+        <span>
+          Avaliado em:{" "}
+          {formatarDataHora(
+            candidatura
+              .data_avaliacao_sll ||
+              candidatura
+                .data_entrada_historico
           )}
         </span>
 
