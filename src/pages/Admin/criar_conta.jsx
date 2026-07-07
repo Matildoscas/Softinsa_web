@@ -26,7 +26,7 @@ function CriarConta() {
     funcao: "Consultor",
     id_areas: "",
     id_serviceline: "",
-    estado_conta: "ATIVO",
+    estado_conta: "PENDENTE_ATIVACAO",
     notas: "",
   });
 
@@ -178,10 +178,11 @@ function CriarConta() {
         id_serviceline: form.id_serviceline
           ? Number(form.id_serviceline)
           : null,
-        notas: form.notas.trim() || null,
       });
 
-      setSucesso("Conta criada com sucesso.");
+      setSucesso(
+        "Conta criada com sucesso. Foi enviado um email para ativação e troca obrigatória da password."
+      );
 
       setTimeout(() => {
         navigate("/admin/contas");
@@ -257,7 +258,7 @@ function CriarConta() {
               title="Será ativado quando a funcionalidade de email estiver pronta"
             >
               <BiEnvelope size={18} />
-              Envio de email pendente
+              Email de ativação será enviado
             </button>
           </div>
 

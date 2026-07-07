@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Spinner } from "react-bootstrap";
+import { Button, Spinner, Modal } from "react-bootstrap";
 import { HiOutlineArrowLeft } from "react-icons/hi";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaLinkedinIn } from "react-icons/fa";
@@ -10,12 +10,46 @@ import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/right_sidebar.jsx";
 import LeftSidebar from "../../components/left_sidebar.jsx";
 import api from "../../services/api.js";
-import BadgeImage from "../../components/badge_image.jsx";
+import BadgeImage, {
+  obterImagemBadge,
+} from "../../components/badge_image.jsx";
 import {
   obterBonusBadge,
 } from "../../utils/badgeBonus.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
+
+function escaparHtml(valor) {
+  return String(valor ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function tornarUrlAbsoluta(url) {
+  if (!url) {
+    return "";
+  }
+
+  const valor =
+    String(url).trim();
+
+  if (
+    valor.startsWith("http://") ||
+    valor.startsWith("https://") ||
+    valor.startsWith("data:image/")
+  ) {
+    return valor;
+  }
+
+  if (valor.startsWith("/")) {
+    return `${window.location.origin}${valor}`;
+  }
+
+  return valor;
+}
 
 function BadgeDetailPage() {
   const navigate = useNavigate();
@@ -36,6 +70,26 @@ function BadgeDetailPage() {
     pode_publicar: false,
     consentimento: null,
   });
+
+  const [
+    mostrarAssinatura,
+    setMostrarAssinatura,
+  ] = useState(false);
+
+  const [
+    assinaturaCopiada,
+    setAssinaturaCopiada,
+  ] = useState(false);
+
+  const [
+    urlCertificadoAssinatura,
+    setUrlCertificadoAssinatura,
+  ] = useState("");
+
+  const [
+    dadosUtilizador,
+    setDadosUtilizador,
+  ] = useState(null);
 
   const [
     linkedinUrl,
@@ -202,10 +256,14 @@ function BadgeDetailPage() {
 
     setLoading(true);
 
+    setDadosUtilizador(userData);
+
     Promise.all([
-        api.get("/badges/todos"),
-        api.get(`/badges/conquistados/${userId}`),
-        api
+      api.get("/badges/todos"),
+
+      api.get(`/badges/conquistados/${userId}`),
+
+      api
         .get(
           `/consentimentos-badge/${userId}/${id}`
         )
@@ -216,9 +274,18 @@ function BadgeDetailPage() {
             pode_publicar: false,
             consentimento: null,
           },
-        }))
+        })),
+
+      api
+        .get(`/utilizadores/${userId}`)
+        .catch(() => ({
+          data: userData,
+        })),
     ])
-        .then(([todosRes, conquistadosRes,  consentimentoRes]) => {
+        .then(([todosRes, conquistadosRes, consentimentoRes, utilizadorRes]) => {
+          setDadosUtilizador(
+            utilizadorRes?.data || userData
+          );
         const dados = Array.isArray(todosRes.data) ? todosRes.data : [];
         const badgesAgrupados = removerDuplicadosComRequisitos(dados);
 
@@ -539,35 +606,228 @@ const revogarPublicacao =
     }
   };
 
-  const partilharLinkedin =
-    () => {
-      if (
-        !consentimento
-          ?.pode_publicar
-      ) {
-        alert(
-          "Para partilhar este badge publicamente, tens de autorizar a publicação RGPD deste badge."
+  const obterUrlPublicaCertificado =
+  async () => {
+    const userId =
+      obterUserId();
+
+    if (!userId) {
+      return "";
+    }
+
+    const idHistoricoDireto =
+      conquistadoBadge
+        ?.id_candidatura_historico ||
+      conquistadoBadge
+        ?.id_historico ||
+      conquistadoBadge
+        ?.idHistorico;
+
+    if (idHistoricoDireto) {
+      return `${window.location.origin}/verificar/CERT-${idHistoricoDireto}-${userId}`;
+    }
+
+    try {
+      const response =
+        await api.get(
+          `/certificados/disponiveis/${userId}`
         );
 
-        return;
+      const lista =
+        Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.certificados)
+            ? response.data.certificados
+            : Array.isArray(response.data?.data)
+              ? response.data.data
+              : [];
+
+      const certificado =
+        lista.find((item) => {
+          const idBadgeCert =
+            item.id_badge_modelo ||
+            item.id_badge ||
+            item.badge_id;
+
+          return (
+            Number(idBadgeCert) ===
+            Number(badge?.id || id)
+          );
+        });
+
+      const idHistorico =
+        certificado
+          ?.id_candidatura_historico ||
+        certificado
+          ?.id_historico ||
+        certificado
+          ?.idHistorico;
+
+      if (!idHistorico) {
+        return "";
       }
 
-      const texto =
-        encodeURIComponent(
-          `Conquistei o badge ${badge.nome} na Softinsa Badges.`
+      return `${window.location.origin}/verificar/CERT-${idHistorico}-${userId}`;
+    } catch (err) {
+      console.error(
+        "Erro ao obter certificado para LinkedIn:",
+        err
+      );
+
+      return "";
+    }
+  };
+
+const garantirPublicacaoAutorizada =
+  async () => {
+    if (
+      consentimento?.pode_publicar
+    ) {
+      return true;
+    }
+
+    const confirmar =
+      window.confirm(
+        "Para partilhar este badge no LinkedIn, o badge ficará público e associado ao teu nome. Queres autorizar a publicação pública?"
+      );
+
+    if (!confirmar) {
+      return false;
+    }
+
+    const userId =
+      obterUserId();
+
+    if (!userId) {
+      navigate("/login", {
+        replace: true,
+      });
+
+      return false;
+    }
+
+    try {
+      setConsentimentoLoading(true);
+
+      await api.post(
+        "/consentimentos-badge/autorizar",
+        {
+          id_utilizador:
+            userId,
+
+          id_badge_modelo:
+            badge.id,
+
+          id_candidatura_pedido:
+            conquistadoBadge
+              ?.id_candidatura_pedido ||
+            null,
+
+          linkedin_url:
+            linkedinUrl.trim(),
+        }
+      );
+
+      const atualizado =
+        await api.get(
+          `/consentimentos-badge/${userId}/${badge.id}`
         );
 
-      const url =
-        encodeURIComponent(
-          window.location.href
-        );
+      setConsentimento(
+        atualizado.data
+      );
 
+      setLinkedinUrl(
+        atualizado.data
+          ?.consentimento
+          ?.linkedin_url ||
+        ""
+      );
+
+      return true;
+    } catch (err) {
+      console.error(
+        "Erro ao autorizar publicação para LinkedIn:",
+        err
+      );
+
+      alert(
+        err.response?.data?.error ||
+        "Não foi possível autorizar a publicação pública do badge."
+      );
+
+      return false;
+    } finally {
+      setConsentimentoLoading(false);
+    }
+  };
+
+const partilharLinkedin =
+  async () => {
+    if (!conquistado) {
+      alert(
+        "Só podes partilhar badges que já conquistaste."
+      );
+
+      return;
+    }
+
+    if (!badge) {
+      alert(
+        "Não foi possível carregar os dados do badge."
+      );
+
+      return;
+    }
+
+    const autorizado =
+      await garantirPublicacaoAutorizada();
+
+    if (!autorizado) {
+      return;
+    }
+
+    const urlBadge =
+      obterUrlPublicaBadge();
+
+    if (!urlBadge) {
+      alert(
+        "Não foi possível gerar o link público do badge."
+      );
+
+      return;
+    }
+
+    const urlCertificado =
+      await obterUrlPublicaCertificado();
+
+    const texto =
+      [
+        `Conquistei o badge "${badge.nome}" na Softinsa Academy!`,
+        "",
+        `Badge público: ${urlBadge}`,
+        urlCertificado
+          ? `Certificado: ${urlCertificado}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+    const linkedinShareUrl =
+      `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(texto)}`;
+
+    const janela =
       window.open(
-        `https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${texto}`,
+        linkedinShareUrl,
         "_blank",
         "noopener,noreferrer"
       );
-    };
+
+    if (!janela) {
+      window.location.href =
+        linkedinShareUrl;
+    }
+  };
 
     const obterUrlPublicaBadge =
   () => {
@@ -637,6 +897,355 @@ const abrirBadgePublico =
     navigate(
       `/badges/${userId}/${idBadge}`
     );
+  };
+
+const obterDadosAssinatura =
+  () => {
+    const storedUser =
+      localStorage.getItem("user");
+
+    let userLocal = {};
+
+    try {
+      userLocal =
+        storedUser
+          ? JSON.parse(storedUser)
+          : {};
+    } catch {
+      userLocal = {};
+    }
+
+    const dados =
+      dadosUtilizador ||
+      userLocal ||
+      {};
+
+    const nome =
+      dados.nome_completo ||
+      dados.nome ||
+      dados.name ||
+      "Consultor/a Softinsa";
+
+    const email =
+      dados.email_softinsa ||
+      dados.email ||
+      dados.emailSoftinsa ||
+      "";
+
+    const cargo =
+      dados.departamento ||
+      dados.tipo_utilizador ||
+      "Consultor/a";
+
+    const area =
+      badge?.nome_area ||
+      "";
+
+    const cargoCompleto =
+      area &&
+      !String(cargo)
+        .toLowerCase()
+        .includes(
+          String(area).toLowerCase()
+        )
+        ? `${cargo} - ${area}`
+        : cargo;
+
+    return {
+      nome,
+      email,
+      cargoCompleto,
+    };
+  };
+
+const gerarAssinaturaTexto =
+  () => {
+    const {
+      nome,
+      email,
+      cargoCompleto,
+    } = obterDadosAssinatura();
+
+    const urlBadge =
+      obterUrlPublicaBadge();
+
+    const partes = [
+      nome,
+      cargoCompleto,
+      email,
+      "",
+      `Badge conquistado: ${badge?.nome || "Badge"}`,
+      "Badge verificado pela Softinsa Academy",
+      "",
+      urlBadge
+        ? `Ver badge público: ${urlBadge}`
+        : "",
+      urlCertificadoAssinatura
+        ? `Ver certificado: ${urlCertificadoAssinatura}`
+        : "",
+    ];
+
+    return partes
+      .filter(Boolean)
+      .join("\n");
+  };
+
+const gerarAssinaturaHtml =
+  () => {
+    const {
+      nome,
+      email,
+      cargoCompleto,
+    } = obterDadosAssinatura();
+
+    const urlBadge =
+      obterUrlPublicaBadge();
+
+    const imagemBadge =
+      tornarUrlAbsoluta(
+        obterImagemBadge(badge)
+      );
+
+    const nomeBadge =
+      badge?.nome ||
+      badge?.nome_badge ||
+      "Badge";
+
+    const imagemHtml =
+      imagemBadge
+        ? `
+          <a href="${escaparHtml(urlBadge)}" style="text-decoration:none;">
+            <img
+              src="${escaparHtml(imagemBadge)}"
+              alt="${escaparHtml(nomeBadge)}"
+              width="64"
+              height="64"
+              style="
+                width:64px;
+                height:64px;
+                object-fit:contain;
+                border-radius:50%;
+                border:1px solid #dbeafe;
+                background:#eff6ff;
+                padding:6px;
+                display:block;
+              "
+            />
+          </a>
+        `
+        : `
+          <div style="
+            width:64px;
+            height:64px;
+            border-radius:50%;
+            border:1px solid #dbeafe;
+            background:#eff6ff;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:26px;
+          ">
+            🏅
+          </div>
+        `;
+
+    return `
+      <table cellpadding="0" cellspacing="0" border="0"
+        style="
+          font-family: Arial, sans-serif;
+          color:#111827;
+          border-collapse:collapse;
+          max-width:520px;
+        ">
+        <tr>
+          <td style="padding-right:14px; vertical-align:top;">
+            ${imagemHtml}
+          </td>
+
+          <td style="
+            vertical-align:top;
+            border-left:3px solid #4470AF;
+            padding-left:14px;
+          ">
+            <div style="
+              font-size:15px;
+              font-weight:bold;
+              color:#111827;
+              line-height:1.3;
+            ">
+              ${escaparHtml(nome)}
+            </div>
+
+            <div style="
+              font-size:13px;
+              color:#475569;
+              margin-top:2px;
+              line-height:1.4;
+            ">
+              ${escaparHtml(cargoCompleto)}
+            </div>
+
+            ${
+              email
+                ? `
+                  <div style="
+                    font-size:13px;
+                    color:#475569;
+                    margin-top:2px;
+                  ">
+                    ${escaparHtml(email)}
+                  </div>
+                `
+                : ""
+            }
+
+            <div style="
+              margin-top:10px;
+              padding-top:8px;
+              border-top:1px solid #e5e7eb;
+            ">
+              <div style="
+                font-size:13px;
+                font-weight:bold;
+                color:#111827;
+              ">
+                🏅 ${escaparHtml(nomeBadge)}
+              </div>
+
+              <div style="
+                font-size:12px;
+                color:#64748b;
+                margin-top:2px;
+              ">
+                Badge verificado pela Softinsa Academy
+              </div>
+
+              <div style="
+                font-size:12px;
+                margin-top:6px;
+              ">
+                ${
+                  urlBadge
+                    ? `
+                      <a href="${escaparHtml(urlBadge)}"
+                        style="color:#2563eb; text-decoration:none; font-weight:bold;">
+                        Ver badge público
+                      </a>
+                    `
+                    : ""
+                }
+
+                ${
+                  urlBadge &&
+                  urlCertificadoAssinatura
+                    ? `
+                      <span style="color:#cbd5e1;"> | </span>
+                    `
+                    : ""
+                }
+
+                ${
+                  urlCertificadoAssinatura
+                    ? `
+                      <a href="${escaparHtml(urlCertificadoAssinatura)}"
+                        style="color:#16a34a; text-decoration:none; font-weight:bold;">
+                        Ver certificado
+                      </a>
+                    `
+                    : ""
+                }
+              </div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    `;
+  };
+
+const abrirModalAssinatura =
+  async () => {
+    if (
+      !consentimento?.pode_publicar
+    ) {
+      alert(
+        "Para usares este badge numa assinatura de email, tens de autorizar primeiro a publicação pública deste badge."
+      );
+
+      return;
+    }
+
+    const urlCertificado =
+      await obterUrlPublicaCertificado();
+
+    setUrlCertificadoAssinatura(
+      urlCertificado || ""
+    );
+
+    setAssinaturaCopiada(false);
+    setMostrarAssinatura(true);
+  };
+
+const copiarAssinatura =
+  async () => {
+    const html =
+      gerarAssinaturaHtml();
+
+    const texto =
+      gerarAssinaturaTexto();
+
+    try {
+      if (
+        navigator.clipboard &&
+        window.ClipboardItem
+      ) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html":
+              new Blob(
+                [html],
+                {
+                  type: "text/html",
+                }
+              ),
+
+            "text/plain":
+              new Blob(
+                [texto],
+                {
+                  type: "text/plain",
+                }
+              ),
+          }),
+        ]);
+      } else {
+        await navigator
+          .clipboard
+          .writeText(texto);
+      }
+
+      setAssinaturaCopiada(true);
+
+      setTimeout(() => {
+        setAssinaturaCopiada(false);
+      }, 1800);
+    } catch (err) {
+      console.error(
+        "Erro ao copiar assinatura:",
+        err
+      );
+
+      try {
+        await navigator
+          .clipboard
+          .writeText(texto);
+
+        setAssinaturaCopiada(true);
+      } catch {
+        alert(
+          "Não foi possível copiar a assinatura."
+        );
+      }
+    }
   };
 
   return (
@@ -921,21 +1530,7 @@ const abrirBadgePublico =
 
     <button
       style={actionBtn}
-      onClick={() => {
-        if (
-          !consentimento?.pode_publicar
-        ) {
-          alert(
-            "Para usar este badge na assinatura pública, autoriza primeiro a publicação deste badge."
-          );
-
-          return;
-        }
-
-        alert(
-          "Assinatura com badge pronta para ser implementada."
-        );
-      }}
+      onClick={abrirModalAssinatura}
     >
       <HiOutlineMail
         size={17}
@@ -993,6 +1588,84 @@ const abrirBadgePublico =
 
         <RightSidebar />
       </div>
+
+       <Modal
+        show={mostrarAssinatura}
+        onHide={() =>
+          setMostrarAssinatura(false)
+        }
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Assinatura de email com badge
+          </Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <p style={signatureHelp}>
+            Copia esta assinatura e cola-a nas definições de assinatura do Gmail, Outlook ou outro cliente de email.
+          </p>
+
+          <div style={signaturePreviewBox}>
+            <div
+              dangerouslySetInnerHTML={{
+                __html:
+                  gerarAssinaturaHtml(),
+              }}
+            />
+          </div>
+
+          <div style={signatureInstructions}>
+            <strong>Como usar:</strong>
+            <br />
+            1. Clica em “Copiar assinatura”.
+            <br />
+            2. Abre as definições do teu email.
+            <br />
+            3. Vai à zona de assinatura.
+            <br />
+            4. Cola a assinatura e guarda.
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <label style={signatureLabel}>
+              Versão em texto simples
+            </label>
+
+            <textarea
+              readOnly
+              value={gerarAssinaturaTexto()}
+              style={signatureTextarea}
+            />
+          </div>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              setMostrarAssinatura(false)
+            }
+          >
+            Fechar
+          </Button>
+
+          <Button
+            onClick={copiarAssinatura}
+            style={{
+              background: "#4470AF",
+              border: "none",
+            }}
+          >
+            {assinaturaCopiada
+              ? "Assinatura copiada!"
+              : "Copiar assinatura"}
+          </Button>
+        </Modal.Footer>
+      </Modal>      
+
     </div>
   );
 }
@@ -1109,6 +1782,52 @@ function nivelParaLetra(idNivel) {
 
   return "";
 }
+
+const signatureHelp = {
+  fontSize: 14,
+  color: "#475569",
+  lineHeight: 1.6,
+  marginBottom: 14,
+};
+
+const signaturePreviewBox = {
+  border: "1px solid #dbe3ef",
+  borderRadius: 12,
+  background: "#ffffff",
+  padding: 18,
+  marginBottom: 14,
+  overflowX: "auto",
+};
+
+const signatureInstructions = {
+  background: "#f8fafc",
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: 14,
+  color: "#475569",
+  fontSize: 13,
+  lineHeight: 1.6,
+};
+
+const signatureLabel = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#111827",
+  marginBottom: 6,
+  display: "block",
+};
+
+const signatureTextarea = {
+  width: "100%",
+  minHeight: 110,
+  border: "1px solid #d1d5db",
+  borderRadius: 10,
+  padding: 12,
+  fontSize: 12,
+  color: "#475569",
+  resize: "vertical",
+  outline: "none",
+};
 
 const publicLinkBox = {
   width: "100%",

@@ -6,6 +6,8 @@ import RegisterPage from './pages/Login/register.jsx';
 import AreaPage from './pages/Login/area_register.jsx';
 import BadgePublicoIndividualPage from './pages/Galeria_Pública/BadgePublicoIndividual.jsx';
 import VerificarCertificadoPage from './pages/Galeria_Pública/VerificarCertificado.jsx';
+import ConfirmarEmailPage from './pages/Login/confirmar_email.jsx';
+import AtivarContaPage from './pages/Login/ativar_conta.jsx';
 
 import PaginaPrincipal from './pages/Consultor/Dashboard_Consultor.jsx';
 import PaginaPerfil from './pages/Consultor/PaginaPerfil_Consultor.jsx';
@@ -20,6 +22,8 @@ import BadgeDetailPage from './pages/Consultor/informacao_badge.jsx';
 import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
+import ConfiguracaoAssinaturaPage from './pages/Consultor/configuracao_assinatura.jsx';
+import IntegracaoSoftinsaPage from './pages/Consultor/integracao_softinsa.jsx';
 
 import GestaoContas from "./pages/Admin/gestao_contas.jsx";
 import EditarConta from "./pages/Admin/editar_contas.jsx";
@@ -90,6 +94,8 @@ function App() {
 
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
+        <Route path="/confirmar-email" element={<ConfirmarEmailPage />}/>
+        <Route path="/ativar-conta" element={<AtivarContaPage />}/>
 
         // Rotas Consultor
         <Route path="/pag_consultor" element={<PaginaPrincipal />} />
@@ -104,6 +110,9 @@ function App() {
         <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
         <Route path="/certificado/:id" element={<CertificadoPage />} />
         <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
+        <Route path="/configurar-assinatura" element={<ConfiguracaoAssinaturaPage />} />
+        <Route path="/softinsa" element={<IntegracaoSoftinsaPage />} />
+        
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
 

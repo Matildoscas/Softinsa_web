@@ -172,11 +172,26 @@ function BadgePublicoIndividualPage() {
     setCopiado,
   ] = useState(false);
 
+  const [
+    urlCertificado,
+    setUrlCertificado,
+  ] = useState("");
+
+  const FRONTEND_PUBLIC_URL =
+    (
+      import.meta.env.VITE_PUBLIC_APP_URL ||
+      window.location.origin
+    ).replace(/\/$/, "");
+
   const urlPublica =
     useMemo(
       () =>
-        window.location.href,
-      []
+        `${FRONTEND_PUBLIC_URL}/badges/${userId}/${badgeId}`,
+      [
+        FRONTEND_PUBLIC_URL,
+        userId,
+        badgeId,
+      ]
     );
 
   useEffect(() => {
@@ -194,29 +209,77 @@ function BadgePublicoIndividualPage() {
     setLoading(true);
     setErro("");
 
+    Promise
+  .all([
+    api.get(
+      `/badges/publico/${userId}/${badgeId}`
+    ),
+
     api
-      .get(
-        `/badges/publico/${userId}/${badgeId}`
-      )
-      .then((response) => {
+    .get(
+      `/certificados/publico/badge/${userId}/${badgeId}`
+    )
+    .catch(() => ({
+      data: null,
+    })),
+    ])
+    .then(
+      ([
+        badgeResponse,
+        certificadosResponse,
+      ]) => {
+        const badgeAtual =
+          badgeResponse.data?.badge ||
+          null;
+
         setBadge(
-          response.data?.badge ||
-          null
-        );
-      })
-      .catch((err) => {
-        console.error(
-          "Erro ao carregar badge público:",
-          err
+          badgeAtual
         );
 
-        setErro(
-          "Este badge público não existe ou não está autorizado para publicação."
-        );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+        const certificado =
+          certificadosResponse
+            .data
+            ?.certificado ||
+          null;
+
+        if (certificado?.codigo_certificado) {
+          setUrlCertificado(
+            `${FRONTEND_PUBLIC_URL}/verificar/${certificado.codigo_certificado}`
+          );
+        } else {
+          setUrlCertificado("");
+        }
+
+        const idHistorico =
+          certificado
+            ?.id_candidatura_historico ||
+          certificado
+            ?.id_historico ||
+          certificado
+            ?.idHistorico;
+
+        if (idHistorico) {
+          setUrlCertificado(
+            `${window.location.origin}/verificar/CERT-${idHistorico}-${userId}`
+          );
+        } else {
+          setUrlCertificado("");
+        }
+      }
+    )
+    .catch((err) => {
+      console.error(
+        "Erro ao carregar badge público:",
+        err
+      );
+
+      setErro(
+        "Este badge público não existe ou não está autorizado para publicação."
+      );
+    })
+    .finally(() => {
+      setLoading(false);
+    });
   }, [
     userId,
     badgeId,
@@ -247,19 +310,49 @@ function BadgePublicoIndividualPage() {
       }
     };
 
-  const partilharLinkedin =
-    () => {
-      const url =
-        encodeURIComponent(
-          urlPublica
-        );
+  const partilharLinkedin = async () => {
+    if (!badge) {
+      alert("Não foi possível carregar os dados do badge.");
+      return;
+    }
 
-      window.open(
-        `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
-        "_blank",
-        "noopener,noreferrer"
+    const nomeBadge =
+      badge.nome_badge ||
+      badge.nome ||
+      "badge";
+
+    const textoParaPublicacao = [
+      `Conquistei o badge "${nomeBadge}" na Softinsa Academy!`,
+      "",
+      urlPublica,
+      urlCertificado
+        ? `Certificado público: ${urlCertificado}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    try {
+      await copiarTexto(textoParaPublicacao);
+    } catch {
+      console.warn(
+        "Não foi possível copiar o texto para a área de transferência."
       );
-    };
+    }
+
+    const linkedinUrl =
+      `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(textoParaPublicacao)}`;
+
+    const janela = window.open(
+      linkedinUrl,
+      "_blank",
+      "noopener,noreferrer"
+    );
+
+    if (!janela) {
+      window.location.href = linkedinUrl;
+    }
+  };
 
   if (loading) {
     return (
@@ -535,6 +628,23 @@ function BadgePublicoIndividualPage() {
                   <FaLinkedinIn size={16} />
                   Partilhar no LinkedIn
                 </Button>
+
+                {urlCertificado && (
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      window.open(
+                        urlCertificado,
+                        "_blank",
+                        "noopener,noreferrer"
+                      )
+                    }
+                    style={primaryButton}
+                  >
+                    <BiShieldAlt2 size={17} />
+                    Ver certificado público
+                  </Button>
+                )}
 
                 {badge.linkedin_url && (
                   <Button
