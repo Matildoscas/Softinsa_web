@@ -1254,6 +1254,13 @@ async function rejeitarCandidatura() {
     Object.keys(decisoesPendentes)
       .length > 0;
 
+  const temRejeicoesPendentes =
+    Object.values(
+      decisoesPendentes
+    ).some(
+      (estado) => estado === "REJEITADO"
+    );
+
   function definirDecisaoEvidencia(
     evidencia,
     estado
@@ -1302,6 +1309,16 @@ async function rejeitarCandidatura() {
       return;
     }
 
+    if (
+      temRejeicoesPendentes &&
+      !motivoRejeicao.trim()
+    ) {
+      setErroGuardarDecisoes(
+        "Indica o motivo da rejeição antes de confirmar."
+      );
+      return;
+    }
+
     try {
       setAGuardarDecisoes(true);
       setErroGuardarDecisoes("");
@@ -1315,11 +1332,18 @@ async function rejeitarCandidatura() {
         // Guardamos de forma sequencial para evitar concorrência em inserções auxiliares do backend.
         await api.put(
           `/sll/evidencias/${idEvidencia}/avaliar`,
-          { estado }
+          {
+            estado,
+            motivo:
+              estado === "REJEITADO"
+                ? motivoRejeicao.trim()
+                : undefined,
+          }
         );
       }
 
       setDecisoesPendentes({});
+      setMotivoRejeicao("");
       await carregarDetalhe();
     } catch (err) {
       setErroGuardarDecisoes(
@@ -1559,6 +1583,50 @@ async function rejeitarCandidatura() {
                     >
                       {erroGuardarDecisoes}
                     </p>
+                  )}
+
+                  {temRejeicoesPendentes && (
+                    <div
+                      style={{
+                        width: "100%",
+                        marginBottom: 10,
+                      }}
+                    >
+                      <label
+                        htmlFor="motivo-rejeicao-evidencias"
+                        style={{
+                          display: "block",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#334155",
+                          marginBottom: 6,
+                        }}
+                      >
+                        Motivo da rejeição
+                      </label>
+
+                      <textarea
+                        id="motivo-rejeicao-evidencias"
+                        value={motivoRejeicao}
+                        onChange={(event) =>
+                          setMotivoRejeicao(
+                            event.target.value
+                          )
+                        }
+                        placeholder="Explica ao consultor o motivo das evidências rejeitadas."
+                        rows={3}
+                        style={{
+                          width: "100%",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          fontSize: 13,
+                          color: "#0f172a",
+                          background: "#fff",
+                          resize: "vertical",
+                        }}
+                      />
+                    </div>
                   )}
 
                   <Button
