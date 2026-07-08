@@ -880,7 +880,7 @@ const chartCard = {
   borderRadius: 14,
   padding: "20px 20px 10px",
   minHeight: 310,
-  marginBottom: 34,
+  marginBottom: 64,
 };
 
 const chartHeader = {

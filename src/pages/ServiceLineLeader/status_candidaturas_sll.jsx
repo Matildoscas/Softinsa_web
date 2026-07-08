@@ -160,13 +160,14 @@ function EstadoPrincipalChip({ titulo, valor }) {
     <div
       style={{
         ...estadoBloco,
-        padding: 12,
+        padding: 16,
+        minHeight: 86,
         background: chip.bg,
         border: `1px solid ${chip.border}`,
       }}
     >
       <div style={estadoTitulo}>{titulo}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: chip.color }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: chip.color }}>
         {chip.label}
       </div>
     </div>
