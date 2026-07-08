@@ -134,6 +134,31 @@ function formatarData(data) {
   );
 }
 
+function obterEstadoConta(estadoConta) {
+  const valor = String(estadoConta || "ATIVO")
+    .trim()
+    .toUpperCase();
+
+  if (
+    valor === "ATIVO" ||
+    valor === "ATIVA"
+  ) {
+    return {
+      label: "Ativo",
+      bg: "#dcfce7",
+      color: "#166534",
+      border: "#bbf7d0",
+    };
+  }
+
+  return {
+    label: "Inativo",
+    bg: "#fee2e2",
+    color: "#991b1b",
+    border: "#fecaca",
+  };
+}
+
 function limparNomeFicheiro(valor) {
   return String(valor || "consultor")
     .normalize("NFD")
@@ -1084,6 +1109,10 @@ function ConsultorCard({
   onPdf,
   onExcel,
 }) {
+  const estadoConta = obterEstadoConta(
+    consultor.estado_conta
+  );
+
   return (
     <article style={card}>
       <div style={consultorTopo}>
@@ -1101,6 +1130,21 @@ function ConsultorCard({
 
           <div style={cargoTexto}>
             Consultor
+          </div>
+
+          <div style={estadoContaLinha}>
+            <span
+              style={{
+                ...estadoContaChip,
+                background:
+                  estadoConta.bg,
+                color:
+                  estadoConta.color,
+                border: `1px solid ${estadoConta.border}`,
+              }}
+            >
+              {estadoConta.label}
+            </span>
           </div>
 
           <div style={emailTexto}>
@@ -1383,6 +1427,21 @@ const cargoTexto = {
   marginTop: 2,
   fontSize: 11,
   color: "#64748b",
+};
+
+const estadoContaLinha = {
+  marginTop: 6,
+};
+
+const estadoContaChip = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 999,
+  fontSize: 10,
+  fontWeight: 700,
+  padding: "3px 10px",
+  whiteSpace: "nowrap",
 };
 
 const emailTexto = {

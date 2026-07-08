@@ -695,7 +695,7 @@ const welcomeAvatar = {
 
 const peopleSection = {
   display: "block",
-  marginTop: 26,
+  marginTop: 0,
   marginBottom: 30,
 };
 
@@ -880,6 +880,7 @@ const chartCard = {
   borderRadius: 14,
   padding: "20px 20px 10px",
   minHeight: 310,
+  marginBottom: 34,
 };
 
 const chartHeader = {

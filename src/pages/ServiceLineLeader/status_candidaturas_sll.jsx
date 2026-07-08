@@ -450,12 +450,14 @@ export default function StatusCandidaturasSll() {
                     <div style={estadoPrincipalWrapper}>
                       <EstadoPrincipalChip titulo="Estado Geral" valor={detalhe.status?.estado_geral} />
                     </div>
-                    <div style={estadoGrid}>
-                      <EstadoChip titulo="Pedido" valor={detalhe.status?.estado_candidatura_pedido} />
-                      <EstadoChip titulo="TM" valor={detalhe.status?.estado_candidaturatm} />
-                      <EstadoChip titulo="SLL" valor={detalhe.status?.estado_candidaturasll} />
-                      <EstadoChip titulo="Etapa Atual" valor={detalhe.status?.fase_geral} />
-                      <EstadoChip titulo="Histórico" valor={detalhe.status?.estado_final} />
+                    <div style={estadoGridFases}>
+                      <EstadoChip titulo="Estado do Pedido" valor={detalhe.status?.estado_candidatura_pedido} />
+                      <EstadoChip titulo="Estado TM" valor={detalhe.status?.estado_candidaturatm} />
+                      <EstadoChip titulo="Estado SLL" valor={detalhe.status?.estado_candidaturasll} />
+                    </div>
+                    <div style={estadoRodapeGrid}>
+                      <EstadoChip titulo="Etapa do Processo" valor={detalhe.status?.fase_geral} />
+                      <EstadoChip titulo="Resultado Histórico" valor={detalhe.status?.estado_final} />
                     </div>
                   </div>
 
@@ -731,9 +733,20 @@ const secaoTitulo = {
   marginBottom: 8,
 };
 
-const estadoGrid = {
+const estadoPrincipalWrapper = {
+  marginBottom: 10,
+};
+
+const estadoGridFases = {
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(120px, 1fr))",
+  gap: 8,
+  marginBottom: 8,
+};
+
+const estadoRodapeGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(140px, 1fr))",
   gap: 8,
 };
 
