@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { Card, Button, Spinner } from 'react-bootstrap';
-import { BiLoader, BiBook, BiUserCircle, BiMedal, BiStar, BiMenu } from 'react-icons/bi';
+import { Container, Row, Col, ListGroup, Card, Button, ProgressBar, Spinner } from 'react-bootstrap';
+import { BiLoader, BiBook, BiBell, BiUserCircle, BiMedal, BiStar, BiNote, BiGrid, BiMenu, BiSearch } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../../services/api.js'; 
+import api from '../../services/api.js'; // Certifica-te que o caminho está correto
 
 // Componentes Estruturais
-import Header from "../../components/Header.jsx";
-import LeftSidebar from "../../components/LeftSidebar.jsx";
-import RightSidebar from "../../components/RightSidebar.jsx";
+import Header from '../../components/header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 
 function PaginaPerfil() {
     const navigate = useNavigate();
@@ -23,12 +23,12 @@ function PaginaPerfil() {
         if (storedUser) {
             const userData = JSON.parse(storedUser);
             setUser(userData);
-            const userId = userData.id_utilizador; // Alinhado com a nova API
+            const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
 
             setLoading(true);
             Promise.all([
                 api.get(`/dashboard/${userId}`),
-                api.get(`/badges/conquistados/${userId}`)
+                api.get(`/badges/conquistados/${userId}`) // Chamada à nova rota criada acima
             ]).then(([dashboardRes, badgesRes]) => {
                 setStats(dashboardRes.data);               
                 // Agora os dados vêm diretamente da nova rota /conquistados
@@ -69,7 +69,7 @@ function PaginaPerfil() {
                         <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
                             <div>
                                 <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Olá, {user?.nome_completo || "Consultor"}!
+                                    Olá, {user?.nome_completo || user?.NOME_COMPLETO || "Consultor"}!
                                 </h5>
                                 <div className="d-flex gap-2">
                                     <div style={cardStyleBase}>
@@ -108,13 +108,13 @@ function PaginaPerfil() {
                         </Button>
                     </div>
 
-                    <BadgeSection title="Os seus Badges Conquistados" sub="Histórico de conquests na Softinsa:">
+                    <BadgeSection title="Os seus Badges Conquistados" sub="Histórico de conquistas na Softinsa:">
                         {badgesConquistados.length > 0 ? (
                             badgesConquistados.map((badge, index) => (
                                 <BadgeCard
                                     key={index}
-                                    name={badge.nome_badge || badge.nome}
-                                    desc={badge.descricao_badge || badge.descricao}
+                                    name={badge.nome}
+                                    desc={badge.descricao}
                                     points={badge.pontos}
                                     dateConquered={badge.data_atribuicao 
                                         ? new Date(badge.data_atribuicao).toLocaleDateString()
@@ -164,7 +164,7 @@ function BadgeSection({ title, sub, children }) {
     );
 }
 
-function BadgeCard({ name, desc, points, dateConquered }) {
+function BadgeCard({ name, desc, points, progress, dateConquered }) {
     return (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
             <div style={{ padding: '16px', display: 'flex', alignItems: 'start', gap: 20 }}>

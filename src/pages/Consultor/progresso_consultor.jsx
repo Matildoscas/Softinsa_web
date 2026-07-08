@@ -5,9 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js'; // Garante que o caminho está correto
 
 // Importação dos teus componentes estruturais
-import Header from "../../components/Header.jsx";
-import LeftSidebar from "../../components/LeftSidebar.jsx";
-import RightSidebar from "../../components/RightSidebar.jsx";
+import Header from '../../components/header.jsx';
+import RightSidebar from '../../components/RightSidebar.jsx';
+import LeftSidebar from '../../components/LeftSidebar.jsx';
 //import ImagemBadge from '../../assets/Cybersecurity_Badge.png';
 
 function ProgressoSection({ title, sub, children }) {

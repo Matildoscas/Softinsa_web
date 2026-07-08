@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, InputGroup, Alert, Spinner } from "react-bootstrap";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api"; 
+import api from "../../services/api"; // Importa a instância do Axios configurada anteriormente
 import ImagemLogin from "../../assets/imagem_login.png";
 
 function LoginPage() {
@@ -25,31 +25,21 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      // Chamada à API
       const response = await api.post("/auth/login", { email, password });
-
-      console.log("DADOS QUE A API MANDOU PRO LOGIN:", response.data);
-
       const data = response.data;
 
       if (data.token) {
         localStorage.setItem("token", data.token);
 
-        const apiUser = response.data.user;
-
-        const userEmail = apiUser.email || apiUser.email_utilizador || apiUser.EMAIL_SOFTINSA;
-        const userCargo = apiUser.cargo || 'TALENT_MANAGER'; 
-
+        const apiUser = data.user || {};
         const utilizadorSeguro = {
-          id_utilizador: data.user?.id_utilizador || data.user?.ID_UTILIZADOR,
-          nome_completo: data.user?.nome_completo || data.user?.NOME_COMPLETO,
-          email: data.user?.email || data.user?.EMAIL,
-          email_softinsa: data.user?.email_softinsa || data.user?.EMAIL_SOFTINSA,
-          estado_conta: data.user?.estado_conta || data.user?.ESTADO_CONTA,
-          tipo_utilizador: data.user?.tipo_utilizador || "utilizador",
+          id_utilizador: apiUser.id_utilizador || apiUser.ID_UTILIZADOR || data.id_utilizador || data.ID_UTILIZADOR,
+          nome_completo: apiUser.nome_completo || apiUser.NOME_COMPLETO || data.nome_completo || data.NOME_COMPLETO,
+          email: apiUser.email || apiUser.EMAIL || data.email || data.EMAIL,
+          email_softinsa: apiUser.email_softinsa || apiUser.EMAIL_SOFTINSA || data.email_softinsa || data.EMAIL_SOFTINSA,
+          estado_conta: apiUser.estado_conta || apiUser.ESTADO_CONTA || data.estado_conta || data.ESTADO_CONTA,
+          tipo_utilizador: apiUser.tipo_utilizador || data.tipo_utilizador || "utilizador",
         };
-
-        console.log("UTILIZADOR SEGURO:", utilizadorSeguro);
 
         localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
 
@@ -66,17 +56,22 @@ function LoginPage() {
           navigate("/talent_manager");
         } else if (tipo.includes("consultor")) {
           navigate("/pag_consultor");
+        } else {
+          navigate("/pag_consultor");
         }
+      } else {
+        setError(data.message || data.error || "Erro ao iniciar sessão.");
       }
     } catch (err) {
       console.error("Erro na tentativa de login:", err);
-      setLoading(false);
-      
-      if (err.response && err.response.status === 403) {
+
+      if (err.response?.status === 403) {
         setError("Confirme o seu email antes de iniciar sessão.");
       } else {
         setError(err.response?.data?.message || err.response?.data?.error || "Email ou password incorretos!");
       }
+    } finally {
+      setLoading(false);
     }
   };
 

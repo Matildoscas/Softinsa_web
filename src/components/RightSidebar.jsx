@@ -101,10 +101,9 @@ function RightSidebar() {
               <BiBell size={12} color="#2563eb" />
             </div>
             <div>
-              {/* Ajustado para chaves minúsculas do PostgreSQL */}
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{n.conteudo}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{n.conteudo || n.CONTEUDO}</div>
               <div style={{ fontSize: 11, color: '#9ca3af' }}>
-                {new Date(n.data_envio).toLocaleDateString()}
+                {new Date(n.data_envio || n.DATA_ENVIO).toLocaleDateString()}
               </div>
             </div>
           </div>

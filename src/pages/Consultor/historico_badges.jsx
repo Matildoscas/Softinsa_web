@@ -4,9 +4,9 @@ import { BiMedal, BiStar, BiUserCircle, BiBook, BiCheckCircle, BiXCircle, BiTime
 import { HiOutlineArrowLeft } from "react-icons/hi";
 import { useNavigate, Link } from "react-router-dom";
 
-import Header from "../../components/Header.jsx";
-import LeftSidebar from "../../components/LeftSidebar.jsx";
+import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
+import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
 
 function HistoricoBadgesPage() {

@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-// consultor
+
+
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
-import LoginPage from './pages/Login/Login.jsx';
-import RegisterPage from './pages/Login/Register.jsx';
+import LoginPage from './pages/Login/login.jsx';
+import RegisterPage from './pages/Login/register.jsx';
 import AreaPage from './pages/Login/AreaRegister.jsx';
 import PaginaPrincipal from './pages/Consultor/DashboardConsultor.jsx';
 import PaginaPerfil from './pages/Consultor/PaginaPerfilConsultor.jsx';
@@ -66,7 +67,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
 
-        {/* Rotas do Consultor */}
+        // Rotas Consultor
         <Route path="/pag_consultor" element={<PaginaPrincipal />} />
         <Route path="/perfil_consultor" element={<PaginaPerfil />} />
         <Route path="/notificacoes" element={<NotificacaoPage />} />
@@ -119,8 +120,6 @@ function App() {
         <Route path="/tm/consultores" element={<TM_consultores />} />
 
         
-        {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}
-        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );

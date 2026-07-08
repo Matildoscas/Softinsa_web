@@ -4,7 +4,7 @@ import { HiOutlineArrowLeft } from "react-icons/hi";
 import { useNavigate, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 
-import Header from "../../components/Header.jsx";
+import Header from "../../components/header.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import api from "../../services/api.js";

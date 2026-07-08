@@ -6,9 +6,9 @@ import { FaLinkedinIn } from "react-icons/fa";
 import { HiOutlineDownload, HiOutlineMail } from "react-icons/hi";
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
 
-import Header from "../../components/Header.jsx";
-import LeftSidebar from "../../components/LeftSidebar.jsx";
+import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
+import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
 
 const niveis = ["A", "B", "C", "D", "E"];

@@ -4,7 +4,7 @@ import { HiOutlineArrowLeft } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import { BiMedal, BiGrid, BiMenu } from "react-icons/bi";
 
-import Header from "../../components/Header.jsx";
+import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
