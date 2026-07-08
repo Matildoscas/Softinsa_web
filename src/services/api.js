@@ -43,13 +43,16 @@ export default api;
 
 /*
 import axios from 'axios';
+import {
+  resolveDebugEnabledForRequest,
+} from './debugMode.js';
 
 const api = axios.create({
   // 🛑 COMENTADO TEMPORARIAMENTE (Para não apagar o link da Render):
-  baseURL: 'https://softinsa-api.onrender.com/api' 
+  //baseURL: 'https://softinsa-api.onrender.com/api' 
 
   // 🚀 ATIVADO LOCALMENTE: Aponta para o teu servidor Node.js que corre no teu PC
-  //baseURL: 'http://localhost:3000/api' 
+  baseURL: 'http://localhost:3000/api' 
 });
 
 // 🎯 INTERCEPTOR: Injeta automaticamente o Token JWT em todas as chamadas HTTP
@@ -61,6 +64,14 @@ api.interceptors.request.use(
     // 2. Se o token existir, injeta-o no cabeçalho com o padrão "Bearer token"
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (resolveDebugEnabledForRequest()) {
+      config.headers['x-debug-mode'] = 'true';
+      config.headers['x-debug-scope'] = 'sll';
+    } else if (config.headers['x-debug-mode']) {
+      delete config.headers['x-debug-mode'];
+      delete config.headers['x-debug-scope'];
     }
     
     return config;

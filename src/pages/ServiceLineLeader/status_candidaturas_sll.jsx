@@ -1,0 +1,717 @@
+import { useEffect, useMemo, useState } from "react";
+import { BiBadge, BiEnvelope, BiRefresh, BiSearch, BiUserCircle } from "react-icons/bi";
+import { useNavigate } from "react-router-dom";
+
+import api from "../../services/api.js";
+import Header from "../../components/Header.jsx";
+import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
+import SllRightSidebar from "../../components/sll_right_sidebar.jsx";
+
+function obterUtilizadorGuardado() {
+  const guardado = localStorage.getItem("user");
+
+  if (!guardado) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(guardado);
+  } catch {
+    return null;
+  }
+}
+
+function normalizarEstado(valor) {
+  return String(valor || "").trim().toUpperCase();
+}
+
+function formatarDataHora(data) {
+  if (!data) {
+    return "-";
+  }
+
+  const date = new Date(data);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleString("pt-PT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function chipEstado(estado) {
+  const valor = normalizarEstado(estado);
+
+  if (valor.includes("APROV")) {
+    return { label: estado || "APROVADO", bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
+  }
+
+  if (valor.includes("REJEIT") || valor.includes("RECUS")) {
+    return { label: estado || "REJEITADO", bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
+  }
+
+  if (valor.includes("AGUARDA") || valor.includes("PEND")) {
+    return { label: estado || "PENDENTE", bg: "#fef3c7", color: "#92400e", border: "#fde68a" };
+  }
+
+  return { label: estado || "-", bg: "#e5e7eb", color: "#475569", border: "#cbd5e1" };
+}
+
+function candidaturaEstaFinalizada(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("FINAL") ||
+    fase.includes("HISTORICO") ||
+    fase.includes("FINALIZ") ||
+    fase.includes("CONCLUID")
+  );
+}
+
+function candidaturaEstaObtida(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("APROV") &&
+    (
+      estado.includes("FINAL") ||
+      fase.includes("HISTORICO") ||
+      fase.includes("FINALIZ") ||
+      fase.includes("CONCLUID")
+    )
+  );
+}
+
+function candidaturaEstaEmProcesso(item) {
+  return !candidaturaEstaFinalizada(item);
+}
+
+function EstadoChip({ titulo, valor }) {
+  const chip = chipEstado(valor);
+
+  return (
+    <div style={estadoBloco}>
+      <div style={estadoTitulo}>{titulo}</div>
+      <span
+        style={{
+          ...estadoChip,
+          background: chip.bg,
+          color: chip.color,
+          border: `1px solid ${chip.border}`,
+        }}
+      >
+        {chip.label}
+      </span>
+    </div>
+  );
+}
+
+function LinhaTimeline({ label, data }) {
+  return (
+    <div style={timelineLinha}>
+      <div style={timelineLabel}>{label}</div>
+      <div style={timelineValor}>{formatarDataHora(data)}</div>
+    </div>
+  );
+}
+
+export default function StatusCandidaturasSll() {
+  const navigate = useNavigate();
+
+  const [serviceLine, setServiceLine] = useState(null);
+  const [lista, setLista] = useState([]);
+  const [selecionada, setSelecionada] = useState(null);
+  const [detalhe, setDetalhe] = useState(null);
+  const [modoLista, setModoLista] = useState("EM_PROCESSO");
+
+  const [pesquisa, setPesquisa] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingDetalhe, setIsLoadingDetalhe] = useState(false);
+  const [erro, setErro] = useState("");
+
+  const utilizador = obterUtilizadorGuardado();
+  const idUtilizador = utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
+
+  async function carregarLista() {
+    if (!idUtilizador) {
+      setErro("Não foi possível identificar o Service Line Leader.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErro("");
+
+      const response = await api.get(`/sll/${idUtilizador}/status-candidaturas`);
+
+      setServiceLine(response.data.serviceLine || null);
+      const candidaturas = Array.isArray(response.data.candidaturas) ? response.data.candidaturas : [];
+      setLista(candidaturas);
+    } catch (err) {
+      setErro(err.response?.data?.error || "Não foi possível carregar o estado das candidaturas.");
+      setLista([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function carregarDetalhe(idCandidatura) {
+    if (!idUtilizador || !idCandidatura) {
+      setDetalhe(null);
+      return;
+    }
+
+    try {
+      setIsLoadingDetalhe(true);
+      const response = await api.get(`/sll/${idUtilizador}/status-candidaturas/${idCandidatura}`);
+      setDetalhe(response.data || null);
+    } catch (err) {
+      setDetalhe(null);
+      setErro(err.response?.data?.error || "Não foi possível carregar o detalhe da candidatura.");
+    } finally {
+      setIsLoadingDetalhe(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarLista();
+  }, []);
+
+  useEffect(() => {
+    if (selecionada) {
+      carregarDetalhe(selecionada);
+    }
+  }, [selecionada]);
+
+  const listaPorModo = useMemo(() => {
+    if (modoLista === "OBTIDOS") {
+      return lista.filter(candidaturaEstaObtida);
+    }
+
+    return lista.filter(candidaturaEstaEmProcesso);
+  }, [lista, modoLista]);
+
+  useEffect(() => {
+    if (listaPorModo.length === 0) {
+      setSelecionada(null);
+      setDetalhe(null);
+      return;
+    }
+
+    if (!listaPorModo.some((item) => item.id_candidatura_pedido === selecionada)) {
+      setSelecionada(listaPorModo[0].id_candidatura_pedido);
+    }
+  }, [listaPorModo, selecionada]);
+
+  const listaFiltrada = useMemo(() => {
+    const termo = pesquisa.trim().toLowerCase();
+
+    if (!termo) {
+      return listaPorModo;
+    }
+
+    return listaPorModo.filter((item) =>
+      String(item.nome_completo || "").toLowerCase().includes(termo) ||
+      String(item.email || "").toLowerCase().includes(termo) ||
+      String(item.nome_badge || "").toLowerCase().includes(termo) ||
+      String(item.estado_geral || "").toLowerCase().includes(termo) ||
+      String(item.fase_geral || "").toLowerCase().includes(termo)
+    );
+  }, [listaPorModo, pesquisa]);
+
+  return (
+    <div style={pagina}>
+      <Header />
+
+      <div style={corpo}>
+        <SllLeftSidebar />
+
+        <main style={conteudo}>
+          <div style={topoBarra}>
+            <button type="button" onClick={() => navigate("/sll")} style={voltarBtn}>Voltar</button>
+
+            <button type="button" onClick={carregarLista} style={refreshBtn}>
+              <BiRefresh size={16} />
+              Atualizar
+            </button>
+          </div>
+
+          <h1 style={titulo}>Status de Candidaturas</h1>
+          <div style={subtitulo}>
+            Service Line: <strong>{serviceLine?.nome_serviceline || "Service Line"}</strong>
+          </div>
+
+          <div style={tabsBox}>
+            <button
+              type="button"
+              onClick={() => setModoLista("EM_PROCESSO")}
+              style={{
+                ...tabBtn,
+                ...(modoLista === "EM_PROCESSO" ? tabBtnAtivo : null),
+              }}
+            >
+              Em Processo ({lista.filter(candidaturaEstaEmProcesso).length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setModoLista("OBTIDOS")}
+              style={{
+                ...tabBtn,
+                ...(modoLista === "OBTIDOS" ? tabBtnAtivo : null),
+              }}
+            >
+              Obtidos ({lista.filter(candidaturaEstaObtida).length})
+            </button>
+          </div>
+
+          <div style={pesquisaBox}>
+            <BiSearch size={16} color="#64748b" />
+            <input
+              value={pesquisa}
+              onChange={(event) => setPesquisa(event.target.value)}
+              placeholder="Pesquisar por consultor, badge, fase ou estado..."
+              style={pesquisaInput}
+            />
+          </div>
+
+          {erro && <div style={erroBox}>{erro}</div>}
+
+          <div style={gridPrincipal}>
+            <section style={listaPanel}>
+              <div style={panelTitulo}>Vista Geral ({listaFiltrada.length})</div>
+
+              {isLoading ? (
+                <div style={mensagemBox}>A carregar candidaturas...</div>
+              ) : listaFiltrada.length === 0 ? (
+                <div style={mensagemBox}>
+                  {modoLista === "OBTIDOS"
+                    ? "Não existem badges obtidos para mostrar."
+                    : "Não existem candidaturas em processo para mostrar."}
+                </div>
+              ) : (
+                <div style={listaCards}>
+                  {listaFiltrada.map((item) => {
+                    const ativa = selecionada === item.id_candidatura_pedido;
+                    const geral = chipEstado(item.estado_geral);
+
+                    return (
+                      <button
+                        key={item.id_candidatura_pedido}
+                        type="button"
+                        onClick={() => setSelecionada(item.id_candidatura_pedido)}
+                        style={{
+                          ...cardBotao,
+                          border: ativa ? "1px solid #3b82f6" : "1px solid #e5e7eb",
+                          background: ativa ? "#eff6ff" : "#fff",
+                        }}
+                      >
+                        <div style={linhaTopoCard}>
+                          <div style={nomeLinha}>
+                            <BiUserCircle size={20} color="#64748b" />
+                            <span>{item.nome_completo}</span>
+                          </div>
+
+                          <span
+                            style={{
+                              ...estadoChip,
+                              background: geral.bg,
+                              color: geral.color,
+                              border: `1px solid ${geral.border}`,
+                            }}
+                          >
+                            {item.estado_geral}
+                          </span>
+                        </div>
+
+                        <div style={badgeLinha}>
+                          <BiBadge size={15} color="#2563eb" />
+                          <span>{item.nome_badge}</span>
+                        </div>
+
+                        <div style={emailLinha}>
+                          <BiEnvelope size={14} color="#6b7280" />
+                          <span>{item.email}</span>
+                        </div>
+
+                        <div style={metaLinha}>
+                          Fase: <strong>{item.fase_geral}</strong>
+                        </div>
+
+                        <div style={metaLinha}>
+                          Evidências TM/SLL: <strong>{item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>{item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section style={detalhePanel}>
+              <div style={panelTitulo}>Detalhe de Status</div>
+
+              {isLoadingDetalhe ? (
+                <div style={mensagemBox}>A carregar detalhe...</div>
+              ) : !detalhe ? (
+                <div style={mensagemBox}>Seleciona uma candidatura para ver o detalhe.</div>
+              ) : (
+                <>
+                  <div style={secaoDetalhe}>
+                    <div style={secaoTitulo}>Estados Explícitos por Fase</div>
+                    <div style={estadoGrid}>
+                      <EstadoChip titulo="Pedido" valor={detalhe.status?.estado_candidatura_pedido} />
+                      <EstadoChip titulo="TM" valor={detalhe.status?.estado_candidaturatm} />
+                      <EstadoChip titulo="SLL" valor={detalhe.status?.estado_candidaturasll} />
+                      <EstadoChip titulo="Histórico" valor={detalhe.status?.estado_final} />
+                      <EstadoChip titulo="Estado Geral" valor={detalhe.status?.estado_geral} />
+                      <EstadoChip titulo="Fase Geral" valor={detalhe.status?.fase_geral} />
+                    </div>
+                  </div>
+
+                  <div style={secaoDetalhe}>
+                    <div style={secaoTitulo}>Linha Temporal</div>
+                    <LinhaTimeline label="Submissão" data={detalhe.status?.data_submissao} />
+                    <LinhaTimeline label="Receção TM" data={detalhe.status?.data_rececao_tm} />
+                    <LinhaTimeline label="Conclusão TM" data={detalhe.status?.data_conclusao_tm} />
+                    <LinhaTimeline label="Receção SLL" data={detalhe.status?.data_rececao_sll} />
+                    <LinhaTimeline label="Conclusão SLL" data={detalhe.status?.data_conclusao_sll} />
+                    <LinhaTimeline label="Avaliação SLL (Histórico)" data={detalhe.status?.data_avaliacao_sll} />
+                    <LinhaTimeline label="Entrada no Histórico" data={detalhe.status?.data_entrada_historico} />
+                  </div>
+
+                  <div style={secaoDetalhe}>
+                    <div style={secaoTitulo}>Requisitos e Estado Atual</div>
+                    <div style={requisitosLista}>
+                      {(detalhe.requisitos || []).map((req) => (
+                        <div key={req.id_requisitos} style={requisitoLinha}>
+                          <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
+                          <span
+                            style={{
+                              ...estadoChip,
+                              ...(() => {
+                                const c = chipEstado(req.estado_evidencia);
+                                return {
+                                  background: c.bg,
+                                  color: c.color,
+                                  border: `1px solid ${c.border}`,
+                                };
+                              })(),
+                            }}
+                          >
+                            {req.estado_evidencia}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </section>
+          </div>
+        </main>
+
+        <SllRightSidebar />
+      </div>
+    </div>
+  );
+}
+
+const pagina = {
+  minHeight: "100vh",
+  background: "#f3f4f6",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const corpo = {
+  display: "flex",
+  flex: 1,
+  overflow: "hidden",
+};
+
+const conteudo = {
+  flex: 1,
+  minWidth: 0,
+  overflowY: "auto",
+  padding: "22px 30px 40px",
+};
+
+const topoBarra = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+};
+
+const voltarBtn = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  cursor: "pointer",
+  padding: 0,
+  fontSize: 14,
+};
+
+const refreshBtn = {
+  border: "1px solid #cbd5e1",
+  background: "white",
+  color: "#1f2937",
+  padding: "8px 12px",
+  borderRadius: 9,
+  cursor: "pointer",
+  display: "inline-flex",
+  gap: 7,
+  alignItems: "center",
+  fontSize: 13,
+};
+
+const titulo = {
+  margin: "10px 0 4px",
+  fontSize: 22,
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const subtitulo = {
+  color: "#64748b",
+  marginBottom: 14,
+};
+
+const tabsBox = {
+  display: "flex",
+  gap: 8,
+  marginBottom: 12,
+};
+
+const tabBtn = {
+  border: "1px solid #d1d5db",
+  background: "#ffffff",
+  color: "#334155",
+  padding: "7px 11px",
+  borderRadius: 999,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const tabBtnAtivo = {
+  border: "1px solid #3b82f6",
+  background: "#eff6ff",
+  color: "#1d4ed8",
+};
+
+const pesquisaBox = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 10,
+  padding: "0 12px",
+  height: 44,
+  marginBottom: 16,
+};
+
+const pesquisaInput = {
+  flex: 1,
+  border: "none",
+  outline: "none",
+  background: "transparent",
+  fontSize: 13,
+};
+
+const erroBox = {
+  border: "1px solid #fecaca",
+  background: "#fef2f2",
+  color: "#b91c1c",
+  borderRadius: 10,
+  padding: "10px 12px",
+  fontSize: 13,
+  marginBottom: 14,
+};
+
+const gridPrincipal = {
+  display: "grid",
+  gridTemplateColumns: "minmax(360px, 0.9fr) minmax(460px, 1.1fr)",
+  gap: 14,
+};
+
+const listaPanel = {
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 12,
+};
+
+const detalhePanel = {
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 12,
+};
+
+const panelTitulo = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: "#111827",
+  marginBottom: 10,
+};
+
+const mensagemBox = {
+  background: "#f8fafc",
+  border: "1px dashed #cbd5e1",
+  color: "#64748b",
+  borderRadius: 10,
+  padding: 16,
+  fontSize: 13,
+};
+
+const listaCards = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+};
+
+const cardBotao = {
+  textAlign: "left",
+  borderRadius: 11,
+  padding: 10,
+  cursor: "pointer",
+};
+
+const linhaTopoCard = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 8,
+};
+
+const nomeLinha = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#1f2937",
+};
+
+const badgeLinha = {
+  marginTop: 7,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  color: "#2563eb",
+  fontSize: 12,
+  fontWeight: 600,
+};
+
+const emailLinha = {
+  marginTop: 6,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  color: "#475569",
+  fontSize: 12,
+};
+
+const metaLinha = {
+  marginTop: 6,
+  fontSize: 12,
+  color: "#334155",
+};
+
+const estadoChip = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  padding: "4px 10px",
+  whiteSpace: "nowrap",
+};
+
+const secaoDetalhe = {
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: 10,
+  marginBottom: 10,
+};
+
+const secaoTitulo = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#111827",
+  marginBottom: 8,
+};
+
+const estadoGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(120px, 1fr))",
+  gap: 8,
+};
+
+const estadoBloco = {
+  border: "1px solid #e5e7eb",
+  borderRadius: 9,
+  padding: 8,
+  background: "#f8fafc",
+};
+
+const estadoTitulo = {
+  fontSize: 11,
+  color: "#64748b",
+  marginBottom: 6,
+  fontWeight: 700,
+  textTransform: "uppercase",
+};
+
+const timelineLinha = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 8,
+  padding: "6px 0",
+  borderBottom: "1px dashed #e2e8f0",
+};
+
+const timelineLabel = {
+  fontSize: 12,
+  color: "#334155",
+  fontWeight: 600,
+};
+
+const timelineValor = {
+  fontSize: 12,
+  color: "#0f172a",
+};
+
+const requisitosLista = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 7,
+};
+
+const requisitoLinha = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 8,
+  border: "1px solid #e5e7eb",
+  borderRadius: 9,
+  padding: "7px 9px",
+};
+
+const requisitoNome = {
+  fontSize: 12,
+  color: "#1f2937",
+  fontWeight: 600,
+};

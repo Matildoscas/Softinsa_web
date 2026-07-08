@@ -8,6 +8,9 @@ import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
+import {obterBonusBadge, removerBadgesDuplicados,} from "../../utils/badgeBonus.js";
 
 function MeusBadgesPage() {
   const navigate = useNavigate();
@@ -24,17 +27,6 @@ function MeusBadgesPage() {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [tipoFiltro, setTipoFiltro] = useState("todos");
   const badgesPorPagina = 5;
-
-  const removerDuplicados = (lista) => {
-    const mapa = new Map();
-
-    lista.forEach((badge) => {
-      const id = String(badge.id || badge.id_badge_modelo);
-      if (!mapa.has(id)) mapa.set(id, { ...badge });
-    });
-
-    return Array.from(mapa.values());
-  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -54,11 +46,11 @@ function MeusBadgesPage() {
         api.get(`/badges/conquistados/${userId}`),
         ])
         .then(([todosRes, conquistadosRes]) => {
-            const todos = removerDuplicados(
+            const todos = removerBadgesDuplicados(
             Array.isArray(todosRes.data) ? todosRes.data : []
             );
 
-            const conquistadosRaw = removerDuplicados(
+            const conquistadosRaw = removerBadgesDuplicados(
             Array.isArray(conquistadosRes.data) ? conquistadosRes.data : []
             );
 
@@ -271,45 +263,79 @@ function MeusBadgesPage() {
             onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
           />
 
-          <div className="d-flex justify-content-center gap-3 mt-5 mb-4 flex-wrap">
+          <div
+            className="
+              d-flex
+              justify-content-center
+              gap-2
+              mt-4
+              mb-4
+              flex-wrap
+            "
+          >
             <Button
-                variant="white"
-                className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
-                style={{
-                ...bottomButtonStyle,
-                background: tipoFiltro === "comuns" ? "#e8f0ff" : "white",
-                borderColor: tipoFiltro === "comuns" ? "#4470AF" : "#dee2e6",
-                }}
-                onClick={() => setTipoFiltro("comuns")}
+              variant="light"
+              className="
+                d-flex
+                align-items-center
+                justify-content-center
+                gap-2
+              "
+              style={obterEstiloBotaoFiltro(
+                tipoFiltro === "comuns"
+              )}
+              onClick={() =>
+                setTipoFiltro(
+                  tipoFiltro === "comuns"
+                    ? "todos"
+                    : "comuns"
+                )
+              }
             >
-                <BiMedal size={20} />
-                Badges Comuns
+              <BiMedal size={17} />
+              Badges Comuns
             </Button>
 
             <Button
-                variant="white"
-                className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
-                style={{
-                ...bottomButtonStyle,
-                background: tipoFiltro === "especiais" ? "#e8f0ff" : "white",
-                borderColor: tipoFiltro === "especiais" ? "#4470AF" : "#dee2e6",
-                }}
-                onClick={() => setTipoFiltro("especiais")}
+              variant="light"
+              className="
+                d-flex
+                align-items-center
+                justify-content-center
+                gap-2
+              "
+              style={obterEstiloBotaoFiltro(
+                tipoFiltro === "especiais"
+              )}
+              onClick={() =>
+                setTipoFiltro(
+                  tipoFiltro === "especiais"
+                    ? "todos"
+                    : "especiais"
+                )
+              }
             >
-                <BiMedal size={20} />
-                Badges Especiais
+              <BiMedal size={17} />
+              Badges Especiais
             </Button>
 
             <Button
-                variant="white"
-                className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
-                style={{bottomButtonStyle}}
-                onClick={() => navigate("/catalogo-badges")}
+              variant="light"
+              className="
+                d-flex
+                align-items-center
+                justify-content-center
+                gap-2
+              "
+              style={bottomButtonStyle}
+              onClick={() =>
+                navigate("/catalogo-badges")
+              }
             >
-                <BiGrid size={20} />
-                Catálogo de Badges
+              <BiGrid size={17} />
+              Catálogo de Badges
             </Button>
-            </div>
+          </div>
 
           <hr />
         </main>
@@ -387,53 +413,320 @@ function PaginacaoCatalogo({
   );
 }
 
-function CatalogoBadgeRow({ badge, conquistado, conquistadoBadge, pendente, onClick }) {
-  const nome = badge.nome || badge.nome_badge || "Badge";
-  const descricao = badge.descricao || badge.descricao_badge_modelo || "";
-  const pontos = badge.pontos || 0;
-  const area = badge.nome_area || badge.nome_areas || badge.area || "";
+function CatalogoBadgeRow({
+  badge,
+  conquistado,
+  conquistadoBadge,
+  pendente,
+  onClick,
+}) {
+  const nome =
+    badge.nome ||
+    badge.nome_badge ||
+    "Badge";
 
-  const estadoTexto = conquistado
-    ? conquistadoBadge?.data_atribuicao
-      ? `Conquistado a ${new Date(conquistadoBadge.data_atribuicao).toLocaleDateString("pt-PT")}`
-      : "Conquistado recentemente"
-    : pendente
-      ? pendente.estado_validacao || "Em progresso"
-      : "Por Conquistar";
-  
-  const corEstado = conquistado
-    ? "#2E7D32"
-    : pendente
-      ? "#EF6C00"
-      : "#3b4a60";
+  const descricao =
+    badge.descricao ||
+    badge.descricao_badge_modelo ||
+    "";
+
+  const pontos =
+    Number(
+      badge.pontos ||
+      0
+    );
+
+  const area =
+    badge.nome_area ||
+    badge.nome_areas ||
+    badge.area ||
+    "";
+
+  const {
+    ganhouBonus,
+    pontosExtra,
+  } = obterBonusBadge(
+    conquistadoBadge ||
+    badge
+  );
+
+  const bonusAtivo =
+    conquistado &&
+    ganhouBonus;
+
+  const estadoBase =
+    conquistado
+      ? conquistadoBadge
+          ?.data_atribuicao
+        ? `Conquistado a ${new Date(
+            conquistadoBadge.data_atribuicao
+          ).toLocaleDateString(
+            "pt-PT"
+          )}`
+        : "Conquistado recentemente"
+      : pendente
+        ? pendente.estado_validacao ||
+          "Em progresso"
+        : "Por Conquistar";
+
+  const estadoTexto =
+    bonusAtivo &&
+    pontosExtra > 0
+      ? `${estadoBase} • Recebeste +${pontosExtra} pontos extra`
+      : estadoBase;
+
+  const corEstado =
+    bonusAtivo
+      ? "#9a6b00"
+      : conquistado
+        ? "#2E7D32"
+        : pendente
+          ? "#EF6C00"
+          : "#3b4a60";
 
   return (
-    <div style={{...badgeCard, cursor: "pointer",}} onClick={onClick}>
-      <div style={badgeContent}>
-        <div style={badgeIcon}>🏅</div>
+    <div
+      style={{
+        ...badgeCard,
 
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 500, color: "#111827" }}>
-            {nome}
+        cursor:
+          "pointer",
+
+        background:
+          bonusAtivo
+            ? "#fffef8"
+            : "white",
+
+        border:
+          bonusAtivo
+            ? "2px solid #d4af37"
+            : badgeCard.border,
+
+        boxShadow:
+          bonusAtivo
+            ? "0 0 0 3px rgba(212,175,55,0.12)"
+            : "none",
+      }}
+      onClick={onClick}
+    >
+      <div
+        style={
+          badgeContent
+        }
+      >
+        <BadgeImage
+          badge={badge}
+          size={72}
+          background={
+            bonusAtivo
+              ? "#fff7d6"
+              : "#eff6ff"
+          }
+          borderColor={
+            bonusAtivo
+              ? "#d4af37"
+              : "#dbeafe"
+          }
+        />
+
+        <div
+          style={{
+            flex: 1,
+          }}
+        >
+          <div
+            style={{
+              display:
+                "flex",
+
+              alignItems:
+                "center",
+
+              gap:
+                9,
+
+              flexWrap:
+                "wrap",
+            }}
+          >
+            <div
+              style={{
+                fontSize:
+                  15,
+
+                fontWeight:
+                  600,
+
+                color:
+                  "#111827",
+              }}
+            >
+              {nome}
+            </div>
+
+            {bonusAtivo && (
+              <span
+                style={{
+                  background:
+                    "#fff7d6",
+
+                  color:
+                    "#9a6b00",
+
+                  border:
+                    "1px solid #f0d36b",
+
+                  borderRadius:
+                    999,
+
+                  padding:
+                    "3px 9px",
+
+                  fontSize:
+                    11,
+
+                  fontWeight:
+                    700,
+                }}
+              >
+                Desafio concluído
+              </span>
+            )}
           </div>
 
-          <div style={{ fontSize: 12, color: "#344563", marginTop: 4 }}>
+          <div
+            style={{
+              fontSize:
+                12,
+
+              color:
+                "#344563",
+
+              marginTop:
+                4,
+            }}
+          >
             {descricao}
+
             {area && (
-                <div style={{ fontSize: 12, color: "#4470AF", marginTop: 3 }}>
-                    {area}
-                </div>
-                )}
+              <div
+                style={{
+                  fontSize:
+                    12,
+
+                  color:
+                    "#4470AF",
+
+                  marginTop:
+                    3,
+                }}
+              >
+                {area}
+              </div>
+            )}
+
+            <DebugBadgePanel badge={badge} />
           </div>
         </div>
 
-        <div style={pointsBox}>
-          <div style={{ fontSize: 10, fontWeight: 600 }}>Pontos</div>
-          <div style={{ fontSize: 17, fontWeight: 700 }}>{pontos}</div>
+        <div
+          style={{
+            ...pointsBox,
+
+            border:
+              bonusAtivo
+                ? "1.5px solid #d4af37"
+                : pointsBox.border,
+
+            background:
+              bonusAtivo
+                ? "#fffdf4"
+                : "white",
+
+            minWidth:
+              bonusAtivo
+                ? 82
+                : 52,
+          }}
+        >
+          <div
+            style={{
+              fontSize:
+                10,
+
+              fontWeight:
+                600,
+
+              color:
+                bonusAtivo
+                  ? "#9a6b00"
+                  : "#111827",
+            }}
+          >
+            Pontos
+          </div>
+
+          <div
+            style={{
+              fontSize:
+                17,
+
+              fontWeight:
+                700,
+            }}
+          >
+            {pontos}
+          </div>
+
+          {bonusAtivo &&
+            pontosExtra >
+              0 && (
+              <div
+                style={{
+                  marginTop:
+                    2,
+
+                  fontSize:
+                    11,
+
+                  fontWeight:
+                    700,
+
+                  color:
+                    "#d4a017",
+
+                  whiteSpace:
+                    "nowrap",
+                }}
+              >
+                +
+                {
+                  pontosExtra
+                }{" "}
+                extra
+              </div>
+            )}
         </div>
       </div>
 
-      <div style={{ ...statusBar, color: corEstado }}>
+      <div
+        style={{
+          ...statusBar,
+
+          color:
+            corEstado,
+
+          background:
+            bonusAtivo
+              ? "#fffdf4"
+              : statusBar.background,
+
+          fontWeight:
+            bonusAtivo
+              ? 600
+              : 400,
+        }}
+      >
         {estadoTexto}
       </div>
     </div>
@@ -525,10 +818,48 @@ const paginationCurrent = {
 };
 
 const bottomButtonStyle = {
-  fontSize: 16,
+  minWidth: 180,
+  height: 40,
+  padding: "0 16px",
+
+  border: "1px solid #d6dbe1",
+  borderRadius: 8,
+
+  background: "#f8f9fa",
+  color: "#344054",
+
+  fontSize: 14,
   fontWeight: 500,
-  minWidth: 220,
-  height: 46,
+
+  boxShadow:
+    "0 1px 2px rgba(0, 0, 0, 0.05)",
+
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
 };
+
+function obterEstiloBotaoFiltro(
+  ativo
+) {
+  return {
+    ...bottomButtonStyle,
+
+    background: ativo
+      ? "#e8edf3"
+      : "#f8f9fa",
+
+    borderColor: ativo
+      ? "#c7d0db"
+      : "#d6dbe1",
+
+    color: ativo
+      ? "#1f2937"
+      : "#344054",
+
+    fontWeight: ativo
+      ? 600
+      : 500,
+  };
+}
 
 export default MeusBadgesPage;

@@ -53,7 +53,7 @@ function normalizarServiceLine(sl) {
       "Sem descrição.",
 
     estado: normalizarEstadoServiceLine(
-        sl.estado_serviceline ||
+      sl.estado_serviceline ||
         sl.ESTADO_SERVICELINE ||
         "ATIVO"
     ),
@@ -62,6 +62,18 @@ function normalizarServiceLine(sl) {
       sl.tipo_serviceline ||
       sl.TIPO_SERVICELINE ||
       "Tecnologia",
+
+    learningPath:
+      sl.nome_learningpath ||
+      sl.nome_learningpaths ||
+      sl.learningpath ||
+      "Sem Learning Path associada",
+
+    areasNomes:
+      sl.nome_areas ||
+      sl.areas_nomes ||
+      sl.areasAssociadas ||
+      "Sem áreas associadas",
 
     areas:
       Number(
@@ -101,10 +113,61 @@ function tagStyle(tag) {
   return map[tag] || { bg: "#f3f4f6", color: "#374151" };
 }
 
+function separarLista(texto) {
+  if (!texto) return [];
+
+  return String(texto)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function ListaCompacta({ label, texto, limite = 3 }) {
+  const [aberto, setAberto] = useState(false);
+
+  const itens = separarLista(texto);
+  const temMais = itens.length > limite;
+
+  const visiveis = aberto ? itens : itens.slice(0, limite);
+
+  if (itens.length === 0) {
+    return (
+      <div style={compactLine}>
+        <span style={compactLabel}>{label}:</span>
+        <span style={compactEmpty}>Sem dados</span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={compactBlock}>
+      <span style={compactLabel}>{label}:</span>
+
+      <div style={compactTagsWrapper}>
+        {visiveis.map((item) => (
+          <span key={item} style={compactTag}>
+            {item}
+          </span>
+        ))}
+
+        {temMais && (
+          <button
+            type="button"
+            onClick={() => setAberto((v) => !v)}
+            style={verMaisButton}
+          >
+            {aberto ? "Ver menos" : `+${itens.length - limite} ver mais`}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ServiceLineCard({ sl, onEditar, onDesativar }) {
   const estadoNormalizado = normalizarEstadoServiceLine(sl.estado);
 
-    const estadoLabel =
+  const estadoLabel =
     estadoNormalizado === "ATIVO" ? "Ativa" : "Inativa";
 
   const estadoStyle = tagStyle(estadoLabel);
@@ -112,7 +175,21 @@ function ServiceLineCard({ sl, onEditar, onDesativar }) {
 
   return (
     <div style={cardStyle}>
-      <div style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
+      <div style={cardHeader}>
+        <ListaCompacta
+          label="Learning Path"
+          texto={sl.learningPath}
+          limite={2}
+        />
+
+        <ListaCompacta
+          label="Áreas"
+          texto={sl.areasNomes}
+          limite={3}
+        />
+      </div>
+
+      <div style={cardBody}>
         <div style={iconBox}>
           <BiBook size={26} color="#64748b" />
         </div>
@@ -191,11 +268,14 @@ function ServiceLineCard({ sl, onEditar, onDesativar }) {
                 <button
                   onClick={() => onDesativar(sl)}
                   disabled={estadoNormalizado === "INATIVO"}
-                style={{
-                ...deactivateButton,
-                opacity: estadoNormalizado === "INATIVO" ? 0.4 : 1,
-                cursor: estadoNormalizado === "INATIVO" ? "not-allowed" : "pointer",
-                }}
+                  style={{
+                    ...deactivateButton,
+                    opacity: estadoNormalizado === "INATIVO" ? 0.4 : 1,
+                    cursor:
+                      estadoNormalizado === "INATIVO"
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
                 >
                   <BiUserX size={15} />
                   Desativar
@@ -263,7 +343,9 @@ function GestaoServiceLines() {
       sl.nome.toLowerCase().includes(texto) ||
       sl.descricao.toLowerCase().includes(texto) ||
       sl.tipo.toLowerCase().includes(texto) ||
-      sl.estado.toLowerCase().includes(texto)
+      sl.estado.toLowerCase().includes(texto) ||
+      sl.learningPath.toLowerCase().includes(texto) ||
+      sl.areasNomes.toLowerCase().includes(texto)
     );
   });
 
@@ -333,30 +415,34 @@ function GestaoServiceLines() {
     }
 
     const dadosExcel = listaFiltrada.map((sl) => ({
-        ID: sl.id,
-        "Nome da Service Line": sl.nome,
-        Descrição: sl.descricao,
-        Tipo: sl.tipo,
-        Estado:
+      ID: sl.id,
+      "Nome da Service Line": sl.nome,
+      Descrição: sl.descricao,
+      "Learning Path": sl.learningPath,
+      Áreas: sl.areasNomes,
+      Tipo: sl.tipo,
+      Estado:
         normalizarEstadoServiceLine(sl.estado) === "ATIVO"
-            ? "Ativa"
-            : "Inativa",
-        "N.º de Áreas": sl.areas,
-        "N.º de Inscritos": sl.inscritos,
-        Responsável: sl.responsavel,
+          ? "Ativa"
+          : "Inativa",
+      "N.º de Áreas": sl.areas,
+      "N.º de Inscritos": sl.inscritos,
+      Responsável: sl.responsavel,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
 
     worksheet["!cols"] = [
-        { wch: 8 },
-        { wch: 32 },
-        { wch: 70 },
-        { wch: 18 },
-        { wch: 12 },
-        { wch: 14 },
-        { wch: 16 },
-        { wch: 28 },
+      { wch: 8 },
+      { wch: 32 },
+      { wch: 70 },
+      { wch: 35 },
+      { wch: 70 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 28 },
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -401,29 +487,31 @@ function GestaoServiceLines() {
     doc.text(`Total: ${listaFiltrada.length} Service Lines`, 14, 29);
 
     const linhas = listaFiltrada.map((sl) => [
-        sl.id,
-        sl.nome,
-        sl.tipo,
-        normalizarEstadoServiceLine(sl.estado) === "ATIVO"
+      sl.id,
+      sl.nome,
+      sl.learningPath,
+      sl.areasNomes,
+      sl.tipo,
+      normalizarEstadoServiceLine(sl.estado) === "ATIVO"
         ? "Ativa"
         : "Inativa",
-        sl.areas,
-        sl.inscritos,
-        sl.responsavel,
-        sl.descricao,
+      sl.areas,
+      sl.inscritos,
+      sl.responsavel,
     ]);
 
     autoTable(doc, {
         startY: 36,
         head: [[
-        "ID",
-        "Nome",
-        "Tipo",
-        "Estado",
-        "Áreas",
-        "Inscritos",
-        "Responsável",
-        "Descrição",
+          "ID",
+          "Nome",
+          "Learning Path",
+          "Áreas",
+          "Tipo",
+          "Estado",
+          "N.º Áreas",
+          "Inscritos",
+          "Responsável",
         ]],
         body: linhas,
         styles: {
@@ -441,14 +529,15 @@ function GestaoServiceLines() {
         fillColor: [248, 250, 252],
         },
         columnStyles: {
-        0: { cellWidth: 12 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 16 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 35 },
-        7: { cellWidth: 115 },
+          0: { cellWidth: 10 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 38 },
+          3: { cellWidth: 65 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 18 },
+          6: { cellWidth: 18 },
+          7: { cellWidth: 18 },
+          8: { cellWidth: 35 },
         },
         margin: { top: 36, left: 14, right: 14 },
     });
@@ -726,11 +815,11 @@ const newButton = {
 };
 
 const cardStyle = {
-  background: "white",
   border: "1px solid #e5e7eb",
   borderRadius: 12,
-  padding: "20px 24px",
+  overflow: "hidden",
   marginBottom: 16,
+  background: "white",
 };
 
 const iconBox = {
@@ -1024,6 +1113,104 @@ const modalConfirmButton = {
   padding: "9px 15px",
   fontSize: 13,
   fontWeight: 700,
+};
+
+const relationInfoBox = {
+  background: "#f8fafc",
+  border: "1px solid #e5e7eb",
+  borderRadius: 8,
+  padding: "8px 10px",
+  marginBottom: 10,
+};
+
+const relationLine = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 6,
+  fontSize: 12,
+  lineHeight: 1.5,
+  marginBottom: 2,
+};
+
+const relationLabel = {
+  color: "#64748b",
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const relationValue = {
+  color: "#334155",
+  fontWeight: 500,
+};
+
+const cardHeader = {
+  padding: "14px 24px",
+  background: "#f8fafc",
+  borderBottom: "1px solid #e5e7eb",
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+};
+
+const cardBody = {
+  padding: "20px 24px",
+  display: "flex",
+  gap: 18,
+  alignItems: "flex-start",
+};
+
+const compactBlock = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 8,
+  flexWrap: "wrap",
+};
+
+const compactLine = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+};
+
+const compactLabel = {
+  fontSize: 12,
+  fontWeight: 700,
+  color: "#64748b",
+  minWidth: 90,
+};
+
+const compactTagsWrapper = {
+  display: "flex",
+  gap: 6,
+  flexWrap: "wrap",
+  flex: 1,
+};
+
+const compactTag = {
+  background: "#eff6ff",
+  color: "#2563eb",
+  border: "1px solid #bfdbfe",
+  borderRadius: 999,
+  padding: "3px 9px",
+  fontSize: 12,
+  fontWeight: 700,
+  lineHeight: 1.4,
+};
+
+const compactEmpty = {
+  fontSize: 12,
+  color: "#9ca3af",
+};
+
+const verMaisButton = {
+  border: "none",
+  background: "#e0f2fe",
+  color: "#0369a1",
+  borderRadius: 999,
+  padding: "3px 9px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
 };
 
 export default GestaoServiceLines;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Card, Form, Button, InputGroup, Spinner, Alert } from "react-bootstrap";
 import { LayoutList, ArrowRight, ArrowLeft } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import api from "../../services/api";
+import api from "../../services/api.js";
 import ImagemLogin from "../../assets/imagem_login.png";
 
 function AreaPage() {

@@ -34,11 +34,55 @@ function normalizarServiceLine(sl) {
   };
 }
 
-function normalizarNivel(n) {
+function obterCodigoNivel(nomeNivel, index) {
+  const nome = String(nomeNivel || "")
+    .trim()
+    .toUpperCase();
+
+  const mapa = {
+    A: "A",
+    JÚNIOR: "A",
+    JUNIOR: "A",
+
+    B: "B",
+    INTERMÉDIO: "B",
+    INTERMEDIO: "B",
+
+    C: "C",
+    SÉNIOR: "C",
+    SENIOR: "C",
+
+    D: "D",
+    ESPECIALISTA: "D",
+
+    E: "E",
+    "LÍDER DE CONHECIMENTO": "E",
+    "LIDER DE CONHECIMENTO": "E",
+  };
+
+  return mapa[nome] || ["A", "B", "C", "D", "E"][index] || "";
+}
+
+function normalizarNivel(n, index = 0) {
+  const nomeNivel =
+    n.nome_nivel ||
+    n.NOME_NIVEL ||
+    "";
+
   return {
-    id_nivel: n.id_nivel || n.ID_NIVEL || "",
-    nome_nivel: n.nome_nivel || n.NOME_NIVEL || "",
-    estado_nivel: n.estado_nivel || n.ESTADO_NIVEL || "ATIVO",
+    id_nivel:
+      n.id_nivel ||
+      n.ID_NIVEL ||
+      "",
+
+    nome_nivel: nomeNivel,
+
+    codigo_nivel: obterCodigoNivel(nomeNivel, index),
+
+    estado_nivel:
+      n.estado_nivel ||
+      n.ESTADO_NIVEL ||
+      "ATIVO",
 
     id_badge_modelo:
       n.id_badge_modelo ||
@@ -53,16 +97,24 @@ function normalizarNivel(n) {
     descricao_badge:
       n.descricao_badge_modelo ||
       n.DESCRICAO_BADGE_MODELO ||
-      "Sem descrição.",
+      "Ainda não existe um badge associado a este nível.",
 
-    pontos: Number(n.pontos || n.PONTOS || 0),
+    pontos: Number(
+      n.pontos ||
+      n.PONTOS ||
+      0
+    ),
 
     total_requisitos: Number(
       n.total_requisitos ||
-        n.numero_requisitos ||
-        n.NUMERO_REQUISITOS ||
-        0
+      n.numero_requisitos ||
+      n.NUMERO_REQUISITOS ||
+      (Array.isArray(n.requisitos) ? n.requisitos.length : 0)
     ),
+
+    requisitos: Array.isArray(n.requisitos)
+      ? n.requisitos
+      : [],
   };
 }
 
@@ -159,10 +211,20 @@ function SelectDropdown({ options, value, onChange, placeholder, erro }) {
 function NivelCard({ nivel, areaId, onEditarRequisitos }) {
   return (
     <div style={nivelCard}>
-      <div style={nivelCodeBox}>{nivel.nome_nivel}</div>
+      <div style={nivelCodeBox}>{nivel.codigo_nivel}</div>
 
       <div style={nivelTitle}>
-        Nível {nivel.nome_nivel} — {nivel.nome_badge}
+        Nível {nivel.codigo_nivel} — {nivel.nome_nivel}
+      </div>
+
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: nivel.id_badge_modelo ? "#2563eb" : "#9ca3af",
+        }}
+      >
+        {nivel.nome_badge}
       </div>
 
       <div style={nivelDescription}>
@@ -201,7 +263,6 @@ function EditarArea() {
   const [form, setForm] = useState({
     nome: "",
     descricao: "",
-    tipo: "",
     estado: "ATIVO",
     id_serviceline: "",
   });
@@ -223,9 +284,10 @@ function EditarArea() {
       setIsLoading(true);
       setErroGeral("");
 
-      const [areaRes, serviceLinesRes] = await Promise.all([
+      const [areaRes, serviceLinesRes, niveisRes] = await Promise.all([
         api.get(`/areas/${id}`),
-        api.get("/servicelines"),
+        api.get("/servicelines/select"),
+        api.get(`/areas/${id}/niveis`),
       ]);
 
       const areaData = areaRes.data?.area || areaRes.data;
@@ -233,27 +295,37 @@ function EditarArea() {
       setForm({
         nome: areaData.nome_area || "",
         descricao: areaData.descricao_area || "",
-        tipo: areaData.tipo_area || "",
         estado: normalizarEstadoArea(areaData.estado_area),
         id_serviceline: areaData.id_serviceline || "",
       });
 
-      const niveisData = Array.isArray(areaData.niveis)
-        ? areaData.niveis
-        : [];
+      const niveisData = niveisRes.data;
 
-      setNiveis(niveisData.map(normalizarNivel));
+      const listaNiveis = Array.isArray(niveisData)
+        ? niveisData
+        : Array.isArray(niveisData?.niveis)
+          ? niveisData.niveis
+          : [];
+
+      console.log("ID DA ÁREA:", id);
+      console.log("RESPOSTA DOS NÍVEIS:", niveisRes.data);
+      console.log("LISTA DE NÍVEIS:", listaNiveis);
+
+      setNiveis(
+        listaNiveis.map((nivel, index) =>
+          normalizarNivel(nivel, index)
+        )
+      );
 
       const slData = serviceLinesRes.data;
 
-      const listaServiceLines =
-        Array.isArray(slData)
-          ? slData
-          : Array.isArray(slData.servicelines)
-            ? slData.servicelines
-            : Array.isArray(slData.data)
-              ? slData.data
-              : [];
+      const listaServiceLines = Array.isArray(slData)
+        ? slData
+        : Array.isArray(slData?.servicelines)
+          ? slData.servicelines
+          : Array.isArray(slData?.data)
+            ? slData.data
+            : [];
 
       setServiceLines(listaServiceLines.map(normalizarServiceLine));
     } catch (err) {
@@ -263,7 +335,7 @@ function EditarArea() {
 
       setErroGeral(
         err.response?.data?.error ||
-          "Não foi possível carregar os dados da área."
+          "Não foi possível carregar a área, os níveis ou as Service Lines."
       );
     } finally {
       setIsLoading(false);
@@ -296,10 +368,6 @@ function EditarArea() {
       novosErros.descricao = "A descrição é obrigatória.";
     }
 
-    if (!form.tipo.trim()) {
-      novosErros.tipo = "O tipo é obrigatório.";
-    }
-
     if (!form.id_serviceline) {
       novosErros.id_serviceline = "Seleciona uma Service Line.";
     }
@@ -320,7 +388,6 @@ function EditarArea() {
       await api.put(`/areas/${id}`, {
         nome_area: form.nome.trim(),
         descricao_area: form.descricao.trim(),
-        tipo_area: form.tipo.trim(),
         estado_area: normalizarEstadoArea(form.estado),
         id_serviceline: Number(form.id_serviceline),
       });
@@ -491,28 +558,6 @@ function EditarArea() {
                 </div>
 
                 <div style={twoColumns}>
-                  <div>
-                    <label style={labelStyle}>
-                      Tipo de Área <span style={{ color: "#dc2626" }}>*</span>
-                    </label>
-
-                    <input
-                      value={form.tipo}
-                      onChange={(e) => set("tipo")(e.target.value)}
-                      placeholder="Ex: Tecnologia"
-                      style={inputStyle("tipo")}
-                      onFocus={(e) => {
-                        if (!erros.tipo) e.target.style.borderColor = "#2563eb";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = erros.tipo
-                          ? "#fca5a5"
-                          : "#d1d5db";
-                      }}
-                    />
-
-                    {erros.tipo && <div style={fieldError}>{erros.tipo}</div>}
-                  </div>
 
                   <div>
                     <label style={labelStyle}>
@@ -701,7 +746,7 @@ const fieldError = {
 
 const twoColumns = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  gridTemplateColumns: "1fr",
   gap: 18,
 };
 

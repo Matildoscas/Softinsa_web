@@ -2,17 +2,31 @@ import { useState, useEffect } from "react";
 import { Button, Spinner, Form } from "react-bootstrap";
 import { HiOutlineArrowLeft, HiOutlineUpload, HiOutlineTrash } from "react-icons/hi";
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
 
 const niveis = ["A", "B", "C", "D", "E"];
 
 function SubmeterEvidenciasPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const idLembrete =
+    location.state?.idLembrete ??
+    null;
+
+  const voltarPara =
+    location.state?.voltarPara ||
+    "/catalogo-badges";
+
+  const textoVoltar =
+    location.state?.textoVoltar ||
+    "Voltar";
   const { id } = useParams();
 
   const [badge, setBadge] = useState(null);
@@ -40,14 +54,53 @@ function SubmeterEvidenciasPage() {
         });
       }
 
-      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
-        mapa.get(badgeId).requisitos.push({
-          id_requisito: linha.id_requisito,
-          titulo: linha.titulo || linha.nome_requisito || "Requisito",
-          nome: linha.nome_requisito || linha.titulo || "Requisito",
-          descricao: linha.descricao_requisito || "",
-          link: linha.link_requisito || linha.link || "",
-        });
+      if (
+        linha.titulo ||
+        linha.nome_requisito ||
+        linha.descricao_requisito
+      ) {
+        const idRequisito =
+          linha.id_requisito ||
+          linha.id_requisitos ||
+          linha.id;
+
+        const requisitosAtuais =
+          mapa.get(badgeId).requisitos;
+
+        const requisitoJaExiste =
+          requisitosAtuais.some(
+            (requisito) =>
+              String(
+                requisito.id_requisito
+              ) ===
+              String(idRequisito)
+          );
+
+        if (!requisitoJaExiste) {
+          requisitosAtuais.push({
+            id_requisito:
+              idRequisito,
+
+            titulo:
+              linha.titulo ||
+              linha.nome_requisito ||
+              "Requisito",
+
+            nome:
+              linha.nome_requisito ||
+              linha.titulo ||
+              "Requisito",
+
+            descricao:
+              linha.descricao_requisito ||
+              "",
+
+            link:
+              linha.link_requisito ||
+              linha.link ||
+              "",
+          });
+        }
       }
     });
 
@@ -98,77 +151,223 @@ function SubmeterEvidenciasPage() {
   const totalFicheiros = Object.values(ficheirosPorRequisito)
     .reduce((total, lista) => total + lista.length, 0);
 
-  const podeSubmeter = badge?.requisitos?.every((req, index) => {
-    const requisitoKey = getRequisitoKey(req, index);
-    return (ficheirosPorRequisito[requisitoKey] || []).length > 0;
-  });
+  const temRequisitos =
+    Array.isArray(
+      badge?.requisitos
+    ) &&
+    badge.requisitos.length > 0;
 
-  const submeterEvidencias = async () => {
-    if (!badge) return;
+  const podeSubmeter =
+    temRequisitos &&
+    badge.requisitos.every(
+      (req, index) => {
+        const requisitoKey =
+          getRequisitoKey(
+            req,
+            index
+          );
+
+        return (
+          ficheirosPorRequisito[
+            requisitoKey
+          ] || []
+        ).length > 0;
+      }
+    );
+
+  const submeterEvidencias =
+  async () => {
+    if (!badge) {
+      return;
+    }
 
     if (!podeSubmeter) {
-      alert("Tem de anexar pelo menos um ficheiro em cada requisito.");
+      alert(
+        "Tem de anexar pelo menos um ficheiro em cada requisito."
+      );
+
       return;
     }
 
-    const storedUser = localStorage.getItem("user");
+    const storedUser =
+      localStorage.getItem(
+        "user"
+      );
 
     if (!storedUser) {
-      navigate("/login", { replace: true });
+      navigate(
+        "/login",
+        {
+          replace: true,
+        }
+      );
+
       return;
     }
 
-    const userData = JSON.parse(storedUser);
-    const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
-
-    const formData = new FormData();
-
-    formData.append("id_utilizador", userId);
-    formData.append("id_badge_modelo", badge.id);
-    formData.append("comentario", comentario);
-
-    badge.requisitos.forEach((req, index) => {
-      const requisitoKey = getRequisitoKey(req, index);
-      const ficheiros = ficheirosPorRequisito[requisitoKey] || [];
-
-      ficheiros.forEach((file) => {
-        formData.append("ficheiros", file);
-
-        formData.append(
-          "metadados",
-          JSON.stringify({
-            requisito_key: requisitoKey,
-            id_requisito: req.id_requisito || null,
-            titulo: req.titulo,
-            nome: req.nome,
-            ficheiro_nome: file.name,
-          })
-        );
-      });
-    });
+    let userData;
 
     try {
-      setSubmeterLoading(true);
-
-      await api.post("/candidaturas/submeter-evidencias", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      alert("Evidências submetidas com sucesso.");
-      navigate("/catalogo-badges");
+      userData =
+        JSON.parse(
+          storedUser
+        );
     } catch (err) {
-      console.error("Erro ao submeter evidências:", err);
-      console.error("STATUS:", err.response?.status);
-      console.error("BODY:", err.response?.data);
+      console.error(
+        "Erro ao ler utilizador:",
+        err
+      );
+
+      navigate(
+        "/login",
+        {
+          replace: true,
+        }
+      );
+
+      return;
+    }
+
+    const userId =
+      userData.id_utilizador ||
+      userData.ID_UTILIZADOR ||
+      userData.id;
+
+    if (!userId) {
+      alert(
+        "Não foi possível identificar o utilizador."
+      );
+
+      return;
+    }
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "id_utilizador",
+      userId
+    );
+
+    formData.append(
+      "id_badge_modelo",
+      badge.id
+    );
+
+    formData.append(
+      "comentario",
+      comentario
+    );
+
+    if (idLembrete) {
+      formData.append(
+        "id_lembrete",
+        String(idLembrete)
+      );
+    }
+
+    badge.requisitos.forEach(
+      (req, index) => {
+        const requisitoKey =
+          getRequisitoKey(
+            req,
+            index
+          );
+
+        const ficheiros =
+          ficheirosPorRequisito[
+            requisitoKey
+          ] || [];
+
+        ficheiros.forEach(
+          (file) => {
+            formData.append(
+              "ficheiros",
+              file
+            );
+
+            formData.append(
+              "metadados",
+              JSON.stringify({
+                requisito_key:
+                  requisitoKey,
+
+                id_requisito:
+                  req.id_requisito ||
+                  req.id_requisitos ||
+                  null,
+
+                titulo:
+                  req.titulo,
+
+                nome:
+                  req.nome,
+
+                descricao:
+                  req.descricao ||
+                  "",
+
+                ficheiro_nome:
+                  file.name,
+              })
+            );
+          }
+        );
+      }
+    );
+
+    try {
+      setSubmeterLoading(
+        true
+      );
+
+      const response =
+        await api.post(
+          "/candidaturas/submeter-evidencias",
+          formData
+        );
+
+      console.log(
+        "Candidatura submetida:",
+        response.data
+      );
+
+      alert(
+        idLembrete
+          ? "Evidências submetidas. O objetivo está agora em validação."
+          : "Evidências submetidas com sucesso."
+      );
+
+      navigate(
+        voltarPara,
+        {
+          replace: true,
+        }
+      );
+    } catch (err) {
+      console.error(
+        "Erro ao submeter evidências:",
+        err
+      );
+
+      console.error(
+        "STATUS:",
+        err.response?.status
+      );
+
+      console.error(
+        "BODY:",
+        err.response?.data
+      );
 
       alert(
         err.response?.data?.error ||
-        "Erro ao submeter evidências."
+          "Erro ao submeter evidências."
       );
     } finally {
-      setSubmeterLoading(false);
+      setSubmeterLoading(
+        false
+      );
     }
   };
 
@@ -193,10 +392,12 @@ function SubmeterEvidenciasPage() {
               variant="link"
               className="d-flex align-items-center text-decoration-none p-0 mb-2"
               style={{ color: "#4A5568", fontSize: "1.05rem" }}
-              onClick={() => navigate(-1)}
+              onClick={() =>
+                navigate(voltarPara)
+              }
             >
               <HiOutlineArrowLeft className="me-1" />
-              <span>Voltar</span>
+              <span>{textoVoltar}</span>
             </Button>
 
             <div className="text-muted mt-4">
@@ -222,16 +423,22 @@ function SubmeterEvidenciasPage() {
             variant="link"
             className="d-flex align-items-center text-decoration-none p-0 mb-2"
             style={{ color: "#4A5568", fontSize: "1.05rem" }}
-            onClick={() => navigate(-1)}
+            onClick={() =>
+              navigate(voltarPara)
+            }
           >
             <HiOutlineArrowLeft className="me-1" />
-            <span>Voltar</span>
+            <span>{textoVoltar}</span>
           </Button>
 
           <hr className="my-2" />
 
           <div style={heroCard}>
-            <div style={heroIconWrap}>🏅</div>
+            <BadgeImage
+              badge={badge}
+              nome={nome}
+              size={72}
+            />
 
             <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 10 }}>
               Submeter Evidências
@@ -316,9 +523,23 @@ function SubmeterEvidenciasPage() {
             <button
               style={{
                 ...actionBtn,
-                opacity: submeterLoading ? 0.7 : 1,
+
+                opacity:
+                  submeterLoading ||
+                  !podeSubmeter
+                    ? 0.55
+                    : 1,
+
+                cursor:
+                  submeterLoading ||
+                  !podeSubmeter
+                    ? "not-allowed"
+                    : "pointer",
               }}
-              disabled={submeterLoading}
+              disabled={
+                submeterLoading ||
+                !podeSubmeter
+              }
               onClick={submeterEvidencias}
             >
               <HiOutlineUpload size={18} style={{ marginRight: 8 }} />
@@ -455,9 +676,13 @@ function RequisitoUploadRow({
   );
 }
 
-function getRequisitoKey(req, index) {
+function getRequisitoKey(
+  req,
+  index
+) {
   return String(
     req.id_requisito ||
+    req.id_requisitos ||
     req.titulo ||
     req.nome ||
     index

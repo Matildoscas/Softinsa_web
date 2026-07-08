@@ -310,6 +310,7 @@ function EditarConta() {
         email: form.email,
         contacto: form.telefone,
         estado_conta: form.status === "Ativo" ? "ATIVO" : "INATIVA",
+        //tipo_utilizador: form.funcao,
     });
 
       setSucesso("Conta atualizada com sucesso.");

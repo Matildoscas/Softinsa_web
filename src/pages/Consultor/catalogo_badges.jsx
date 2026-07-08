@@ -8,6 +8,9 @@ import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
+import BadgeImage from "../../components/badge_image.jsx";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
+import { obterBonusBadge, removerBadgesDuplicados,} from "../../utils/badgeBonus.js";
 
 function CatalogoBadgesPage() {
   const navigate = useNavigate();
@@ -54,11 +57,11 @@ function CatalogoBadgesPage() {
       api.get(`/certificados/pendentes/${userId}`),
     ])
       .then(([todosRes, conquistadosRes, pendentesRes]) => {
-        const todos = removerDuplicados(
+        const todos = removerBadgesDuplicados(
           Array.isArray(todosRes.data) ? todosRes.data : []
         );
 
-        const conquistados = removerDuplicados(
+        const conquistados = removerBadgesDuplicados(
           Array.isArray(conquistadosRes.data) ? conquistadosRes.data : []
         );
 
@@ -235,23 +238,72 @@ function CatalogoBadgesPage() {
           <PaginacaoCatalogo
             paginaAtual={paginaAtual}
             totalPaginas={totalPaginas}
-            onAnterior={() => setPaginaAtual((p) => Math.max(1, p - 1))}
-            onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+            onAnterior={() =>
+              setPaginaAtual((pagina) =>
+                Math.max(1, pagina - 1)
+              )
+            }
+            onProxima={() =>
+              setPaginaAtual((pagina) =>
+                Math.min(
+                  totalPaginas,
+                  pagina + 1
+                )
+              )
+            }
+            onSelecionarPagina={
+              setPaginaAtual
+            }
           />
 
-          <div className="d-flex justify-content-center mt-5 mb-4">
+          <div
+            className="
+              d-flex
+              justify-content-center
+              mt-4
+              mb-4
+            "
+          >
             <Button
-              variant="white"
-              className="rounded-pill px-4 shadow-sm border d-flex align-items-center gap-2"
-              style={{ fontSize: 16, fontWeight: 500, minWidth: 200 }}
-              onClick={() => navigate("/meus_badges")}
+              variant="light"
+              className="
+                d-flex
+                align-items-center
+                justify-content-center
+                gap-2
+              "
+              style={{
+                minWidth: 175,
+                height: 40,
+
+                border:
+                  "1px solid #d6dbe1",
+
+                borderRadius: 8,
+
+                background:
+                  "#f8f9fa",
+
+                color:
+                  "#344054",
+
+                fontSize: 14,
+                fontWeight: 500,
+
+                boxShadow:
+                  "0 1px 2px rgba(0,0,0,0.04)",
+              }}
+              onClick={() =>
+                navigate(
+                  "/meus_badges"
+                )
+              }
             >
-              <BiMedal size={20} />
+              <BiMedal size={18} />
+
               Os seus Badges
             </Button>
           </div>
-
-          <hr />
         </main>
 
         <RightSidebar />
@@ -267,113 +319,475 @@ function PaginacaoCatalogo({
   totalPaginas,
   onAnterior,
   onProxima,
+  onSelecionarPagina,
 }) {
-  if (totalPaginas <= 1) return null;
+  if (totalPaginas <= 1) {
+    return null;
+  }
 
-  const disabledAnterior = paginaAtual === 1;
-  const disabledProxima = paginaAtual === totalPaginas;
+  const disabledAnterior =
+    paginaAtual === 1;
+
+  const disabledProxima =
+    paginaAtual ===
+    totalPaginas;
+
+  const criarPaginasVisiveis =
+    () => {
+      /*
+       * Até cinco páginas:
+       * apresenta todas.
+       */
+      if (totalPaginas <= 5) {
+        return Array.from(
+          {
+            length:
+              totalPaginas,
+          },
+          (_, index) =>
+            index + 1
+        );
+      }
+
+      /*
+       * Muitas páginas:
+       * mantém a atual ao centro.
+       */
+      if (paginaAtual <= 3) {
+        return [
+          1,
+          2,
+          3,
+          4,
+          "...",
+          totalPaginas,
+        ];
+      }
+
+      if (
+        paginaAtual >=
+        totalPaginas - 2
+      ) {
+        return [
+          1,
+          "...",
+          totalPaginas - 3,
+          totalPaginas - 2,
+          totalPaginas - 1,
+          totalPaginas,
+        ];
+      }
+
+      return [
+        1,
+        "...",
+        paginaAtual - 1,
+        paginaAtual,
+        paginaAtual + 1,
+        "...",
+        totalPaginas,
+      ];
+    };
+
+  const paginasVisiveis =
+    criarPaginasVisiveis();
 
   return (
     <div
       style={{
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 5,
-        marginTop: 26,
-        marginBottom: 18,
+        justifyContent:
+          "center",
+        marginTop: 24,
+        marginBottom: 24,
       }}
     >
-      <button
-        onClick={onAnterior}
-        disabled={disabledAnterior}
-        style={{
-          ...paginationButton,
-          opacity: disabledAnterior ? 0.45 : 1,
-          cursor: disabledAnterior ? "not-allowed" : "pointer",
-        }}
-      >
-        {"<"}
-      </button>
-
-      <div style={paginationCurrent}>
-        {paginaAtual}
-      </div>
-
       <div
         style={{
-          fontSize: 20,
-          color: "#2f3d4f",
-          minWidth: 58,
-          textAlign: "center",
-          fontWeight: 500,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          background: "white",
+          border:
+            "1px solid #dfe3e8",
+          borderRadius: 9,
+          padding: 5,
+          boxShadow:
+            "0 1px 2px rgba(0,0,0,0.03)",
         }}
       >
-        {paginaAtual}/{totalPaginas}
-      </div>
+        <button
+          type="button"
+          onClick={onAnterior}
+          disabled={
+            disabledAnterior
+          }
+          aria-label="Página anterior"
+          style={{
+            ...paginationButton,
 
-      <button
-        onClick={onProxima}
-        disabled={disabledProxima}
-        style={{
-          ...paginationButton,
-          opacity: disabledProxima ? 0.45 : 1,
-          cursor: disabledProxima ? "not-allowed" : "pointer",
-        }}
-      >
-        {">"}
-      </button>
+            color:
+              disabledAnterior
+                ? "#cbd0d6"
+                : "#5f6b7a",
+
+            cursor:
+              disabledAnterior
+                ? "not-allowed"
+                : "pointer",
+
+            background:
+              disabledAnterior
+                ? "#fafafa"
+                : "white",
+          }}
+        >
+          ‹
+        </button>
+
+        {paginasVisiveis.map(
+          (
+            pagina,
+            index
+          ) => {
+            if (
+              pagina === "..."
+            ) {
+              return (
+                <div
+                  key={`ellipsis-${index}`}
+                  style={{
+                    width: 30,
+                    height: 32,
+                    display:
+                      "flex",
+                    alignItems:
+                      "center",
+                    justifyContent:
+                      "center",
+                    color:
+                      "#8a94a3",
+                    fontSize: 13,
+                  }}
+                >
+                  ...
+                </div>
+              );
+            }
+
+            const ativa =
+              Number(pagina) ===
+              Number(
+                paginaAtual
+              );
+
+            return (
+              <button
+                key={pagina}
+                type="button"
+                onClick={() =>
+                  onSelecionarPagina(
+                    pagina
+                  )
+                }
+                aria-current={
+                  ativa
+                    ? "page"
+                    : undefined
+                }
+                style={{
+                  ...paginationButton,
+
+                  background:
+                    ativa
+                      ? "#e8edf3"
+                      : "white",
+
+                  color:
+                    ativa
+                      ? "#1f2937"
+                      : "#667085",
+
+                  borderColor:
+                    ativa
+                      ? "#d6dce4"
+                      : "transparent",
+
+                  fontWeight:
+                    ativa
+                      ? 700
+                      : 500,
+
+                  cursor:
+                    "pointer",
+                }}
+              >
+                {pagina}
+              </button>
+            );
+          }
+        )}
+
+        <div
+          style={{
+            minWidth: 42,
+            padding:
+              "0 6px",
+            textAlign:
+              "center",
+            color:
+              "#667085",
+            fontSize:
+              12,
+            fontWeight:
+              500,
+          }}
+        >
+          {paginaAtual}/
+          {totalPaginas}
+        </div>
+
+        <button
+          type="button"
+          onClick={onProxima}
+          disabled={
+            disabledProxima
+          }
+          aria-label="Página seguinte"
+          style={{
+            ...paginationButton,
+
+            color:
+              disabledProxima
+                ? "#cbd0d6"
+                : "#5f6b7a",
+
+            cursor:
+              disabledProxima
+                ? "not-allowed"
+                : "pointer",
+
+            background:
+              disabledProxima
+                ? "#fafafa"
+                : "white",
+          }}
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 }
 
-function CatalogoBadgeRow({ badge, conquistado, conquistadoBadge, pendente, onClick }) {
-  const nome = badge.nome || badge.nome_badge || "Badge";
-  const descricao = badge.descricao || badge.descricao_badge_modelo || "";
-  const pontos = badge.pontos || 0;
-  const area = badge.nome_area || badge.nome_areas || badge.area || "";
+function CatalogoBadgeRow({
+  badge,
+  conquistado,
+  conquistadoBadge,
+  pendente,
+  onClick,
+}) {
+  const nome =
+    badge.nome ||
+    badge.nome_badge ||
+    "Badge";
 
-  const estadoTexto = conquistado
+  const descricao =
+    badge.descricao ||
+    badge.descricao_badge_modelo ||
+    "";
+
+  const pontos =
+    Number(badge.pontos || 0);
+
+  const area =
+    badge.nome_area ||
+    badge.nome_areas ||
+    badge.area ||
+    "";
+
+  /*
+   * No catálogo, o bónus vem do badge
+   * conquistado, não do badge de catálogo.
+   */
+  const {
+    ganhouBonus,
+    pontosExtra,
+  } = obterBonusBadge(
+    conquistadoBadge
+  );
+
+  const bonusAtivo =
+    conquistado &&
+    ganhouBonus;
+
+  const estadoBase = conquistado
     ? conquistadoBadge?.data_atribuicao
-      ? `Conquistado a ${new Date(conquistadoBadge.data_atribuicao).toLocaleDateString("pt-PT")}`
+      ? `Conquistado a ${new Date(
+          conquistadoBadge.data_atribuicao
+        ).toLocaleDateString("pt-PT")}`
       : "Conquistado recentemente"
     : pendente
-      ? pendente.estado_validacao || "A aguardar validação"
+      ? pendente.estado_validacao ||
+        "A aguardar validação"
       : "Por Conquistar";
-  
-  const corEstado = conquistado
-    ? "#2E7D32"
-    : pendente
-      ? "#EF6C00"
-      : "#3b4a60";
+
+  const estadoTexto =
+    bonusAtivo && pontosExtra > 0
+      ? `${estadoBase} • +${pontosExtra} pontos extra`
+      : estadoBase;
+
+  const corEstado = bonusAtivo
+    ? "#9a6b00"
+    : conquistado
+      ? "#2E7D32"
+      : pendente
+        ? "#EF6C00"
+        : "#3b4a60";
 
   return (
-    <div style={{...badgeCard, cursor: "pointer", }} onClick={onClick}    >
+    <div
+      style={{
+        ...badgeCard,
+        cursor: "pointer",
+
+        border: bonusAtivo
+          ? "2px solid #d4af37"
+          : badgeCard.border,
+
+        boxShadow: bonusAtivo
+          ? "0 0 0 3px rgba(212,175,55,0.12)"
+          : "none",
+      }}
+      onClick={onClick}
+    >
       <div style={badgeContent}>
-        <div style={badgeIcon}>🏅</div>
+        <BadgeImage
+          badge={badge}
+          size={72}
+        />
 
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 500, color: "#111827" }}>
-            {nome}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#111827",
+              }}
+            >
+              {nome}
+            </div>
+
+            {bonusAtivo && (
+              <span
+                style={{
+                  background: "#fff7d6",
+                  color: "#9a6b00",
+                  border:
+                    "1px solid #f0d36b",
+                  borderRadius: 999,
+                  padding: "3px 9px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                Desafio concluído
+              </span>
+            )}
           </div>
 
-          <div style={{ fontSize: 12, color: "#344563", marginTop: 4 }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: "#344563",
+              marginTop: 4,
+            }}
+          >
             {descricao}
+
             {area && (
-                <div style={{ fontSize: 12, color: "#4470AF", marginTop: 3 }}>
-                    {area}
-                </div>
-                )}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#4470AF",
+                  marginTop: 3,
+                }}
+              >
+                {area}
+              </div>
+            )}
+
+            <DebugBadgePanel badge={badge} />
           </div>
         </div>
 
-        <div style={pointsBox}>
-          <div style={{ fontSize: 10, fontWeight: 600 }}>Pontos</div>
-          <div style={{ fontSize: 17, fontWeight: 700 }}>{pontos}</div>
+        <div
+          style={{
+            ...pointsBox,
+
+            border: bonusAtivo
+              ? "1.5px solid #d4af37"
+              : pointsBox.border,
+
+            background: bonusAtivo
+              ? "#fffdf4"
+              : "white",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: bonusAtivo
+                ? "#9a6b00"
+                : "#111827",
+            }}
+          >
+            Pontos
+          </div>
+
+          <div
+            style={{
+              fontSize: 17,
+              fontWeight: 700,
+            }}
+          >
+            {pontos}
+          </div>
+
+          {bonusAtivo &&
+            pontosExtra > 0 && (
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#d4a017",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                +{pontosExtra} extra
+              </div>
+            )}
         </div>
       </div>
 
-      <div style={{ ...statusBar, color: corEstado }}>
+      <div
+        style={{
+          ...statusBar,
+          color: corEstado,
+          background: bonusAtivo
+            ? "#fffdf4"
+            : statusBar.background,
+        }}
+      >
         {estadoTexto}
       </div>
     </div>
@@ -408,18 +822,6 @@ const badgeContent = {
   gap: 18,
 };
 
-const badgeIcon = {
-  width: 72,
-  height: 72,
-  borderRadius: "50%",
-  background: "#eef6ff",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  flexShrink: 0,
-  fontSize: 28,
-};
-
 const pointsBox = {
   border: "1.5px solid #4470AF",
   borderRadius: 12,
@@ -438,30 +840,19 @@ const statusBar = {
 };
 
 const paginationButton = {
-  width: 45,
-  height: 45,
-  border: "none",
-  borderRadius: 18,
-  background: "#e9eef5",
-  color: "#2f3d4f",
-  fontSize: 20,
-  fontWeight: 400,
+  width: 34,
+  height: 32,
+  border:
+    "1px solid transparent",
+  borderRadius: 6,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-};
-
-const paginationCurrent = {
-  width: 45,
-  height: 45,
-  borderRadius: 18,
-  background: "#e1e7ef",
-  color: "#2f3d4f",
-  fontSize: 20,
-  fontWeight: 500,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  fontSize: 14,
+  lineHeight: 1,
+  padding: 0,
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
 };
 
 export default CatalogoBadgesPage;

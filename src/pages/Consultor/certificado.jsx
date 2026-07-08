@@ -8,6 +8,7 @@ import Header from "../../components/header.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import api from "../../services/api.js";
+import logoImg from "../../assets/logo.png";
 
 function SignatureIcon() {
   return (
@@ -276,10 +277,26 @@ function CertificadoPage() {
           <hr style={{ borderColor: "#e5e7eb", margin: "8px 0 20px" }} />
 
           <div style={certCard} id="certificado-print">
-            <div style={certTitle}>Certificado de Competências</div>
-            <div style={certBrand}>SOFTINSA</div>
+            <div style={certificateTopLine} />
+            <div style={certificateHeader}>
+            <img
+              src={logoImg}
+              alt="Softinsa"
+              style={certLogo}
+            />
 
-            <div style={{ height: 40 }} />
+            <div style={certTitle}>
+              Certificado de Competências
+            </div>
+
+            <div style={titleDivider} />
+
+            <div style={certSubtitle}>
+              Softinsa Academy
+            </div>
+          </div>
+
+          <div style={{ height: 42 }} />
 
             <div style={certLine}>Certificamos que:</div>
 
@@ -381,31 +398,21 @@ const backBtn = {
 };
 
 const certCard = {
+  position: "relative",
   background: "white",
-  border: "1px solid #dbe3ef",
+
+  border: "2px solid #dbe3ef",
   borderRadius: 12,
+
   padding: "64px 80px",
   maxWidth: 900,
   minHeight: 1000,
   margin: "0 auto",
-}
 
-const certTitle = {
-  fontSize: 26,
-  fontWeight: 700,
-  color: "#111827",
-  textAlign: "center",
-  letterSpacing: "-0.3px",
-};
+  boxShadow:
+    "0 8px 30px rgba(15, 23, 42, 0.07)",
 
-const certBrand = {
-  fontSize: 22,
-  fontWeight: 700,
-  color: "#1a6fdc",
-  textAlign: "center",
-  letterSpacing: "1px",
-  marginTop: 4,
-  fontStyle: "italic",
+  overflow: "hidden",
 };
 
 const certLine = {
@@ -464,6 +471,51 @@ const actionBtn = {
   color: "#374151",
   cursor: "pointer",
   boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+};
+
+const certificateHeader = {
+  textAlign: "center",
+};
+
+const certLogo = {
+  display: "block",
+  width: 170,
+  maxHeight: 65,
+  objectFit: "contain",
+  margin: "0 auto 22px",
+};
+
+const certTitle = {
+  fontSize: 28,
+  fontWeight: 700,
+  color: "#111827",
+  textAlign: "center",
+  letterSpacing: "-0.4px",
+};
+
+const titleDivider = {
+  width: 72,
+  height: 3,
+  borderRadius: 999,
+  background: "#4470AF",
+  margin: "14px auto 10px",
+};
+
+const certSubtitle = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#64748b",
+  textTransform: "uppercase",
+  letterSpacing: "1.5px",
+};
+
+const certificateTopLine = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 8,
+  background: "#4470AF",
 };
 
 export default CertificadoPage;

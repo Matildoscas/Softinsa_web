@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BiBell, BiUserCircle, BiGrid, BiMedal } from "react-icons/bi";
-import api from "../services/api";
+import api from "../services/api.js";
 
 function AdminRightSidebar() {
   const [notifications, setNotifications] = useState([]);
