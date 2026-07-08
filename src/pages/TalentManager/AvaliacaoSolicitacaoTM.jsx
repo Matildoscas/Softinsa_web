@@ -65,7 +65,7 @@ function AvaliacaoSolicitacaoTM() {
           evidenciaTexto: linha.descricao_evidencia,
           documento: linha.nome_ficheiro,
           caminhoFicheiro: linha.caminho_ficheiro, // Guardamos o caminho para poder visualizar
-          estado: linha.estado_evidencia_tm || 'SEM_EVIDENCIA'
+          estado: linha.id_evidencia ? (linha.estado_evidencia_tm || 'PENDENTE') : 'SEM_EVIDENCIA'
         }));
 
         setRequisitos(requisitosTratados);
@@ -90,38 +90,47 @@ function AvaliacaoSolicitacaoTM() {
   };
 
   // NOVA FUNÇÃO: Abrir o ficheiro armazenado no backend numa nova aba
-  const handleVisualizarFicheiro = (nomeFicheiro) => {
-    if (!nomeFicheiro) return;
-    // Descobre o domínio base da API (ex: http://localhost:3000) e aponta para a pasta pública de uploads
-    const urlBase = api.defaults.baseURL ? api.defaults.baseURL.split('/api')[0] : 'http://localhost:3000';
-    const urlFicheiro = `${urlBase}/uploads/${nomeFicheiro}`;
-    window.open(urlFicheiro, '_blank');
-  };
+  const handleVisualizarFicheiro = (caminhoFicheiro) => {
+  if (!caminhoFicheiro) return;
 
-  // ACEITAR EVIDÊNCIA (Com bloqueio de duplo clique)
-  const handleAceitarEvidencia = async (idEvidencia) => {
+  const urlBase = api.defaults.baseURL 
+    ? api.defaults.baseURL.split('/api')[0] 
+    : 'http://localhost:3000'; // Garante que esta porta coincide com o teu backend (ex: 5000)
+
+  // caminhoFicheiro já vem da BD como "/uploads/evidencias/178350708..."
+  const urlFicheiro = `${urlBase}${caminhoFicheiro}`;
+  
+  window.open(urlFicheiro, '_blank');
+};
+
+  // ACEITAR EVIDÊNCIA 
+  const handleAceitarEvidencia = async (idEvidencia, idCandidaturaPedido) => {
     if (!idEvidencia || idEvidencia === 'SEM_EVIDENCIA') return;
+    
     try {
-      setAvaliandoId(idEvidencia); // Ativa o loading para este botão específico
+      setAvaliandoId(idEvidencia); 
+      
       await api.post("/candidaturas/tm/avaliar-evidencia", {
+        id_v_evidencia: idEvidencia, // Podes manter por segurança
         id_evidencia: idEvidencia,
-        estado_evidencia_tm: "AGUARDA_SLL"
+        id_candidatura_pedido: idCandidaturaPedido || Number(id), 
+        estado: "AGUARDA_SLL" // 🎯 CORREÇÃO: Usar a palavra chave 'estado' para o backend aceitar
       });
       
       setAtualizarDados(prev => prev + 1); 
     } catch (err) {
-      console.error(err);
-      alert("Erro ao aceitar a evidência.");
+      console.error("Erro ao aceitar evidência:", err);
+      alert("Erro ao aceitar a evidência. Verifica a consola.");
     } finally {
-      setAvaliandoId(null); // Liberta o loading
+      setAvaliandoId(null); 
     }
   };
 
-  // REJEITAR EVIDÊNCIA
+  // REJEITAR EVIDÊNCIA 
   const handleRejeitarEvidencia = async (idEvidencia, idCandidaturaPedido) => {
     if (!idEvidencia || idEvidencia === 'SEM_EVIDENCIA') return;
 
-    const motivo = prompt("Por favor, introduza o motivo da rejeição desta evidência:");
+    const motivo = prompt("Por favor, introduza o motivo da recuperação/rejeição desta evidência:");
     if (motivo === null) return; 
     if (!motivo.trim()) {
       alert("É obrigatório deixar um comentário para rejeitar a evidência.");
@@ -129,11 +138,11 @@ function AvaliacaoSolicitacaoTM() {
     }
 
     try {
-      setAvaliandoId(idEvidencia); // Ativa o loading
+      setAvaliandoId(idEvidencia); 
       await api.post("/candidaturas/tm/avaliar-evidencia", {
         id_evidencia: idEvidencia,
-        estado_evidencia_tm: "REJEITADA_TM",
         id_candidatura_pedido: idCandidaturaPedido,
+        estado: "REJEITADA", // 🎯 CORREÇÃO: Usar 'estado' e o valor "REJEITADA" porque o teu backend faz um .toUpperCase() e valida se é igual a 'REJEITADA' para rodar a transação global
         comentarios: motivo
       });
       
@@ -142,7 +151,7 @@ function AvaliacaoSolicitacaoTM() {
       console.error(err);
       alert("Erro ao rejeitar a evidência.");
     } finally {
-      setAvaliandoId(null); // Liberta o loading
+      setAvaliandoId(null); 
     }
   };
 
@@ -164,35 +173,40 @@ function AvaliacaoSolicitacaoTM() {
     const st = estado?.toUpperCase();
     if (st === 'PENDENTE') return { bg: '#fff3cd', text: '#664d03', label: 'PENDENTE' };
     if (st === 'AGUARDA_TM') return { bg: '#fff3cd', text: '#664d03', label: 'AGUARDA TM' };
-    if (st === 'APROVADO' || st === 'APROVADA') return { bg: '#d1e7dd', text: '#0f5132', label: 'APROVADO' };
+    
+    // 🎯 CORREÇÃO: Mapear o estado AGUARDA_SLL para mostrar como aprovado pelo Talent Manager
+    if (st === 'AGUARDA_SLL' || st === 'APROVADO' || st === 'APROVADA' || st === 'APROVADO_TM') {
+      return { bg: '#d1e7dd', text: '#0f5132', label: 'APROVADO POR TM' };
+    }
+    
     if (st === 'REJEITADA' || st === 'REJEITADO') return { bg: '#f8d7da', text: '#842029', label: 'REJEITADO' };
     return { bg: '#e9ecef', text: '#495057', label: 'SEM EVIDÊNCIA' };
   };
 
-  // SUBMISSÃO FINAL (Com tratamento do Erro 404 corrigido para /pedido/)
+  // SUBMISSÃO FINAL 
   const finalizarValidacaoBadge = async () => {
-  if (!todosAprovados) return;
-  
-  try {
-    setFinalizando(true); 
+    if (!todosAprovados) return;
     
-    await api.post("/candidaturas/tm/finalizar-avaliacao", {
-      id_candidatura_pedido: Number(id), 
-      estado_evidencia_tm: "APROVADO",        
-      comentarios: "Todos os requisitos foram validados e aprovados com sucesso."
-    });
+    try {
+      setFinalizando(true); 
+      
+      await api.post("/candidaturas/tm/finalizar-avaliacao", {
+        id_candidatura_pedido: Number(id), 
+        estado: "AGUARDA_SLL", 
+        comentarios: "Todos os requisitos foram validados e aprovados com sucesso."
+      });
 
-    navigate('/tm/Solicitacoes'); 
-  } catch (err) {
-    console.error("Erro ao finalizar badge:", err);
+      navigate('/tm/Solicitacoes'); 
+    } catch (err) {
+      console.error("Erro ao finalizar badge:", err);
 
-    const mensagemErroBackend = err.response?.data?.error || err.message;
-    alert(`Erro no Servidor: ${mensagemErroBackend}`);
-    
-  } finally {
-    setFinalizando(false); // Desativa o loading
-  }
-};
+      const mensagemErroBackend = err.response?.data?.error || err.message;
+      alert(`Erro no Servidor: ${mensagemErroBackend}`);
+      
+    } finally {
+      setFinalizando(false); 
+    }
+  };
 
   if (loading) {
     return (
@@ -342,7 +356,7 @@ function AvaliacaoSolicitacaoTM() {
                                   </div>
                                   {/* CORREÇÃO: Função de visualizar adicionada ao clique */}
                                   <button 
-                                    onClick={() => handleVisualizarFicheiro(req.documento)}
+                                    onClick={() => handleVisualizarFicheiro(req.caminhoFicheiro)}
                                     style={{ background: 'none', border: 'none', color: '#0d6efd', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
                                   >
                                     Visualizar
@@ -355,7 +369,7 @@ function AvaliacaoSolicitacaoTM() {
                               {req.estado?.toUpperCase() === 'PENDENTE' ? (
                                 <>
                                   <button 
-                                    onClick={() => handleAceitarEvidencia(req.idEvidencia)}
+                                    onClick={() => handleAceitarEvidencia(req.idEvidencia, req.idCandidaturaPedido)}
                                     disabled={avaliandoId !== null}
                                     style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#0d6efd', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}
                                   >

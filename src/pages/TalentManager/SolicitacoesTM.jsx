@@ -17,8 +17,9 @@ function SolicitacaoBadges() {
   const [candidaturas, setCandidaturas] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados dos Filtros (Conforme pedido: Estado + Texto)
+  // Estados dos Filtros
   const [filtroEstado, setFiltroEstado] = useState("Todos"); // "Todos", "Por avaliar", "Em avaliação"
+  const [filtroAmbito, setFiltroAmbito] = useState("MinhaArea"); // 🎯 NOVO FILTRO: "MinhaArea" ou "Todos"
   const [pesquisa, setPesquisa] = useState("");
 
   // Procurar candidaturas pendentes e em progresso diretamente do Backend
@@ -45,19 +46,20 @@ function SolicitacaoBadges() {
       const matchTexto = nomeConsultor.includes(termo) || nomeBadge.includes(termo);
 
       // 2. Filtro por Estado de Validação (Por avaliar / Em avaliação)
-      // Mapeia de acordo com as strings exatas que guardas na tua BD (ex: 'Por avaliar', 'Em avaliação' ou 'Pendente')
       const estadoCandidatura = c.estado_validacao || c.estado || "Por avaliar";
       const matchEstado = filtroEstado === "Todos" ? true : estadoCandidatura === filtroEstado;
 
-      return matchTexto && matchEstado;
+      // 3. 🎯 NOVO: Filtro por Âmbito de Visualização (Minha Área vs Todas)
+      const matchAmbito = filtroAmbito === "Todos" ? true : c.da_minha_area === true;
+
+      return matchTexto && matchEstado && matchAmbito;
     })
     .sort((a, b) => {
-      // ORDENAÇÃO SOLICITADA: Mais perto de acabar em cima (Maior número de evidências já avaliadas / maior progresso)
-      // Se a tua BD já devolver a percentagem ou contagem de evidências:
+      // ORDENAÇÃO SOLICITADA: Mais perto de acabar em cima
       const progressoA = Number(a.evidencias_avaliadas || a.progresso || 0);
       const progressoB = Number(b.evidencias_avaliadas || b.progresso || 0);
 
-      return progressoB - progressoA; // Ordem decrescente (Maior progresso no topo)
+      return progressoB - progressoA; 
     });
 
   return (
@@ -92,6 +94,20 @@ function SolicitacaoBadges() {
 
             {/* BARRA DE FILTROS RECONFIGURADA */}
             <div style={filterBar}>
+              
+              {/* 🎯 NOVO: Dropdown de Escopo de Visualização */}
+              <div style={filterGroup}>
+                <label style={filterLabel}>Visualização</label>
+                <Form.Select 
+                  style={{ ...filterInput, width: "190px", borderColor: "#2563EB", fontWeight: "500" }}
+                  value={filtroAmbito}
+                  onChange={(e) => setFiltroAmbito(e.target.value)}
+                >
+                  <option value="MinhaArea">Minha Área / SL</option>
+                  <option value="Todos">Todas as Áreas</option>
+                </Form.Select>
+              </div>
+
               {/* Filtro por Estado de Avaliação */}
               <div style={filterGroup}>
                 <label style={filterLabel}>Filtrar por Estado</label>
@@ -142,7 +158,6 @@ function SolicitacaoBadges() {
             ) : (
               <div style={listContainer}>
                 {candidaturasProcessadas.map((pedido) => {
-                  // Chave primária do pedido na tua base de dados
                   const idPedido = pedido.id_candidatura_pedido || pedido.id;
                   
                   return (
@@ -161,7 +176,7 @@ function SolicitacaoBadges() {
               <div style={linkItem}>
                 <BiTimeFive size={16} /> Ver Badges com expiração próxima
               </div>
-              <div style={linkItem} onClick={() => navigate("/tm/historico")}>
+              <div style={linkItem} onClick={() => navigate("/tm/HistoricoCandidaturas")}>
                 <BiHistory size={16} /> Ver Histórico de candidaturas
               </div>
             </div>
@@ -177,19 +192,15 @@ function SolicitacaoBadges() {
 
 // COMPONENTE ISOLADO PARA CADA LINHA DA TABELA candidatura_pedido
 function CandidaturaPedidoRow({ pedido, onClick }) {
-  // Tratamento preventivo de nomes de propriedades vindas do SQL Join
   const consultorNome = pedido.nome_consultor || pedido.nome_utilizador || "Consultor";
   const consultorEmail = pedido.email_consultor || pedido.email || "";
   const badgeNome = pedido.nome_badge || pedido.nome || "Badge Especificado";
   const areaNome = pedido.nome_area || pedido.service_line || pedido.area || "";
   const diasPassados = pedido.dias_passados || 0;
   
-  // Estado de Validação
   const estado = pedido.estado_validacao || pedido.estado || "Por avaliar";
   const isEmAvaliacao = estado === "Em avaliação";
 
-  // Cálculo Dinâmico do Progresso baseado nas evidências da BD
-  // Podes passar diretamente o valor calculado do SQL ou computá-lo aqui:
   const totalEvidencias = Number(pedido.total_evidencias || 0);
   const evidenciasAvalia = Number(pedido.evidencias_avaliadas || 0);
   const percentagemProgresso = totalEvidencias > 0 
@@ -214,7 +225,15 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
         <div style={badgeHeader}>
           <span style={{ fontSize: "22px" }}>🏅</span>
           <div>
-            <div style={badgeTitle}>{badgeNome}</div>
+            <div style={badgeTitle}>
+              {badgeNome} 
+              {/* 🎯 TAG VISUAL EXTRA: Mostra um pequeno badge caso a candidatura seja de fora da área dele */}
+              {!pedido.da_minha_area && (
+                <span style={{ fontSize: '10px', marginLeft: '8px', padding: '2px 6px', backgroundColor: '#f3f4f6', color: '#6b7280', borderRadius: '4px', fontWeight: 'normal' }}>
+                  Outra Área
+                </span>
+              )}
+            </div>
             <div style={serviceLine}>{areaNome}</div>
           </div>
         </div>
@@ -262,7 +281,6 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
           }}
         >
           {isEmAvaliacao ? "Continuar Avaliação" : "Avaliar"}
-          
         </button>
       </div>
     </div>
@@ -270,7 +288,6 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
 }
 
 // ================= ESTILOS CONFIGURADOS (CSS-in-JS) =================
-
 const pageLayout = { display: "flex", minHeight: "100vh", backgroundColor: "#f7f7f7" };
 const mainContentWrapper = { flex: 1, display: "flex", flexDirection: "column", minWidth: 0 };
 const bodyWrapper = { display: "flex", flex: 1, overflow: "hidden" };

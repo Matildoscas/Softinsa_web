@@ -104,8 +104,8 @@ function DetalhesHistoricoTM() {
                                     <div className="text-primary fw-semibold mb-1">{detalhes.badge_nome}</div>
                                     <p className="text-muted small mb-2" style={{ fontSize: 13 }}>{detalhes.badge_descricao}</p>
                                     <div className="d-flex justify-content-between align-items-center">
-                                        <Badge bg="primary" style={{ backgroundColor: '#e5edff', color: '#0d6efd', fontWeight: 500 }} className="rounded-pill px-3 py-1">
-                                            {detalhes.badge_categoria || 'Tecnologia'}
+                                        <Badge bg="primary" style={{ backgroundColor: '#e5edff', color: '#0d6efd', fontWeight: 500 }} className="text-primary bg-opacity-10 border border-primary border-opacity-25 rounded-pill px-3 py-1">
+                                            {detalhes.badge_categoria}
                                         </Badge>
                                         <small className="text-muted small">Solicitado a: {detalhes.data_submissao_formatada}</small>
                                     </div>
