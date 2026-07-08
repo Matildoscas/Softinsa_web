@@ -57,10 +57,11 @@ function PaginaPrincipalSll() {
     nome_completo: "Service Line Leader",
     nome_serviceline: "Service Line",
     total_consultores: 0,
-    total_talent_managers: 0,
+    consultores_ativos: 0,
     evidencias_pendentes: 0,
     badges_atribuidos_mes: 0,
     badges_por_aprovar: 0,
+    pontos_obtidos_mes: 0,
   });
 
   const [consultores, setConsultores] =
@@ -131,9 +132,9 @@ function PaginaPrincipalSll() {
             .total_consultores || 0
         ),
 
-        total_talent_managers: Number(
+        consultores_ativos: Number(
           resumoResultado.value.data
-            .total_talent_managers || 0
+            .consultores_ativos || 0
         ),
 
         evidencias_pendentes: Number(
@@ -149,6 +150,11 @@ function PaginaPrincipalSll() {
         badges_por_aprovar: Number(
           resumoResultado.value.data
             .badges_por_aprovar || 0
+        ),
+
+        pontos_obtidos_mes: Number(
+          resumoResultado.value.data
+            .pontos_obtidos_mes || 0
         ),
       });
 
@@ -219,11 +225,11 @@ function PaginaPrincipalSll() {
           atual: "consultores_este_ano",
           anterior: "consultores_ano_passado",
         }
-      : activeTab === "Total Learning Paths"
+      : activeTab === "Pontos obtidos"
         ? {
-            atual: "learningpaths_este_ano",
+            atual: "pontos_este_ano",
             anterior:
-              "learningpaths_ano_passado",
+              "pontos_ano_passado",
           }
         : {
             atual: "badges_este_ano",
@@ -282,7 +288,7 @@ function PaginaPrincipalSll() {
               <section style={statsRow}>
                 <SmallStatCard
                     icon={<BiUserCircle size={28} />}
-                    value={resumo.total_consultores}
+                  value={resumo.consultores_ativos}
                     label="Consultores ativos"
                 />
 
@@ -298,75 +304,6 @@ function PaginaPrincipalSll() {
                     label="Badges por aprovar"
                 />
                 </section>
-
-              <section style={peopleSection}>
-                <div style={peopleColumn}>
-                  <div style={peopleHeader}>
-                    <div>
-                      <h3 style={sectionTitle}>
-                        Os seus Consultores e Talent
-                        Managers
-                      </h3>
-
-                      <div style={sectionDescription}>
-                        Tem {resumo.total_consultores}{" "}
-                        consultores e{" "}
-                        {resumo.total_talent_managers}{" "}
-                        Talent Managers
-                      </div>
-
-                      <div style={topText}>
-                        Top 3 este mês:
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate("/sll/consultores")
-                      }
-                      style={viewAllButton}
-                    >
-                      <BiBookOpen size={15} />
-                      Ver Todos
-                    </button>
-                  </div>
-
-                  {consultores.length > 0 ? (
-                    consultores.map((consultor, index) => {
-                      const idConsultor =
-                        consultor.id_utilizador ||
-                        consultor.ID_UTILIZADOR ||
-                        consultor.id;
-
-                      return (
-                        <ConsultorCard
-                          key={idConsultor || index}
-                          consultor={consultor}
-                          onVerPerfil={() =>
-                            navigate(
-                              `/sll/consultores/${consultor.id_utilizador}`,
-                              {
-                                state: {
-                                  voltarPara: location.pathname,
-                                  textoVoltar: "Voltar ao dashboard",
-                                },
-                              }
-                            )
-                          }
-                        />
-                      );
-                    })
-                  ) : (
-                    <div style={emptyBox}>
-                      Ainda não existem consultores
-                      associados a esta Service Line.
-                    </div>
-                  )}
-                </div>
-
-                
-              </section>
 
               <section style={chartCard}>
                 <div style={chartHeader}>
@@ -439,6 +376,73 @@ function PaginaPrincipalSll() {
                     gráfico.
                   </div>
                 )}
+              </section>
+
+              <section style={peopleSection}>
+                <div style={peopleColumn}>
+                  <div style={peopleHeader}>
+                    <div>
+                      <h3 style={sectionTitle}>
+                        Os seus Consultores
+                      </h3>
+
+                      <div style={sectionDescription}>
+                        Tem {resumo.total_consultores}{" "}
+                        consultores nesta Service
+                        Line
+                      </div>
+
+                      <div style={topText}>
+                        Top 3 este mês:
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate("/sll/consultores")
+                      }
+                      style={viewAllButton}
+                    >
+                      <BiBookOpen size={15} />
+                      Ver Todos
+                    </button>
+                  </div>
+
+                  {consultores.length > 0 ? (
+                    consultores.map((consultor, index) => {
+                      const idConsultor =
+                        consultor.id_utilizador ||
+                        consultor.ID_UTILIZADOR ||
+                        consultor.id;
+
+                      return (
+                        <ConsultorCard
+                          key={idConsultor || index}
+                          consultor={consultor}
+                          onVerPerfil={() =>
+                            navigate(
+                              `/sll/consultores/${consultor.id_utilizador}`,
+                              {
+                                state: {
+                                  voltarPara: location.pathname,
+                                  textoVoltar: "Voltar ao dashboard",
+                                },
+                              }
+                            )
+                          }
+                        />
+                      );
+                    })
+                  ) : (
+                    <div style={emptyBox}>
+                      Ainda não existem consultores
+                      associados a esta Service Line.
+                    </div>
+                  )}
+                </div>
+
+                
               </section>
             </>
           )}
@@ -553,7 +557,7 @@ function ChartTabs({
 }) {
   const tabs = [
     "Total Consultores",
-    "Total Learning Paths",
+    "Pontos obtidos",
     "Badges atribuídos",
   ];
 

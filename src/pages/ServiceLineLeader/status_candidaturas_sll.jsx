@@ -63,14 +63,53 @@ function chipEstado(estado) {
   return { label: estado || "-", bg: "#e5e7eb", color: "#475569", border: "#cbd5e1" };
 }
 
+function estadoEtapaRequisito(requisito, chaveEstado) {
+  const evidencias = Array.isArray(requisito?.evidencias)
+    ? requisito.evidencias
+    : [];
+
+  if (evidencias.length === 0) {
+    return "SEM_EVIDENCIA";
+  }
+
+  const estados = evidencias.map((evidencia) =>
+    normalizarEstado(evidencia?.[chaveEstado] || "PENDENTE")
+  );
+
+  if (
+    estados.some(
+      (estado) =>
+        estado.includes("REJEIT") ||
+        estado.includes("RECUS")
+    )
+  ) {
+    return "REJEITADO";
+  }
+
+  if (
+    estados.every(
+      (estado) =>
+        estado.includes("APROV") ||
+        estado.includes("VALID")
+    )
+  ) {
+    return "APROVADO";
+  }
+
+  return "PENDENTE";
+}
+
 function candidaturaEstaFinalizada(item) {
   const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
   const fase = normalizarEstado(item?.fase_geral);
 
   return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
     estado.includes("FINAL") ||
     fase.includes("HISTORICO") ||
     fase.includes("FINALIZ") ||
+    fase.includes("REJEIT") ||
     fase.includes("CONCLUID")
   );
 }
@@ -100,6 +139,26 @@ function EstadoChip({ titulo, valor }) {
   return (
     <div style={estadoBloco}>
       <div style={estadoTitulo}>{titulo}</div>
+      <span
+        style={{
+          ...estadoChip,
+          background: chip.bg,
+          color: chip.color,
+          border: `1px solid ${chip.border}`,
+        }}
+      >
+        {chip.label}
+      </span>
+    </div>
+  );
+}
+
+function EstadoRequisitoChip({ titulo, valor }) {
+  const chip = chipEstado(valor);
+
+  return (
+    <div style={estadoRequisitoBloco}>
+      <div style={estadoRequisitoTitulo}>{titulo}</div>
       <span
         style={{
           ...estadoChip,
@@ -395,21 +454,17 @@ export default function StatusCandidaturasSll() {
                       {(detalhe.requisitos || []).map((req) => (
                         <div key={req.id_requisitos} style={requisitoLinha}>
                           <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
-                          <span
-                            style={{
-                              ...estadoChip,
-                              ...(() => {
-                                const c = chipEstado(req.estado_evidencia);
-                                return {
-                                  background: c.bg,
-                                  color: c.color,
-                                  border: `1px solid ${c.border}`,
-                                };
-                              })(),
-                            }}
-                          >
-                            {req.estado_evidencia}
-                          </span>
+                          <div style={requisitoEstadosLinha}>
+                            <EstadoRequisitoChip
+                              titulo="TM"
+                              valor={estadoEtapaRequisito(req, "estado_evidencia_tm")}
+                            />
+
+                            <EstadoRequisitoChip
+                              titulo="SLL"
+                              valor={estadoEtapaRequisito(req, "estado_evidencia_sll")}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -708,6 +763,27 @@ const requisitoLinha = {
   border: "1px solid #e5e7eb",
   borderRadius: 9,
   padding: "7px 9px",
+};
+
+const requisitoEstadosLinha = {
+  display: "flex",
+  gap: 10,
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
+};
+
+const estadoRequisitoBloco = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  gap: 4,
+};
+
+const estadoRequisitoTitulo = {
+  fontSize: 10,
+  fontWeight: 700,
+  color: "#64748b",
+  textTransform: "uppercase",
 };
 
 const requisitoNome = {
