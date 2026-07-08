@@ -40,26 +40,34 @@ function CatalogoBadges() {
   // Carregamento de Dados Iniciais com Proteção de Rota
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-
-    if (!storedUser) {
+    const token = localStorage.getItem("token"); // 🚀 1. Vai buscar o token
+    
+    // Se não houver sessão ou token ativo, manda para o login
+    if (!storedUser || !token) {
       navigate("/login", { replace: true });
       return;
     }
-
+  
     const userData = JSON.parse(storedUser);
     const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
-
+  
     setLoading(true);
-
+  
+    // 🚀 2. Cria a configuração com o cabeçalho de autorização
+    const config = {
+      headers: { Authorization: `Bearer ${token}` }
+    };
+  
+    // 🚀 3. Injeta a 'config' como segundo parâmetro em cada GET do Promise.all
     Promise.all([
-      api.get("/badges/todos"),
-      api.get(`/badges/conquistados/${userId}`),
-      api.get(`/certificados/pendentes/${userId}`),
+      api.get("/badges/todos", config),
+      api.get(`/badges/conquistados/${userId}`, config),
+      api.get(`/certificados/pendentes/${userId}`, config),
     ])
       .then(([todosRes, conquistadosRes, pendentesRes]) => {
         const todos = removerDuplicados(Array.isArray(todosRes.data) ? todosRes.data : []);
         const conquistadosDados = removerDuplicados(Array.isArray(conquistadosRes.data) ? conquistadosRes.data : []);
-
+      
         setBadges(todos);
         setConquistados(conquistadosDados);
         setPendentes(Array.isArray(pendentesRes.data) ? pendentesRes.data : []);

@@ -105,7 +105,7 @@ function AvaliacaoSolicitacaoTM() {
       setAvaliandoId(idEvidencia); // Ativa o loading para este botão específico
       await api.post("/candidaturas/tm/avaliar-evidencia", {
         id_evidencia: idEvidencia,
-        estado_evidencia_tm: "APROVADO"
+        estado_evidencia_tm: "AGUARDA_SLL"
       });
       
       setAtualizarDados(prev => prev + 1); 
@@ -132,7 +132,7 @@ function AvaliacaoSolicitacaoTM() {
       setAvaliandoId(idEvidencia); // Ativa o loading
       await api.post("/candidaturas/tm/avaliar-evidencia", {
         id_evidencia: idEvidencia,
-        estado_evidencia_tm: "REJEITADA",
+        estado_evidencia_tm: "REJEITADA_TM",
         id_candidatura_pedido: idCandidaturaPedido,
         comentarios: motivo
       });
@@ -150,12 +150,12 @@ function AvaliacaoSolicitacaoTM() {
   const totalRequisitos = requisitos.length;
   const avaliadosCount = requisitos.filter(r => {
     const st = r.estado?.toUpperCase();
-    return st === 'APROVADO' || st === 'APROVADA' || st === 'REJEITADO' || st === 'REJEITADA';
+    return st === 'AGUARDA_SLL' || st === 'APROVADA' || st === 'REJEITADO' || st === 'REJEITADA';
   }).length;
 
   const todosAprovados = requisitos.length > 0 && requisitos.every(r => {
     const st = r.estado?.toUpperCase();
-    return st === 'APROVADO' || st === 'APROVADA';
+    return st === 'AGUARDA_SLL' || st === 'APROVADA';
   });
 
   const percentagemProgresso = totalRequisitos > 0 ? (avaliadosCount / totalRequisitos) * 100 : 0;
@@ -163,6 +163,7 @@ function AvaliacaoSolicitacaoTM() {
   const obterEstiloEstado = (estado) => {
     const st = estado?.toUpperCase();
     if (st === 'PENDENTE') return { bg: '#fff3cd', text: '#664d03', label: 'PENDENTE' };
+    if (st === 'AGUARDA_TM') return { bg: '#fff3cd', text: '#664d03', label: 'AGUARDA TM' };
     if (st === 'APROVADO' || st === 'APROVADA') return { bg: '#d1e7dd', text: '#0f5132', label: 'APROVADO' };
     if (st === 'REJEITADA' || st === 'REJEITADO') return { bg: '#f8d7da', text: '#842029', label: 'REJEITADO' };
     return { bg: '#e9ecef', text: '#495057', label: 'SEM EVIDÊNCIA' };

@@ -51,6 +51,7 @@ import HistoricoCandidaturasTM from './pages/TalentManager/HistoricoCandidaturas
 import DetalhesHistoricoTM from './pages/TalentManager/DetalhesHistoricoTM.jsx';
 import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';
 import TM_Definicoes from './pages/TalentManager/TM_Definicoes.jsx';
+import TM_consultores from './pages/TalentManager/TM_Consultore.jsx';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -115,6 +116,7 @@ function App() {
         <Route path="/tm/detalhes-historico/:id" element={<DetalhesHistoricoTM />} />
         <Route path="/tm/perfil" element={<TM_Perfil />} />
         <Route path="/tm/definicoes" element={<TM_Definicoes />} />
+        <Route path="/tm/consultores" element={<TM_consultores />} />
 
         
         {/* Rota de segurança: se o utilizador digitar qualquer coisa errada, vai para o login */}

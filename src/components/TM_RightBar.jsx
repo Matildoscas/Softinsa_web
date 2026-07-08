@@ -76,44 +76,52 @@ function RightSidebarTM() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) return;
+  const storedUser = localStorage.getItem("user");
+  const token = localStorage.getItem("token"); // 🚀 1. Vai buscar o token
 
-    const user = JSON.parse(storedUser);
-    const userId = user.id_utilizador;
+  // Se não houver utilizador ou token, não faz os pedidos
+  if (!storedUser || !token) return;
 
-    if (!userId) return;
+  const user = JSON.parse(storedUser);
+  const userId = user.id_utilizador;
 
-    setLoading(true);
+  if (!userId) return;
 
-    // 📡 1. Procura as Candidaturas Ativas na BD para calcular o número real pendente
-    const fetchSolicitacoes = api.get("/candidaturas/tm/candidaturas")
-      .then(res => {
-        const dados = Array.isArray(res.data) ? res.data : [];
-        setTotalPendentes(dados.length);
-      })
-      .catch(err => console.error("Erro ao carregar contagem de solicitações:", err));
+  setLoading(true);
 
-    // 📡 2. Procura o Histórico Geral na BD para calcular o número real avaliado
-    const fetchHistorico = api.get("/candidaturas/tm/historico")
-      .then(res => {
-        const dados = Array.isArray(res.data) ? res.data : [];
-        setTotalHistorico(dados.length);
-      })
-      .catch(err => console.error("Erro ao carregar contagem do histórico:", err));
+  // 🚀 2. Cria a configuração com o cabeçalho de autorização
+  const config = {
+    headers: { Authorization: `Bearer ${token}` }
+  };
 
-    // 📡 3. Procura as Notificações Reais do TM conectado
-    const fetchNotificacoes = api.get(`/notificacoes/${userId}`)
-      .then(res => {
-        setNotifications(Array.isArray(res.data) ? res.data : []);
-      })
-      .catch(err => console.error("Erro ao carregar notificações do TM:", err));
+  // 📡 1. Procura as Candidaturas Ativas na BD (Passando a config)
+  const fetchSolicitacoes = api.get("/candidaturas/tm/candidaturas", config)
+    .then(res => {
+      const dados = Array.isArray(res.data) ? res.data : [];
+      setTotalPendentes(dados.length);
+    })
+    .catch(err => console.error("Erro ao carregar contagem de solicitações:", err));
 
-    // Desliga os loadings quando todas as promessas da BD terminarem
-    Promise.all([fetchSolicitacoes, fetchHistorico, fetchNotificacoes])
-      .finally(() => setLoading(false));
+  // 📡 2. Procura o Histórico Geral na BD (Passando a config)
+  const fetchHistorico = api.get("/candidaturas/tm/historico", config)
+    .then(res => {
+      const dados = Array.isArray(res.data) ? res.data : [];
+      setTotalHistorico(dados.length);
+    })
+    .catch(err => console.error("Erro ao carregar contagem do histórico:", err));
 
-  }, []);
+  // 📡 3. Procura as Notificações Reais (Passando a config)
+  const fetchNotificacoes = api.get(`/notificacoes/${userId}`, config)
+    .then(res => {
+      setNotifications(Array.isArray(res.data) ? res.data : []);
+    })
+    .catch(err => console.error("Erro ao carregar notificações do TM:", err));
+
+  // Desliga os loadings quando todas as promessas da BD terminarem
+  Promise.all([fetchSolicitacoes, fetchHistorico, fetchNotificacoes])
+    .finally(() => setLoading(false));
+
+}, []);
 
   const containerStyle = { 
     width: '260px', 
