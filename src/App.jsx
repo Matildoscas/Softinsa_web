@@ -24,6 +24,7 @@ import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
 import ConfiguracaoAssinaturaPage from './pages/Consultor/configuracao_assinatura.jsx';
 import IntegracaoSoftinsaPage from './pages/Consultor/integracao_softinsa.jsx';
+import ConfiguracaoSLA from "./pages/Admin/config_sla.jsx";
 
 import GestaoContas from "./pages/Admin/gestao_contas.jsx";
 import EditarConta from "./pages/Admin/editar_contas.jsx";
@@ -45,6 +46,7 @@ import ConfigurarNotificacoes from "./pages/Admin/config_notificacao.jsx";
 import GestaoBadges from "./pages/Admin/gestao_badges.jsx";
 import CriarBadge from "./pages/Admin/criar_badges.jsx";
 import EditarBadge from "./pages/Admin/editar_badges.jsx";
+import GestaoPedidosBadges from "./pages/Admin/gestao_pedidos_badges.jsx";
 
 import DashboardSll from "./pages/ServiceLineLeader/dashboard_sll.jsx";
 import CatalogoBadgesSll from "./pages/ServiceLineLeader/catalogo_badges_sll.jsx";
@@ -137,6 +139,8 @@ function App() {
         <Route path="/admin/badges" element={<GestaoBadges />} />
         <Route path="/admin/badges/novo" element={<CriarBadge />} />
         <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
+        <Route path="/admin/pedidos-badges" element={<GestaoPedidosBadges />}/>
+        <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
 
         <Route path="/sll" element={<DashboardSll />} />
         <Route path="/sll/badges" element={<CatalogoBadgesSll />} />

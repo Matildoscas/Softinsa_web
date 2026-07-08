@@ -11,6 +11,7 @@ import {
   BiShield,
   BiBell,
   BiChevronRight,
+  BiTimeFive,
 } from "react-icons/bi";
 
 function AdminLeftSidebar() {
@@ -111,9 +112,15 @@ function AdminLeftSidebar() {
           />
 
           <SubLink
+            to="/admin/pedidos-badges"
+            label="Gestão de Pedidos de Badges"
+            icon={<BiBadge size={20} />}
+          />
+
+          <SubLink
             to="/admin/avisos"
             label="Informações Genéricas e Avisos"
-            icon={<BiInfoCircle size={15} />}
+            icon={<BiInfoCircle size={20} />}
           />
 
           <SubLink
@@ -128,6 +135,11 @@ function AdminLeftSidebar() {
         to="/admin/notificacoes"
         icon={<BiBell size={16} />}
         label="Configurar notificações"
+      />
+      <AdminLink
+        to="/admin/sla"
+        icon={<BiTimeFive size={16} />}
+        label="Configuração de SLA"
       />
     </div>
   );
