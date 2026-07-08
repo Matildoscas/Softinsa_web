@@ -158,7 +158,78 @@ function normalizarDocumentos(documentos) {
         documento.tipo ||
         documento.mimetype ||
         "",
+
+      estado_evidencia:
+        documento.estado_evidencia || "",
+
+      estado_evidencia_tm:
+        documento.estado_evidencia_tm || "",
+
+      estado_evidencia_sll:
+        documento.estado_evidencia_sll || "",
     }));
+}
+
+function normalizarEstado(valor) {
+  return String(valor || "")
+    .trim()
+    .toUpperCase();
+}
+
+function estadoAprovado(valor) {
+  return [
+    "APROVADA",
+    "APROVADO",
+    "VALIDADA",
+    "VALIDADO",
+  ].includes(normalizarEstado(valor));
+}
+
+function estadoRejeitado(valor) {
+  return [
+    "REJEITADA",
+    "REJEITADO",
+    "RECUSADA",
+    "RECUSADO",
+  ].includes(normalizarEstado(valor));
+}
+
+function candidaturaConcluida(candidatura) {
+  return (
+    estadoAprovado(candidatura?.estado) ||
+    estadoRejeitado(candidatura?.estado) ||
+    estadoAprovado(candidatura?.estado_sll) ||
+    estadoRejeitado(candidatura?.estado_sll)
+  );
+}
+
+function obterEstadoVisualSll(estado) {
+  const valor = normalizarEstado(estado);
+
+  if (estadoAprovado(valor)) {
+    return {
+      label: "Aprovado pelo SLL",
+      background: "#dcfce7",
+      color: "#166534",
+      border: "#bbf7d0",
+    };
+  }
+
+  if (estadoRejeitado(valor)) {
+    return {
+      label: "Rejeitado pelo SLL",
+      background: "#fee2e2",
+      color: "#991b1b",
+      border: "#fecaca",
+    };
+  }
+
+  return {
+    label: "Pendente SLL",
+    background: "#fef3c7",
+    color: "#92400e",
+    border: "#fde68a",
+  };
 }
 
 function normalizarRequisito(
@@ -196,6 +267,27 @@ function normalizarRequisito(
       requisito.estado_evidencia ||
       requisito.estado ||
       "AGUARDAR_TM",
+
+    estado_tm:
+      requisito.estado_requisito_tm ||
+      requisito.estado_evidencia_tm ||
+      requisito.estado_evidencia ||
+      requisito.estado ||
+      "PENDENTE",
+
+    estado_sll:
+      requisito.estado_requisito_sll ||
+      requisito.estado_evidencia_sll ||
+      "PENDENTE",
+
+    estado_evidencia_tm:
+      requisito.estado_evidencia_tm ||
+      requisito.estado_evidencia ||
+      "",
+
+    estado_evidencia_sll:
+      requisito.estado_evidencia_sll ||
+      "",
 
     descricao_evidencia:
       evidencia?.descricao ||
@@ -270,6 +362,13 @@ function normalizarResposta(dados) {
         candidatura.estado_candidatura_pedido ||
         candidatura.estado ||
         "PENDENTE",
+
+      estado_sll:
+        candidatura.estado_sll ||
+        candidatura.estado_candidaturasll ||
+        candidaturaSll.estado_candidaturasll ||
+        dados.solicitacao?.estado_candidaturasll ||
+        "",
     },
 
     consultor: {
@@ -345,6 +444,11 @@ function normalizarResposta(dados) {
         )
       : [],
 
+    progresso_sll:
+      dados.progresso_sll ||
+      dados.progressoSll ||
+      null,
+
     desafio:
     desafioRaw?.id_lembrete
       ? {
@@ -410,6 +514,74 @@ function normalizarResposta(dados) {
             ),
         }
       : null,
+  };
+}
+
+function calcularProgressoSll(
+  requisitos,
+  progressoApi = null
+) {
+  const lista =
+    Array.isArray(requisitos)
+      ? requisitos
+      : [];
+
+  const total =
+    Number(
+      progressoApi?.total_requisitos ||
+      lista.length ||
+      0
+    );
+
+  const aprovados =
+    progressoApi
+      ? Number(
+          progressoApi.requisitos_aprovados ||
+          0
+        )
+      : lista.filter((requisito) =>
+          estadoAprovado(
+            requisito.estado_sll
+          )
+        ).length;
+
+  const rejeitados =
+    progressoApi
+      ? Number(
+          progressoApi.requisitos_rejeitados ||
+          0
+        )
+      : lista.filter((requisito) =>
+          estadoRejeitado(
+            requisito.estado_sll
+          )
+        ).length;
+
+  const pendentes =
+    Math.max(
+      total - aprovados - rejeitados,
+      0
+    );
+
+  const percentagem =
+    total > 0
+      ? Math.round(
+          (aprovados / total) * 100
+        )
+      : 0;
+
+  return {
+    total,
+    aprovados,
+    rejeitados,
+    pendentes,
+    percentagem,
+    todosAprovados:
+      total > 0 &&
+      aprovados === total,
+
+    existeRejeitado:
+      rejeitados > 0,
   };
 }
 
@@ -559,6 +731,11 @@ function DetalheSolicitacaoSll() {
   ] = useState(false);
 
   const [
+    requisitoAProcessar,
+    setRequisitoAProcessar,
+  ] = useState(null);
+
+  const [
     mensagem,
     setMensagem,
   ] = useState("");
@@ -697,6 +874,74 @@ function DetalheSolicitacaoSll() {
   }
 }
 
+  async function avaliarRequisitoSll(
+    requisito,
+    decisao
+  ) {
+    const utilizador =
+      obterUtilizadorGuardado();
+
+    const idUtilizadorSll =
+      utilizador?.id_utilizador ||
+      utilizador?.ID_UTILIZADOR ||
+      utilizador?.id;
+
+    if (!idUtilizadorSll) {
+      setErro(
+        "Não foi possível identificar o Service Line Leader."
+      );
+
+      return;
+    }
+
+    if (!requisito?.id) {
+      setErro(
+        "Não foi possível identificar o requisito."
+      );
+
+      return;
+    }
+
+    try {
+      setErro("");
+      setMensagem("");
+
+      const chaveProcessamento =
+        `${requisito.id}-${decisao}`;
+
+      setRequisitoAProcessar(
+        chaveProcessamento
+      );
+
+      await api.put(
+        `/sll/${idUtilizadorSll}/solicitacoes/${idCandidatura}/requisitos/${requisito.id}`,
+        {
+          decisao,
+        }
+      );
+
+      setMensagem(
+        decisao === "APROVAR"
+          ? "Requisito aprovado pelo Service Line Leader."
+          : "Requisito rejeitado pelo Service Line Leader."
+      );
+
+      await carregarDetalhe();
+    } catch (err) {
+      console.error(
+        "Erro ao avaliar requisito pelo SLL:",
+        err
+      );
+
+      setErro(
+        err.response?.data?.error ||
+        "Não foi possível avaliar o requisito."
+      );
+    } finally {
+      setRequisitoAProcessar(null);
+    }
+  }
+
   async function aprovarCandidatura() {
   const idSll =
     dados?.candidatura
@@ -750,72 +995,72 @@ function DetalheSolicitacaoSll() {
   }
 }
 
-async function rejeitarCandidatura() {
-  const idSll =
-    dados?.candidatura
-      ?.id_candidatura_sll ??
-    idCandidatura ??
-    null;
+  async function rejeitarCandidatura() {
+    const idSll =
+      dados?.candidatura
+        ?.id_candidatura_sll ??
+      idCandidatura ??
+      null;
 
-  if (!idSll) {
-    setErro(
-      "Não foi possível identificar a candidatura do SLL."
-    );
-
-    return;
-  }
-
-  if (!motivoRejeicao.trim()) {
-    setErro(
-      "Indica o motivo da rejeição."
-    );
-
-    return;
-  }
-
-  try {
-    setIsProcessing(true);
-    setErro("");
-    setMensagem("");
-
-    const response =
-      await api.put(
-        `/certificados/sll/rejeitar/${idSll}`,
-        {
-          motivo:
-            motivoRejeicao.trim(),
-        }
+    if (!idSll) {
+      setErro(
+        "Não foi possível identificar a candidatura do SLL."
       );
 
-    setMostrarRejeitar(false);
+      return;
+    }
 
-    setMensagem(
-      response.data?.message ||
-      "Candidatura rejeitada."
-    );
-
-    setTimeout(() => {
-      navigate(
-        "/sll/solicitacoes",
-        {
-          replace: true,
-        }
+    if (!motivoRejeicao.trim()) {
+      setErro(
+        "Indica o motivo da rejeição."
       );
-    }, 1300);
-  } catch (err) {
-    console.error(
-      "Erro ao rejeitar candidatura:",
-      err
-    );
 
-    setErro(
-      err.response?.data?.error ||
-      "Não foi possível rejeitar a candidatura."
-    );
-  } finally {
-    setIsProcessing(false);
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setErro("");
+      setMensagem("");
+
+      const response =
+        await api.put(
+          `/certificados/sll/rejeitar/${idSll}`,
+          {
+            motivo:
+              motivoRejeicao.trim(),
+          }
+        );
+
+      setMostrarRejeitar(false);
+
+      setMensagem(
+        response.data?.message ||
+        "Candidatura rejeitada."
+      );
+
+      setTimeout(() => {
+        navigate(
+          "/sll/solicitacoes",
+          {
+            replace: true,
+          }
+        );
+      }, 1300);
+    } catch (err) {
+      console.error(
+        "Erro ao rejeitar candidatura:",
+        err
+      );
+
+      setErro(
+        err.response?.data?.error ||
+        "Não foi possível rejeitar a candidatura."
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   }
-}
 
   const totalEvidencias =
     useMemo(() => {
@@ -841,6 +1086,36 @@ async function rejeitarCandidatura() {
       idCandidaturaSll
     ) &&
     !isProcessing;
+
+  const progressoSll =
+    useMemo(
+      () =>
+        calcularProgressoSll(
+          dados?.requisitos || [],
+          dados?.progresso_sll
+        ),
+      [dados]
+    );
+
+  const candidaturaJaConcluida =
+    candidaturaConcluida(
+      dados?.candidatura
+    );
+
+  const podeAvaliarRequisitos =
+    Boolean(idCandidaturaSll) &&
+    !isProcessing &&
+    !candidaturaJaConcluida;
+
+  const podeAprovarFinal =
+    podeDecidir &&
+    !candidaturaJaConcluida &&
+    progressoSll.todosAprovados;
+
+  const podeRejeitarFinal =
+    podeDecidir &&
+    !candidaturaJaConcluida &&
+    progressoSll.existeRejeitado;
 
 
   return (
@@ -933,6 +1208,13 @@ async function rejeitarCandidatura() {
                 />
               </div>
 
+              <ProgressoSllCard
+                progresso={progressoSll}
+                candidaturaConcluida={
+                  candidaturaJaConcluida
+                }
+              />
+
               {dados.requisitos.length >
               0 ? (
                 dados.requisitos.map(
@@ -949,6 +1231,15 @@ async function rejeitarCandidatura() {
                       }
                       abertoInicial={
                         index === 0
+                      }
+                      podeAvaliar={
+                        podeAvaliarRequisitos
+                      }
+                      requisitoAProcessar={
+                        requisitoAProcessar
+                      }
+                      onAvaliar={
+                        avaliarRequisitoSll
                       }
                     />
                   )
@@ -981,8 +1272,7 @@ async function rejeitarCandidatura() {
                 </h2>
 
                 <div style={decisaoTexto}>
-                  Confirma se as evidências cumprem
-                  todos os requisitos do badge.
+                  A aprovação final só fica disponível quando todos os requisitos estiverem aprovados pelo SLL.
                 </div>
               </div>
 
@@ -990,7 +1280,7 @@ async function rejeitarCandidatura() {
                 <Button
                   type="button"
                   variant="outline-danger"
-                  disabled={!podeDecidir}
+                  disabled={!podeRejeitarFinal}
                   onClick={() => {
                     setMotivoRejeicao("");
                     setMostrarRejeitar(true);
@@ -1007,7 +1297,7 @@ async function rejeitarCandidatura() {
                 <Button
                   type="button"
                   variant="success"
-                  disabled={!podeDecidir}
+                  disabled={!podeAprovarFinal}
                   onClick={
                     aprovarCandidatura
                   }
@@ -1028,6 +1318,19 @@ async function rejeitarCandidatura() {
                       />
                       Aprovar candidatura
                     </>
+                  )}
+                  {!candidaturaJaConcluida &&
+                  !progressoSll.todosAprovados && (
+                    <div style={avisoDecisao}>
+                      Para aprovar a candidatura, valida primeiro todos os requisitos pelo SLL.
+                    </div>
+                  )}
+
+                  {!candidaturaJaConcluida &&
+                    progressoSll.existeRejeitado && (
+                      <div style={avisoDecisao}>
+                        Existe pelo menos um requisito rejeitado. A candidatura já pode ser rejeitada.
+                      </div>
                   )}
                 </Button>
               </div>
@@ -1484,17 +1787,115 @@ function EstadoCandidatura({
    REQUISITOS
 ========================================================= */
 
+function ProgressoSllCard({
+  progresso,
+  candidaturaConcluida,
+}) {
+  return (
+    <section style={progressoSllCard}>
+      <div style={progressoSllTopo}>
+        <div>
+          <div style={progressoSllTitulo}>
+            Progresso de validação SLL
+          </div>
+
+          <div style={progressoSllTexto}>
+            {candidaturaConcluida
+              ? "Esta candidatura já foi concluída."
+              : "Valida requisito a requisito antes da decisão final."}
+          </div>
+        </div>
+
+        <div style={progressoSllPercentagem}>
+          {progresso.percentagem}%
+        </div>
+      </div>
+
+      <div style={barraProgresso}>
+        <div
+          style={{
+            ...barraProgressoPreenchida,
+            width: `${Math.min(
+              progresso.percentagem,
+              100
+            )}%`,
+          }}
+        />
+      </div>
+
+      <div style={progressoSllStats}>
+        <div style={progressoSllStat}>
+          <strong>
+            {progresso.aprovados}
+          </strong>
+          <span>Aprovados</span>
+        </div>
+
+        <div style={progressoSllStat}>
+          <strong>
+            {progresso.rejeitados}
+          </strong>
+          <span>Rejeitados</span>
+        </div>
+
+        <div style={progressoSllStat}>
+          <strong>
+            {progresso.pendentes}
+          </strong>
+          <span>Pendentes</span>
+        </div>
+
+        <div style={progressoSllStat}>
+          <strong>
+            {progresso.total}
+          </strong>
+          <span>Total</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function RequisitoCard({
   requisito,
   abertoInicial,
+  podeAvaliar,
+  requisitoAProcessar,
+  onAvaliar,
 }) {
   const [aberto, setAberto] =
     useState(abertoInicial);
 
-  const estadoVisual =
+  const estadoTmVisual =
     obterEstadoVisual(
+      requisito.estado_tm ||
       requisito.estado
     );
+
+  const estadoSllVisual =
+    obterEstadoVisualSll(
+      requisito.estado_sll
+    );
+
+  const tmAprovou =
+    estadoAprovado(
+      requisito.estado_tm ||
+      requisito.estado
+    );
+
+  const aAprovar =
+    requisitoAProcessar ===
+    `${requisito.id}-APROVAR`;
+
+  const aRejeitar =
+    requisitoAProcessar ===
+    `${requisito.id}-REJEITAR`;
+
+  const bloqueado =
+    !podeAvaliar ||
+    !tmAprovou ||
+    aAprovar ||
+    aRejeitar;
 
   return (
     <article style={requisitoCard}>
@@ -1529,13 +1930,33 @@ function RequisitoCard({
               ...estadoRequisito,
 
               background:
-                estadoVisual.background,
+                estadoTmVisual.background,
 
               color:
-                estadoVisual.color,
+                estadoTmVisual.color,
+
+              border:
+                `1px solid ${estadoTmVisual.border}`,
             }}
           >
-            {estadoVisual.label}
+            {estadoTmVisual.label}
+          </span>
+
+          <span
+            style={{
+              ...estadoRequisito,
+
+              background:
+                estadoSllVisual.background,
+
+              color:
+                estadoSllVisual.color,
+
+              border:
+                `1px solid ${estadoSllVisual.border}`,
+            }}
+          >
+            {estadoSllVisual.label}
           </span>
 
           {aberto ? (
@@ -1633,6 +2054,93 @@ function RequisitoCard({
                 Não existem documentos
                 associados a este
                 requisito.
+              </p>
+            )}
+          </BlocoInformacao>
+
+          <BlocoInformacao
+            titulo="Validação do Service Line Leader"
+          >
+            <div style={avaliacaoSllBox}>
+              <div>
+                <div style={avaliacaoSllTitulo}>
+                  Estado da validação SLL
+                </div>
+
+                <div style={avaliacaoSllTexto}>
+                  Primeiro confirma a evidência deste requisito.
+                  Depois poderás tomar a decisão final da candidatura.
+                </div>
+              </div>
+
+              <div style={avaliacaoSllAcoes}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline-danger"
+                  disabled={bloqueado}
+                  onClick={() =>
+                    onAvaliar(
+                      requisito,
+                      "REJEITAR"
+                    )
+                  }
+                >
+                  {aRejeitar ? (
+                    <>
+                      <Spinner
+                        size="sm"
+                        className="me-1"
+                      />
+                      A rejeitar...
+                    </>
+                  ) : (
+                    <>
+                      <BiXCircle
+                        size={16}
+                        className="me-1"
+                      />
+                      Rejeitar requisito
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="success"
+                  disabled={bloqueado}
+                  onClick={() =>
+                    onAvaliar(
+                      requisito,
+                      "APROVAR"
+                    )
+                  }
+                >
+                  {aAprovar ? (
+                    <>
+                      <Spinner
+                        size="sm"
+                        className="me-1"
+                      />
+                      A aprovar...
+                    </>
+                  ) : (
+                    <>
+                      <BiCheckCircle
+                        size={16}
+                        className="me-1"
+                      />
+                      Aprovar requisito
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {!tmAprovou && (
+              <p style={textoVazio}>
+                Este requisito ainda não está aprovado pelo Talent Manager.
               </p>
             )}
           </BlocoInformacao>
@@ -2286,6 +2794,113 @@ const decisaoAcoes = {
   alignItems: "center",
   gap: 10,
   flexWrap: "wrap",
+};
+
+const progressoSllCard = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 12,
+  padding: "16px 18px",
+  marginBottom: 16,
+};
+
+const progressoSllTopo = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 14,
+  marginBottom: 12,
+};
+
+const progressoSllTitulo = {
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const progressoSllTexto = {
+  marginTop: 3,
+  fontSize: 11,
+  color: "#64748b",
+};
+
+const progressoSllPercentagem = {
+  fontSize: 22,
+  fontWeight: 800,
+  color: "#2563eb",
+};
+
+const barraProgresso = {
+  width: "100%",
+  height: 9,
+  borderRadius: 999,
+  background: "#e5e7eb",
+  overflow: "hidden",
+};
+
+const barraProgressoPreenchida = {
+  height: "100%",
+  borderRadius: 999,
+  background: "#2563eb",
+  transition: "width 0.25s ease",
+};
+
+const progressoSllStats = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(auto-fit, minmax(120px, 1fr))",
+  gap: 10,
+  marginTop: 13,
+};
+
+const progressoSllStat = {
+  background: "#f8fafc",
+  border: "1px solid #e5e7eb",
+  borderRadius: 9,
+  padding: "10px 12px",
+  display: "flex",
+  flexDirection: "column",
+  gap: 2,
+  color: "#64748b",
+  fontSize: 11,
+};
+
+const avaliacaoSllBox = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 10,
+  padding: "13px 14px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 14,
+  flexWrap: "wrap",
+};
+
+const avaliacaoSllTitulo = {
+  color: "#111827",
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+const avaliacaoSllTexto = {
+  marginTop: 3,
+  color: "#64748b",
+  fontSize: 11,
+};
+
+const avaliacaoSllAcoes = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  flexWrap: "wrap",
+};
+
+const avisoDecisao = {
+  width: "100%",
+  color: "#64748b",
+  fontSize: 11,
+  marginTop: 8,
 };
 
 export default DetalheSolicitacaoSll;
