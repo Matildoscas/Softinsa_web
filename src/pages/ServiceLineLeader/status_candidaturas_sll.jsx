@@ -153,6 +153,26 @@ function EstadoChip({ titulo, valor }) {
   );
 }
 
+function EstadoPrincipalChip({ titulo, valor }) {
+  const chip = chipEstado(valor);
+
+  return (
+    <div
+      style={{
+        ...estadoBloco,
+        padding: 12,
+        background: chip.bg,
+        border: `1px solid ${chip.border}`,
+      }}
+    >
+      <div style={estadoTitulo}>{titulo}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: chip.color }}>
+        {chip.label}
+      </div>
+    </div>
+  );
+}
+
 function EstadoRequisitoChip({ titulo, valor }) {
   const chip = chipEstado(valor);
 
@@ -427,13 +447,15 @@ export default function StatusCandidaturasSll() {
                 <>
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Estados Explícitos por Fase</div>
+                    <div style={estadoPrincipalWrapper}>
+                      <EstadoPrincipalChip titulo="Estado Geral" valor={detalhe.status?.estado_geral} />
+                    </div>
                     <div style={estadoGrid}>
                       <EstadoChip titulo="Pedido" valor={detalhe.status?.estado_candidatura_pedido} />
                       <EstadoChip titulo="TM" valor={detalhe.status?.estado_candidaturatm} />
                       <EstadoChip titulo="SLL" valor={detalhe.status?.estado_candidaturasll} />
+                      <EstadoChip titulo="Etapa Atual" valor={detalhe.status?.fase_geral} />
                       <EstadoChip titulo="Histórico" valor={detalhe.status?.estado_final} />
-                      <EstadoChip titulo="Estado Geral" valor={detalhe.status?.estado_geral} />
-                      <EstadoChip titulo="Fase Geral" valor={detalhe.status?.fase_geral} />
                     </div>
                   </div>
 

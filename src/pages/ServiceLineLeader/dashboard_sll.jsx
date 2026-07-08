@@ -695,6 +695,7 @@ const welcomeAvatar = {
 
 const peopleSection = {
   display: "block",
+  marginTop: 26,
   marginBottom: 30,
 };
 
