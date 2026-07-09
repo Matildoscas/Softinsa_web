@@ -882,6 +882,11 @@ function DetailBox({ title, children }) {
 function RequisitoCard({ requisito }) {
   const estado = requisito.estado_calculado || "PENDENTE";
   const styleEstado = estadoStyle(estado);
+  const apiBaseUrl =
+    (
+      import.meta.env.VITE_SOCKET_URL ||
+      "https://softinsa-api.onrender.com"
+    ).replace(/\/$/, "");
 
   const evidencias = Array.isArray(requisito.evidencias)
     ? requisito.evidencias
@@ -936,7 +941,7 @@ function RequisitoCard({ requisito }) {
 
               {ev.caminho_ficheiro && (
                 <a
-                  href={`http://localhost:3000${ev.caminho_ficheiro}`}
+                  href={`${apiBaseUrl}${ev.caminho_ficheiro}`}
                   target="_blank"
                   rel="noreferrer"
                   style={fileLink}
