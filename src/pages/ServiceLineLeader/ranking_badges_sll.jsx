@@ -24,6 +24,7 @@ import api from "../../services/api.js";
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
 import SllRightSidebar from "../../components/sll_right_sidebar.jsx";
+import PaginacaoCatalogo from "../../components/PaginacaoCatalogo.jsx";
 
 /* =========================================================
    UTILIZADOR
@@ -118,6 +119,11 @@ function RankingBadgesSll() {
 
   const [ordenacao, setOrdenacao] =
     useState("VALOR");
+
+  const [paginaAtual, setPaginaAtual] =
+    useState(1);
+
+  const itensPorPagina = 5;
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -254,6 +260,41 @@ function RankingBadgesSll() {
           )
       );
     }, [ranking, ordenacao, abaRanking]);
+
+    const totalPaginas =
+      Math.max(
+        1,
+        Math.ceil(
+          rankingOrdenado.length /
+          itensPorPagina
+        )
+      );
+
+    const inicioPagina =
+      (paginaAtual - 1) *
+      itensPorPagina;
+
+    const rankingPaginaAtual =
+      rankingOrdenado.slice(
+        inicioPagina,
+        inicioPagina + itensPorPagina
+      );
+
+    useEffect(() => {
+      setPaginaAtual(1);
+    }, [
+      abaRanking,
+      ordenacao,
+    ]);
+
+    useEffect(() => {
+      if (paginaAtual > totalPaginas) {
+        setPaginaAtual(totalPaginas);
+      }
+    }, [
+      paginaAtual,
+      totalPaginas,
+    ]);
 
   /* =======================================================
      PDF
@@ -651,28 +692,38 @@ function RankingBadgesSll() {
             0 ? (
             <>
               <div style={listaRanking}>
-                {rankingOrdenado.map(
+                {rankingPaginaAtual.map(
                   (
                     consultor,
                     index
                   ) => (
                     <RankingCard
-                      key={
-                        consultor.id_utilizador
-                      }
-                      consultor={
-                        consultor
-                      }
+                      key={consultor.id_utilizador}
+                      consultor={consultor}
                       posicao={
-                        index + 1
+                        inicioPagina + index + 1
                       }
-                      tipoRanking={
-                        abaRanking
-                      }
+                      tipoRanking={abaRanking}
                     />
                   )
                 )}
               </div>
+
+              <PaginacaoCatalogo
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                onAnterior={() =>
+                  setPaginaAtual((pagina) =>
+                    Math.max(1, pagina - 1)
+                  )
+                }
+                onProxima={() =>
+                  setPaginaAtual((pagina) =>
+                    Math.min(totalPaginas, pagina + 1)
+                  )
+                }
+                onSelecionarPagina={setPaginaAtual}
+              />
 
               <ResumoRanking
                 resumo={resumo}

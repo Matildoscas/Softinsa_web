@@ -167,7 +167,7 @@ function CatalogoBadgesSll() {
 
   const [paginaAtual, setPaginaAtual] = useState(1);
 
-  const badgesPorPagina = 5;
+  const badgesPorPagina = 4;
 
   useEffect(() => {
     carregarServiceLines();
@@ -983,7 +983,7 @@ function BadgeCard({
             ...badgeImagemBox,
 
             background: especial
-              ? "#ff8a00"
+              ? "#a48d73"
               : "#eff6ff",
 
             border: especial
@@ -1707,7 +1707,7 @@ const statusBar = {
   fontSize: 12,
   lineHeight: 1.45,
   background: "#fbfdff",
-  color: "#2E7D32",
+  color: "#646c65",
   whiteSpace: "normal",
   overflowWrap: "anywhere",
 };

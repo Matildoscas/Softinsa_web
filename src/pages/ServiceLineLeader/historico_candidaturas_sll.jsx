@@ -31,6 +31,7 @@ import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
 import SllRightSidebar from "../../components/sll_right_sidebar.jsx";
 import logoImg from '../../assets/logo.png';
+import PaginacaoCatalogo from "../../components/PaginacaoCatalogo.jsx";
 
 /* =========================================================
    UTILIZADOR
@@ -375,6 +376,11 @@ function HistoricoCandidaturasSll() {
     setOrdenacao,
   ] = useState("RECENTES");
 
+  const [paginaAtual, setPaginaAtual] =
+    useState(1);
+
+  const itensPorPagina = 5;
+
   const [isLoading, setIsLoading] =
     useState(true);
 
@@ -568,6 +574,43 @@ function HistoricoCandidaturasSll() {
       filtroEstado,
       ordenacao,
     ]);
+
+  const totalPaginas =
+    Math.max(
+      1,
+      Math.ceil(
+        candidaturasFiltradas.length /
+        itensPorPagina
+      )
+    );
+
+  const inicioPagina =
+    (paginaAtual - 1) *
+    itensPorPagina;
+
+  const candidaturasPaginaAtual =
+    candidaturasFiltradas.slice(
+      inicioPagina,
+      inicioPagina + itensPorPagina
+    );
+
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [
+    pesquisa,
+    pesquisaConsultor,
+    filtroEstado,
+    ordenacao,
+  ]);
+
+  useEffect(() => {
+    if (paginaAtual > totalPaginas) {
+      setPaginaAtual(totalPaginas);
+    }
+  }, [
+    paginaAtual,
+    totalPaginas,
+  ]);
 
   function exportarExcelHistorico() {
     const cabecalho = [
@@ -948,28 +991,42 @@ function HistoricoCandidaturasSll() {
             <div style={mensagemBox}>
               A carregar histórico...
             </div>
-          ) : candidaturasFiltradas
-              .length > 0 ? (
-            <div style={lista}>
-              {candidaturasFiltradas.map(
-                (candidatura) => (
-                  <HistoricoCard
-                    key={
-                      candidatura
-                        .id_candidatura_pedido
-                    }
-                    candidatura={
-                      candidatura
-                    }
-                    onDetalhes={() =>
-                      navigate(
-                        `/sll/solicitacoes/${candidatura.id_candidatura_pedido}`
-                      )
-                    }
-                  />
-                )
-              )}
-            </div>
+          ) : candidaturasFiltradas.length > 0 ? (
+            <>
+              <div style={lista}>
+                {candidaturasPaginaAtual.map(
+                  (candidatura) => (
+                    <HistoricoCard
+                      key={
+                        candidatura.id_candidatura_pedido
+                      }
+                      candidatura={candidatura}
+                      onDetalhes={() =>
+                        navigate(
+                          `/sll/solicitacoes/${candidatura.id_candidatura_pedido}`
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+
+              <PaginacaoCatalogo
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                onAnterior={() =>
+                  setPaginaAtual((pagina) =>
+                    Math.max(1, pagina - 1)
+                  )
+                }
+                onProxima={() =>
+                  setPaginaAtual((pagina) =>
+                    Math.min(totalPaginas, pagina + 1)
+                  )
+                }
+                onSelecionarPagina={setPaginaAtual}
+              />
+            </>
           ) : (
             <div style={mensagemBox}>
               Não foram encontradas

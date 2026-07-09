@@ -31,6 +31,7 @@ import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
 import SllRightSidebar from "../../components/sll_right_sidebar.jsx";
+import PaginacaoCatalogo from "../../components/PaginacaoCatalogo.jsx";
 
 function obterUtilizadorGuardado() {
   const guardado =
@@ -376,6 +377,42 @@ function SolicitacoesBadgesSll() {
       pesquisaConsultor,
       ordenacao,
     ]);
+
+  const totalPaginas =
+    Math.max(
+      1,
+      Math.ceil(
+        solicitacoesFiltradas.length /
+        itensPorPagina
+      )
+    );
+
+  const inicioPagina =
+    (paginaAtual - 1) *
+    itensPorPagina;
+
+  const solicitacoesPaginaAtual =
+    solicitacoesFiltradas.slice(
+      inicioPagina,
+      inicioPagina + itensPorPagina
+    );
+
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [
+    filtroNivel,
+    pesquisaConsultor,
+    ordenacao,
+  ]);
+
+  useEffect(() => {
+    if (paginaAtual > totalPaginas) {
+      setPaginaAtual(totalPaginas);
+    }
+  }, [
+    paginaAtual,
+    totalPaginas,
+  ]);
 
   function gerarPdf() {
     try {
@@ -786,36 +823,49 @@ function SolicitacoesBadgesSll() {
             <div style={mensagemBox}>
               A carregar solicitações...
             </div>
-          ) : solicitacoesFiltradas
-              .length > 0 ? (
-            <div style={lista}>
-              {solicitacoesFiltradas.map(
-                (solicitacao) => (
-                  <SolicitacaoCard
-                    key={
-                      solicitacao
-                        .id_candidatura_sll ||
-                      solicitacao
-                        .id_candidatura_pedido
-                    }
-                    solicitacao={
-                      solicitacao
-                    }
-                    onDetalhes={() =>
-                      navigate(
-                        `/sll/solicitacoes/${solicitacao.id_candidatura_pedido}${
-                          solicitacao.id_candidatura_sll
-                            ? `?sid=${encodeURIComponent(
-                                solicitacao.id_candidatura_sll
-                              )}`
-                            : ""
-                        }`
-                      )
-                    }
-                  />
-                )
-              )}
-            </div>
+          ) : solicitacoesFiltradas.length > 0 ? (
+            <>
+              <div style={lista}>
+                {solicitacoesPaginaAtual.map(
+                  (solicitacao) => (
+                    <SolicitacaoCard
+                      key={
+                        solicitacao.id_candidatura_sll ||
+                        solicitacao.id_candidatura_pedido
+                      }
+                      solicitacao={solicitacao}
+                      onDetalhes={() =>
+                        navigate(
+                          `/sll/solicitacoes/${solicitacao.id_candidatura_pedido}${
+                            solicitacao.id_candidatura_sll
+                              ? `?sid=${encodeURIComponent(
+                                  solicitacao.id_candidatura_sll
+                                )}`
+                              : ""
+                          }`
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+
+              <PaginacaoCatalogo
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                onAnterior={() =>
+                  setPaginaAtual((pagina) =>
+                    Math.max(1, pagina - 1)
+                  )
+                }
+                onProxima={() =>
+                  setPaginaAtual((pagina) =>
+                    Math.min(totalPaginas, pagina + 1)
+                  )
+                }
+                onSelecionarPagina={setPaginaAtual}
+              />
+            </>
           ) : (
             <div style={mensagemBox}>
               Não existem solicitações
