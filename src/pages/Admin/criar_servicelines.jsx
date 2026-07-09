@@ -13,150 +13,25 @@ import Header from "../../components/header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 
-function normalizarArea(a) {
+function normalizarLearningPath(lp) {
   return {
     id:
-      a.id_areas ||
-      a.ID_AREAS ||
-      a.id_area ||
-      a.id ||
+      lp.id_learningpaths ||
+      lp.ID_LEARNINGPATHS ||
+      lp.id ||
       "",
 
     nome:
-      a.nome_area ||
-      a.NOME_AREA ||
-      a.nome ||
-      a.designacao ||
-      "Área sem nome",
+      lp.nome_learningpaths ||
+      lp.NOME_LEARNINGPATHS ||
+      lp.nome ||
+      "Learning Path sem nome",
 
     estado:
-      a.estado_area ||
-      a.ESTADO_AREA ||
+      lp.estado_learningpath ||
+      lp.ESTADO_LEARNINGPATH ||
       "ATIVO",
   };
-}
-
-function MultiSelectDropdown({ options, selected, onChange, erro }) {
-  const [aberto, setAberto] = useState(false);
-  const [pesquisa, setPesquisa] = useState("");
-
-  const filtradas = options.filter((o) => {
-    const jaSelecionada = selected.some((s) => String(s.id) === String(o.id));
-
-    return (
-      o.nome.toLowerCase().includes(pesquisa.toLowerCase()) &&
-      !jaSelecionada
-    );
-  });
-
-  function adicionar(area) {
-    onChange([...selected, area]);
-    setPesquisa("");
-  }
-
-  function remover(area) {
-    onChange(selected.filter((a) => String(a.id) !== String(area.id)));
-  }
-
-  return (
-    <div style={{ position: "relative" }}>
-      <div
-        onClick={() => setAberto((v) => !v)}
-        style={{
-          minHeight: 42,
-          border: `1px solid ${erro ? "#fca5a5" : aberto ? "#2563eb" : "#d1d5db"}`,
-          borderRadius: 8,
-          padding: "6px 36px 6px 12px",
-          cursor: "pointer",
-          background: "white",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 6,
-          alignItems: "center",
-          position: "relative",
-        }}
-      >
-        {selected.length === 0 && (
-          <span style={{ fontSize: 14, color: "#9ca3af" }}>
-            Selecione as áreas
-          </span>
-        )}
-
-        {selected.map((area) => (
-          <span key={area.id} style={selectedTag}>
-            {area.nome}
-
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                remover(area);
-              }}
-              style={{ cursor: "pointer", lineHeight: 1 }}
-            >
-              <BiX size={14} />
-            </span>
-          </span>
-        ))}
-
-        <span
-          style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "#6b7280",
-          }}
-        >
-          <BiChevronDown
-            size={18}
-            style={{
-              transform: aberto ? "rotate(180deg)" : "none",
-              transition: "0.2s",
-            }}
-          />
-        </span>
-      </div>
-
-      {aberto && (
-        <div style={dropdownBox}>
-          <div style={{ padding: "8px 10px", borderBottom: "1px solid #f3f4f6" }}>
-            <input
-              type="text"
-              value={pesquisa}
-              onChange={(e) => setPesquisa(e.target.value)}
-              placeholder="Pesquisar área..."
-              onClick={(e) => e.stopPropagation()}
-              style={dropdownSearch}
-            />
-          </div>
-
-          <div style={{ maxHeight: 220, overflowY: "auto" }}>
-            {filtradas.length > 0 ? (
-              filtradas.map((area) => (
-                <div
-                  key={area.id}
-                  onClick={() => adicionar(area)}
-                  style={dropdownItem}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#f0f9ff";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                  }}
-                >
-                  {area.nome}
-                </div>
-              ))
-            ) : (
-              <div style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af" }}>
-                Nenhuma área encontrada.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 function CriarServiceLine() {
@@ -167,47 +42,47 @@ function CriarServiceLine() {
     descricao: "",
     tipo: "",
     estado: "ATIVO",
-    areas: [],
+    id_learningpaths: "",
   });
 
-  const [areasDisponiveis, setAreasDisponiveis] = useState([]);
+  const [learningPaths, setLearningPaths] = useState([]);
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [sucesso, setSucesso] = useState("");
-  const [isLoadingAreas, setIsLoadingAreas] = useState(true);
+  const [isLoadingLearningPaths, setIsLoadingLearningPaths] = useState(true);
   const [aCriar, setACriar] = useState(false);
 
   useEffect(() => {
-    carregarAreas();
+    carregarLearningPaths();
   }, []);
 
-  async function carregarAreas() {
+  async function carregarLearningPaths() {
     try {
-      setIsLoadingAreas(true);
+      setIsLoadingLearningPaths(true);
 
-      const res = await api.get("/areas/select");
+      const res = await api.get("/learningpaths/select");
 
       const data = res.data;
 
       const lista =
         Array.isArray(data)
           ? data
-          : Array.isArray(data.areas)
-            ? data.areas
+          : Array.isArray(data.learningpaths)
+            ? data.learningpaths
             : Array.isArray(data.data)
               ? data.data
               : [];
 
-      setAreasDisponiveis(lista.map(normalizarArea));
+      setLearningPaths(lista.map(normalizarLearningPath));
     } catch (err) {
-      console.error("Erro ao carregar áreas:", err);
+      console.error("Erro ao carregar Learning Paths:", err);
       console.error("STATUS:", err.response?.status);
       console.error("BODY:", err.response?.data);
 
-      setAreasDisponiveis([]);
-      setErroGeral("Não foi possível carregar as áreas.");
+      setLearningPaths([]);
+      setErroGeral("Não foi possível carregar as Learning Paths.");
     } finally {
-      setIsLoadingAreas(false);
+      setIsLoadingLearningPaths(false);
     }
   }
 
@@ -241,8 +116,8 @@ function CriarServiceLine() {
       novosErros.tipo = "O tipo é obrigatório.";
     }
 
-    if (form.areas.length === 0) {
-      novosErros.areas = "Seleciona pelo menos uma área.";
+    if (!form.id_learningpaths) {
+      novosErros.id_learningpaths = "Seleciona uma Learning Path.";
     }
 
     setErros(novosErros);
@@ -263,7 +138,7 @@ function CriarServiceLine() {
         descricao_serviceline: form.descricao.trim(),
         tipo_serviceline: form.tipo.trim(),
         estado_serviceline: form.estado,
-        areas_ids: form.areas.map((a) => Number(a.id)),
+        id_learningpaths: Number(form.id_learningpaths),
       });
 
       setSucesso("Service Line criada com sucesso.");
@@ -471,23 +346,45 @@ function CriarServiceLine() {
 
             <div style={{ marginTop: 22 }}>
               <label style={labelStyle}>
-                Áreas <span style={{ color: "#dc2626" }}>*</span>
+                Learning Path <span style={{ color: "#dc2626" }}>*</span>
               </label>
 
-              <MultiSelectDropdown
-                options={areasDisponiveis}
-                selected={form.areas}
-                onChange={set("areas")}
-                erro={erros.areas}
-              />
+              <select
+                value={form.id_learningpaths}
+                onChange={(e) => set("id_learningpaths")(e.target.value)}
+                disabled={isLoadingLearningPaths}
+                style={inputStyle("id_learningpaths")}
+                onFocus={(e) => {
+                  if (!erros.id_learningpaths) {
+                    e.target.style.borderColor = "#2563eb";
+                  }
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = erros.id_learningpaths
+                    ? "#fca5a5"
+                    : "#d1d5db";
+                }}
+              >
+                <option value="">
+                  {isLoadingLearningPaths
+                    ? "A carregar Learning Paths..."
+                    : "Selecione a Learning Path"}
+                </option>
 
-              {isLoadingAreas && (
-                <div style={{ fontSize: 11, color: "#6b7280", marginTop: 5 }}>
-                  A carregar áreas...
-                </div>
+                {learningPaths.map((lp) => (
+                  <option key={lp.id} value={lp.id}>
+                    {lp.nome}
+                  </option>
+                ))}
+              </select>
+
+              {erros.id_learningpaths && (
+                <div style={fieldError}>{erros.id_learningpaths}</div>
               )}
 
-              {erros.areas && <div style={fieldError}>{erros.areas}</div>}
+              <div style={helperText}>
+                A Service Line será associada a esta Learning Path. As áreas serão criadas depois e associadas à Service Line.
+              </div>
             </div>
           </div>
 
@@ -516,6 +413,13 @@ function CriarServiceLine() {
     </div>
   );
 }
+
+const helperText = {
+  fontSize: 12,
+  color: "#6b7280",
+  marginTop: 6,
+  lineHeight: 1.45,
+};
 
 const backButton = {
   background: "none",

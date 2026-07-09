@@ -404,25 +404,6 @@ function PaginaPrincipalAdmin() {
                       label="Badges"
                       value={`Tem ${adminResumo.total_badges} badges`}
                     />
-
-                    <button
-                      style={{
-                        background: "rgba(255,255,255,0.15)",
-                        border: "1px solid rgba(255,255,255,0.3)",
-                        borderRadius: 8,
-                        padding: "6px 14px",
-                        color: "white",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <BiGrid size={16} />
-                      Pedidos Badges
-                    </button>
                   </div>
                 </div>
 

@@ -20,27 +20,6 @@ function normalizarEstado(valor) {
   return "ATIVO";
 }
 
-function normalizarServiceLine(sl) {
-  return {
-    id:
-      sl.id_serviceline ||
-      sl.ID_SERVICELINE ||
-      sl.id ||
-      "",
-
-    nome:
-      sl.nome_serviceline ||
-      sl.NOME_SERVICELINE ||
-      sl.nome ||
-      "Service Line sem nome",
-
-    id_learningpaths:
-      sl.id_learningpaths ||
-      sl.ID_LEARNINGPATHS ||
-      null,
-  };
-}
-
 function MultiSelectDropdown({
   options,
   values,
@@ -171,51 +150,13 @@ function CriarLearningPath() {
     nome: "",
     descricao: "",
     estado: "ATIVO",
-    id_servicelines: [],
   });
 
-  const [serviceLines, setServiceLines] = useState([]);
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [isLoadingDados, setIsLoadingDados] = useState(true);
   const [aCriar, setACriar] = useState(false);
-
-  useEffect(() => {
-    carregarDadosAuxiliares();
-  }, []);
-
-  async function carregarDadosAuxiliares() {
-    try {
-      setIsLoadingDados(true);
-      setErroGeral("");
-
-      const slRes = await api.get("/servicelines/select");
-
-      const data = slRes.data;
-
-      const lista = Array.isArray(data)
-        ? data
-        : Array.isArray(data.servicelines)
-          ? data.servicelines
-          : Array.isArray(data.serviceLines)
-            ? data.serviceLines
-            : Array.isArray(data.data)
-              ? data.data
-              : [];
-
-      setServiceLines(lista.map(normalizarServiceLine));
-    } catch (err) {
-      console.error("Erro ao carregar Service Lines:", err);
-      console.error("STATUS:", err.response?.status);
-      console.error("BODY:", err.response?.data);
-
-      setErroGeral("Não foi possível carregar as Service Lines.");
-      setServiceLines([]);
-    } finally {
-      setIsLoadingDados(false);
-    }
-  }
 
   const set = (field) => (value) => {
     setForm((prev) => ({
@@ -243,13 +184,6 @@ function CriarLearningPath() {
       novosErros.descricao = "A descrição é obrigatória.";
     }
 
-    if (
-      !Array.isArray(form.id_servicelines) ||
-      form.id_servicelines.length === 0
-    ) {
-      novosErros.id_servicelines = "Seleciona pelo menos uma Service Line.";
-    }
-
     setErros(novosErros);
 
     return Object.keys(novosErros).length === 0;
@@ -267,7 +201,6 @@ function CriarLearningPath() {
         nome_learningpaths: form.nome.trim(),
         descricao_learningpaths: form.descricao.trim(),
         estado_learningpath: normalizarEstado(form.estado),
-        id_servicelines: form.id_servicelines.map(Number),
       });
 
       setSucesso("Learning Path criado com sucesso.");
@@ -339,7 +272,7 @@ function CriarLearningPath() {
               <h5 style={pageTitle}>Criar Learning Path</h5>
 
               <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-                Preenche os dados do Learning Path e associa Service Lines.
+                Preenche os dados base do Learning Path. As Service Lines serão associadas na criação de Service Lines.
               </div>
             </div>
           </div>
@@ -347,10 +280,7 @@ function CriarLearningPath() {
           {erroGeral && <div style={errorBox}>{erroGeral}</div>}
           {sucesso && <div style={successBox}>{sucesso}</div>}
 
-          {isLoadingDados ? (
-            <div style={loadingBox}>A carregar dados...</div>
-          ) : (
-            <>
+
               <div style={formCard}>
                 <div style={{ marginBottom: 20 }}>
                   <label style={labelStyle}>
@@ -457,29 +387,6 @@ function CriarLearningPath() {
                     </button>
                   </div>
                 </div>
-
-                <div style={{ marginBottom: 8 }}>
-                  <label style={labelStyle}>
-                    Service Lines <span style={{ color: "#dc2626" }}>*</span>
-                  </label>
-
-                  <MultiSelectDropdown
-                    options={serviceLines}
-                    values={form.id_servicelines}
-                    onChange={set("id_servicelines")}
-                    placeholder="Selecione uma ou mais Service Lines"
-                    erro={erros.id_servicelines}
-                  />
-
-                  {erros.id_servicelines && (
-                    <div style={fieldError}>{erros.id_servicelines}</div>
-                  )}
-
-                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                    As áreas associadas serão determinadas automaticamente pelas
-                    Service Lines escolhidas.
-                  </div>
-                </div>
               </div>
 
               <div style={actionsRow}>
@@ -504,8 +411,6 @@ function CriarLearningPath() {
                   {aCriar ? "A criar..." : "Criar Learning Path"}
                 </button>
               </div>
-            </>
-          )}
         </div>
 
         <AdminRightSidebar />
