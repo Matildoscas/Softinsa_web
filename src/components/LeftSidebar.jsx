@@ -11,6 +11,7 @@ import {
   BiMedal,
   BiUser,
   BiUserCircle,
+  BiTimeFive,
 } from "react-icons/bi";
 
 import {
@@ -137,6 +138,12 @@ function LeftSidebar() {
         to="/perfil_consultor"
         icon={<BiUser size={18} />}
         label="Perfil do Consultor"
+      />
+
+      <SidebarItem
+        to="/status-candidaturas"
+        icon={<BiTimeFive size={18} />}
+        label="Progresso das Candidaturas"
       />
 
       {/* Grupo Badges */}
