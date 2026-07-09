@@ -5,7 +5,7 @@ import {
 const socketUrl =
   import.meta.env
     .VITE_SOCKET_URL ||
-  "http://localhost:3000";
+  "https://softinsa-api.onrender.com";
 
 export const socket =
   io(
