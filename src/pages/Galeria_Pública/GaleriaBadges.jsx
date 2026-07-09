@@ -382,7 +382,7 @@ function GaleriaBadgesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
+ const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
     const area = badge.nome_area || "Área não definida";
 
     if (!acc[area]) {
@@ -392,6 +392,15 @@ function GaleriaBadgesPage() {
     acc[area].push(badge);
     return acc;
   }, {});
+
+  // === NOVO BLOCO: Ordenar os badges de CADA área pelo nível (1 a 5) ===
+  Object.keys(badgesAgrupadosPorArea).forEach((area) => {
+    badgesAgrupadosPorArea[area].sort((a, b) => {
+      const nivelA = Number(a.id_nivel) || 0;
+      const nivelB = Number(b.id_nivel) || 0;
+      return nivelA - nivelB; // Ordenação crescente (Nível 1, depois 2, 3...)
+    });
+  });
 
   Object.keys(badgesAgrupadosPorArea).forEach((area) => {
     badgesAgrupadosPorArea[area].sort((a, b) => {
