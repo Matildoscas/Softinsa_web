@@ -320,7 +320,7 @@ function ConfiguracaoAssinaturaPage() {
       })
       .catch((err) => {
         console.error(
-          "Erro ao carregar configuraÃ§Ã£o da assinatura:",
+          "Erro ao carregar configuração da assinatura:",
           err
         );
       })
@@ -522,7 +522,7 @@ function ConfiguracaoAssinaturaPage() {
               justify-content:center;
               font-size:24px;
             ">
-              ðŸ…
+              🏅
             </div>
           `;
 
@@ -556,7 +556,7 @@ function ConfiguracaoAssinaturaPage() {
                   <div style="font-size:12px; margin-top:4px;">
                     <a href="${escaparHtml(urlBadge)}"
                       style="color:#2563eb; text-decoration:none; font-weight:bold;">
-                      Ver badge pÃºblico
+                      Ver badge público
                     </a>
                   </div>
                 `
@@ -823,7 +823,7 @@ function ConfiguracaoAssinaturaPage() {
           setCopiado(true);
         } catch {
           alert(
-            "NÃ£o foi possÃ­vel copiar a assinatura."
+            "Não foi possível copiar a assinatura."
           );
         }
       }
@@ -920,7 +920,7 @@ function ConfiguracaoAssinaturaPage() {
               </div>
 
               <h1 style={title}>
-                ConfiguraÃ§Ã£o do template
+                Configuração do template
               </h1>
 
               <p style={subtitle}>
@@ -966,7 +966,7 @@ function ConfiguracaoAssinaturaPage() {
                         "completo"
                       }
                       title="Completo"
-                      description="Dados pessoais, badge e links pÃºblicos."
+                      description="Dados pessoais, badge e links públicos."
                       onClick={() =>
                         atualizarConfig(
                           "template",
@@ -981,7 +981,7 @@ function ConfiguracaoAssinaturaPage() {
                         "galeria"
                       }
                       title="Galeria"
-                      description="Mostra vÃ¡rios badges conquistados."
+                      description="Mostra vários badges conquistados."
                       onClick={() => {
                         atualizarConfig(
                           "template",
@@ -1003,7 +1003,7 @@ function ConfiguracaoAssinaturaPage() {
               >
                 <Card.Body>
                   <h5 style={sectionTitle}>
-                    Campos visÃ­veis
+                    Campos visíveis
                   </h5>
 
                   <div style={checksGrid}>
@@ -1073,7 +1073,7 @@ function ConfiguracaoAssinaturaPage() {
                     />
 
                     <CheckOption
-                      label="Mostrar link pÃºblico"
+                      label="Mostrar link público"
                       checked={
                         config.mostrarLinkBadge
                       }
@@ -1086,7 +1086,7 @@ function ConfiguracaoAssinaturaPage() {
                     />
 
                     <CheckOption
-                      label="Mostrar vÃ¡rios badges"
+                      label="Mostrar vários badges"
                       checked={
                         config.mostrarVariosBadges
                       }
@@ -1112,7 +1112,7 @@ function ConfiguracaoAssinaturaPage() {
 
                   {badges.length === 0 ? (
                     <p style={muted}>
-                      Ainda nÃ£o tens badges conquistados para adicionar Ã  assinatura.
+                      Ainda não tens badges conquistados para adicionar à assinatura.
                     </p>
                   ) : (
                     <>
@@ -1238,7 +1238,7 @@ function ConfiguracaoAssinaturaPage() {
                                 }}
                               >
                                 {selecionado
-                                  ? "âœ“"
+                                  ? "✓"
                                   : ""}
                               </span>
                             </button>
@@ -1260,11 +1260,11 @@ function ConfiguracaoAssinaturaPage() {
                   <div style={previewHeader}>
                     <div>
                       <h5 style={sectionTitle}>
-                        PrÃ©-visualizaÃ§Ã£o
+                        Pré-visualização
                       </h5>
 
                       <p style={muted}>
-                        Esta Ã© a assinatura que serÃ¡ copiada.
+                        Esta é a assinatura que será copiada.
                       </p>
                     </div>
                   </div>
@@ -1334,7 +1334,7 @@ function ConfiguracaoAssinaturaPage() {
                   />
 
                   <p style={smallInfo}>
-                    Usa esta versÃ£o se o cliente de e-mail nÃ£o aceitar HTML.
+                    Usa esta versão se o cliente de e-mail não aceitar HTML.
                   </p>
                 </Card.Body>
               </Card>

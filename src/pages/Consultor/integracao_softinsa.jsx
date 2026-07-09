@@ -43,7 +43,7 @@ const CONTACTO_SOFTINSA = {
   telefone: "+351213219600",
   telefoneFormatado: "+351 213 219 600",
   morada:
-    "EdifÃ­cio Office Oriente, Rua do Mar da China nÂº 3, B6, Parque das NaÃ§Ãµes, 1990-138 Lisboa",
+    "Edifício Office Oriente, Rua do Mar da China nº 3, B6, Parque das Nações, 1990-138 Lisboa",
 };
 
 function abrirLink(url) {
@@ -86,7 +86,7 @@ function IntegracaoSoftinsaPage() {
         }, 1800);
       } catch {
         alert(
-          "NÃ£o foi possÃ­vel copiar os contactos."
+          "Não foi possível copiar os contactos."
         );
       }
     };
@@ -113,7 +113,7 @@ function IntegracaoSoftinsaPage() {
           <section style={hero}>
             <div>
               <div style={eyebrow}>
-                IntegraÃ§Ã£o institucional
+                Integração institucional
               </div>
 
               <h1 style={title}>
@@ -121,7 +121,7 @@ function IntegracaoSoftinsaPage() {
               </h1>
 
               <p style={subtitle}>
-                Acede rapidamente ao site oficial da Softinsa, contactos, carreiras, serviÃ§os, centros de inovaÃ§Ã£o e polÃ­tica de privacidade.
+                Acede rapidamente ao site oficial da Softinsa, contactos, carreiras, serviços, centros de inovação e política de privacidade.
               </p>
 
               <div style={heroActions}>
@@ -160,7 +160,7 @@ function IntegracaoSoftinsaPage() {
             <InstitutionalCard
               icon={<BiGlobe />}
               title="Site oficial"
-              description="PÃ¡gina institucional da Softinsa."
+              description="Página institucional da Softinsa."
               buttonText="Abrir site"
               onClick={() =>
                 abrirLink(
@@ -172,8 +172,8 @@ function IntegracaoSoftinsaPage() {
             <InstitutionalCard
               icon={<BiBuildingHouse />}
               title="Quem somos"
-              description="InformaÃ§Ã£o institucional sobre a Softinsa."
-              buttonText="Ver informaÃ§Ã£o"
+              description="Informação institucional sobre a Softinsa."
+              buttonText="Ver informação"
               onClick={() =>
                 abrirLink(
                   SOFTINSA_LINKS.quemSomos
@@ -184,7 +184,7 @@ function IntegracaoSoftinsaPage() {
             <InstitutionalCard
               icon={<BiBriefcase />}
               title="Carreiras"
-              description="Acesso Ã  Ã¡rea de carreiras e candidaturas."
+              description="Acesso à área de carreiras e candidaturas."
               buttonText="Ver carreiras"
               onClick={() =>
                 abrirLink(
@@ -195,8 +195,8 @@ function IntegracaoSoftinsaPage() {
 
             <InstitutionalCard
               icon={<BiMap />}
-              title="Centros de inovaÃ§Ã£o"
-              description="Consulta os centros de inovaÃ§Ã£o da Softinsa."
+              title="Centros de inovação"
+              description="Consulta os centros de inovação da Softinsa."
               buttonText="Ver centros"
               onClick={() =>
                 abrirLink(
@@ -207,9 +207,9 @@ function IntegracaoSoftinsaPage() {
 
             <InstitutionalCard
               icon={<BiShield />}
-              title="PolÃ­tica de privacidade"
-              description="Consulta a polÃ­tica oficial de privacidade."
-              buttonText="Ver polÃ­tica"
+              title="Política de privacidade"
+              description="Consulta a política oficial de privacidade."
+              buttonText="Ver política"
               onClick={() =>
                 abrirLink(
                   SOFTINSA_LINKS.privacidade
@@ -219,9 +219,9 @@ function IntegracaoSoftinsaPage() {
 
             <InstitutionalCard
               icon={<BiCheckCircle />}
-              title="ServiÃ§os"
-              description="Consulta os serviÃ§os apresentados no site institucional."
-              buttonText="Ver serviÃ§os"
+              title="Serviços"
+              description="Consulta os serviços apresentados no site institucional."
+              buttonText="Ver serviços"
               onClick={() =>
                 abrirLink(
                   SOFTINSA_LINKS.servicos
@@ -302,7 +302,7 @@ function IntegracaoSoftinsaPage() {
                       )
                     }
                   >
-                    Abrir pÃ¡gina de contactos
+                    Abrir página de contactos
                   </Button>
                 </div>
               </Card.Body>
@@ -314,7 +314,7 @@ function IntegracaoSoftinsaPage() {
             >
               <Card.Body>
                 <h5 style={sectionTitle}>
-                  IntegraÃ§Ã£o funcional
+                  Integração funcional
                 </h5>
 
                 <div style={statusBox}>
@@ -325,11 +325,11 @@ function IntegracaoSoftinsaPage() {
 
                   <div>
                     <div style={statusTitle}>
-                      LigaÃ§Ã£o ativa ao site institucional
+                      Ligação ativa ao site institucional
                     </div>
 
                     <div style={statusText}>
-                      Esta pÃ¡gina nÃ£o contÃ©m apenas texto estÃ¡tico: permite abrir pÃ¡ginas oficiais, enviar email, ligar para o contacto institucional e consultar informaÃ§Ãµes externas da Softinsa.
+                      Esta página não contém apenas texto estático: permite abrir páginas oficiais, enviar email, ligar para o contacto institucional e consultar informações externas da Softinsa.
                     </div>
                   </div>
                 </div>
@@ -344,11 +344,11 @@ function IntegracaoSoftinsaPage() {
                   </div>
 
                   <div style={integrationItem}>
-                    LigaÃ§Ã£o Ã  pÃ¡gina de carreiras
+                    Ligação à página de carreiras
                   </div>
 
                   <div style={integrationItem}>
-                    LigaÃ§Ã£o Ã  polÃ­tica de privacidade
+                    Ligação à política de privacidade
                   </div>
 
                   <div style={integrationItem}>
