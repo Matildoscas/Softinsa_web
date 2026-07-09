@@ -379,90 +379,32 @@ function ProgressoPage() {
             }),
 
         api.get(
-            "/badges/todos"
+        `/badges/estatisticas-progresso/${userId}`
         ),
 
         api.get(
-            `/badges/conquistados/${userId}`
+        `/badges/conquistados/${userId}`
         ),
 
         api.get(
-            `/utilizadores/dashboard/${userId}`
+        `/utilizadores/dashboard/${userId}`
         ),
         ])
-        .then(([learningRes, todosRes, conquistadosRes, dashboardRes]) => {
+        .then(([learningRes, estatisticasRes, conquistadosRes, dashboardRes]) => {
             const learningPaths = Array.isArray(learningRes.data)
                 ? learningRes.data
                 : [];
 
-            const todosRaw = Array.isArray(todosRes.data)
-                ? todosRes.data
-                : [];
+            const conquistadosRaw =
+                Array.isArray(conquistadosRes.data)
+                    ? conquistadosRes.data
+                    : [];
 
-            const conquistadosRaw = Array.isArray(conquistadosRes.data)
-                ? conquistadosRes.data
-                : [];
+                const conquistados =
+                removerDuplicados(conquistadosRaw);
 
-            const todos = removerDuplicados(todosRaw);
-            const conquistados = removerDuplicados(conquistadosRaw);
-
-            console.log("===== BADGES CONQUISTADOS =====");
-
-            conquistados.forEach((badge) => {
-                console.log({
-                    id: badge.id,
-                    nome: badge.nome,
-                    id_nivel: badge.id_nivel,
-                    pontos: badge.pontos,
-                });
-            });
-
-            console.log("===============================");
-
-            console.log("===== TODOS OS BADGES =====");
-
-            todos.forEach((badge) => {
-                console.log({
-                    id: badge.id,
-                    nome: badge.nome,
-                    id_nivel: badge.id_nivel,
-                    pontos: badge.pontos,
-                });
-            });
-
-            console.log("========================");
-
-            console.log(
-                "ESPECIAIS CONQUISTADOS:",
-                conquistados.filter((b) => Number(b.id_nivel) === 5)
-            );
-
-            console.log(
-                "COMUNS CONQUISTADOS:",
-                conquistados.filter((b) => Number(b.id_nivel) < 5)
-            );
-
-            let comunsTotal = 0;
-            let especiaisTotal = 0;
-
-            todos.forEach((b) => {
-                if (isEspecial(b)) {
-                    especiaisTotal++;
-                } else if (isComum(b)) {
-                    comunsTotal++;
-                }
-            });
-
-            let comunsObtidos = 0;
-            let especiaisObtidos = 0;
-
-            conquistados.forEach((b) => {
-                if (isEspecial(b)) {
-                    especiaisObtidos++;
-                } else if (isComum(b)) {
-                    comunsObtidos++;
-                }
-            });
+                const estatisticas =
+                estatisticasRes.data || {};
 
             const ranking = [...conquistados]
                 .sort((a, b) => Number(b.pontos || 0) - Number(a.pontos || 0))
@@ -477,10 +419,29 @@ function ProgressoPage() {
             });
 
             setBadgeStats({
-                badges_comuns_conquistados: comunsObtidos,
-                badges_especiais_conquistados: especiaisObtidos,
-                total_badges_comuns: comunsTotal,
-                total_badges_especiais: especiaisTotal,
+                badges_comuns_conquistados:
+                    Number(
+                    estatisticas.badges_comuns_conquistados ||
+                    0
+                    ),
+
+                badges_especiais_conquistados:
+                    Number(
+                    estatisticas.badges_especiais_conquistados ||
+                    0
+                    ),
+
+                total_badges_comuns:
+                    Number(
+                    estatisticas.total_badges_comuns ||
+                    0
+                    ),
+
+                total_badges_especiais:
+                    Number(
+                    estatisticas.total_badges_especiais ||
+                    0
+                    ),
             });
         })
             .catch((err) => {
