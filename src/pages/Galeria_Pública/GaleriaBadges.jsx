@@ -381,8 +381,8 @@ function GaleriaBadgesPage() {
       })
       .finally(() => setLoading(false));
   }, []);
-
- const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
+// 1. Agrupa os badges por área
+  const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
     const area = badge.nome_area || "Área não definida";
 
     if (!acc[area]) {
@@ -393,23 +393,30 @@ function GaleriaBadgesPage() {
     return acc;
   }, {});
 
-  // === NOVO BLOCO: Ordenar os badges de CADA área pelo nível (1 a 5) ===
+  // 2. ORDENAÇÃO INFALÍVEL: Organiza por palavra-chave do nível (Junior -> Intermediate/Practitioner -> Senior -> Specialist -> Leader)
   Object.keys(badgesAgrupadosPorArea).forEach((area) => {
     badgesAgrupadosPorArea[area].sort((a, b) => {
-      const nivelA = Number(a.id_nivel) || 0;
-      const nivelB = Number(b.id_nivel) || 0;
-      return nivelA - nivelB; // Ordenação crescente (Nível 1, depois 2, 3...)
+      const obterPeso = (badge) => {
+        const nome = (badge.nome || badge.nome_badge || "").toLowerCase();
+        
+        if (nome.includes("junior")) return 1;
+        if (nome.includes("intermediate") || nome.includes("practitioner")) return 2;
+        if (nome.includes("senior")) return 3;
+        if (nome.includes("specialist")) return 4;
+        if (nome.includes("leader")) return 5;
+
+        // Fallback: Se o nome não tiver a palavra, tenta usar o id_nivel numérico da BD
+        const idNivel = Number(badge.id_nivel);
+        if (idNivel >= 1 && idNivel <= 5) return idNivel;
+
+        return 99; // Coloca no fim caso não identifique nenhum nível
+      };
+
+      return obterPeso(a) - obterPeso(b);
     });
   });
 
-  Object.keys(badgesAgrupadosPorArea).forEach((area) => {
-    badgesAgrupadosPorArea[area].sort((a, b) => {
-      const nivelA = Number(a.id_nivel) || 0;
-      const nivelB = Number(b.id_nivel) || 0;
-      return nivelA - nivelB;
-    });
-  });
-
+  // 3. Ordena as áreas por ordem alfabética
   const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) =>
     a.localeCompare(b, "pt-PT")
   );
