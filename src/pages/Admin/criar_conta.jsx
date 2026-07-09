@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
-import Header from "../../components/Header.jsx";
+import Header from "../../components/header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 
@@ -26,7 +26,8 @@ function CriarConta() {
     funcao: "Consultor",
     id_areas: "",
     id_serviceline: "",
-    estado_conta: "ATIVO",
+    estado_conta: "PENDENTE_ATIVACAO",
+    notas: "",
   });
 
   const [areas, setAreas] = useState([]);
@@ -44,6 +45,11 @@ function CriarConta() {
   async function carregarDadosAuxiliares() {
     try {
         setIsLoadingDados(true);
+
+        /*const [areasRes, serviceLinesRes] = await Promise.allSettled([
+        api.get("/areas"),
+        api.get("/servicelines"),
+        ]);*/
 
         const [areasRes, serviceLinesRes] = await Promise.allSettled([
             api.get("/areas"),
@@ -174,7 +180,9 @@ function CriarConta() {
           : null,
       });
 
-      setSucesso("Conta criada com sucesso.");
+      setSucesso(
+        "Conta criada com sucesso. Foi enviado um email para ativação e troca obrigatória da password."
+      );
 
       setTimeout(() => {
         navigate("/admin/contas");
@@ -250,7 +258,7 @@ function CriarConta() {
               title="Será ativado quando a funcionalidade de email estiver pronta"
             >
               <BiEnvelope size={18} />
-              Envio de email pendente
+              Email de ativação será enviado
             </button>
           </div>
 
@@ -389,6 +397,26 @@ function CriarConta() {
                   A carregar áreas e service lines...
                 </div>
               )}
+            </div>
+
+            <Divider />
+
+            <div style={{ marginBottom: 28 }}>
+              <label style={fieldLabel}>Observações / Notas Internas</label>
+
+              <textarea
+                value={form.notas}
+                onChange={(e) => set("notas")(e.target.value)}
+                placeholder="Adicione notas sobre o utilizador..."
+                rows={5}
+                style={textareaStyle}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#2563eb";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#d1d5db";
+                }}
+              />
             </div>
           </div>
 
@@ -571,6 +599,21 @@ const dividerStyle = {
   height: 1,
   background: "#f3f4f6",
   marginBottom: 24,
+};
+
+const textareaStyle = {
+  width: "100%",
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  padding: 14,
+  fontSize: 14,
+  color: "#111827",
+  resize: "vertical",
+  outline: "none",
+  boxSizing: "border-box",
+  fontFamily: "inherit",
+  lineHeight: 1.6,
+  marginTop: 8,
 };
 
 const actionsGrid = {

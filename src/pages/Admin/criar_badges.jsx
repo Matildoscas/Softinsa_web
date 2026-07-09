@@ -14,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
-import Header from "../../components/Header.jsx";
+import Header from "../../components/header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 
@@ -24,12 +24,14 @@ const UNIDADES_TEMPO = [
   { value: "ANOS", label: "Anos" },
 ];
 
-const NIVEIS_FALLBACK = [
-  { value: 1, label: "Iniciante" },
-  { value: 2, label: "Intermédio" },
-  { value: 3, label: "Avançado" },
-  { value: 4, label: "Expert" },
-  { value: 5, label: "Master" },
+const TIPOS_BADGE = [
+  { value: "Regular", label: "Regular" },
+  { value: "Especial", label: "Especial" },
+];
+
+const ESTADOS_BADGE = [
+  { value: "Ativo", label: "Ativo" },
+  { value: "Inativo", label: "Inativo" },
 ];
 
 function criarRequisito(aberto = true) {
@@ -37,6 +39,7 @@ function criarRequisito(aberto = true) {
     tempId: Date.now() + Math.random(),
     titulo: "Completar formação associada",
     descricao: "O consultor deve ter concluído o curso:",
+    tipo_requisito: "FORMAÇÃO",
     link: "",
     aberto,
   };
@@ -44,24 +47,162 @@ function criarRequisito(aberto = true) {
 
 function normalizarNivel(nivel) {
   return {
-    value: Number(nivel.id_nivel || nivel.id || nivel.ID_NIVEL),
-    label: nivel.nome_nivel || nivel.nome || nivel.NOME_NIVEL || "Nível",
+    value: Number(
+      nivel.id_nivel ||
+      nivel.id ||
+      nivel.ID_NIVEL
+    ),
+
+    label:
+      nivel.nome_nivel ||
+      nivel.nome ||
+      nivel.NOME_NIVEL ||
+      "Nível",
+
+    id_areas: Number(
+      nivel.id_areas ||
+      nivel.ID_AREAS ||
+      0
+    ),
+
+    nome_area:
+      nivel.nome_area ||
+      nivel.NOME_AREA ||
+      "",
   };
 }
 
-async function getNiveis() {
-  const endpoints = ["/badges/niveis"];
+function normalizarArea(area) {
+  return {
+    value: Number(
+      area.id_areas ||
+      area.id_area ||
+      area.id ||
+      area.ID_AREAS
+    ),
+
+    label:
+      area.nome_area ||
+      area.nome ||
+      area.NOME_AREA ||
+      "Área",
+
+    id_serviceline: Number(
+      area.id_serviceline ||
+      area.ID_SERVICELINE ||
+      0
+    ),
+
+    nome_serviceline:
+      area.nome_serviceline ||
+      area.NOME_SERVICELINE ||
+      `Service Line ${
+        area.id_serviceline ||
+        area.ID_SERVICELINE ||
+        ""
+      }`,
+  };
+}
+
+function normalizarServiceLine(sl) {
+  return {
+    value: Number(
+      sl.id_serviceline ||
+      sl.id ||
+      sl.ID_SERVICELINE
+    ),
+
+    label:
+      sl.nome_serviceline ||
+      sl.nome ||
+      sl.NOME_SERVICELINE ||
+      "Service Line",
+  };
+}
+
+async function getAreas() {
+  const endpoints = [
+    "/areas/select",
+    "/areas",
+  ];
 
   for (const endpoint of endpoints) {
     try {
       const res = await api.get(endpoint);
 
-      if (Array.isArray(res.data)) return res.data;
-      if (Array.isArray(res.data?.niveis)) return res.data.niveis;
-      if (Array.isArray(res.data?.data)) return res.data.data;
+      if (Array.isArray(res.data)) {
+        return res.data;
+      }
+
+      if (Array.isArray(res.data?.areas)) {
+        return res.data.areas;
+      }
+
+      if (Array.isArray(res.data?.data)) {
+        return res.data.data;
+      }
     } catch {
       // tenta o próximo endpoint
     }
+  }
+
+  return [];
+}
+
+async function getServiceLines() {
+  const endpoints = [
+    "/servicelines/select",
+    "/servicelines/admin/select",
+    "/servicelines",
+    "/service-lines",
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const res = await api.get(endpoint);
+
+      if (Array.isArray(res.data)) {
+        return res.data;
+      }
+
+      if (Array.isArray(res.data?.servicelines)) {
+        return res.data.servicelines;
+      }
+
+      if (Array.isArray(res.data?.serviceLines)) {
+        return res.data.serviceLines;
+      }
+
+      if (Array.isArray(res.data?.data)) {
+        return res.data.data;
+      }
+    } catch {
+      // tenta o próximo endpoint
+    }
+  }
+
+  return [];
+}
+
+async function getNiveis(areaId) {
+  if (!areaId) {
+    return [];
+  }
+
+  const res = await api.get(
+    `/badges/niveis?areaId=${areaId}`
+  );
+
+  if (Array.isArray(res.data)) {
+    return res.data;
+  }
+
+  if (Array.isArray(res.data?.niveis)) {
+    return res.data.niveis;
+  }
+
+  if (Array.isArray(res.data?.data)) {
+    return res.data.data;
   }
 
   return [];
@@ -330,13 +471,22 @@ function CriarBadge() {
     pontos: "",
     tempoExpiracao: "",
     unidadeTempo: "MESES",
+
+    id_serviceline: "",
+    id_areas: "",
     id_nivel: "",
+
+    tipo_badge: "Regular",
+    estado_badge_modelo: "Ativo",
+
     imagem: null,
     imagemPreview: null,
     descricao: "",
   });
 
-  const [niveis, setNiveis] = useState(NIVEIS_FALLBACK);
+  const [serviceLines, setServiceLines] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [niveis, setNiveis] = useState([]);
   const [requisitos, setRequisitos] = useState([criarRequisito(true)]);
   const [requisitoEmEdicao, setRequisitoEmEdicao] = useState(null);
 
@@ -345,31 +495,146 @@ function CriarBadge() {
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
 
+  const areasFiltradas = form.id_serviceline
+    ? areas.filter(
+        (area) =>
+          String(area.id_serviceline) ===
+          String(form.id_serviceline)
+      )
+    : areas;
+
   useEffect(() => {
-    carregarNiveis();
+    carregarSelects();
   }, []);
 
-  async function carregarNiveis() {
+  async function carregarSelects() {
+  try {
+    setLoadingNiveis(true);
+
+    const [
+      serviceLinesRaw,
+      areasRaw,
+    ] = await Promise.all([
+      getServiceLines(),
+      getAreas(),
+    ]);
+
+    const areasNormalizadas = areasRaw
+      .map(normalizarArea)
+      .filter((area) => area.value);
+
+    const serviceLinesNormalizadas = serviceLinesRaw
+      .map(normalizarServiceLine)
+      .filter((sl) => sl.value);
+
+    const serviceLinesDasAreas = Array.from(
+      new Map(
+        areasNormalizadas
+          .filter((area) => area.id_serviceline)
+          .map((area) => [
+            area.id_serviceline,
+            {
+              value: area.id_serviceline,
+              label: area.nome_serviceline,
+            },
+          ])
+      ).values()
+    );
+
+    setAreas(areasNormalizadas);
+
+    setServiceLines(
+      serviceLinesNormalizadas.length > 0
+        ? serviceLinesNormalizadas
+        : serviceLinesDasAreas
+    );
+
+    setNiveis([]);
+  } catch (err) {
+    console.error(
+      "Erro ao carregar Service Lines/Áreas:",
+      err
+    );
+
+    setErroGeral(
+      "Não foi possível carregar Service Lines e Áreas."
+    );
+  } finally {
+    setLoadingNiveis(false);
+  }
+  }
+
+  async function carregarNiveisPorArea(areaId) {
+    if (!areaId) {
+      setNiveis([]);
+      return;
+    }
+
     try {
       setLoadingNiveis(true);
 
-      const niveisRaw = await getNiveis();
+      const niveisRaw = await getNiveis(areaId);
 
       const niveisNormalizados = niveisRaw
         .map(normalizarNivel)
-        .filter((nivel) => nivel.value && nivel.label);
+        .filter((nivel) => nivel.value);
 
-      setNiveis(
-        niveisNormalizados.length > 0
-          ? niveisNormalizados
-          : NIVEIS_FALLBACK
-      );
+      setNiveis(niveisNormalizados);
     } catch (err) {
-      console.error("Erro ao carregar níveis:", err);
-      setNiveis(NIVEIS_FALLBACK);
+      console.error(
+        "Erro ao carregar níveis da área:",
+        err
+      );
+
+      setNiveis([]);
+
+      setErroGeral(
+        "Não foi possível carregar os níveis da área selecionada."
+      );
     } finally {
       setLoadingNiveis(false);
     }
+  }
+
+  function selecionarServiceLine(value) {
+    setForm((prev) => ({
+      ...prev,
+      id_serviceline: value,
+      id_areas: "",
+      id_nivel: "",
+    }));
+
+    setNiveis([]);
+
+    setErros((prev) => ({
+      ...prev,
+      id_serviceline: "",
+      id_areas: "",
+      id_nivel: "",
+    }));
+
+    setErroGeral("");
+  }
+
+  function selecionarArea(value, areaSelecionada) {
+    setForm((prev) => ({
+      ...prev,
+      id_areas: value,
+      id_serviceline:
+        areaSelecionada?.id_serviceline ||
+        prev.id_serviceline,
+      id_nivel: "",
+    }));
+
+    setErros((prev) => ({
+      ...prev,
+      id_areas: "",
+      id_nivel: "",
+    }));
+
+    setErroGeral("");
+
+    carregarNiveisPorArea(value);
   }
 
   function setCampo(campo, valor) {
@@ -484,6 +749,16 @@ function CriarBadge() {
       novosErros.pontos = "Os pontos são obrigatórios.";
     }
 
+    if (!form.id_serviceline) {
+      novosErros.id_serviceline =
+        "Seleciona uma Service Line.";
+    }
+
+    if (!form.id_areas) {
+      novosErros.id_areas =
+        "Seleciona uma área.";
+    }
+
     if (Number(form.pontos) < 0) {
       novosErros.pontos = "Os pontos não podem ser negativos.";
     }
@@ -539,6 +814,7 @@ function CriarBadge() {
           titulo: req.titulo.trim(),
           nome_requisito: req.titulo.trim(),
           descricao_requisito: req.descricao.trim(),
+          tipo_requisito: req.tipo_requisito || "FORMAÇÃO",
           links: req.link.trim() ? [req.link.trim()] : [],
         }));
 
@@ -548,11 +824,31 @@ function CriarBadge() {
       formData.append("descricao_badge_modelo", form.descricao.trim());
       formData.append("pontos", Number(form.pontos));
       formData.append("id_nivel", form.id_nivel);
+      //formData.append("tipo_badge", form.tipo_badge || "Regular");
       formData.append("estado_badge_modelo", "ATIVO");
       formData.append("numero_requisitos", requisitosLimpos.length);
       formData.append("tempo_expiracao_quantidade", form.tempoExpiracao || 0);
       formData.append("tempo_expiracao_unidade", form.unidadeTempo);
       formData.append("requisitos", JSON.stringify(requisitosLimpos));
+      formData.append(
+        "id_serviceline",
+        form.id_serviceline
+      );
+
+      formData.append(
+        "id_areas",
+        form.id_areas
+      );
+
+      formData.append(
+        "tipo_badge",
+        form.tipo_badge
+      );
+
+      formData.append(
+        "estado_badge_modelo",
+        form.estado_badge_modelo
+      );
 
       if (idUtilizador) {
         formData.append("id_utilizador", idUtilizador);
@@ -656,6 +952,53 @@ function CriarBadge() {
 
             <div style={grid2}>
               <div>
+                <label style={labelStyle}>Service Line</label>
+
+                <SelectDropdown
+                  options={serviceLines}
+                  value={form.id_serviceline}
+                  onChange={(value) =>
+                    selecionarServiceLine(value)
+                  }
+                  placeholder="Selecione uma Service Line"
+                  erro={erros.id_serviceline}
+                  disabled={loadingNiveis}
+                />
+
+                {erros.id_serviceline && (
+                  <FieldError>
+                    {erros.id_serviceline}
+                  </FieldError>
+                )}
+              </div>
+
+              <div>
+                <label style={labelStyle}>Área</label>
+
+                <SelectDropdown
+                  options={areasFiltradas}
+                  value={form.id_areas}
+                  onChange={(value, option) =>
+                    selecionarArea(value, option)
+                  }
+                  placeholder="Selecione uma área"
+                  erro={erros.id_areas}
+                  disabled={
+                    loadingNiveis ||
+                    !form.id_serviceline
+                  }
+                />
+
+                {erros.id_areas && (
+                  <FieldError>
+                    {erros.id_areas}
+                  </FieldError>
+                )}
+              </div>
+            </div>
+
+            <div style={grid2}>
+              <div>
                 <label style={labelStyle}>Tempo de expiração</label>
 
                 <div style={{ display: "flex", gap: 8 }}>
@@ -691,17 +1034,52 @@ function CriarBadge() {
                 <SelectDropdown
                   options={niveis}
                   value={form.id_nivel}
-                  onChange={(value) => setCampo("id_nivel", value)}
+                  onChange={(value) =>
+                    setCampo("id_nivel", value)
+                  }
                   placeholder={
-                    loadingNiveis
-                      ? "A carregar níveis..."
-                      : "Selecione um nível"
+                    !form.id_areas
+                      ? "Seleciona primeiro uma área"
+                      : loadingNiveis
+                        ? "A carregar níveis..."
+                        : "Selecione um nível"
                   }
                   erro={erros.id_nivel}
-                  disabled={loadingNiveis}
+                  disabled={
+                    loadingNiveis ||
+                    !form.id_areas
+                  }
                 />
 
                 {erros.id_nivel && <FieldError>{erros.id_nivel}</FieldError>}
+              </div>
+            </div>
+
+            <div style={grid2}>
+              <div>
+                <label style={labelStyle}>Tipo do Badge</label>
+
+                <SelectDropdown
+                  options={TIPOS_BADGE}
+                  value={form.tipo_badge}
+                  onChange={(value) =>
+                    setCampo("tipo_badge", value)
+                  }
+                  placeholder="Selecione o tipo"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Estado</label>
+
+                <SelectDropdown
+                  options={ESTADOS_BADGE}
+                  value={form.estado_badge_modelo}
+                  onChange={(value) =>
+                    setCampo("estado_badge_modelo", value)
+                  }
+                  placeholder="Selecione o estado"
+                />
               </div>
             </div>
 

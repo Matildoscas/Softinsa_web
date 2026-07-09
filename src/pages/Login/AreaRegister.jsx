@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Card, Form, Button, InputGroup, Spinner, Alert } from "react-bootstrap";
 import { LayoutList, ArrowRight, ArrowLeft } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import api from "../../services/api.js";
+import api from "../../services/api";
 import ImagemLogin from "../../assets/imagem_login.png";
 
 function AreaPage() {
     const location = useLocation();
     const navigate = useNavigate();
-    const dadosIniciais = location.state; // Recebe os dados do Register.jsx 
+    const dadosIniciais = location.state; // Recebe os dados do RegisterPage 
 
     const [areas, setAreas] = useState([]);
     const [selectedAreaId, setSelectedAreaId] = useState("");
@@ -16,54 +16,92 @@ function AreaPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
 
-    // Carregar áreas da API
+    const obterIdArea = (area) => {
+        return (
+            area.id_areas ??
+            area.id_area ??
+            area.id
+        );
+    };
+
+    // Carregar áreas da API (Equivalente ao _carregarAreas do Flutter) 
     useEffect(() => {
         api.get("/areas")
             .then(res => {
-                setAreas(res.data || []);
+                setAreas(res.data);
                 setIsLoading(false);
             })
             .catch(() => {
                 setMessage({ type: "danger", text: "Erro ao carregar áreas." });
                 setIsLoading(false);
             });
-    }, []);
+        }, []);
 
     const handleFinalizar = async () => {
         console.log("Dados recebidos da página anterior:", dadosIniciais);
         console.log("ID da Área selecionada:", selectedAreaId);
 
-        if (!selectedAreaId) {
-            setMessage({ type: "warning", text: "Selecione uma área!" });
+        const idAreaNumerico =
+            Number(selectedAreaId);
+
+        if (
+            !selectedAreaId ||
+            Number.isNaN(idAreaNumerico)
+        ) {
+            setMessage({
+            type: "warning",
+            text: "Selecione uma área válida!",
+            });
+
+            return;
+        }
+
+        if (
+            !dadosIniciais?.nome ||
+            !dadosIniciais?.email ||
+            !dadosIniciais?.password
+        ) {
+            setMessage({
+            type: "danger",
+            text: "Dados do registo em falta. Volte atrás e preencha novamente.",
+            });
+
             return;
         }
 
         setIsSaving(true);
+
         try {
             const payload = {
-                nome: dadosIniciais?.nome, 
-                email: dadosIniciais?.email,
-                password: dadosIniciais?.password,
-                aceitar_termos: dadosIniciais?.aceitar_termos || dadosIniciais?.aceitarTermos,
-                id_area: parseInt(selectedAreaId, 10)
+            nome: dadosIniciais.nome,
+            email: dadosIniciais.email,
+            password: dadosIniciais.password,
+            aceitar_termos: dadosIniciais.aceitarTermos,
+            id_area: idAreaNumerico,
             };
 
             console.log("Enviando Payload Final:", payload);
 
             await api.post("/auth/register", payload);
-            setMessage({ type: "success", text: "Conta criada! Verifique o seu email." });
-            
-            // Aguarda 3 segundos para o utilizador ler o aviso e manda para o login
-            setTimeout(() => navigate("/login"), 3000);
+
+            setMessage({
+            type: "success",
+            text:
+                "Conta criada com sucesso! Enviámos um email de confirmação. Confirme o email antes de iniciar sessão.",
+            });
+
+            setTimeout(() => navigate("/login"), 5000);
         } catch (err) {
-            setMessage({ 
-                type: "danger", 
-                text: err.response?.data?.message || err.response?.data?.error || "Erro no registo." 
+            setMessage({
+            type: "danger",
+            text:
+                err.response?.data?.error ||
+                "Erro no registo.",
             });
         } finally {
             setIsSaving(false);
         }
-    };
+        };
 
     return (
         <Container fluid className="p-0" style={{ backgroundColor: "#f4f7f6" }}>
@@ -92,15 +130,19 @@ function AreaPage() {
                                                 onChange={(e) => setSelectedAreaId(e.target.value)}
                                             >
                                                 <option value="">Selecione uma área...</option>
-                                                {areas.map((area) => (
-                                                    // Ajustado para ler as propriedades em minúsculas vindas do PostgreSQL
-                                                    <option 
-                                                        key={area.id_area} 
-                                                        value={area.id_area}
-                                                    >
-                                                        {area.nome_area}
-                                                    </option>
-                                                ))}
+                                                    {areas.map((area) => {
+                                                    const idArea =
+                                                        obterIdArea(area);
+
+                                                    return (
+                                                        <option
+                                                        key={idArea}
+                                                        value={idArea}
+                                                        >
+                                                        {area.nome_area || area.nome}
+                                                        </option>
+                                                    );
+                                                })}
                                             </Form.Select>
                                         </InputGroup>
                                     </Form.Group>

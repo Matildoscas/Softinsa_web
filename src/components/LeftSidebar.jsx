@@ -6,6 +6,7 @@ import {
 import {
   BiChevronDown,
   BiChevronRight,
+  BiGlobe,
   BiGrid,
   BiMedal,
   BiUser,
@@ -16,7 +17,7 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import SidebarItem from "./SidebarItem.jsx";
+import SidebarItem from "./sidebar_item.jsx";
 
 function LeftSidebar() {
   const location = useLocation();
@@ -32,6 +33,7 @@ function LeftSidebar() {
     "/meus_badges",
     "/badge-detalhe",
     "/historico_badges",
+    "/configurar-assinatura",
   ];
 
   const estaNumaRotaDeBadges =
@@ -197,9 +199,20 @@ function LeftSidebar() {
             label="Badges Conquistados"
             nested
           />
+
+          <SidebarItem
+            to="/configurar-assinatura"
+            label="Template de Assinatura"
+            nested
+          />
         </div>
       )}
 
+       <SidebarItem
+        to="/softinsa"
+        icon={<BiGlobe size={18} />}
+        label="Site Softinsa"
+      />
     </aside>
   );
 }

@@ -1,14 +1,18 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
-import LoginPage from './pages/Login/Login.jsx';
-import RegisterPage from './pages/Login/Register.jsx';
-import AreaPage from './pages/Login/AreaRegister.jsx';
+import LoginPage from './pages/Login/login.jsx';
+import RegisterPage from './pages/Login/register.jsx';
+import AreaPage from './pages/Login/area_register.jsx';
+import BadgePublicoIndividualPage from './pages/Galeria_Pública/BadgePublicoIndividual.jsx';
+import VerificarCertificadoPage from './pages/Galeria_Pública/VerificarCertificado.jsx';
+import ConfirmarEmailPage from './pages/Login/confirmar_email.jsx';
+import AtivarContaPage from './pages/Login/ativar_conta.jsx';
 
-import PaginaPrincipal from './pages/Consultor/DashboardConsultor.jsx';
-import PaginaPerfil from './pages/Consultor/PaginaPerfilConsultor.jsx';
-import NotificacaoPage from './pages/Consultor/Notificacao.jsx';
-import LembretePage from './pages/Consultor/Lembretes.jsx';
+import PaginaPrincipal from './pages/Consultor/Dashboard_Consultor.jsx';
+import PaginaPerfil from './pages/Consultor/PaginaPerfil_Consultor.jsx';
+import NotificacaoPage from './pages/Consultor/notificacao.jsx';
+import LembretePage from './pages/Consultor/lembretes.jsx';
 import ProgressoPage from './pages/Consultor/progresso_consultor.jsx';
 import CatalogoBadgesPage from './pages/Consultor/catalogo_badges.jsx';
 import PaginaPrincipalAdmin from './pages/Admin/Dashboard_Admin.jsx';
@@ -18,6 +22,9 @@ import BadgeDetailPage from './pages/Consultor/informacao_badge.jsx';
 import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
+import ConfiguracaoAssinaturaPage from './pages/Consultor/configuracao_assinatura.jsx';
+import IntegracaoSoftinsaPage from './pages/Consultor/integracao_softinsa.jsx';
+import ConfiguracaoSLA from "./pages/Admin/config_sla.jsx";
 
 import GestaoContas from "./pages/Admin/gestao_contas.jsx";
 import EditarConta from "./pages/Admin/editar_contas.jsx";
@@ -30,7 +37,7 @@ import CriarArea from "./pages/Admin/criar_areas.jsx";
 import EditarArea from "./pages/Admin/editar_areas.jsx";
 import GestaoRequisitos from "./pages/Admin/gestao_requisitos.jsx";
 import GestaoLearningPaths from "./pages/Admin/gestao_learningpaths.jsx";
-import CriarLearningPath from "./pages/Admin/criar_learningpaths.jsx";
+import CriarLearningPath from "./pages/admin/criar_learningpaths.jsx";
 import EditarLearningPath from "./pages/Admin/editar_learningpaths.jsx";
 import InformacoesAvisos from "./pages/Admin/avisos_informacoes.jsx";
 import PoliticasRGPD from "./pages/Admin/politicas_rgpd.jsx";
@@ -39,6 +46,7 @@ import ConfigurarNotificacoes from "./pages/Admin/config_notificacao.jsx";
 import GestaoBadges from "./pages/Admin/gestao_badges.jsx";
 import CriarBadge from "./pages/Admin/criar_badges.jsx";
 import EditarBadge from "./pages/Admin/editar_badges.jsx";
+import GestaoPedidosBadges from "./pages/Admin/gestao_pedidos_badges.jsx";
 
 import DashboardSll from "./pages/ServiceLineLeader/dashboard_sll.jsx";
 import CatalogoBadgesSll from "./pages/ServiceLineLeader/catalogo_badges_sll.jsx";
@@ -47,7 +55,6 @@ import SolicitacoesBadgesSll from "./pages/ServiceLineLeader/solicitacoes_badges
 import DetalheSolicitacaoSll from "./pages/ServiceLineLeader/detalhe_solicitacao_sll.jsx";
 import RankingBadgesSll from "./pages/ServiceLineLeader/ranking_badges_sll.jsx";
 import HistoricoCandidaturasSll from "./pages/ServiceLineLeader/historico_candidaturas_sll.jsx";
-import StatusCandidaturasSll from "./pages/ServiceLineLeader/status_candidaturas_sll.jsx";
 import GerarCertificadoSll from "./pages/ServiceLineLeader/gerar_certificado_sll.jsx";
 import GerarRelatorioSll from "./pages/ServiceLineLeader/gerar_relatorio.jsx";
 import ListaConsultoresSll from "./pages/ServiceLineLeader/lista_consultores_sll.jsx";
@@ -79,13 +86,18 @@ function App() {
   return (
     <Router>
       <Routes>
+        
+        // Rotas públicas
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/galeria-badges" element={<GaleriaBadgesPage />} />
+        <Route path="/badges/:userId/:badgeId" element={<BadgePublicoIndividualPage />}/>
+        <Route path="/verificar/:codigo" element={<VerificarCertificadoPage />}/>
 
-        // Rotas públicas
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
+        <Route path="/confirmar-email" element={<ConfirmarEmailPage />}/>
+        <Route path="/ativar-conta" element={<AtivarContaPage />}/>
 
         // Rotas Consultor
         <Route path="/pag_consultor" element={<PaginaPrincipal />} />
@@ -100,6 +112,9 @@ function App() {
         <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
         <Route path="/certificado/:id" element={<CertificadoPage />} />
         <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
+        <Route path="/configurar-assinatura" element={<ConfiguracaoAssinaturaPage />} />
+        <Route path="/softinsa" element={<IntegracaoSoftinsaPage />} />
+        
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
 
@@ -124,6 +139,8 @@ function App() {
         <Route path="/admin/badges" element={<GestaoBadges />} />
         <Route path="/admin/badges/novo" element={<CriarBadge />} />
         <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
+        <Route path="/admin/pedidos-badges" element={<GestaoPedidosBadges />}/>
+        <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
 
         <Route path="/sll" element={<DashboardSll />} />
         <Route path="/sll/badges" element={<CatalogoBadgesSll />} />
@@ -132,7 +149,6 @@ function App() {
         <Route path="/sll/solicitacoes/:idCandidatura" element={<DetalheSolicitacaoSll />}/>
         <Route path="/sll/ranking" element={<RankingBadgesSll />} />
         <Route path="/sll/historico-candidaturas" element={<HistoricoCandidaturasSll />}/>
-        <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSll />}/>
         <Route path="/sll/certificados" element={<GerarCertificadoSll />} />
         <Route path="/sll/relatorios" element={<GerarRelatorioSll />} />
         <Route path="/sll/consultores" element={<ListaConsultoresSll />}/>

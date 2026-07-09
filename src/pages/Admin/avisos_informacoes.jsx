@@ -20,6 +20,18 @@ import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 import logoImg from "../../assets/logo.png";
 
+const TITULOS_NOTIFICACAO = {
+  MARCO_PRIMEIRO_BADGE: "Primeiro badge conquistado",
+  BADGE_APROVADO: "Badge aprovado",
+  BADGE_A_EXPIRAR: "Badge prestes a expirar",
+  MARCO_NIVEL_E: "Marco de nível E",
+  MARCO_5_BADGES: "Marco de 5 badges",
+  DESAFIO_CONCLUIDO: "Desafio concluído",
+  OBJETIVO_CONCLUIDO: "Objetivo concluído",
+  BADGE_REJEITADO: "Badge rejeitado",
+  BADGE_RETIFICACAO: "Pedido em retificação",
+};
+
 function normalizarEstado(estado) {
   const e = String(estado || "").trim().toUpperCase();
 
@@ -29,15 +41,38 @@ function normalizarEstado(estado) {
   return "ATIVO";
 }
 
+function formatarTituloNotificacao(tipo) {
+  const raw = String(tipo || "").trim();
+
+  if (!raw) {
+    return "Aviso";
+  }
+
+  const chave = raw.toUpperCase();
+
+  if (TITULOS_NOTIFICACAO[chave]) {
+    return TITULOS_NOTIFICACAO[chave];
+  }
+
+  return raw
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letra) => letra.toUpperCase());
+}
+
 function normalizarAviso(a) {
+  const tipoOriginal =
+    a.tipo_notificacao ||
+    a.TIPO_NOTIFICACAO ||
+    a.titulo ||
+    "Aviso";
+
   return {
     id: a.id_notificacoes || a.ID_NOTIFICACOES || a.id || "",
 
-    titulo:
-      a.tipo_notificacao ||
-      a.TIPO_NOTIFICACAO ||
-      a.titulo ||
-      "Aviso",
+    tipo_original: tipoOriginal,
+
+    titulo: formatarTituloNotificacao(tipoOriginal),
 
     conteudo:
       a.conteudo ||
@@ -363,14 +398,15 @@ function EliminarAvisoModal({
           <BiTrash size={34} />
         </div>
 
-        <h3 style={modalTitle}>Eliminar aviso?</h3>
+        <h3 style={modalTitle}>Desativar aviso?</h3>
 
         <p style={modalText}>
-          O aviso <strong>{aviso.titulo}</strong> será eliminado.
+          O aviso <strong>{aviso.titulo}</strong> será desativado.
         </p>
 
         <p style={modalSubText}>
-          Esta ação remove também a associação aos utilizadores.
+          Esta ação não apaga o aviso da base de dados.
+          Poderás voltar a ativá-lo mais tarde.
         </p>
 
         <div style={modalActions}>
@@ -393,7 +429,7 @@ function EliminarAvisoModal({
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "A eliminar..." : "Sim, eliminar"}
+            {loading ? "A desativar..." : "Sim, desativar"}
           </button>
         </div>
       </div>
@@ -462,15 +498,6 @@ function AvisoCard({
           style={neutralButton}
         >
           {ativo ? "Desativar" : "Ativar"}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onEliminar(aviso)}
-          style={deleteButton}
-        >
-          <BiTrash size={15} />
-          Eliminar
         </button>
       </div>
     </div>
@@ -617,13 +644,25 @@ function InformacoesAvisos() {
 
       await api.delete(`/avisos/${modalEliminar.id}`);
 
-      setAvisos((prev) => prev.filter((a) => a.id !== modalEliminar.id));
+      setAvisos((prev) =>
+        prev.map((a) =>
+          a.id === modalEliminar.id
+            ? {
+                ...a,
+                estado: "INATIVO",
+              }
+            : a
+        )
+      );
+
       setModalEliminar(null);
+      setSucesso("Aviso desativado com sucesso.");
     } catch (err) {
-      console.error("Erro ao eliminar aviso:", err);
-      alert(
+      console.error("Erro ao desativar aviso:", err);
+
+      setErro(
         err.response?.data?.error ||
-          "Não foi possível eliminar."
+          "Não foi possível desativar o aviso."
       );
     } finally {
       setAEliminar(false);

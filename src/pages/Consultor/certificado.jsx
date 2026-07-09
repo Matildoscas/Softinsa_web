@@ -83,45 +83,86 @@ function CertificadoPage() {
     setLoading(true);
 
     Promise.all([
-        api.get("/badges/todos"),
-        api.get(`/badges/conquistados/${userId}`),
-        ])
-        .then(([todosRes, conquistadosRes]) => {
-            const todosRaw = Array.isArray(todosRes.data) ? todosRes.data : [];
-            const conquistadosRaw = Array.isArray(conquistadosRes.data)
-            ? conquistadosRes.data
-            : [];
+      api.get("/badges/todos"),
+      api.get(`/badges/conquistados/${userId}`),
+      api.get(`/certificados/disponiveis/${userId}`),
+    ])
+        .then(([
+          todosRes,
+          conquistadosRes,
+          certificadosRes,
+        ]) => {
+          const todosRaw =
+            Array.isArray(todosRes.data)
+              ? todosRes.data
+              : [];
 
-            const todos = removerDuplicados(todosRaw);
-            const conquistados = removerDuplicados(conquistadosRaw);
+          const conquistadosRaw =
+            Array.isArray(conquistadosRes.data)
+              ? conquistadosRes.data
+              : [];
 
-            const badgeConquistado = conquistados.find(
-            (b) => Number(b.id || b.id_badge_modelo) === Number(id)
+          const certificadosRaw =
+            Array.isArray(certificadosRes.data)
+              ? certificadosRes.data
+              : [];
+
+          const todos =
+            removerDuplicados(todosRaw);
+
+          const conquistados =
+            removerDuplicados(conquistadosRaw);
+
+          const badgeConquistado =
+            conquistados.find(
+              (b) =>
+                Number(
+                  b.id ||
+                  b.id_badge_modelo
+                ) === Number(id)
             );
 
-            if (!badgeConquistado) {
+          if (!badgeConquistado) {
             setBadge(null);
             return;
-            }
+          }
 
-            const badgeCatalogo = todos.find(
-            (b) =>
-                Number(b.id || b.id_badge_modelo) ===
-                Number(badgeConquistado.id || badgeConquistado.id_badge_modelo)
+          const badgeCatalogo =
+            todos.find(
+              (b) =>
+                Number(
+                  b.id ||
+                  b.id_badge_modelo
+                ) ===
+                Number(
+                  badgeConquistado.id ||
+                  badgeConquistado.id_badge_modelo
+                )
             );
 
-            const badgeFinal = {
+          const certificadoEncontrado =
+            certificadosRaw.find(
+              (cert) =>
+                Number(
+                  cert.id_badge_modelo
+                ) === Number(id)
+            );
+
+          const badgeFinal = {
             ...badgeCatalogo,
             ...badgeConquistado,
-            nome_area:
-                badgeConquistado.nome_area ||
-                badgeCatalogo?.nome_area ||
-                badgeCatalogo?.nome_areas ||
-                badgeCatalogo?.area ||
-                "Área não definida",
-            };
+            ...certificadoEncontrado,
 
-            setBadge(badgeFinal);
+            nome_area:
+              certificadoEncontrado?.nome_area ||
+              badgeConquistado.nome_area ||
+              badgeCatalogo?.nome_area ||
+              badgeCatalogo?.nome_areas ||
+              badgeCatalogo?.area ||
+              "Área não definida",
+          };
+
+          setBadge(badgeFinal);
         })
         .catch((err) => {
             console.error("Erro ao carregar certificado:", err);
@@ -186,14 +227,32 @@ function CertificadoPage() {
   };
 
   const getCodigoVerificacao = () => {
-    const userId = user?.id_utilizador || user?.ID_UTILIZADOR || "U";
-    const badgeId = badge?.id || badge?.id_badge_modelo || "B";
+    const userId =
+      user?.id_utilizador ||
+      user?.ID_UTILIZADOR;
 
-    return `CERT-${userId}-${badgeId}`;
+    const idHistorico =
+      badge?.id_candidatura_historico;
+
+    if (
+      !userId ||
+      !idHistorico
+    ) {
+      return "";
+    }
+
+    return `CERT-${idHistorico}-${userId}`;
   };
 
   const getUrlVerificacao = () => {
-    return `softinsa.pt/badges/${user?.id_utilizador || user?.ID_UTILIZADOR || "user"}/${badge?.id || id}`;
+    const codigo =
+      getCodigoVerificacao();
+
+    if (!codigo) {
+      return "";
+    }
+
+    return `${window.location.origin}/verificar/${codigo}`;
   };
 
   const handleGerarPDF = () => {
@@ -260,6 +319,34 @@ function CertificadoPage() {
       </div>
     );
   }
+
+  const handleCopiarLinkVerificacao =
+  async () => {
+    const url =
+      getUrlVerificacao();
+
+    if (!url) {
+      alert(
+        "Link de verificação indisponível."
+      );
+
+      return;
+    }
+
+    try {
+      await navigator
+        .clipboard
+        .writeText(url);
+
+      alert(
+        "Link de verificação copiado."
+      );
+    } catch {
+      alert(
+        "Não foi possível copiar o link."
+      );
+    }
+  };
 
   return (
     <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -333,14 +420,18 @@ function CertificadoPage() {
 
             <div style={certMeta}>
               URL de Verificação:{" "}
-              <a
-                href={`https://${getUrlVerificacao()}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "#4470AF" }}
-              >
-                {getUrlVerificacao()}
-              </a>
+              {getUrlVerificacao() ? (
+                <a
+                  href={getUrlVerificacao()}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#4470AF" }}
+                >
+                  {getUrlVerificacao()}
+                </a>
+              ) : (
+                "Indisponível"
+              )}
             </div>
 
             <div style={{ height: 64 }} />
@@ -366,6 +457,13 @@ function CertificadoPage() {
 
               <button style={actionBtn} onClick={handleGerarExcel}>
                 Gerar Excel
+              </button>
+
+              <button
+                style={actionBtn}
+                onClick={handleCopiarLinkVerificacao}
+              >
+                Copiar Link de Verificação
               </button>
             </div>
           </div>

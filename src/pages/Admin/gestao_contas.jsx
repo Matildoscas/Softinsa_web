@@ -14,6 +14,9 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import logoImg from "../../assets/logo.png";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 import api from "../../services/api.js";
 import Header from "../../components/Header.jsx";
@@ -249,6 +252,140 @@ function GestaoContas() {
     navigate("/admin/contas/novo");
   }
 
+  function prepararDadosExportacao() {
+    return dadosFiltrados.map((c) => ({
+      ID: c.id,
+      Nome: c.nome,
+      Email: c.email,
+      Função: c.funcao,
+      Departamento: c.departamento,
+      Badges: c.badges,
+      "Data de Registo": c.dataRegisto,
+      Estado: c.status,
+    }));
+  }
+
+  function handleExcel() {
+    const dados = prepararDadosExportacao();
+
+    if (dados.length === 0) {
+      alert("Não existem contas para exportar.");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(dados);
+
+    worksheet["!cols"] = [
+      { wch: 8 },
+      { wch: 32 },
+      { wch: 38 },
+      { wch: 24 },
+      { wch: 32 },
+      { wch: 10 },
+      { wch: 18 },
+      { wch: 12 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Contas"
+    );
+
+    const dataHoje = new Date()
+      .toLocaleDateString("pt-PT")
+      .replaceAll("/", "-");
+
+    XLSX.writeFile(
+      workbook,
+      `gestao_contas_${dataHoje}.xlsx`
+    );
+  }
+
+  function handlePDF() {
+    const dados = prepararDadosExportacao();
+
+    if (dados.length === 0) {
+      alert("Não existem contas para exportar.");
+      return;
+    }
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const dataHoje = new Date().toLocaleDateString("pt-PT");
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("SOFTINSA - Gestão de Contas", 14, 16);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Exportado em: ${dataHoje}`, 14, 23);
+    doc.text(`Total de contas: ${dados.length}`, 14, 29);
+
+    autoTable(doc, {
+      startY: 36,
+      head: [[
+        "ID",
+        "Nome",
+        "Email",
+        "Função",
+        "Departamento",
+        "Badges",
+        "Data",
+        "Estado",
+      ]],
+      body: dados.map((c) => [
+        c.ID,
+        c.Nome,
+        c.Email,
+        c.Função,
+        c.Departamento,
+        c.Badges,
+        c["Data de Registo"],
+        c.Estado,
+      ]),
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: "linebreak",
+        valign: "top",
+      },
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { cellWidth: 12 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 48 },
+        3: { cellWidth: 34 },
+        4: { cellWidth: 42 },
+        5: { cellWidth: 16 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 16 },
+        6: { cellWidth: 2218 },
+      },
+      margin: { top: 36, left: 14, right: 14 },
+    });
+
+    const dataFicheiro = new Date()
+      .toLocaleDateString("pt-PT")
+      .replaceAll("/", "-");
+
+    doc.save(`gestao_contas_${dataFicheiro}.pdf`);
+  }
+
   function handleEditar(id) {
     navigate(`/admin/contas/editar/${id}`);
   }
@@ -467,6 +604,16 @@ function GestaoContas() {
                   title="Criar nova conta"
                 >
                   <BiPlus size={22} />
+                </button>
+              </div>
+
+              <div style={{ marginTop: 18, display: "flex", gap: 10 }}>
+                <button onClick={handleExcel} style={excelButton}>
+                  📊 Excel
+                </button>
+
+                <button onClick={handlePDF} style={pdfButton}>
+                  📄 PDF
                 </button>
               </div>
             </div>
@@ -839,6 +986,36 @@ const avatarMini = {
   alignItems: "center",
   justifyContent: "center",
   flexShrink: 0,
+};
+
+const excelButton = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  background: "#16a34a",
+  color: "white",
+  border: "none",
+  borderRadius: 8,
+  padding: "7px 16px",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  height: 38,
+};
+
+const pdfButton = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  background: "#dc2626",
+  color: "white",
+  border: "none",
+  borderRadius: 8,
+  padding: "7px 16px",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  height: 38,
 };
 
 const novoButton = {
