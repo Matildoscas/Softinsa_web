@@ -26,23 +26,61 @@ import {
   obterTipoNotificacao,
 } from "../../utils/notificacoesUtils.js";
 
-function ProgressoSection({ title, sub, children }) {
-    return (
-        <div className="mb-4">
-            <div className="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>{title}</div>
-                    <div style={{ fontSize: 12, color: "#6b7280" }}>{sub}</div>
-                </div>
-                <div style={{ fontSize: 12, color: "#2563eb", display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                    <BiMenu size={14} /> Ver Todos
-                </div>
-            </div>
-            <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-                {children}
-            </div>
+function ProgressoSection({
+  title,
+  sub,
+  children,
+  onVerTodos,
+  mostrarVerTodos = true,
+}) {
+  return (
+    <div className="mb-4">
+      <div className="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#111827",
+            }}
+          >
+            {title}
+          </div>
+
+          <div
+            style={{
+              fontSize: 12,
+              color: "#6b7280",
+            }}
+          >
+            {sub}
+          </div>
         </div>
-    );
+
+        {mostrarVerTodos && (
+          <button
+            type="button"
+            onClick={onVerTodos}
+            style={verTodosButton}
+          >
+            <BiMenu size={14} />
+            Ver Todos
+          </button>
+        )}
+      </div>
+
+      <div
+        style={{
+          background: "white",
+          border: "1px solid #e5e7eb",
+          borderRadius: 12,
+          padding: 16,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
  
 function BadgeCircle({ conquistados, total, label }) {
@@ -250,6 +288,11 @@ function ProgressoPage() {
     marcos,
     setMarcos,
     ] = useState([]);
+
+    const [
+    modalMarcosAberto,
+    setModalMarcosAberto,
+    ] = useState(false);
 
     const [
     userId,
@@ -478,6 +521,16 @@ function ProgressoPage() {
         carregarMarcos,
     ]);
 
+    const marcosDisponiveis =
+    montarMarcosDisponiveis({
+        marcos,
+        stats,
+        badgeStats,
+    });
+
+    const ultimosMarcos =
+    marcos.slice(0, 3);
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
@@ -603,12 +656,15 @@ function ProgressoPage() {
                     </ProgressoSection>
 
                     <ProgressoSection
-                        title="Marcos alcançados"
-                        sub={`${marcos.length} marco(s) registado(s) no teu percurso`}
-                        >
-                        <TimelineMarcos
-                            marcos={marcos}
-                        />
+                    title="Marcos alcançados"
+                    sub={`${marcos.length} marco(s) registado(s) no teu percurso`}
+                    onVerTodos={() =>
+                        setModalMarcosAberto(true)
+                    }
+                    >
+                    <TimelineMarcos
+                        marcos={ultimosMarcos}
+                    />
                     </ProgressoSection>
 
  
@@ -648,6 +704,14 @@ function ProgressoPage() {
 
                 <RightSidebar />
             </div>
+            {modalMarcosAberto && (
+                <ModalTodosMarcos
+                    marcos={marcosDisponiveis}
+                    onClose={() =>
+                    setModalMarcosAberto(false)
+                    }
+                />
+            )}
         </div>
     );
 }
@@ -663,6 +727,100 @@ const cardStyleBase = {
     fontSize: 12, 
     textAlign: 'left'
 };
+
+const DEFINICOES_MARCOS = [
+  {
+    tipo: "MARCO_PRIMEIRO_BADGE",
+    titulo: "Primeiro badge conquistado",
+    descricao:
+      "Conquista o teu primeiro badge na Softinsa Academy.",
+    icone: "🎉",
+    condicao: ({ stats }) =>
+      Number(stats.total_badges || 0) >= 1,
+  },
+  {
+    tipo: "MARCO_5_BADGES",
+    titulo: "5 badges conquistados",
+    descricao:
+      "Conquista pelo menos 5 badges.",
+    icone: "🔥",
+    condicao: ({ stats }) =>
+      Number(stats.total_badges || 0) >= 5,
+  },
+  {
+    tipo: "MARCO_10_BADGES",
+    titulo: "10 badges conquistados",
+    descricao:
+      "Conquista pelo menos 10 badges.",
+    icone: "🚀",
+    condicao: ({ stats }) =>
+      Number(stats.total_badges || 0) >= 10,
+  },
+  {
+    tipo: "MARCO_NIVEL_E",
+    titulo: "Primeiro badge de nível E",
+    descricao:
+      "Conquista pelo menos um badge especial / nível E.",
+    icone: "🏆",
+    condicao: ({ badgeStats }) =>
+      Number(
+        badgeStats.badges_especiais_conquistados ||
+        0
+      ) >= 1,
+  },
+];
+
+function encontrarMarcoNotificacao(
+  marcos,
+  tipo
+) {
+  return marcos.find(
+    (marco) =>
+      obterTipoNotificacao(marco) === tipo
+  );
+}
+
+function montarMarcosDisponiveis({
+  marcos,
+  stats,
+  badgeStats,
+}) {
+  const listaMarcos =
+    Array.isArray(marcos)
+      ? marcos
+      : [];
+
+  return DEFINICOES_MARCOS.map(
+    (definicao) => {
+      const notificacao =
+        encontrarMarcoNotificacao(
+          listaMarcos,
+          definicao.tipo
+        );
+
+      const alcancadoPorDados =
+        definicao.condicao({
+          stats,
+          badgeStats,
+        });
+
+      const alcancado =
+        Boolean(notificacao) ||
+        alcancadoPorDados;
+
+      return {
+        ...definicao,
+        alcancado,
+        notificacao:
+          notificacao || null,
+        data:
+          notificacao?.data_envio ||
+          notificacao?.DATA_ENVIO ||
+          null,
+      };
+    }
+  );
+}
 
 function TimelineMarcos({
   marcos,
@@ -812,6 +970,165 @@ function BadgeCard({ name, desc, points, progress, dateConquered }) {
     );
 }
 
+function ModalTodosMarcos({
+  marcos,
+  onClose,
+}) {
+  const lista =
+    Array.isArray(marcos)
+      ? marcos
+      : [];
+
+  const alcancados =
+    lista.filter(
+      (marco) => marco.alcancado
+    );
+
+  const porAlcancar =
+    lista.filter(
+      (marco) => !marco.alcancado
+    );
+
+  return (
+    <div style={modalOverlay}>
+      <div style={modalCard}>
+        <div style={modalHeader}>
+          <div>
+            <h3 style={modalTitle}>
+              Todos os Marcos
+            </h3>
+
+            <div style={modalSubtitle}>
+              {alcancados.length} alcançado(s) de{" "}
+              {lista.length} marco(s)
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={modalCloseButton}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={modalBody}>
+          <div style={modalSectionTitle}>
+            Marcos alcançados
+          </div>
+
+          {alcancados.length > 0 ? (
+            alcancados.map((marco) => (
+              <MarcoCard
+                key={marco.tipo}
+                marco={marco}
+              />
+            ))
+          ) : (
+            <div style={timelineEmpty}>
+              Ainda não alcançaste nenhum marco.
+            </div>
+          )}
+
+          <div
+            style={{
+              ...modalSectionTitle,
+              marginTop: 22,
+            }}
+          >
+            Marcos disponíveis
+          </div>
+
+          {porAlcancar.length > 0 ? (
+            porAlcancar.map((marco) => (
+              <MarcoCard
+                key={marco.tipo}
+                marco={marco}
+              />
+            ))
+          ) : (
+            <div style={timelineEmpty}>
+              Já alcançaste todos os marcos disponíveis.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarcoCard({
+  marco,
+}) {
+  const alcancado =
+    Boolean(marco.alcancado);
+
+  return (
+    <div
+      style={{
+        ...marcoCard,
+        border: alcancado
+          ? "1px solid #bbf7d0"
+          : "1px solid #e5e7eb",
+        background: alcancado
+          ? "#f0fdf4"
+          : "#f8fafc",
+      }}
+    >
+      <div
+        style={{
+          ...marcoIcon,
+          background: alcancado
+            ? "#16a34a"
+            : "#94a3b8",
+        }}
+      >
+        {alcancado
+          ? marco.icone
+          : "🔒"}
+      </div>
+
+      <div style={{ flex: 1 }}>
+        <div style={marcoTitulo}>
+          {marco.titulo}
+        </div>
+
+        <div style={marcoDescricao}>
+          {marco.descricao}
+        </div>
+
+        {marco.data && (
+          <div style={marcoData}>
+            Alcançado em{" "}
+            {new Date(
+              marco.data
+            ).toLocaleDateString(
+              "pt-PT"
+            )}
+          </div>
+        )}
+      </div>
+
+      <span
+        style={{
+          ...marcoEstado,
+          background: alcancado
+            ? "#dcfce7"
+            : "#e5e7eb",
+          color: alcancado
+            ? "#15803d"
+            : "#475569",
+        }}
+      >
+        {alcancado
+          ? "Alcançado"
+          : "Por alcançar"}
+      </span>
+    </div>
+  );
+}
+
 const timelineWrap = {
   display: "flex",
   flexDirection: "column",
@@ -911,6 +1228,137 @@ const navigationButtonStyle = {
 
   transition:
     "background-color 0.15s ease, border-color 0.15s ease",
+};
+
+const verTodosButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+  cursor: "pointer",
+  fontSize: 12,
+  padding: 0,
+};
+
+const modalOverlay = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 9999,
+  background: "rgba(15, 23, 42, 0.55)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 22,
+};
+
+const modalCard = {
+  width: "100%",
+  maxWidth: 760,
+  maxHeight: "86vh",
+  background: "white",
+  borderRadius: 16,
+  boxShadow:
+    "0 24px 70px rgba(15, 23, 42, 0.30)",
+  overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const modalHeader = {
+  padding: "18px 22px",
+  borderBottom: "1px solid #e5e7eb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+};
+
+const modalTitle = {
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const modalSubtitle = {
+  marginTop: 3,
+  fontSize: 12,
+  color: "#64748b",
+};
+
+const modalCloseButton = {
+  width: 34,
+  height: 34,
+  borderRadius: "50%",
+  border: "none",
+  background: "#f1f5f9",
+  color: "#334155",
+  fontSize: 22,
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const modalBody = {
+  padding: 22,
+  overflowY: "auto",
+};
+
+const modalSectionTitle = {
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#111827",
+  marginBottom: 10,
+};
+
+const marcoCard = {
+  display: "flex",
+  alignItems: "center",
+  gap: 13,
+  borderRadius: 12,
+  padding: "13px 14px",
+  marginBottom: 10,
+};
+
+const marcoIcon = {
+  width: 38,
+  height: 38,
+  borderRadius: "50%",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: 800,
+  flexShrink: 0,
+};
+
+const marcoTitulo = {
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const marcoDescricao = {
+  marginTop: 3,
+  fontSize: 12,
+  color: "#64748b",
+  lineHeight: 1.45,
+};
+
+const marcoData = {
+  marginTop: 5,
+  fontSize: 11,
+  color: "#15803d",
+  fontWeight: 700,
+};
+
+const marcoEstado = {
+  borderRadius: 999,
+  padding: "5px 10px",
+  fontSize: 11,
+  fontWeight: 800,
+  whiteSpace: "nowrap",
 };
 
 export default ProgressoPage;
