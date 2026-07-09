@@ -110,12 +110,12 @@ function CatalogoBadgesPage() {
 
   /*
    * Carrega:
-   * - catÃ¡logo;
+    * - catálogo;
    * - badges conquistados;
    * - candidaturas pendentes.
    *
-   * Esta funÃ§Ã£o tambÃ©m Ã© usada quando
-   * chega uma atualizaÃ§Ã£o Socket.IO.
+    * Esta função também é usada quando
+    * chega uma atualização Socket.IO.
    */
   const carregarCatalogo =
     useCallback(
@@ -196,13 +196,13 @@ function CatalogoBadgesPage() {
           );
         } catch (err) {
           console.error(
-            "[CATÃLOGO] Erro ao carregar:",
+            "[CATÁLOGO] Erro ao carregar:",
             err
           );
 
           if (!silencioso) {
             setMensagemRealtime(
-              "NÃ£o foi possÃ­vel carregar o catÃ¡logo de badges."
+              "Não foi possível carregar o catálogo de badges."
             );
           }
         } finally {
@@ -215,7 +215,7 @@ function CatalogoBadgesPage() {
     );
 
   /*
-   * ObtÃ©m o utilizador autenticado.
+       * Obtém o utilizador autenticado.
    */
   useEffect(() => {
     const storedUser =
@@ -265,7 +265,7 @@ function CatalogoBadgesPage() {
       carregarCatalogo(id);
     } catch (err) {
       console.error(
-        "[CATÃLOGO] Utilizador invÃ¡lido:",
+        "[CATÁLOGO] Utilizador inválido:",
         err
       );
 
@@ -292,7 +292,7 @@ function CatalogoBadgesPage() {
     useCallback(
       async (evento) => {
         console.log(
-          "[CATÃLOGO] Evento recebido:",
+          "[CATÁLOGO] Evento recebido:",
           evento
         );
 
@@ -302,7 +302,7 @@ function CatalogoBadgesPage() {
           );
 
         /*
-        * SÃ³ coloca a mensagem no card
+          * Só coloca a mensagem no card
         * quando o evento identifica
         * corretamente o badge.
         */
@@ -391,7 +391,7 @@ function CatalogoBadgesPage() {
     );
 
   /*
-   * Lista das Ã¡reas disponÃ­veis.
+       * Lista das áreas disponíveis.
    */
   const areasDisponiveis =
     useMemo(
@@ -422,7 +422,7 @@ function CatalogoBadgesPage() {
     );
 
   /*
-   * Pesquisa, filtros e ordenaÃ§Ã£o.
+   * Pesquisa, filtros e ordenação.
    */
   const badgesFiltrados =
     useMemo(
@@ -596,8 +596,8 @@ function CatalogoBadgesPage() {
     );
 
   /*
-   * Volta Ã  pÃ¡gina 1 quando os filtros
-   * sÃ£o alterados.
+   * Volta à página 1 quando os filtros
+   * são alterados.
    */
   useEffect(() => {
     setPaginaAtual(1);
@@ -609,8 +609,8 @@ function CatalogoBadgesPage() {
   ]);
 
   /*
-   * Garante que a pÃ¡gina atual continua
-   * vÃ¡lida depois de uma atualizaÃ§Ã£o
+   * Garante que a página atual continua
+   * válida depois de uma atualização
    * em tempo real.
    */
   useEffect(() => {
@@ -723,7 +723,7 @@ function CatalogoBadgesPage() {
                   mb-0
                 "
               >
-                CatÃ¡logo de Badges
+                Catálogo de Badges
               </h5>
 
               <div
@@ -735,11 +735,11 @@ function CatalogoBadgesPage() {
                     "#4b5563",
                 }}
               >
-                HÃ¡{" "}
+                Há{" "}
                 {
                   badgesFiltrados.length
                 }{" "}
-                Badges disponÃ­veis
+                Badges disponíveis
               </div>
             </div>
 
@@ -761,7 +761,7 @@ function CatalogoBadgesPage() {
 
                 <Form.Control
                   type="search"
-                  placeholder="Nome, descriÃ§Ã£o ou Ã¡rea"
+                  placeholder="Nome, descrição ou área"
                   value={pesquisa}
                   onChange={(event) =>
                     setPesquisa(
@@ -780,7 +780,7 @@ function CatalogoBadgesPage() {
                     filterLabel
                   }
                 >
-                  Filtrar por Ãrea
+                  Filtrar por Área
                 </div>
 
                 <div
@@ -806,7 +806,7 @@ function CatalogoBadgesPage() {
                     }
                   >
                     <option value="">
-                      Todas as Ã¡reas
+                      Todas as áreas
                     </option>
 
                     {areasDisponiveis.map(
@@ -840,11 +840,11 @@ function CatalogoBadgesPage() {
                     }}
                   >
                     <option value="az">
-                      Ãrea A-Z
+                      Área A-Z
                     </option>
 
                     <option value="za">
-                      Ãrea Z-A
+                      Área Z-A
                     </option>
                   </Form.Select>
                 </div>
@@ -856,7 +856,7 @@ function CatalogoBadgesPage() {
                     filterLabel
                   }
                 >
-                  Filtrar por NÃ­vel
+                  Filtrar por Nível
                 </div>
 
                 <Form.Select
@@ -882,23 +882,23 @@ function CatalogoBadgesPage() {
                   </option>
 
                   <option value="1">
-                    NÃ­vel A
+                    Nível A
                   </option>
 
                   <option value="2">
-                    NÃ­vel B
+                    Nível B
                   </option>
 
                   <option value="3">
-                    NÃ­vel C
+                    Nível C
                   </option>
 
                   <option value="4">
-                    NÃ­vel D
+                    Nível D
                   </option>
 
                   <option value="5">
-                    NÃ­vel E
+                    Nível E
                   </option>
                 </Form.Select>
               </div>
@@ -948,7 +948,7 @@ function CatalogoBadgesPage() {
                   "#667085",
               }}
             >
-              NÃ£o foram encontrados
+              Não foram encontrados
               badges com os filtros
               selecionados.
             </div>
@@ -1174,7 +1174,7 @@ function CatalogoBadgeRow({
       : pendente
         ? pendente
             .estado_validacao ||
-          "A aguardar validaÃ§Ã£o"
+          "A aguardar validação"
         : "Por Conquistar";
 
   /*
@@ -1189,7 +1189,7 @@ function CatalogoBadgeRow({
   const estadoTexto =
     bonusAtivo &&
     pontosExtra > 0
-      ? `${estadoBase} â€¢ +${pontosExtra} pontos extra`
+      ? `${estadoBase} • +${pontosExtra} pontos extra`
       : estadoBase;
 
   const corEstado =
@@ -1292,7 +1292,7 @@ function CatalogoBadgeRow({
                     700,
                 }}
               >
-                Desafio concluÃ­do
+                Desafio concluído
               </span>
             )}
           </div>
@@ -1547,7 +1547,7 @@ function PaginacaoCatalogo({
           disabled={
             disabledAnterior
           }
-          aria-label="PÃ¡gina anterior"
+          aria-label="Página anterior"
           style={{
             ...paginationButton,
 
@@ -1567,7 +1567,7 @@ function PaginacaoCatalogo({
                 : "white",
           }}
         >
-          â€¹
+          ‹
         </button>
 
         {paginasVisiveis.map(
@@ -1702,7 +1702,7 @@ function PaginacaoCatalogo({
           disabled={
             disabledProxima
           }
-          aria-label="PÃ¡gina seguinte"
+          aria-label="Página seguinte"
           style={{
             ...paginationButton,
 
@@ -1722,7 +1722,7 @@ function PaginacaoCatalogo({
                 : "white",
           }}
         >
-          â€º
+          ›
         </button>
       </div>
     </div>
