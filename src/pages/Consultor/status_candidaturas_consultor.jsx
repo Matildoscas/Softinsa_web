@@ -196,7 +196,7 @@ export default function StatusCandidaturasConsultor() {
     if (!idUtilizador) {
       setErro("Não foi possível identificar o consultor.");
       setIsLoading(false);
-      return;
+      return [];
     }
 
     try {
@@ -204,10 +204,13 @@ export default function StatusCandidaturasConsultor() {
       setErro("");
 
       const response = await api.get(`/candidaturas/${idUtilizador}/status-candidaturas`);
-      setLista(Array.isArray(response.data?.candidaturas) ? response.data.candidaturas : []);
+      const candidaturas = Array.isArray(response.data?.candidaturas) ? response.data.candidaturas : [];
+      setLista(candidaturas);
+      return candidaturas;
     } catch (err) {
       setErro(err.response?.data?.error || "Não foi possível carregar o progresso das candidaturas.");
       setLista([]);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -228,6 +231,18 @@ export default function StatusCandidaturasConsultor() {
       setErro(err.response?.data?.error || "Não foi possível carregar o detalhe da candidatura.");
     } finally {
       setIsLoadingDetalhe(false);
+    }
+  }
+
+  async function atualizarPagina() {
+    const candidaturaSelecionada = selecionada;
+    const candidaturasAtualizadas = await carregarLista();
+
+    if (
+      candidaturaSelecionada &&
+      candidaturasAtualizadas.some((item) => item.id_candidatura_pedido === candidaturaSelecionada)
+    ) {
+      await carregarDetalhe(candidaturaSelecionada);
     }
   }
 
@@ -290,7 +305,7 @@ export default function StatusCandidaturasConsultor() {
               Voltar
             </button>
 
-            <button type="button" onClick={carregarLista} style={refreshBtn}>
+            <button type="button" onClick={atualizarPagina} style={refreshBtn}>
               <BiRefresh size={16} />
               Atualizar
             </button>

@@ -224,7 +224,7 @@ export default function StatusCandidaturasSll() {
     if (!idUtilizador) {
       setErro("Não foi possível identificar o Service Line Leader.");
       setIsLoading(false);
-      return;
+      return [];
     }
 
     try {
@@ -236,9 +236,11 @@ export default function StatusCandidaturasSll() {
       setServiceLine(response.data.serviceLine || null);
       const candidaturas = Array.isArray(response.data.candidaturas) ? response.data.candidaturas : [];
       setLista(candidaturas);
+      return candidaturas;
     } catch (err) {
       setErro(err.response?.data?.error || "Não foi possível carregar o estado das candidaturas.");
       setLista([]);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -259,6 +261,18 @@ export default function StatusCandidaturasSll() {
       setErro(err.response?.data?.error || "Não foi possível carregar o detalhe da candidatura.");
     } finally {
       setIsLoadingDetalhe(false);
+    }
+  }
+
+  async function atualizarPagina() {
+    const candidaturaSelecionada = selecionada;
+    const candidaturasAtualizadas = await carregarLista();
+
+    if (
+      candidaturaSelecionada &&
+      candidaturasAtualizadas.some((item) => item.id_candidatura_pedido === candidaturaSelecionada)
+    ) {
+      await carregarDetalhe(candidaturaSelecionada);
     }
   }
 
@@ -319,7 +333,7 @@ export default function StatusCandidaturasSll() {
           <div style={topoBarra}>
             <button type="button" onClick={() => navigate("/sll")} style={voltarBtn}>Voltar</button>
 
-            <button type="button" onClick={carregarLista} style={refreshBtn}>
+            <button type="button" onClick={atualizarPagina} style={refreshBtn}>
               <BiRefresh size={16} />
               Atualizar
             </button>
