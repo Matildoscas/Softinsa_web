@@ -24,6 +24,7 @@ import CertificadoPage from './pages/Consultor/certificado.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
 import ConfiguracaoAssinaturaPage from './pages/Consultor/configuracao_assinatura.jsx';
 import IntegracaoSoftinsaPage from './pages/Consultor/integracao_softinsa.jsx';
+import StatusCandidaturasConsultorPage from './pages/Consultor/status_candidaturas_consultor.jsx';
 import ConfiguracaoSLA from "./pages/Admin/config_sla.jsx";
 
 import GestaoContas from "./pages/Admin/gestao_contas.jsx";
@@ -115,6 +116,7 @@ function App() {
         <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
         <Route path="/configurar-assinatura" element={<ConfiguracaoAssinaturaPage />} />
         <Route path="/softinsa" element={<IntegracaoSoftinsaPage />} />
+        <Route path="/status-candidaturas" element={<StatusCandidaturasConsultorPage />} />
         
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
