@@ -165,6 +165,10 @@ function CatalogoBadgesSll() {
   const [erro, setErro] =
     useState("");
 
+  const [paginaAtual, setPaginaAtual] = useState(1);
+
+  const badgesPorPagina = 5;
+
   useEffect(() => {
     carregarServiceLines();
   }, []);
@@ -376,6 +380,43 @@ function CatalogoBadgesSll() {
     pesquisa,
     filtro,
     ordenacao,
+  ]);
+
+  const totalPaginas =
+    Math.max(
+      1,
+      Math.ceil(
+        badgesFiltrados.length /
+        badgesPorPagina
+      )
+    );
+
+  const inicio =
+    (paginaAtual - 1) *
+    badgesPorPagina;
+
+  const badgesPaginaAtual =
+    badgesFiltrados.slice(
+      inicio,
+      inicio + badgesPorPagina
+    );
+
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [
+    pesquisa,
+    filtro,
+    ordenacao,
+    serviceLineId,
+  ]);
+
+  useEffect(() => {
+    if (paginaAtual > totalPaginas) {
+      setPaginaAtual(totalPaginas);
+    }
+  }, [
+    paginaAtual,
+    totalPaginas,
   ]);
 
   /* =======================================================
@@ -858,33 +899,46 @@ function CatalogoBadgesSll() {
             <div style={loadingBox}>
               A carregar badges...
             </div>
-          ) : badgesFiltrados.length >
-            0 ? (
-            <div style={listaBadges}>
-              {badgesFiltrados.map(
-                (badge) => (
-                  <BadgeCard
-                    key={
-                      badge.id_badge_modelo
-                    }
-                    badge={badge}
-                    onConsultar={() =>
-                      navigate(
-                        `/sll/badges/${badge.id_badge_modelo}`
-                      )
-                    }
-                  />
-                )
-              )}
-            </div>
-          ) : (
-            <div style={loadingBox}>
-              {serviceLineId &&
-              serviceLineId !== "MINE"
-                ? "Não foram encontrados badges nesta Service Line."
-                : "Não foram encontrados badges."}
-            </div>
-          )}
+            ) : badgesPaginaAtual.length > 0 ? (
+              <>
+                <div style={listaBadges}>
+                  {badgesPaginaAtual.map((badge) => (
+                    <BadgeCard
+                      key={badge.id_badge_modelo}
+                      badge={badge}
+                      onConsultar={() =>
+                        navigate(
+                          `/sll/badges/${badge.id_badge_modelo}`
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+
+                <PaginacaoCatalogo
+                  paginaAtual={paginaAtual}
+                  totalPaginas={totalPaginas}
+                  onAnterior={() =>
+                    setPaginaAtual((pagina) =>
+                      Math.max(1, pagina - 1)
+                    )
+                  }
+                  onProxima={() =>
+                    setPaginaAtual((pagina) =>
+                      Math.min(totalPaginas, pagina + 1)
+                    )
+                  }
+                  onSelecionarPagina={setPaginaAtual}
+                />
+              </>
+            ) : (
+              <div style={loadingBox}>
+                {serviceLineId &&
+                serviceLineId !== "MINE"
+                  ? "Não foram encontrados badges nesta Service Line."
+                  : "Não foram encontrados badges."}
+              </div>
+            )}
         </main>
 
         <SllRightSidebar />
@@ -907,29 +961,23 @@ function BadgeCard({
     ).toUpperCase() === "ESPECIAL";
 
   return (
-    <article
+    <div
       style={{
         ...badgeCard,
 
-        background: especial
-          ? "#fff3cd"
-          : "white",
+        cursor: "pointer",
 
         border: especial
-          ? "1px solid #f59e0b"
-          : "1px solid #e5e7eb",
+          ? "2px solid #f59e0b"
+          : badgeCard.border,
+
+        boxShadow: especial
+          ? "0 0 0 3px rgba(245, 158, 11, 0.12)"
+          : "none",
       }}
+      onClick={onConsultar}
     >
-      <div style={serviceLineTexto}>
-        Service Line:{" "}
-        <span style={serviceLineLink}>
-          {badge.nome_serviceline}
-        </span>
-      </div>
-
-      <div style={badgeConteudo}>
-        {/* Imagem */}
-
+      <div style={badgeContent}>
         <div
           style={{
             ...badgeImagemBox,
@@ -961,75 +1009,59 @@ function BadgeCard({
           )}
         </div>
 
-        {/* Informação */}
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={badgeNome}>
+              {badge.nome_badge}
+            </div>
 
-        <div style={badgeInfo}>
-          <div style={badgeNome}>
-            {badge.nome_badge}
+            {especial && (
+              <span style={especialPill}>
+                Especial
+              </span>
+            )}
           </div>
 
           <div style={badgeDescricao}>
-            {
-              badge.descricao_badge_modelo
-            }
+            {badge.descricao_badge_modelo}
+
+            {badge.nome_areas && (
+              <div style={areaLinha}>
+                {badge.nome_areas}
+              </div>
+            )}
+
+            {badge.nome_nivel && (
+              <div style={nivelLinha}>
+                {badge.nome_nivel}
+              </div>
+            )}
           </div>
-
-          <div style={areasTexto}>
-            Áreas: {badge.nome_areas}
-          </div>
-
-          <DebugBadgePanel badge={badge} />
-
-          <span
-            style={{
-              ...nivelBadge,
-
-              background: especial
-                ? "#ff8a00"
-                : "#eff6ff",
-
-              color: especial
-                ? "white"
-                : "#2563eb",
-            }}
-          >
-            {especial
-              ? "Especial"
-              : badge.nome_nivel}
-          </span>
         </div>
 
-        {/* Pontos e botão */}
-
-        <div style={badgeActions}>
-          <div style={pontosBox}>
-            <div style={pontosLabel}>
-              Pontos
-            </div>
-
-            <div
-              style={{
-                ...pontosValor,
-
-                background: especial
-                  ? "#facc15"
-                  : "#eff6ff",
-              }}
-            >
-              {badge.pontos}
-            </div>
+        <div style={pointsBox}>
+          <div style={pointsLabel}>
+            Pontos
           </div>
 
-          <button
-            type="button"
-            onClick={onConsultar}
-            style={consultarButton}
-          >
-            Consultar
-          </button>
+          <div style={pointsValue}>
+            {badge.pontos}
+          </div>
         </div>
       </div>
-    </article>
+
+      <div style={statusBar}>
+        Service Line:{" "}
+        <strong>{badge.nome_serviceline}</strong>
+      </div>
+    </div>
   );
 }
 
@@ -1148,6 +1180,181 @@ function ModalInfo({
 
       <div style={modalInfoValue}>
         {value}
+      </div>
+    </div>
+  );
+}
+
+function PaginacaoCatalogo({
+  paginaAtual,
+  totalPaginas,
+  onAnterior,
+  onProxima,
+  onSelecionarPagina,
+}) {
+  if (totalPaginas <= 1) {
+    return null;
+  }
+
+  const disabledAnterior =
+    paginaAtual === 1;
+
+  const disabledProxima =
+    paginaAtual === totalPaginas;
+
+  const criarPaginasVisiveis = () => {
+    if (totalPaginas <= 5) {
+      return Array.from(
+        { length: totalPaginas },
+        (_, index) => index + 1
+      );
+    }
+
+    if (paginaAtual <= 3) {
+      return [
+        1,
+        2,
+        3,
+        4,
+        "...",
+        totalPaginas,
+      ];
+    }
+
+    if (
+      paginaAtual >=
+      totalPaginas - 2
+    ) {
+      return [
+        1,
+        "...",
+        totalPaginas - 3,
+        totalPaginas - 2,
+        totalPaginas - 1,
+        totalPaginas,
+      ];
+    }
+
+    return [
+      1,
+      "...",
+      paginaAtual - 1,
+      paginaAtual,
+      paginaAtual + 1,
+      "...",
+      totalPaginas,
+    ];
+  };
+
+  const paginasVisiveis =
+    criarPaginasVisiveis();
+
+  return (
+    <div style={paginationWrapper}>
+      <div style={paginationBox}>
+        <button
+          type="button"
+          onClick={onAnterior}
+          disabled={disabledAnterior}
+          style={{
+            ...paginationButton,
+
+            color: disabledAnterior
+              ? "#cbd0d6"
+              : "#5f6b7a",
+
+            cursor: disabledAnterior
+              ? "not-allowed"
+              : "pointer",
+
+            background: disabledAnterior
+              ? "#fafafa"
+              : "white",
+          }}
+        >
+          ‹
+        </button>
+
+        {paginasVisiveis.map(
+          (pagina, index) => {
+            if (pagina === "...") {
+              return (
+                <div
+                  key={`ellipsis-${index}`}
+                  style={paginationEllipsis}
+                >
+                  ...
+                </div>
+              );
+            }
+
+            const ativa =
+              Number(pagina) ===
+              Number(paginaAtual);
+
+            return (
+              <button
+                key={pagina}
+                type="button"
+                onClick={() =>
+                  onSelecionarPagina(
+                    Number(pagina)
+                  )
+                }
+                style={{
+                  ...paginationButton,
+
+                  background: ativa
+                    ? "#e8edf3"
+                    : "white",
+
+                  color: ativa
+                    ? "#1f2937"
+                    : "#667085",
+
+                  borderColor: ativa
+                    ? "#d6dce4"
+                    : "transparent",
+
+                  fontWeight: ativa
+                    ? 700
+                    : 500,
+
+                  cursor: "pointer",
+                }}
+              >
+                {pagina}
+              </button>
+            );
+          }
+        )}
+
+        <div style={paginationCounter}>
+          {paginaAtual}/{totalPaginas}
+        </div>
+
+        <button
+          type="button"
+          onClick={onProxima}
+          disabled={disabledProxima}
+          style={{
+            ...paginationButton,
+
+            color: disabledProxima
+              ? "#cbd0d6"
+              : "#5f6b7a",
+
+            cursor: disabledProxima
+              ? "not-allowed"
+              : "pointer",
+
+            background: disabledProxima
+              ? "#fafafa"
+              : "white",
+          }}
+        >
+          ›
+        </button>
       </div>
     </div>
   );
@@ -1391,35 +1598,24 @@ const serviceLineInfo = {
 const listaBadges = {
   display: "flex",
   flexDirection: "column",
-  gap: 22,
-  maxWidth: 900,
-  margin: "0 auto",
+  gap: 14,
+  maxWidth: "100%",
+  margin: "0",
 };
 
 const badgeCard = {
-  borderRadius: 14,
-  padding: "12px 24px",
-  boxShadow:
-    "0 3px 8px rgba(15, 23, 42, 0.13)",
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 10,
+  overflow: "hidden",
+  marginBottom: 0,
 };
 
-const serviceLineTexto = {
-  fontSize: 13,
-  color: "#475569",
-  marginBottom: 16,
-};
-
-const serviceLineLink = {
-  color: "#2563eb",
-  fontWeight: 600,
-};
-
-const badgeConteudo = {
-  display: "grid",
-  gridTemplateColumns:
-    "76px minmax(0, 1fr) 105px",
-  gap: 20,
+const badgeContent = {
+  padding: "18px 12px",
+  display: "flex",
   alignItems: "center",
+  gap: 18,
 };
 
 const badgeImagemBox = {
@@ -1432,8 +1628,6 @@ const badgeImagemBox = {
   overflow: "hidden",
   flexShrink: 0,
   boxSizing: "border-box",
-  boxShadow:
-    "0 3px 8px rgba(15, 23, 42, 0.15)",
 };
 
 const badgeImagem = {
@@ -1443,96 +1637,79 @@ const badgeImagem = {
   borderRadius: "50%",
 };
 
-const badgeInfo = {
-  minWidth: 0,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-};
-
 const badgeNome = {
-  fontSize: 16,
-  fontWeight: 700,
+  fontSize: 15,
+  fontWeight: 600,
   color: "#111827",
-  marginBottom: 7,
-  lineHeight: 1.3,
 };
 
 const badgeDescricao = {
-  fontSize: 13,
-  color: "#64748b",
-  lineHeight: 1.5,
-  maxWidth: 620,
-};
-
-const areasTexto = {
-  marginTop: 6,
   fontSize: 12,
-  color: "#94a3b8",
+  color: "#344563",
+  marginTop: 4,
+  lineHeight: 1.45,
 };
 
-const nivelBadge = {
+const areaLinha = {
+  fontSize: 12,
+  color: "#4470AF",
+  marginTop: 3,
+};
+
+const nivelLinha = {
   display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
+  marginTop: 8,
+  padding: "4px 10px",
   borderRadius: 999,
-  padding: "5px 14px",
+  background: "#eff6ff",
+  color: "#2563eb",
   fontSize: 11,
-  fontWeight: 500,
-  marginTop: 14,
+  fontWeight: 600,
 };
 
-const badgeActions = {
-  minHeight: 110,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "stretch",
-  justifyContent: "space-between",
-  gap: 14,
+const especialPill = {
+  background: "#fff7d6",
+  color: "#9a6b00",
+  border: "1px solid #f0d36b",
+  borderRadius: 999,
+  padding: "3px 9px",
+  fontSize: 11,
+  fontWeight: 700,
 };
 
-const pontosBox = {
-  width: "100%",
-  border: "1px solid #2563eb",
-  borderRadius: 16,
-  padding: "7px 10px",
+const pointsBox = {
+  border: "1.5px solid #4470AF",
+  borderRadius: 12,
+  padding: "8px 10px",
+  minWidth: 52,
   textAlign: "center",
+  boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
   background: "white",
-  boxSizing: "border-box",
-  boxShadow:
-    "0 3px 6px rgba(15, 23, 42, 0.16)",
+  flexShrink: 0,
 };
 
-const pontosLabel = {
+const pointsLabel = {
   fontSize: 10,
-  color: "#475569",
-  marginBottom: 3,
-};
-
-const pontosValor = {
-  width: 48,
-  height: 48,
-  margin: "0 auto",
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: 18,
-  fontWeight: 800,
+  fontWeight: 600,
   color: "#111827",
 };
 
-const consultarButton = {
-  width: "100%",
-  minHeight: 40,
-  border: "none",
-  borderRadius: 9,
-  background: "#d1d5db",
-  color: "#475569",
-  padding: "8px 12px",
+const pointsValue = {
+  fontSize: 17,
+  fontWeight: 700,
+  color: "#111827",
+};
+
+const statusBar = {
+  borderTop: "1px solid #e5e7eb",
+  textAlign: "center",
+  padding: "8px 14px",
   fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
+  lineHeight: 1.45,
+  background: "#fbfdff",
+  color: "#2E7D32",
+  whiteSpace: "normal",
+  overflowWrap: "anywhere",
 };
 
 /* =========================================================
@@ -1675,6 +1852,58 @@ const fecharButton = {
   color: "white",
   padding: "9px 18px",
   cursor: "pointer",
+};
+
+const paginationWrapper = {
+  display: "flex",
+  justifyContent: "center",
+  marginTop: 24,
+  marginBottom: 24,
+};
+
+const paginationBox = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+  background: "white",
+  border: "1px solid #dfe3e8",
+  borderRadius: 9,
+  padding: 5,
+  boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+};
+
+const paginationButton = {
+  width: 34,
+  height: 32,
+  border: "1px solid transparent",
+  borderRadius: 6,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 14,
+  lineHeight: 1,
+  padding: 0,
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
+};
+
+const paginationEllipsis = {
+  width: 30,
+  height: 32,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#8a94a3",
+  fontSize: 13,
+};
+
+const paginationCounter = {
+  minWidth: 42,
+  padding: "0 6px",
+  textAlign: "center",
+  color: "#667085",
+  fontSize: 12,
+  fontWeight: 500,
 };
 
 export default CatalogoBadgesSll;
