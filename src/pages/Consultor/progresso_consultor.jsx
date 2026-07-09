@@ -274,7 +274,7 @@ function ProgressoPage() {
         );
     };
 
-    const isEspecial = (badge) => {
+    /*const isEspecial = (badge) => {
     const nivel = Number(badge.id_nivel || 0);
     return nivel === 5;
     };
@@ -282,6 +282,20 @@ function ProgressoPage() {
     const isComum = (badge) => {
         const nivel = Number(badge.id_nivel || 0);
         return nivel >= 1 && nivel <= 4;
+    };*/
+
+    const isEspecial = (badge) => {
+    return String(
+        badge.tipo_badge ||
+        badge.TIPO_BADGE ||
+        ""
+    )
+        .trim()
+        .toUpperCase() === "ESPECIAL";
+    };
+
+    const isComum = (badge) => {
+    return !isEspecial(badge);
     };
 
     const [
