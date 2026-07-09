@@ -22,7 +22,7 @@ import {
 import useNotificacoesRealtime from
   "../hooks/useNotificacoesRealtime.js";
 
-import NotificationPopover from "./notificacoes_pop";
+import NotificationPopover from "./NotificacoesPop.jsx";
 
 import logoImg from "../assets/logo.png";
 

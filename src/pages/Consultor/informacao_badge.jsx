@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Button, Spinner, Modal } from "react-bootstrap";
 import { HiOutlineArrowLeft } from "react-icons/hi";
 import { useNavigate, useParams } from "react-router-dom";
@@ -6,9 +6,9 @@ import { FaLinkedinIn } from "react-icons/fa";
 import { HiOutlineDownload, HiOutlineMail } from "react-icons/hi";
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
 
-import Header from "../../components/header.jsx";
-import RightSidebar from "../../components/right_sidebar.jsx";
-import LeftSidebar from "../../components/left_sidebar.jsx";
+import Header from "../../components/Header.jsx";
+import RightSidebar from "../../components/RightSidebar.jsx";
+import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
 import BadgeImage, {
   obterImagemBadge,
@@ -182,7 +182,7 @@ function BadgeDetailPage() {
         );
 
       /*
-      * Caso a primeira linha do badge não
+      * Caso a primeira linha do badge nÃ£o
       * tenha imagem, mas outra linha tenha.
       */
       if (!badgeAgrupado.imagem && imagem) {
@@ -418,7 +418,7 @@ function BadgeDetailPage() {
             </Button>
 
             <div className="text-muted mt-4">
-              Badge não encontrado.
+              Badge nÃ£o encontrado.
             </div>
           </main>
           <RightSidebar />
@@ -517,17 +517,17 @@ const autorizarPublicacao =
 
       alert(
         response.data?.message ||
-        "Publicação autorizada."
+        "PublicaÃ§Ã£o autorizada."
       );
     } catch (err) {
       console.error(
-        "Erro ao autorizar publicação:",
+        "Erro ao autorizar publicaÃ§Ã£o:",
         err
       );
 
       alert(
         err.response?.data?.error ||
-        "Não foi possível autorizar a publicação."
+        "NÃ£o foi possÃ­vel autorizar a publicaÃ§Ã£o."
       );
     } finally {
       setConsentimentoLoading(
@@ -555,7 +555,7 @@ const revogarPublicacao =
 
     if (
       !window.confirm(
-        "Tens a certeza que queres revogar a publicação pública deste badge?"
+        "Tens a certeza que queres revogar a publicaÃ§Ã£o pÃºblica deste badge?"
       )
     ) {
       return;
@@ -587,17 +587,17 @@ const revogarPublicacao =
       );
 
       alert(
-        "Autorização revogada com sucesso."
+        "AutorizaÃ§Ã£o revogada com sucesso."
       );
     } catch (err) {
       console.error(
-        "Erro ao revogar publicação:",
+        "Erro ao revogar publicaÃ§Ã£o:",
         err
       );
 
       alert(
         err.response?.data?.error ||
-        "Não foi possível revogar a autorização."
+        "NÃ£o foi possÃ­vel revogar a autorizaÃ§Ã£o."
       );
     } finally {
       setConsentimentoLoading(
@@ -688,7 +688,7 @@ const garantirPublicacaoAutorizada =
 
     const confirmar =
       window.confirm(
-        "Para partilhar este badge no LinkedIn, o badge ficará público e associado ao teu nome. Queres autorizar a publicação pública?"
+        "Para partilhar este badge no LinkedIn, o badge ficarÃ¡ pÃºblico e associado ao teu nome. Queres autorizar a publicaÃ§Ã£o pÃºblica?"
       );
 
     if (!confirmar) {
@@ -747,13 +747,13 @@ const garantirPublicacaoAutorizada =
       return true;
     } catch (err) {
       console.error(
-        "Erro ao autorizar publicação para LinkedIn:",
+        "Erro ao autorizar publicaÃ§Ã£o para LinkedIn:",
         err
       );
 
       alert(
         err.response?.data?.error ||
-        "Não foi possível autorizar a publicação pública do badge."
+        "NÃ£o foi possÃ­vel autorizar a publicaÃ§Ã£o pÃºblica do badge."
       );
 
       return false;
@@ -766,7 +766,7 @@ const partilharLinkedin =
   async () => {
     if (!conquistado) {
       alert(
-        "Só podes partilhar badges que já conquistaste."
+        "SÃ³ podes partilhar badges que jÃ¡ conquistaste."
       );
 
       return;
@@ -774,7 +774,7 @@ const partilharLinkedin =
 
     if (!badge) {
       alert(
-        "Não foi possível carregar os dados do badge."
+        "NÃ£o foi possÃ­vel carregar os dados do badge."
       );
 
       return;
@@ -792,7 +792,7 @@ const partilharLinkedin =
 
     if (!urlBadge) {
       alert(
-        "Não foi possível gerar o link público do badge."
+        "NÃ£o foi possÃ­vel gerar o link pÃºblico do badge."
       );
 
       return;
@@ -805,7 +805,7 @@ const partilharLinkedin =
       [
         `Conquistei o badge "${badge.nome}" na Softinsa Academy!`,
         "",
-        `Badge público: ${urlBadge}`,
+        `Badge pÃºblico: ${urlBadge}`,
         urlCertificado
           ? `Certificado: ${urlCertificado}`
           : "",
@@ -856,7 +856,7 @@ const copiarLinkPublico =
 
     if (!url) {
       alert(
-        "Não foi possível gerar o link público."
+        "NÃ£o foi possÃ­vel gerar o link pÃºblico."
       );
 
       return;
@@ -868,11 +868,11 @@ const copiarLinkPublico =
         .writeText(url);
 
       alert(
-        "Link público copiado."
+        "Link pÃºblico copiado."
       );
     } catch {
       alert(
-        "Não foi possível copiar o link."
+        "NÃ£o foi possÃ­vel copiar o link."
       );
     }
   };
@@ -978,7 +978,7 @@ const gerarAssinaturaTexto =
       "Badge verificado pela Softinsa Academy",
       "",
       urlBadge
-        ? `Ver badge público: ${urlBadge}`
+        ? `Ver badge pÃºblico: ${urlBadge}`
         : "",
       urlCertificadoAssinatura
         ? `Ver certificado: ${urlCertificadoAssinatura}`
@@ -1045,7 +1045,7 @@ const gerarAssinaturaHtml =
             justify-content:center;
             font-size:26px;
           ">
-            🏅
+            ðŸ…
           </div>
         `;
 
@@ -1109,7 +1109,7 @@ const gerarAssinaturaHtml =
                 font-weight:bold;
                 color:#111827;
               ">
-                🏅 ${escaparHtml(nomeBadge)}
+                ðŸ… ${escaparHtml(nomeBadge)}
               </div>
 
               <div style="
@@ -1129,7 +1129,7 @@ const gerarAssinaturaHtml =
                     ? `
                       <a href="${escaparHtml(urlBadge)}"
                         style="color:#2563eb; text-decoration:none; font-weight:bold;">
-                        Ver badge público
+                        Ver badge pÃºblico
                       </a>
                     `
                     : ""
@@ -1168,7 +1168,7 @@ const abrirModalAssinatura =
       !consentimento?.pode_publicar
     ) {
       alert(
-        "Para usares este badge numa assinatura de email, tens de autorizar primeiro a publicação pública deste badge."
+        "Para usares este badge numa assinatura de email, tens de autorizar primeiro a publicaÃ§Ã£o pÃºblica deste badge."
       );
 
       return;
@@ -1242,7 +1242,7 @@ const copiarAssinatura =
         setAssinaturaCopiada(true);
       } catch {
         alert(
-          "Não foi possível copiar a assinatura."
+          "NÃ£o foi possÃ­vel copiar a assinatura."
         );
       }
     }
@@ -1314,16 +1314,16 @@ const copiarAssinatura =
                 fontWeight: 700,
               }}
             >
-              Desafio concluído em tempo recorde
-              {" • "}
+              Desafio concluÃ­do em tempo recorde
+              {" â€¢ "}
               +{pontosExtra} pontos extra
             </div>
           )}
 
           <div style={sectionCard}>
-            <div style={sectionTitle}>Descrição</div>
+            <div style={sectionTitle}>DescriÃ§Ã£o</div>
             <p style={{ fontSize: 13, color: "#374151", marginTop: 8, marginBottom: 0, lineHeight: 1.65 }}>
-              {badge.descricao || "Sem descrição disponível."}
+              {badge.descricao || "Sem descriÃ§Ã£o disponÃ­vel."}
             </p>
           </div>
 
@@ -1331,7 +1331,7 @@ const copiarAssinatura =
 
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
-              Requisitos do Nível
+              Requisitos do NÃ­vel
             </div>
 
             {badge.requisitos.length > 0 ? (
@@ -1359,7 +1359,7 @@ const copiarAssinatura =
           marginBottom: 6,
         }}
       >
-        Publicação pública deste badge
+        PublicaÃ§Ã£o pÃºblica deste badge
       </div>
 
       <div
@@ -1374,7 +1374,7 @@ const copiarAssinatura =
       >
         {consentimento?.pode_publicar
           ? "Autorizada. Este badge pode aparecer publicamente associado ao teu nome."
-          : "Não autorizada. Este badge está privado e não aparece associado ao teu nome na galeria pública."}
+          : "NÃ£o autorizada. Este badge estÃ¡ privado e nÃ£o aparece associado ao teu nome na galeria pÃºblica."}
       </div>
 
       <div
@@ -1418,8 +1418,8 @@ const copiarAssinatura =
           {consentimentoLoading
             ? "A guardar..."
             : consentimento?.pode_publicar
-              ? "Atualizar autorização"
-              : "Autorizar publicação"}
+              ? "Atualizar autorizaÃ§Ã£o"
+              : "Autorizar publicaÃ§Ã£o"}
         </button>
 
         {consentimento?.pode_publicar && (
@@ -1455,7 +1455,7 @@ const copiarAssinatura =
             marginBottom: 6,
           }}
         >
-          Link público do badge
+          Link pÃºblico do badge
         </div>
 
         <div
@@ -1538,7 +1538,7 @@ const copiarAssinatura =
           marginRight: 8,
         }}
       />
-      Adicionar Badge à Assinatura
+      Adicionar Badge Ã  Assinatura
     </button>
   </>
             ) : (
@@ -1556,7 +1556,7 @@ const copiarAssinatura =
                     marginRight: 8,
                   }}
                 />
-                Submeter Evidências
+                Submeter EvidÃªncias
               </button>
             )}
             </div>
@@ -1605,7 +1605,7 @@ const copiarAssinatura =
 
         <Modal.Body>
           <p style={signatureHelp}>
-            Copia esta assinatura e cola-a nas definições de assinatura do Gmail, Outlook ou outro cliente de email.
+            Copia esta assinatura e cola-a nas definiÃ§Ãµes de assinatura do Gmail, Outlook ou outro cliente de email.
           </p>
 
           <div style={signaturePreviewBox}>
@@ -1620,18 +1620,18 @@ const copiarAssinatura =
           <div style={signatureInstructions}>
             <strong>Como usar:</strong>
             <br />
-            1. Clica em “Copiar assinatura”.
+            1. Clica em â€œCopiar assinaturaâ€.
             <br />
-            2. Abre as definições do teu email.
+            2. Abre as definiÃ§Ãµes do teu email.
             <br />
-            3. Vai à zona de assinatura.
+            3. Vai Ã  zona de assinatura.
             <br />
             4. Cola a assinatura e guarda.
           </div>
 
           <div style={{ marginTop: 14 }}>
             <label style={signatureLabel}>
-              Versão em texto simples
+              VersÃ£o em texto simples
             </label>
 
             <textarea
@@ -1673,7 +1673,7 @@ const copiarAssinatura =
 function NivelSelector({ nivelAtual }) {
   return (
     <div style={sectionCard}>
-      <div style={sectionTitle}>Nível</div>
+      <div style={sectionTitle}>NÃ­vel</div>
       <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
         {niveis.map((n) => (
           <div
@@ -1722,7 +1722,7 @@ function RequisitoRow({ req, defaultOpen }) {
         <div style={requisitoBody}>
           <span style={{ fontWeight: 600 }}>{req.id}</span>
           {" - "}
-          {req.descricao || "Sem descrição."}
+          {req.descricao || "Sem descriÃ§Ã£o."}
 
           {req.link && (
             <div style={{ marginTop: 4 }}>
@@ -1752,7 +1752,7 @@ function RelatedBadgeRow({ badge, onClick }) {
             {badge.nome}
           </div>
           <div style={{ fontSize: 12, color: "#4470AF", marginTop: 2 }}>
-            {badge.nome_area || "Área não definida"}
+            {badge.nome_area || "Ãrea nÃ£o definida"}
           </div>
         </div>
 

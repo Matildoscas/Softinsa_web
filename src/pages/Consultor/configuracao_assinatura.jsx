@@ -1,4 +1,4 @@
-import {
+﻿import {
   useEffect,
   useMemo,
   useState,
@@ -24,9 +24,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import Header from "../../components/header.jsx";
-import LeftSidebar from "../../components/left_sidebar.jsx";
-import RightSidebar from "../../components/right_sidebar.jsx";
+import Header from "../../components/Header.jsx";
+import LeftSidebar from "../../components/LeftSidebar.jsx";
+import RightSidebar from "../../components/RightSidebar.jsx";
 import BadgeImage, {
   obterImagemBadge,
 } from "../../components/badge_image.jsx";
@@ -320,7 +320,7 @@ function ConfiguracaoAssinaturaPage() {
       })
       .catch((err) => {
         console.error(
-          "Erro ao carregar configuração da assinatura:",
+          "Erro ao carregar configuraÃ§Ã£o da assinatura:",
           err
         );
       })
@@ -522,7 +522,7 @@ function ConfiguracaoAssinaturaPage() {
               justify-content:center;
               font-size:24px;
             ">
-              🏅
+              ðŸ…
             </div>
           `;
 
@@ -556,7 +556,7 @@ function ConfiguracaoAssinaturaPage() {
                   <div style="font-size:12px; margin-top:4px;">
                     <a href="${escaparHtml(urlBadge)}"
                       style="color:#2563eb; text-decoration:none; font-weight:bold;">
-                      Ver badge público
+                      Ver badge pÃºblico
                     </a>
                   </div>
                 `
@@ -823,7 +823,7 @@ function ConfiguracaoAssinaturaPage() {
           setCopiado(true);
         } catch {
           alert(
-            "Não foi possível copiar a assinatura."
+            "NÃ£o foi possÃ­vel copiar a assinatura."
           );
         }
       }
@@ -920,7 +920,7 @@ function ConfiguracaoAssinaturaPage() {
               </div>
 
               <h1 style={title}>
-                Configuração do template
+                ConfiguraÃ§Ã£o do template
               </h1>
 
               <p style={subtitle}>
@@ -966,7 +966,7 @@ function ConfiguracaoAssinaturaPage() {
                         "completo"
                       }
                       title="Completo"
-                      description="Dados pessoais, badge e links públicos."
+                      description="Dados pessoais, badge e links pÃºblicos."
                       onClick={() =>
                         atualizarConfig(
                           "template",
@@ -981,7 +981,7 @@ function ConfiguracaoAssinaturaPage() {
                         "galeria"
                       }
                       title="Galeria"
-                      description="Mostra vários badges conquistados."
+                      description="Mostra vÃ¡rios badges conquistados."
                       onClick={() => {
                         atualizarConfig(
                           "template",
@@ -1003,7 +1003,7 @@ function ConfiguracaoAssinaturaPage() {
               >
                 <Card.Body>
                   <h5 style={sectionTitle}>
-                    Campos visíveis
+                    Campos visÃ­veis
                   </h5>
 
                   <div style={checksGrid}>
@@ -1073,7 +1073,7 @@ function ConfiguracaoAssinaturaPage() {
                     />
 
                     <CheckOption
-                      label="Mostrar link público"
+                      label="Mostrar link pÃºblico"
                       checked={
                         config.mostrarLinkBadge
                       }
@@ -1086,7 +1086,7 @@ function ConfiguracaoAssinaturaPage() {
                     />
 
                     <CheckOption
-                      label="Mostrar vários badges"
+                      label="Mostrar vÃ¡rios badges"
                       checked={
                         config.mostrarVariosBadges
                       }
@@ -1112,7 +1112,7 @@ function ConfiguracaoAssinaturaPage() {
 
                   {badges.length === 0 ? (
                     <p style={muted}>
-                      Ainda não tens badges conquistados para adicionar à assinatura.
+                      Ainda nÃ£o tens badges conquistados para adicionar Ã  assinatura.
                     </p>
                   ) : (
                     <>
@@ -1238,7 +1238,7 @@ function ConfiguracaoAssinaturaPage() {
                                 }}
                               >
                                 {selecionado
-                                  ? "✓"
+                                  ? "âœ“"
                                   : ""}
                               </span>
                             </button>
@@ -1260,11 +1260,11 @@ function ConfiguracaoAssinaturaPage() {
                   <div style={previewHeader}>
                     <div>
                       <h5 style={sectionTitle}>
-                        Pré-visualização
+                        PrÃ©-visualizaÃ§Ã£o
                       </h5>
 
                       <p style={muted}>
-                        Esta é a assinatura que será copiada.
+                        Esta Ã© a assinatura que serÃ¡ copiada.
                       </p>
                     </div>
                   </div>
@@ -1334,7 +1334,7 @@ function ConfiguracaoAssinaturaPage() {
                   />
 
                   <p style={smallInfo}>
-                    Usa esta versão se o cliente de e-mail não aceitar HTML.
+                    Usa esta versÃ£o se o cliente de e-mail nÃ£o aceitar HTML.
                   </p>
                 </Card.Body>
               </Card>

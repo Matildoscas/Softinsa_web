@@ -17,7 +17,7 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import SidebarItem from "./sidebar_item.jsx";
+import SidebarItem from "./SidebarItem.jsx";
 
 function LeftSidebar() {
   const location = useLocation();
