@@ -381,7 +381,7 @@ function GaleriaBadgesPage() {
       })
       .finally(() => setLoading(false));
   }, []);
-
+// 1. Agrupa os badges por área
   const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
     const area = badge.nome_area || "Área não definida";
 
@@ -393,6 +393,30 @@ function GaleriaBadgesPage() {
     return acc;
   }, {});
 
+  // 2. ORDENAÇÃO INFALÍVEL: Organiza por palavra-chave do nível (Junior -> Intermediate/Practitioner -> Senior -> Specialist -> Leader)
+  Object.keys(badgesAgrupadosPorArea).forEach((area) => {
+    badgesAgrupadosPorArea[area].sort((a, b) => {
+      const obterPeso = (badge) => {
+        const nome = (badge.nome || badge.nome_badge || "").toLowerCase();
+        
+        if (nome.includes("junior")) return 1;
+        if (nome.includes("intermediate") || nome.includes("practitioner")) return 2;
+        if (nome.includes("senior")) return 3;
+        if (nome.includes("specialist")) return 4;
+        if (nome.includes("leader")) return 5;
+
+        // Fallback: Se o nome não tiver a palavra, tenta usar o id_nivel numérico da BD
+        const idNivel = Number(badge.id_nivel);
+        if (idNivel >= 1 && idNivel <= 5) return idNivel;
+
+        return 99; // Coloca no fim caso não identifique nenhum nível
+      };
+
+      return obterPeso(a) - obterPeso(b);
+    });
+  });
+
+  // 3. Ordena as áreas por ordem alfabética
   const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) =>
     a.localeCompare(b, "pt-PT")
   );
