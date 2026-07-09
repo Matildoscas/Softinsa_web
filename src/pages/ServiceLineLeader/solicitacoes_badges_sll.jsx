@@ -202,6 +202,13 @@ function SolicitacoesBadgesSll() {
     setOrdenacao,
   ] = useState("RECENTES");
 
+  const [
+    paginaAtual,
+    setPaginaAtual,
+  ] = useState(1);
+
+  const itensPorPagina = 5;
+
   const [isLoading, setIsLoading] =
     useState(true);
 
