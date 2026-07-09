@@ -19,6 +19,7 @@ import api from "../../services/api.js";
 import Header from "../../components/Header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
+import { resolverUrlFicheiro } from "../../utils/fileUrl.js";
 
 const ROWS_PER_PAGE = 5;
 
@@ -936,7 +937,7 @@ function RequisitoCard({ requisito }) {
 
               {ev.caminho_ficheiro && (
                 <a
-                  href={`http://localhost:3000${ev.caminho_ficheiro}`}
+                  href={resolverUrlFicheiro(ev.caminho_ficheiro)}
                   target="_blank"
                   rel="noreferrer"
                   style={fileLink}
