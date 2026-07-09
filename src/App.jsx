@@ -61,6 +61,7 @@ import ListaConsultoresSll from "./pages/ServiceLineLeader/lista_consultores_sll
 import InformacaoConsultorSll from "./pages/ServiceLineLeader/informacao_consultor_sll.jsx";
 import DefinicoesSllPage from "./pages/ServiceLineLeader/definicoes_sll.jsx";
 import NotificacoesSllPage from "./pages/ServiceLineLeader/notificacoes_sll.jsx";
+import StatusCandidaturasSllPage from "./pages/ServiceLineLeader/status_candidaturas_sll.jsx";
 
 import DashboardTm from "./pages/TalentManager/dashboard_tm.jsx";
 import CatalogoBadgesTm from "./pages/TalentManager/catalogo_badges_tm.jsx";
@@ -155,6 +156,7 @@ function App() {
         <Route path="/sll/consultores/:idConsultor" element={<InformacaoConsultorSll />}/>
         <Route path="/sll/definicoes" element={<DefinicoesSllPage />}/>
         <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
+        <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSllPage />}/>
 
         <Route path="/tm" element={<DashboardTm />} />
         <Route path="/tm/badges" element={<CatalogoBadgesTm />}/>
