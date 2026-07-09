@@ -393,6 +393,14 @@ function GaleriaBadgesPage() {
     return acc;
   }, {});
 
+  Object.keys(badgesAgrupadosPorArea).forEach((area) => {
+    badgesAgrupadosPorArea[area].sort((a, b) => {
+      const nivelA = Number(a.id_nivel) || 0;
+      const nivelB = Number(b.id_nivel) || 0;
+      return nivelA - nivelB;
+    });
+  });
+
   const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) =>
     a.localeCompare(b, "pt-PT")
   );
