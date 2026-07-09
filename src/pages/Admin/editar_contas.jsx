@@ -17,6 +17,14 @@ import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 function normalizarUtilizador(u) {
   const estado = u.estado_conta || u.ESTADO_CONTA || "ATIVO";
 
+  const funcaoFormatada = formatarFuncao(
+    u.tipo_utilizador ||
+      u.TIPO_UTILIZADOR ||
+      u.cargo ||
+      u.CARGO ||
+      "Consultor"
+  );
+
   return {
     id:
       u.id_utilizador ||
@@ -47,13 +55,25 @@ function normalizarUtilizador(u) {
       "",
 
     funcao:
-      formatarFuncao(
-        u.tipo_utilizador ||
-          u.TIPO_UTILIZADOR ||
-          u.cargo ||
-          u.CARGO ||
-          "Consultor"
-      ),
+      funcaoFormatada,
+
+    funcao_original:
+      funcaoFormatada,
+
+    id_areas:
+      u.id_areas ||
+      u.ID_AREAS ||
+      "",
+
+    id_serviceline:
+      u.id_serviceline ||
+      u.ID_SERVICELINE ||
+      "",
+
+    especializacao_tm:
+      u.especializacao_tm ||
+      u.ESPECIALIZACAO_TM ||
+      "",
 
     departamento:
       u.departamento ||
@@ -155,22 +175,44 @@ function FormField({
   );
 }
 
-function SelectField({ label, value, onChange, options }) {
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  disabled = false,
+  helper = "",
+}) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <label style={fieldLabel}>{label}</label>
 
       <select
-        value={value}
+        value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        style={inputStyle}
+        disabled={disabled}
+        style={{
+          ...inputStyle,
+          background: disabled ? "#f9fafb" : "white",
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
       >
         {options.map((op) => (
-          <option key={op.value} value={op.value}>
+          <option
+            key={op.value}
+            value={op.value}
+            disabled={op.disabled}
+          >
             {op.label}
           </option>
         ))}
       </select>
+
+      {helper && (
+        <div style={helperText}>
+          {helper}
+        </div>
+      )}
     </div>
   );
 }
@@ -249,10 +291,24 @@ function EditarConta() {
   const [aGuardar, setAGuardar] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [opcoesFuncao, setOpcoesFuncao] = useState({
+    especializacoes_tm: [],
+    servicelines: [],
+    areas: [],
+  });
+
+  const [isLoadingOpcoes, setIsLoadingOpcoes] = useState(false);
 
   useEffect(() => {
-    carregarUtilizador();
+    carregarPagina();
   }, [id]);
+
+  async function carregarPagina() {
+    await Promise.all([
+      carregarUtilizador(),
+      carregarOpcoesFuncao(),
+    ]);
+  }
 
   async function carregarUtilizador() {
     try {
@@ -280,18 +336,177 @@ function EditarConta() {
     }
     }
 
+  async function carregarOpcoesFuncao() {
+    try {
+      setIsLoadingOpcoes(true);
+
+      const res = await api.get(
+        `/admin/contas/${id}/funcoes-opcoes`
+      );
+
+      const opcoes =
+        res.data?.opcoes ||
+        res.data ||
+        {};
+
+      setOpcoesFuncao({
+        especializacoes_tm:
+          Array.isArray(opcoes.especializacoes_tm)
+            ? opcoes.especializacoes_tm
+            : [],
+
+        servicelines:
+          Array.isArray(opcoes.servicelines)
+            ? opcoes.servicelines
+            : [],
+
+        areas:
+          Array.isArray(opcoes.areas)
+            ? opcoes.areas
+            : [],
+      });
+    } catch (err) {
+      console.error("Erro ao carregar opções de função:", err);
+      console.error("STATUS:", err.response?.status);
+      console.error("BODY:", err.response?.data);
+
+      setErro(
+        err.response?.data?.error ||
+          "Não foi possível carregar as opções de função."
+      );
+    } finally {
+      setIsLoadingOpcoes(false);
+    }
+  }
+
   const set = (field) => (value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setForm((prev) => {
+      const atualizado = {
+        ...prev,
+        [field]: value,
+      };
+
+      if (field === "funcao") {
+        atualizado.id_areas = "";
+        atualizado.id_serviceline = "";
+        atualizado.especializacao_tm = "";
+      }
+
+      return atualizado;
+    });
+
+    setErro("");
+    setSucesso("");
   };
+
+  function funcaoFoiAlterada() {
+    return form?.funcao !== form?.funcao_original;
+  }
+
+  function opcoesEspecializacaoTm() {
+    const disponiveis =
+      opcoesFuncao.especializacoes_tm.filter(
+        (esp) =>
+          esp.disponivel ||
+          esp.pertence_ao_utilizador_atual
+      );
+
+    return [
+      {
+        value: "",
+        label:
+          disponiveis.length > 0
+            ? "Seleciona uma especialização"
+            : "Sem especializações disponíveis",
+        disabled: true,
+      },
+      ...disponiveis.map((esp) => ({
+        value: esp.nome,
+        label: esp.pertence_ao_utilizador_atual
+          ? `${esp.nome} — atual`
+          : esp.nome,
+      })),
+    ];
+  }
+
+  function opcoesServiceLines() {
+    const disponiveis =
+      opcoesFuncao.servicelines.filter(
+        (sl) =>
+          sl.disponivel ||
+          sl.pertence_ao_utilizador_atual
+      );
+
+    return [
+      {
+        value: "",
+        label:
+          disponiveis.length > 0
+            ? "Seleciona uma Service Line"
+            : "Sem Service Lines disponíveis",
+        disabled: true,
+      },
+      ...disponiveis.map((sl) => ({
+        value: String(sl.id_serviceline),
+        label: sl.pertence_ao_utilizador_atual
+          ? `${sl.nome_serviceline} — atual`
+          : sl.nome_serviceline,
+      })),
+    ];
+  }
+
+  function opcoesAreas() {
+    return [
+      {
+        value: "",
+        label: "Seleciona uma área",
+        disabled: true,
+      },
+      ...opcoesFuncao.areas.map((area) => ({
+        value: String(area.id_areas),
+        label: area.nome_area,
+      })),
+    ];
+  }
+
+  function validarFuncao() {
+    if (!funcaoFoiAlterada()) {
+      return true;
+    }
+
+    if (form.funcao === "Consultor" && !form.id_areas) {
+      setErro("Seleciona uma área para atribuir a função Consultor.");
+      return false;
+    }
+
+    if (
+      form.funcao === "Talent Manager" &&
+      !form.especializacao_tm
+    ) {
+      setErro("Seleciona uma especialização disponível para Talent Manager.");
+      return false;
+    }
+
+    if (
+      form.funcao === "Service Line Leader" &&
+      !form.id_serviceline
+    ) {
+      setErro("Seleciona uma Service Line disponível para Service Line Leader.");
+      return false;
+    }
+
+    return true;
+  }
 
   async function handleGuardar() {
     if (!form) return;
 
     if (!form.nome_completo.trim()) {
       setErro("O nome completo é obrigatório.");
+      return;
+    }
+
+    if (!validarFuncao()) {
       return;
     }
 
@@ -304,8 +519,32 @@ function EditarConta() {
         nome_completo: form.nome_completo,
         contacto: form.telefone,
         estado_conta: form.status === "Ativo" ? "ATIVO" : "INATIVA",
-        //tipo_utilizador: form.funcao,
-    });
+      });
+
+      if (funcaoFoiAlterada()) {
+        const payload = {
+          nova_funcao: form.funcao,
+        };
+
+        if (form.funcao === "Consultor") {
+          payload.id_areas = Number(form.id_areas);
+        }
+
+        if (form.funcao === "Talent Manager") {
+          payload.especializacao_tm =
+            form.especializacao_tm;
+        }
+
+        if (form.funcao === "Service Line Leader") {
+          payload.id_serviceline =
+            Number(form.id_serviceline);
+        }
+
+        await api.put(
+          `/admin/contas/${form.id}/funcao`,
+          payload
+        );
+      }
 
       setSucesso("Conta atualizada com sucesso.");
 
@@ -325,6 +564,38 @@ function EditarConta() {
       setAGuardar(false);
     }
   }
+
+  const especializacoesDisponiveis =
+    opcoesFuncao.especializacoes_tm.filter(
+      (esp) =>
+        esp.disponivel ||
+        esp.pertence_ao_utilizador_atual
+    );
+
+  const serviceLinesDisponiveis =
+    opcoesFuncao.servicelines.filter(
+      (sl) =>
+        sl.disponivel ||
+        sl.pertence_ao_utilizador_atual
+    );
+
+  const bloquearGuardarPorFuncao =
+    form &&
+    funcaoFoiAlterada() &&
+    (
+      (
+        form.funcao === "Talent Manager" &&
+        especializacoesDisponiveis.length === 0
+      ) ||
+      (
+        form.funcao === "Service Line Leader" &&
+        serviceLinesDisponiveis.length === 0
+      ) ||
+      (
+        form.funcao === "Consultor" &&
+        opcoesFuncao.areas.length === 0
+      )
+    );
 
   return (
     <div
@@ -461,19 +732,98 @@ function EditarConta() {
                     label="Função"
                     value={form.funcao}
                     onChange={set("funcao")}
+                    disabled={isLoadingOpcoes}
                     options={[
-                        { value: "Consultor", label: "Consultor" },
-                        { value: "Talent Manager", label: "Talent Manager" },
-                        { value: "Service Line Leader", label: "Service Line Leader" },
+                      { value: "Consultor", label: "Consultor" },
+                      { value: "Talent Manager", label: "Talent Manager" },
+                      {
+                        value: "Service Line Leader",
+                        label: "Service Line Leader",
+                      },
                     ]}
-                    />
+                    helper={
+                      funcaoFoiAlterada()
+                        ? "A alteração de função só será aplicada ao guardar."
+                        : "Função atual do utilizador."
+                    }
+                  />
 
-                    <FormField
-                    label="Departamento / Área"
+                  <FormField
+                    label="Departamento / Área atual"
                     value={form.departamento}
                     readOnly
-                    />
+                  />
                 </div>
+
+                {form.funcao === "Consultor" && funcaoFoiAlterada() && (
+                  <div style={formGrid}>
+                    <SelectField
+                      label="Nova área do consultor"
+                      value={form.id_areas}
+                      onChange={set("id_areas")}
+                      disabled={isLoadingOpcoes}
+                      options={opcoesAreas()}
+                      helper="Obrigatório ao passar o utilizador para Consultor."
+                    />
+
+                    <InfoBoxFuncao
+                      titulo="Alteração para Consultor"
+                      texto="O utilizador deixa de ocupar vaga de TM/SLL e passa a atuar apenas como consultor."
+                    />
+                  </div>
+                )}
+
+                {form.funcao === "Talent Manager" && funcaoFoiAlterada() && (
+                  <div style={formGrid}>
+                    <SelectField
+                      label="Especialização TM"
+                      value={form.especializacao_tm}
+                      onChange={set("especializacao_tm")}
+                      disabled={
+                        isLoadingOpcoes ||
+                        especializacoesDisponiveis.length === 0
+                      }
+                      options={opcoesEspecializacaoTm()}
+                      helper="Só aparecem especializações livres."
+                    />
+
+                    <InfoBoxFuncao
+                      titulo="Vagas de Talent Manager"
+                      texto={
+                        especializacoesDisponiveis.length === 0
+                          ? "As 3 especializações TM já estão ocupadas. Para promover este utilizador, liberta primeiro uma especialização."
+                          : "Ao guardar, este utilizador passa a ocupar a especialização selecionada."
+                      }
+                      perigo={especializacoesDisponiveis.length === 0}
+                    />
+                  </div>
+                )}
+
+                {form.funcao === "Service Line Leader" && funcaoFoiAlterada() && (
+                  <div style={formGrid}>
+                    <SelectField
+                      label="Service Line"
+                      value={form.id_serviceline}
+                      onChange={set("id_serviceline")}
+                      disabled={
+                        isLoadingOpcoes ||
+                        serviceLinesDisponiveis.length === 0
+                      }
+                      options={opcoesServiceLines()}
+                      helper="Só aparecem Service Lines sem SLL associado."
+                    />
+
+                    <InfoBoxFuncao
+                      titulo="Vagas de Service Line Leader"
+                      texto={
+                        serviceLinesDisponiveis.length === 0
+                          ? "Não existem Service Lines disponíveis. Para promover este utilizador, liberta primeiro uma Service Line."
+                          : "Ao guardar, este utilizador fica responsável pela Service Line selecionada."
+                      }
+                      perigo={serviceLinesDisponiveis.length === 0}
+                    />
+                  </div>
+                )}
 
                 <SectionTitle
                   icon={<BiStats size={18} />}
@@ -488,11 +838,18 @@ function EditarConta() {
                 <div style={actionsGrid}>
                   <button
                     onClick={handleGuardar}
-                    disabled={aGuardar}
+                    disabled={aGuardar || bloquearGuardarPorFuncao}
                     style={{
                       ...saveButton,
-                      opacity: aGuardar ? 0.7 : 1,
-                      cursor: aGuardar ? "not-allowed" : "pointer",
+                      opacity:
+                        aGuardar || bloquearGuardarPorFuncao
+                          ? 0.7
+                          : 1,
+
+                      cursor:
+                        aGuardar || bloquearGuardarPorFuncao
+                          ? "not-allowed"
+                          : "pointer",
                     }}
                   >
                     <BiSave size={18} />
@@ -513,6 +870,46 @@ function EditarConta() {
         </div>
 
         <AdminRightSidebar />
+      </div>
+    </div>
+  );
+}
+
+function InfoBoxFuncao({
+  titulo,
+  texto,
+  perigo = false,
+}) {
+  return (
+    <div
+      style={{
+        background: perigo ? "#fef2f2" : "#eff6ff",
+        border: perigo
+          ? "1px solid #fecaca"
+          : "1px solid #bfdbfe",
+        borderRadius: 10,
+        padding: "12px 14px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          color: perigo ? "#991b1b" : "#1d4ed8",
+          marginBottom: 4,
+        }}
+      >
+        {titulo}
+      </div>
+
+      <div
+        style={{
+          fontSize: 12,
+          color: perigo ? "#7f1d1d" : "#1e3a8a",
+          lineHeight: 1.45,
+        }}
+      >
+        {texto}
       </div>
     </div>
   );
@@ -701,6 +1098,12 @@ const cancelButton = {
   fontSize: 15,
   fontWeight: 600,
   cursor: "pointer",
+};
+
+const helperText = {
+  fontSize: 11,
+  color: "#6b7280",
+  lineHeight: 1.4,
 };
 
 export default EditarConta;
