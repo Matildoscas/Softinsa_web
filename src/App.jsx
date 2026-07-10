@@ -103,7 +103,7 @@ function App() {
         <Route path="/ativar-conta" element={<AtivarContaPage />}/>
 
         // Rotas Consultor
-        <Route path="/pag_consultor" element={<PaginaPrincipal />} />
+        <Route path="/pag_consultor" element={<DashboardConsultor />} />
         <Route path="/perfil_consultor" element={<PaginaPerfil />} />
         <Route path="/notificacoes" element={<NotificacaoPage />} />
         <Route path="/lembretes" element={<LembretePage />} />
