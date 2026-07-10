@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar, Nav, Dropdown, OverlayTrigger } from 'react-bootstrap';
 import { BiLogOut, BiUser, BiBell, BiUserCircle, BiCog, BiStar } from 'react-icons/bi'; // 🚀 Alterado BiSparkles para BiStar
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import NotificationPopover from './NotificacoesPop';
+import NotificationPopover from './TM_Notificacions';
 import logoImg from '../assets/logo.png';
 import { buildUploadUrl } from '../services/api.js';
 
@@ -41,8 +41,8 @@ function Header() {
   const primeiroNome = user?.nome_completo ? user.nome_completo.split(" ")[0] : "Utilizador";
 
   // Determinar a rota do Logótipo
-  const rotaDashboard = (location.pathname.startsWith('/tm') || location.pathname === '/talent_manager') 
-    ? '/talent_manager' 
+  const rotaDashboard = (location.pathname.startsWith('/tm') || location.pathname === '/talent_manager')
+    ? '/tm'
     : '/';
 
   return (

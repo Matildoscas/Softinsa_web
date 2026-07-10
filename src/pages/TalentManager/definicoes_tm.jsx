@@ -1,20 +1,8 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
-import {
-  BiArrowBack,
-  BiBriefcase,
-  BiCheck,
-  BiEnvelope,
-  BiSave,
-  BiUser,
-} from "react-icons/bi";
+import { BiArrowBack, BiBriefcase, BiCheck, BiEnvelope, BiSave, BiUser } from "react-icons/bi";
 
-import {
-  useNavigate,
-} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
@@ -27,8 +15,7 @@ import api from "../../services/api.js";
 ========================================================= */
 
 function obterUtilizadorGuardado() {
-  const guardado =
-    localStorage.getItem("user");
+  const guardado = localStorage.getItem("user");
 
   if (!guardado) {
     return null;
@@ -37,10 +24,7 @@ function obterUtilizadorGuardado() {
   try {
     return JSON.parse(guardado);
   } catch (err) {
-    console.error(
-      "Erro ao ler utilizador:",
-      err
-    );
+    console.error("Erro ao ler utilizador:", err);
 
     return null;
   }
@@ -51,50 +35,30 @@ function obterUtilizadorGuardado() {
 ========================================================= */
 
 function DefinicoesTm() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  const [dados, setDados] =
-    useState(null);
+  const [dados, setDados] = useState(null);
 
-  const [
-    nomeCompleto,
-    setNomeCompleto,
-  ] = useState("");
+  const [nomeCompleto, setNomeCompleto] = useState("");
 
-  const [
-    contacto,
-    setContacto,
-  ] = useState("");
+  const [contacto, setContacto] = useState("");
 
-  const [
-    isLoading,
-    setIsLoading,
-  ] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [
-    isSaving,
-    setIsSaving,
-  ] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [erro, setErro] =
-    useState("");
+  const [erro, setErro] = useState("");
 
-  const [mensagem, setMensagem] =
-    useState("");
+  const [mensagem, setMensagem] = useState("");
 
   useEffect(() => {
     carregarDefinicoes();
   }, []);
 
   async function carregarDefinicoes() {
-    const utilizador =
-      obterUtilizadorGuardado();
+    const utilizador = obterUtilizadorGuardado();
 
-    const idUtilizador =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+    const idUtilizador = utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
 
     if (!idUtilizador) {
       navigate("/login", {
@@ -108,69 +72,39 @@ function DefinicoesTm() {
       setIsLoading(true);
       setErro("");
 
-      const response =
-        await api.get(
-          `/tm/${idUtilizador}/definicoes`
-        );
+      const response = await api.get(`/tm/${idUtilizador}/definicoes`);
 
-      const informacao =
-        response.data || {};
+      const informacao = response.data || {};
 
       setDados(informacao);
 
-      setNomeCompleto(
-        informacao.nome_completo ||
-        ""
-      );
+      setNomeCompleto(informacao.nome_completo || "");
 
-      setContacto(
-        informacao.contacto ||
-        ""
-      );
+      setContacto(informacao.contacto || "");
     } catch (err) {
-      console.error(
-        "Erro ao carregar definições do TM:",
-        err
-      );
+      console.error("Erro ao carregar definições do TM:", err);
 
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
+      console.error("STATUS:", err.response?.status);
 
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
+      console.error("BODY:", err.response?.data);
 
       setDados(null);
 
-      setErro(
-        err.response?.data?.error ||
-          "Não foi possível carregar as definições."
-      );
+      setErro(err.response?.data?.error || "Não foi possível carregar as definições.");
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function guardarDefinicoes(
-    event
-  ) {
+  async function guardarDefinicoes(event) {
     event.preventDefault();
 
-    const utilizador =
-      obterUtilizadorGuardado();
+    const utilizador = obterUtilizadorGuardado();
 
-    const idUtilizador =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+    const idUtilizador = utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
 
     if (!nomeCompleto.trim()) {
-      setErro(
-        "O nome completo é obrigatório."
-      );
+      setErro("O nome completo é obrigatório.");
 
       return;
     }
@@ -180,58 +114,34 @@ function DefinicoesTm() {
       setErro("");
       setMensagem("");
 
-      const response =
-        await api.put(
-          `/tm/${idUtilizador}/definicoes`,
-          {
-            nome_completo:
-              nomeCompleto.trim(),
+      const response = await api.put(`/tm/${idUtilizador}/definicoes`, {
+        nome_completo: nomeCompleto.trim(),
 
-            contacto:
-              contacto.trim(),
-          }
-        );
+        contacto: contacto.trim(),
+      });
 
-      const utilizadorAtualizado =
-        response.data?.utilizador ||
-        {};
+      const utilizadorAtualizado = response.data?.utilizador || {};
 
-      setDados(
-        utilizadorAtualizado
-      );
+      setDados(utilizadorAtualizado);
 
-      setMensagem(
-        response.data?.message ||
-          "Definições atualizadas com sucesso."
-      );
+      setMensagem(response.data?.message || "Definições atualizadas com sucesso.");
 
-      const utilizadorGuardado =
-        obterUtilizadorGuardado();
+      const utilizadorGuardado = obterUtilizadorGuardado();
 
       localStorage.setItem(
         "user",
         JSON.stringify({
           ...utilizadorGuardado,
 
-          nome_completo:
-            utilizadorAtualizado
-              .nome_completo,
+          nome_completo: utilizadorAtualizado.nome_completo,
 
-          contacto:
-            utilizadorAtualizado
-              .contacto,
-        })
+          contacto: utilizadorAtualizado.contacto,
+        }),
       );
     } catch (err) {
-      console.error(
-        "Erro ao guardar definições:",
-        err
-      );
+      console.error("Erro ao guardar definições:", err);
 
-      setErro(
-        err.response?.data?.error ||
-          "Não foi possível guardar as definições."
-      );
+      setErro(err.response?.data?.error || "Não foi possível guardar as definições.");
     } finally {
       setIsSaving(false);
     }
@@ -245,13 +155,7 @@ function DefinicoesTm() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button
-            type="button"
-            onClick={() =>
-              navigate("/tm")
-            }
-            style={voltarButton}
-          >
+          <button type="button" onClick={() => navigate("/tm")} style={voltarButton}>
             <BiArrowBack size={18} />
             Voltar
           </button>
@@ -259,21 +163,12 @@ function DefinicoesTm() {
           <div style={separador} />
 
           <div style={cabecalhoPagina}>
-            <h1 style={titulo}>
-              Definições da Conta
-            </h1>
+            <h1 style={titulo}>Definições da Conta</h1>
 
-            <div style={subtitulo}>
-              Consulta e atualiza os dados da sua
-              conta de Talent Manager
-            </div>
+            <div style={subtitulo}>Consulta e atualiza os dados da sua conta de Talent Manager</div>
           </div>
 
-          {erro && (
-            <div style={erroBox}>
-              {erro}
-            </div>
-          )}
+          {erro && <div style={erroBox}>{erro}</div>}
 
           {mensagem && (
             <div style={sucessoBox}>
@@ -283,20 +178,11 @@ function DefinicoesTm() {
           )}
 
           {isLoading ? (
-            <div style={mensagemBox}>
-              A carregar definições...
-            </div>
+            <div style={mensagemBox}>A carregar definições...</div>
           ) : dados ? (
             <>
-              <form
-                onSubmit={
-                  guardarDefinicoes
-                }
-                style={formularioCard}
-              >
-                <h2 style={tituloCard}>
-                  Dados pessoais
-                </h2>
+              <form onSubmit={guardarDefinicoes} style={formularioCard}>
+                <h2 style={tituloCard}>Dados pessoais</h2>
 
                 <div style={formularioGrid}>
                   <div style={campo}>
@@ -308,31 +194,18 @@ function DefinicoesTm() {
                     <input
                       type="text"
                       value={nomeCompleto}
-                      onChange={(event) =>
-                        setNomeCompleto(
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => setNomeCompleto(event.target.value)}
                       style={input}
                     />
                   </div>
 
                   <div style={campo}>
                     <label style={label}>
-                      <BiEnvelope
-                        size={16}
-                      />
+                      <BiEnvelope size={16} />
                       Email
                     </label>
 
-                    <input
-                      type="text"
-                      value={
-                        dados.email || ""
-                      }
-                      disabled
-                      style={inputDesativado}
-                    />
+                    <input type="text" value={dados.email || ""} disabled style={inputDesativado} />
                   </div>
 
                   <div style={campo}>
@@ -344,11 +217,7 @@ function DefinicoesTm() {
                     <input
                       type="text"
                       value={contacto}
-                      onChange={(event) =>
-                        setContacto(
-                          event.target.value
-                        )
-                      }
+                      onChange={(event) => setContacto(event.target.value)}
                       placeholder="Contacto telefónico"
                       style={input}
                     />
@@ -356,50 +225,35 @@ function DefinicoesTm() {
 
                   <div style={campo}>
                     <label style={label}>
-                      <BiBriefcase
-                        size={16}
-                      />
+                      <BiBriefcase size={16} />
                       Especialização
                     </label>
 
                     <input
                       type="text"
-                      value={
-                        dados.especializacao_tm ||
-                        ""
-                      }
+                      value={dados.especializacao_tm || ""}
                       disabled
                       style={inputDesativado}
                     />
                   </div>
 
                   <div style={campo}>
-                    <label style={label}>
-                      Estado da conta
-                    </label>
+                    <label style={label}>Estado da conta</label>
 
                     <input
                       type="text"
-                      value={
-                        dados.estado_conta ||
-                        "Não definido"
-                      }
+                      value={dados.estado_conta || "Não definido"}
                       disabled
                       style={inputDesativado}
                     />
                   </div>
 
                   <div style={campo}>
-                    <label style={label}>
-                      Estado de Talent Manager
-                    </label>
+                    <label style={label}>Estado de Talent Manager</label>
 
                     <input
                       type="text"
-                      value={
-                        dados.estado_tm ||
-                        "Não definido"
-                      }
+                      value={dados.estado_tm || "Não definido"}
                       disabled
                       style={inputDesativado}
                     />
@@ -412,64 +266,43 @@ function DefinicoesTm() {
                   style={{
                     ...guardarButton,
 
-                    opacity:
-                      isSaving
-                        ? 0.65
-                        : 1,
+                    opacity: isSaving ? 0.65 : 1,
                   }}
                 >
                   <BiSave size={18} />
 
-                  {isSaving
-                    ? "A guardar..."
-                    : "Guardar alterações"}
+                  {isSaving ? "A guardar..." : "Guardar alterações"}
                 </button>
               </form>
 
               <section style={estatisticasCard}>
-                <h2 style={tituloCard}>
-                  Resumo da atividade
-                </h2>
+                <h2 style={tituloCard}>Resumo da atividade</h2>
 
                 <div style={estatisticasGrid}>
                   <Estatistica
-                    valor={
-                      dados.numero_consultores_acompanhados ||
-                      0
-                    }
+                    valor={dados.numero_consultores_acompanhados || 0}
                     label="Consultores acompanhados"
                   />
 
                   <Estatistica
-                    valor={
-                      dados.candidaturas_avaliadas ||
-                      0
-                    }
+                    valor={dados.candidaturas_avaliadas || 0}
                     label="Candidaturas avaliadas"
                   />
 
                   <Estatistica
-                    valor={
-                      dados.candidaturas_aprovadas ||
-                      0
-                    }
+                    valor={dados.candidaturas_aprovadas || 0}
                     label="Candidaturas aprovadas"
                   />
 
                   <Estatistica
-                    valor={
-                      dados.candidaturas_rejeitadas ||
-                      0
-                    }
+                    valor={dados.candidaturas_rejeitadas || 0}
                     label="Candidaturas rejeitadas"
                   />
                 </div>
               </section>
             </>
           ) : (
-            <div style={mensagemBox}>
-              Talent Manager não encontrado.
-            </div>
+            <div style={mensagemBox}>Talent Manager não encontrado.</div>
           )}
         </main>
 
@@ -483,19 +316,12 @@ function DefinicoesTm() {
    ESTATÍSTICA
 ========================================================= */
 
-function Estatistica({
-  valor,
-  label,
-}) {
+function Estatistica({ valor, label }) {
   return (
     <div style={estatisticaItem}>
-      <div style={estatisticaValor}>
-        {valor}
-      </div>
+      <div style={estatisticaValor}>{valor}</div>
 
-      <div style={estatisticaLabel}>
-        {label}
-      </div>
+      <div style={estatisticaLabel}>{label}</div>
     </div>
   );
 }
@@ -578,8 +404,7 @@ const tituloCard = {
 
 const formularioGrid = {
   display: "grid",
-  gridTemplateColumns:
-    "repeat(2, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: 20,
 };
 
@@ -645,8 +470,7 @@ const estatisticasCard = {
 
 const estatisticasGrid = {
   display: "grid",
-  gridTemplateColumns:
-    "repeat(4, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: 16,
 };
 

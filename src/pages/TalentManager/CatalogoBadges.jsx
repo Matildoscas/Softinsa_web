@@ -152,7 +152,7 @@ function CatalogoBadges() {
               variant="link"
               className="d-flex align-items-center text-decoration-none p-0 mb-2"
               style={{ color: "#4A5568", fontSize: "1.05rem" }}
-              onClick={() => navigate("/talent_manager")}
+              onClick={() => navigate("/tm")}
             >
               <HiOutlineArrowLeft className="me-1" />
               <span>Voltar</span>

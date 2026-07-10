@@ -12,9 +12,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
-import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/LeftBarTM.jsx";
+import TmRightSidebar from "../../components/TM_RightBar.jsx";
 
 import api from "../../services/api.js";
 

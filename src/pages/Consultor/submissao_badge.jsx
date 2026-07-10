@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button, Spinner, Form } from "react-bootstrap";
-import { HiOutlineArrowLeft, HiOutlineUpload, HiOutlineTrash } from "react-icons/hi";
+import {
+  HiOutlineArrowLeft,
+  HiOutlineUpload,
+  HiOutlineTrash,
+} from "react-icons/hi";
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 
@@ -16,17 +20,11 @@ function SubmeterEvidenciasPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const idLembrete =
-    location.state?.idLembrete ??
-    null;
+  const idLembrete = location.state?.idLembrete ?? null;
 
-  const voltarPara =
-    location.state?.voltarPara ||
-    "/catalogo-badges";
+  const voltarPara = location.state?.voltarPara || "/catalogo-badges";
 
-  const textoVoltar =
-    location.state?.textoVoltar ||
-    "Voltar";
+  const textoVoltar = location.state?.textoVoltar || "Voltar";
   const { id } = useParams();
 
   const [badge, setBadge] = useState(null);
@@ -54,51 +52,27 @@ function SubmeterEvidenciasPage() {
         });
       }
 
-      if (
-        linha.titulo ||
-        linha.nome_requisito ||
-        linha.descricao_requisito
-      ) {
+      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
         const idRequisito =
-          linha.id_requisito ||
-          linha.id_requisitos ||
-          linha.id;
+          linha.id_requisito || linha.id_requisitos || linha.id;
 
-        const requisitosAtuais =
-          mapa.get(badgeId).requisitos;
+        const requisitosAtuais = mapa.get(badgeId).requisitos;
 
-        const requisitoJaExiste =
-          requisitosAtuais.some(
-            (requisito) =>
-              String(
-                requisito.id_requisito
-              ) ===
-              String(idRequisito)
-          );
+        const requisitoJaExiste = requisitosAtuais.some(
+          (requisito) => String(requisito.id_requisito) === String(idRequisito),
+        );
 
         if (!requisitoJaExiste) {
           requisitosAtuais.push({
-            id_requisito:
-              idRequisito,
+            id_requisito: idRequisito,
 
-            titulo:
-              linha.titulo ||
-              linha.nome_requisito ||
-              "Requisito",
+            titulo: linha.titulo || linha.nome_requisito || "Requisito",
 
-            nome:
-              linha.nome_requisito ||
-              linha.titulo ||
-              "Requisito",
+            nome: linha.nome_requisito || linha.titulo || "Requisito",
 
-            descricao:
-              linha.descricao_requisito ||
-              "",
+            descricao: linha.descricao_requisito || "",
 
-            link:
-              linha.link_requisito ||
-              linha.link ||
-              "",
+            link: linha.link_requisito || linha.link || "",
           });
         }
       }
@@ -110,13 +84,14 @@ function SubmeterEvidenciasPage() {
   useEffect(() => {
     setLoading(true);
 
-    api.get("/badges/todos")
+    api
+      .get("/badges/todos")
       .then((res) => {
         const dados = Array.isArray(res.data) ? res.data : [];
         const badgesAgrupados = removerDuplicadosComRequisitos(dados);
 
         const selecionado = badgesAgrupados.find(
-          (b) => Number(b.id) === Number(id)
+          (b) => Number(b.id) === Number(id),
         );
 
         setBadge(selecionado || null);
@@ -134,10 +109,7 @@ function SubmeterEvidenciasPage() {
 
     setFicheirosPorRequisito((prev) => ({
       ...prev,
-      [requisitoKey]: [
-        ...(prev[requisitoKey] || []),
-        ...novos,
-      ],
+      [requisitoKey]: [...(prev[requisitoKey] || []), ...novos],
     }));
   };
 
@@ -148,59 +120,39 @@ function SubmeterEvidenciasPage() {
     }));
   };
 
-  const totalFicheiros = Object.values(ficheirosPorRequisito)
-    .reduce((total, lista) => total + lista.length, 0);
+  const totalFicheiros = Object.values(ficheirosPorRequisito).reduce(
+    (total, lista) => total + lista.length,
+    0,
+  );
 
   const temRequisitos =
-    Array.isArray(
-      badge?.requisitos
-    ) &&
-    badge.requisitos.length > 0;
+    Array.isArray(badge?.requisitos) && badge.requisitos.length > 0;
 
   const podeSubmeter =
     temRequisitos &&
-    badge.requisitos.every(
-      (req, index) => {
-        const requisitoKey =
-          getRequisitoKey(
-            req,
-            index
-          );
+    badge.requisitos.every((req, index) => {
+      const requisitoKey = getRequisitoKey(req, index);
 
-        return (
-          ficheirosPorRequisito[
-            requisitoKey
-          ] || []
-        ).length > 0;
-      }
-    );
+      return (ficheirosPorRequisito[requisitoKey] || []).length > 0;
+    });
 
-  const submeterEvidencias =
-  async () => {
+  const submeterEvidencias = async () => {
     if (!badge) {
       return;
     }
 
     if (!podeSubmeter) {
-      alert(
-        "Tem de anexar pelo menos um ficheiro em cada requisito."
-      );
+      alert("Tem de anexar pelo menos um ficheiro em cada requisito.");
 
       return;
     }
 
-    const storedUser =
-      localStorage.getItem(
-        "user"
-      );
+    const storedUser = localStorage.getItem("user");
 
     if (!storedUser) {
-      navigate(
-        "/login",
-        {
-          replace: true,
-        }
-      );
+      navigate("/login", {
+        replace: true,
+      });
 
       return;
     }
@@ -208,172 +160,103 @@ function SubmeterEvidenciasPage() {
     let userData;
 
     try {
-      userData =
-        JSON.parse(
-          storedUser
-        );
+      userData = JSON.parse(storedUser);
     } catch (err) {
-      console.error(
-        "Erro ao ler utilizador:",
-        err
-      );
+      console.error("Erro ao ler utilizador:", err);
 
-      navigate(
-        "/login",
-        {
-          replace: true,
-        }
-      );
+      navigate("/login", {
+        replace: true,
+      });
 
       return;
     }
 
     const userId =
-      userData.id_utilizador ||
-      userData.ID_UTILIZADOR ||
-      userData.id;
+      userData.id_utilizador || userData.ID_UTILIZADOR || userData.id;
 
     if (!userId) {
-      alert(
-        "Não foi possível identificar o utilizador."
-      );
+      alert("Não foi possível identificar o utilizador.");
 
       return;
     }
 
-    const formData =
-      new FormData();
+    const formData = new FormData();
 
-    formData.append(
-      "id_utilizador",
-      userId
-    );
+    formData.append("id_utilizador", userId);
 
-    formData.append(
-      "id_badge_modelo",
-      badge.id
-    );
+    formData.append("id_badge_modelo", badge.id);
 
-    formData.append(
-      "comentario",
-      comentario
-    );
+    formData.append("comentario", comentario);
 
     if (idLembrete) {
-      formData.append(
-        "id_lembrete",
-        String(idLembrete)
-      );
+      formData.append("id_lembrete", String(idLembrete));
     }
 
-    badge.requisitos.forEach(
-      (req, index) => {
-        const requisitoKey =
-          getRequisitoKey(
-            req,
-            index
-          );
+    badge.requisitos.forEach((req, index) => {
+      const requisitoKey = getRequisitoKey(req, index);
 
-        const ficheiros =
-          ficheirosPorRequisito[
-            requisitoKey
-          ] || [];
+      const ficheiros = ficheirosPorRequisito[requisitoKey] || [];
 
-        ficheiros.forEach(
-          (file) => {
-            formData.append(
-              "ficheiros",
-              file
-            );
+      ficheiros.forEach((file) => {
+        formData.append("ficheiros", file);
 
-            formData.append(
-              "metadados",
-              JSON.stringify({
-                requisito_key:
-                  requisitoKey,
+        formData.append(
+          "metadados",
+          JSON.stringify({
+            requisito_key: requisitoKey,
 
-                id_requisito:
-                  req.id_requisito ||
-                  req.id_requisitos ||
-                  null,
+            id_requisito: req.id_requisito || req.id_requisitos || null,
 
-                titulo:
-                  req.titulo,
+            titulo: req.titulo,
 
-                nome:
-                  req.nome,
+            nome: req.nome,
 
-                descricao:
-                  req.descricao ||
-                  "",
+            descricao: req.descricao || "",
 
-                ficheiro_nome:
-                  file.name,
-              })
-            );
-          }
+            ficheiro_nome: file.name,
+          }),
         );
-      }
-    );
+      });
+    });
 
     try {
-      setSubmeterLoading(
-        true
+      setSubmeterLoading(true);
+
+      const response = await api.post(
+        "/candidaturas/submeter-evidencias",
+        formData,
       );
 
-      const response =
-        await api.post(
-          "/candidaturas/submeter-evidencias",
-          formData
-        );
-
-      console.log(
-        "Candidatura submetida:",
-        response.data
-      );
+      console.log("Candidatura submetida:", response.data);
 
       alert(
         idLembrete
           ? "Evidências submetidas. O objetivo está agora em validação."
-          : "Evidências submetidas com sucesso."
+          : "Evidências submetidas com sucesso.",
       );
 
-      navigate(
-        voltarPara,
-        {
-          replace: true,
-        }
-      );
+      navigate(voltarPara, {
+        replace: true,
+      });
     } catch (err) {
-      console.error(
-        "Erro ao submeter evidências:",
-        err
-      );
+      console.error("Erro ao submeter evidências:", err);
 
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
+      console.error("STATUS:", err.response?.status);
 
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
+      console.error("BODY:", err.response?.data);
 
-      alert(
-        err.response?.data?.error ||
-          "Erro ao submeter evidências."
-      );
+      alert(err.response?.data?.error || "Erro ao submeter evidências.");
     } finally {
-      setSubmeterLoading(
-        false
-      );
+      setSubmeterLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "100vh" }}
+      >
         <Spinner animation="border" variant="primary" />
       </div>
     );
@@ -381,7 +264,14 @@ function SubmeterEvidenciasPage() {
 
   if (!badge) {
     return (
-      <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <div
+        style={{
+          backgroundColor: "#f7f7f7",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Header />
 
         <div style={{ display: "flex", flex: 1 }}>
@@ -392,17 +282,13 @@ function SubmeterEvidenciasPage() {
               variant="link"
               className="d-flex align-items-center text-decoration-none p-0 mb-2"
               style={{ color: "#4A5568", fontSize: "1.05rem" }}
-              onClick={() =>
-                navigate(voltarPara)
-              }
+              onClick={() => navigate(voltarPara)}
             >
               <HiOutlineArrowLeft className="me-1" />
               <span>{textoVoltar}</span>
             </Button>
 
-            <div className="text-muted mt-4">
-              Badge não encontrado.
-            </div>
+            <div className="text-muted mt-4">Badge não encontrado.</div>
           </main>
 
           <RightSidebar />
@@ -412,7 +298,14 @@ function SubmeterEvidenciasPage() {
   }
 
   return (
-    <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        backgroundColor: "#f7f7f7",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Header />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -423,9 +316,7 @@ function SubmeterEvidenciasPage() {
             variant="link"
             className="d-flex align-items-center text-decoration-none p-0 mb-2"
             style={{ color: "#4A5568", fontSize: "1.05rem" }}
-            onClick={() =>
-              navigate(voltarPara)
-            }
+            onClick={() => navigate(voltarPara)}
           >
             <HiOutlineArrowLeft className="me-1" />
             <span>{textoVoltar}</span>
@@ -434,13 +325,16 @@ function SubmeterEvidenciasPage() {
           <hr className="my-2" />
 
           <div style={heroCard}>
-            <BadgeImage
-              badge={badge}
-              nome={nome}
-              size={72}
-            />
+            <BadgeImage badge={badge} nome={badge.nome} size={72} />
 
-            <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 10 }}>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#111827",
+                marginTop: 10,
+              }}
+            >
               Submeter Evidências
             </div>
 
@@ -457,15 +351,31 @@ function SubmeterEvidenciasPage() {
 
           <div style={sectionCard}>
             <div style={sectionTitle}>Descrição</div>
-            <p style={{ fontSize: 13, color: "#374151", marginTop: 8, marginBottom: 0, lineHeight: 1.65 }}>
-              Anexe as evidências necessárias para cada requisito do badge. Cada requisito deve ter pelo menos um ficheiro associado.
+            <p
+              style={{
+                fontSize: 13,
+                color: "#374151",
+                marginTop: 8,
+                marginBottom: 0,
+                lineHeight: 1.65,
+              }}
+            >
+              Anexe as evidências necessárias para cada requisito do badge. Cada
+              requisito deve ter pelo menos um ficheiro associado.
             </p>
           </div>
 
           <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
 
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#111827",
+                marginBottom: 10,
+              }}
+            >
               Requisitos e Evidências
             </div>
 
@@ -479,8 +389,12 @@ function SubmeterEvidenciasPage() {
                     req={req}
                     requisitoKey={requisitoKey}
                     ficheiros={ficheirosPorRequisito[requisitoKey] || []}
-                    onAddFiles={(files) => adicionarFicheiros(requisitoKey, files)}
-                    onRemoveFile={(fileIndex) => removerFicheiro(requisitoKey, fileIndex)}
+                    onAddFiles={(files) =>
+                      adicionarFicheiros(requisitoKey, files)
+                    }
+                    onRemoveFile={(fileIndex) =>
+                      removerFicheiro(requisitoKey, fileIndex)
+                    }
                     defaultOpen={index === 0}
                   />
                 );
@@ -524,22 +438,12 @@ function SubmeterEvidenciasPage() {
               style={{
                 ...actionBtn,
 
-                opacity:
-                  submeterLoading ||
-                  !podeSubmeter
-                    ? 0.55
-                    : 1,
+                opacity: submeterLoading || !podeSubmeter ? 0.55 : 1,
 
                 cursor:
-                  submeterLoading ||
-                  !podeSubmeter
-                    ? "not-allowed"
-                    : "pointer",
+                  submeterLoading || !podeSubmeter ? "not-allowed" : "pointer",
               }}
-              disabled={
-                submeterLoading ||
-                !podeSubmeter
-              }
+              disabled={submeterLoading || !podeSubmeter}
               onClick={submeterEvidencias}
             >
               <HiOutlineUpload size={18} style={{ marginRight: 8 }} />
@@ -567,10 +471,12 @@ function NivelSelector({ nivelAtual }) {
             style={{
               ...nivelCircle,
               background: n === nivelAtual ? "#F5C518" : "#f0f0f0",
-              border: n === nivelAtual ? "2px solid #e0a800" : "1.5px solid #d1d5db",
+              border:
+                n === nivelAtual ? "2px solid #e0a800" : "1.5px solid #d1d5db",
               color: n === nivelAtual ? "#7a5800" : "#374151",
               fontWeight: n === nivelAtual ? 700 : 500,
-              boxShadow: n === nivelAtual ? "0 2px 8px rgba(245,197,24,0.35)" : "none",
+              boxShadow:
+                n === nivelAtual ? "0 2px 8px rgba(245,197,24,0.35)" : "none",
             }}
           >
             {n}
@@ -599,9 +505,7 @@ function RequisitoUploadRow({
             Requisito {req.titulo}
           </span>
           {" - "}
-          <span style={{ color: "#4470AF", fontWeight: 500 }}>
-            {req.nome}
-          </span>
+          <span style={{ color: "#4470AF", fontWeight: 500 }}>{req.nome}</span>
         </div>
 
         {open ? (
@@ -619,7 +523,12 @@ function RequisitoUploadRow({
 
           {req.link && (
             <div style={{ marginBottom: 10 }}>
-              <a href={req.link} target="_blank" rel="noreferrer" style={{ color: "#4470AF", fontSize: 13 }}>
+              <a
+                href={req.link}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#4470AF", fontSize: 13 }}
+              >
                 {req.link}
               </a>
             </div>
@@ -645,7 +554,13 @@ function RequisitoUploadRow({
               {ficheiros.map((file, index) => (
                 <div key={`${file.name}-${index}`} style={fileRow}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "#111827",
+                      }}
+                    >
                       {file.name}
                     </div>
                     <div style={{ fontSize: 11, color: "#6b7280" }}>
@@ -676,16 +591,9 @@ function RequisitoUploadRow({
   );
 }
 
-function getRequisitoKey(
-  req,
-  index
-) {
+function getRequisitoKey(req, index) {
   return String(
-    req.id_requisito ||
-    req.id_requisitos ||
-    req.titulo ||
-    req.nome ||
-    index
+    req.id_requisito || req.id_requisitos || req.titulo || req.nome || index,
   );
 }
 
@@ -815,7 +723,7 @@ function nivelParaLetra(idNivel) {
   if (nivel === 5) return "E";
 
   return "";
-};
+}
 
 const nivelCircle = {
   width: 52,

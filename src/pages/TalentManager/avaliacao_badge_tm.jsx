@@ -786,9 +786,28 @@ function AvaliacaoBadgeTm() {
               </section>
             </>
           ) : (
-            <div style={mensagemBox}>
-              Candidatura não encontrada.
-            </div>
+            <section style={fallbackCard}>
+              <div style={fallbackIconBox}>
+                <BiFile size={30} color="#2563eb" />
+              </div>
+
+              <h2 style={fallbackTitle}>
+                Candidatura indisponível
+              </h2>
+
+              <p style={fallbackText}>
+                Ainda não existe um card de candidatura para mostrar
+                neste momento.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => navigate(voltarPara)}
+                style={fallbackButton}
+              >
+                Voltar às solicitações
+              </button>
+            </section>
           )}
         </main>
 
@@ -1544,6 +1563,55 @@ const mensagemBox = {
   padding: 40,
   textAlign: "center",
   color: "#64748b",
+};
+
+const fallbackCard = {
+  width: "100%",
+  boxSizing: "border-box",
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 14,
+  padding: "34px 28px",
+  textAlign: "center",
+  boxShadow: "0 2px 7px rgba(15, 23, 42, 0.05)",
+};
+
+const fallbackIconBox = {
+  width: 64,
+  height: 64,
+  borderRadius: "50%",
+  background: "#eff6ff",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  marginBottom: 14,
+};
+
+const fallbackTitle = {
+  margin: 0,
+  color: "#111827",
+  fontSize: 18,
+  fontWeight: 700,
+};
+
+const fallbackText = {
+  margin: "10px auto 0",
+  maxWidth: 420,
+  color: "#64748b",
+  fontSize: 13,
+  lineHeight: 1.6,
+};
+
+const fallbackButton = {
+  marginTop: 16,
+  border: "none",
+  borderRadius: 8,
+  background: "#2563eb",
+  color: "white",
+  padding: "10px 16px",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
 };
 
 const modalOverlay = {

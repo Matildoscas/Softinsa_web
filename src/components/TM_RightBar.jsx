@@ -226,10 +226,10 @@ function RightSidebarTM() {
       {/* Link de saída na base da barra */}
       <div style={{ borderTop: '1px solid #f1f3f5', paddingTop: '12px', textAlign: 'right' }}>
         <span 
-            onClick={() => navigate('/notificacoes')} 
+            onClick={() => navigate('/tm/notificacoes')} 
             style={{ fontSize: '12px', color: '#0d6efd', cursor: 'pointer', fontWeight: '600' }}
         >
-            Ver histórico total →
+            Ver Notificações
         </span>
       </div>
 

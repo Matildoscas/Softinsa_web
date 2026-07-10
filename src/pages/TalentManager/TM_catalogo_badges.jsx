@@ -12,6 +12,7 @@ import {
   BiFile,
   BiSpreadsheet,
   BiMedal,
+  BiCertification,
 } from "react-icons/bi";
 
 import { jsPDF } from "jspdf";
@@ -24,9 +25,9 @@ import {
 import api from "../../services/api.js";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
-import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/LeftBarTM.jsx";
+import TmRightSidebar from "../../components/TM_RightBar.jsx";
 
 /* =========================================================
    UTILIZADOR AUTENTICADO
@@ -798,6 +799,24 @@ function CatalogoBadgesTm() {
             </div>
 
             <div style={acoesTopo}>
+
+                  <button
+                                  type="button"
+                                  onClick={() =>
+                                    navigate(
+                                      "/tm/certificados"
+                                    )
+                                  }
+                                  style={certificadoButton}
+                                >
+                                  <BiCertification
+                                    size={17}
+                                  />
+                  
+                                  Gerar Certificado
+                                  Personalizado
+                                </button>
+
               <button
                 type="button"
                 onClick={
@@ -1597,6 +1616,24 @@ const erroBox = {
   color: "#991b1b",
   marginBottom: 18,
   fontSize: 13,
+};
+
+const certificadoButton = {
+  minHeight: 42,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  border: "1px solid #cbd5e1",
+  borderRadius: 9,
+  background: "white",
+  color: "#334155",
+  padding: "9px 16px",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  boxShadow:
+    "0 2px 5px rgba(15, 23, 42, 0.12)",
 };
 
 export default CatalogoBadgesTm;

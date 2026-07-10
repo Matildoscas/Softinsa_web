@@ -114,7 +114,7 @@ function AvaliacaoSolicitacaoTM() {
         id_v_evidencia: idEvidencia, // Podes manter por segurança
         id_evidencia: idEvidencia,
         id_candidatura_pedido: idCandidaturaPedido || Number(id), 
-        estado: "AGUARDA_SLL" // 🎯 CORREÇÃO: Usar a palavra chave 'estado' para o backend aceitar
+        estado: "APROVADO" 
       });
       
       setAtualizarDados(prev => prev + 1); 
@@ -155,32 +155,55 @@ function AvaliacaoSolicitacaoTM() {
     }
   };
 
+  const normalizarEstadoAvaliacao = (estado) => {
+    const valor = String(estado || "")
+      .trim()
+      .toUpperCase();
+
+    if (["APROVADA", "APROVADO", "APROVADO_TM", "VALIDADA", "VALIDADO"].includes(valor)) {
+      return "APROVADA";
+    }
+
+    if (["REJEITADA", "REJEITADO", "RECUSADA", "RECUSADO"].includes(valor)) {
+      return "REJEITADA";
+    }
+
+    if (valor === "PENDENTE") {
+      return "PENDENTE";
+    }
+
+    return "SEM_EVIDENCIA";
+  };
+
   // Cálculos de Progresso
   const totalRequisitos = requisitos.length;
-  const avaliadosCount = requisitos.filter(r => {
-    const st = r.estado?.toUpperCase();
-    return st === 'AGUARDA_SLL' || st === 'APROVADA' || st === 'REJEITADO' || st === 'REJEITADA';
+  const avaliadosCount = requisitos.filter((r) => {
+    const estado = normalizarEstadoAvaliacao(r.estado);
+    return estado === "APROVADA" || estado === "REJEITADA";
   }).length;
 
-  const todosAprovados = requisitos.length > 0 && requisitos.every(r => {
-    const st = r.estado?.toUpperCase();
-    return st === 'AGUARDA_SLL' || st === 'APROVADA';
+  const todosAprovados = requisitos.length > 0 && requisitos.every((r) => {
+    return normalizarEstadoAvaliacao(r.estado) === "APROVADA";
   });
 
   const percentagemProgresso = totalRequisitos > 0 ? (avaliadosCount / totalRequisitos) * 100 : 0;
 
   const obterEstiloEstado = (estado) => {
-    const st = estado?.toUpperCase();
-    if (st === 'PENDENTE') return { bg: '#fff3cd', text: '#664d03', label: 'PENDENTE' };
-    if (st === 'AGUARDA_TM') return { bg: '#fff3cd', text: '#664d03', label: 'AGUARDA TM' };
-    
-    // 🎯 CORREÇÃO: Mapear o estado AGUARDA_SLL para mostrar como aprovado pelo Talent Manager
-    if (st === 'AGUARDA_SLL' || st === 'APROVADO' || st === 'APROVADA' || st === 'APROVADO_TM') {
-      return { bg: '#d1e7dd', text: '#0f5132', label: 'APROVADO POR TM' };
+    const st = normalizarEstadoAvaliacao(estado);
+
+    if (st === "PENDENTE") {
+      return { bg: "#fff3cd", text: "#664d03", label: "PENDENTE" };
     }
-    
-    if (st === 'REJEITADA' || st === 'REJEITADO') return { bg: '#f8d7da', text: '#842029', label: 'REJEITADO' };
-    return { bg: '#e9ecef', text: '#495057', label: 'SEM EVIDÊNCIA' };
+
+    if (st === "APROVADA") {
+      return { bg: "#d1e7dd", text: "#0f5132", label: "APROVADO POR TM" };
+    }
+
+    if (st === "REJEITADA") {
+      return { bg: "#f8d7da", text: "#842029", label: "REJEITADO" };
+    }
+
+    return { bg: "#e9ecef", text: "#495057", label: "SEM EVIDÊNCIA" };
   };
 
   // SUBMISSÃO FINAL 
@@ -192,7 +215,7 @@ function AvaliacaoSolicitacaoTM() {
       
       await api.post("/candidaturas/tm/finalizar-avaliacao", {
         id_candidatura_pedido: Number(id), 
-        estado: "AGUARDA_SLL", 
+        estado: "APROVADO", 
         comentarios: "Todos os requisitos foram validados e aprovados com sucesso."
       });
 

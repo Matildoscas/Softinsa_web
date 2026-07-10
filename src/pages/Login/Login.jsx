@@ -84,7 +84,7 @@ function LoginPage() {
         if (tipo.includes("administrador") || tipo.includes("admin")) {
           navigate("/admin");
         } else if (tipo.includes("talent_manager") || tipo.includes("talentmanager")) {
-          navigate("/talent_manager");
+          navigate("/tm");
         } else if (tipo.includes("consultor")) {
           navigate("/pag_consultor");
         } else {
@@ -272,7 +272,7 @@ function LoginPage() {
                       placeholder="Email" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      disabled={loading} // 🔒 Bloqueia o campo durante o loading
+                      disabled={loading} 
                     />
                   </InputGroup>
                 </Form.Group>
@@ -285,7 +285,7 @@ function LoginPage() {
                       placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      disabled={loading} // 🔒 Bloqueia o campo durante o loading
+                      disabled={loading} 
                     />
                     <InputGroup.Text 
                       style={{ cursor: loading ? 'not-allowed' : 'pointer' }} 
@@ -296,11 +296,11 @@ function LoginPage() {
                   </InputGroup>
                 </Form.Group>
 
-                {/* 🏁 BOTÃO DINÂMICO COM ANIMAÇÃO */}
+                {/* BOTÃO DINÂMICO COM ANIMAÇÃO */}
                 <Button 
                   type="submit"
                   variant="primary" 
-                  disabled={loading} // 🔒 Desativa o clique para evitar duplo envio
+                  disabled={loading} 
                   className="w-100 d-flex align-items-center justify-content-center gap-2 mb-5" 
                   style={{ 
                     backgroundColor: '#1d61ff', 
@@ -309,7 +309,7 @@ function LoginPage() {
                     height: '50px',
                     fontSize: '1rem',
                     fontWeight: '600',
-                    opacity: loading ? 0.7 : 1 // Efeito visual de desativado
+                    opacity: loading ? 0.7 : 1 
                   }}
                 >
                   {loading ? (

@@ -10,112 +10,127 @@ import {
   HiOutlineTrash,
   HiOutlineCamera,
 } from "react-icons/hi";
-import { BiChevronRight } from "react-icons/bi";
+import { BiChevronRight, BiBriefcase, BiEnvelope } from "react-icons/bi";
 
+// Componentes Estruturais da Versão 1
 import Header from "../../components/TM_Header.jsx";
 import LeftBarTM from "../../components/LeftBarTM.jsx"; 
 import RightSidebar from "../../components/TM_RightBar.jsx";
 import api, { buildUploadUrl } from "../../services/api.js";
 
+/* =========================================================
+   FUNÇÃO AUXILIAR DE AUTENTICAÇÃO (Evita erros de import)
+========================================================= */
+function obterUtilizadorGuardado() {
+  const guardado = localStorage.getItem("user");
+  if (!guardado) return null;
+  try {
+    return JSON.parse(guardado);
+  } catch (err) {
+    console.error("Erro ao ler utilizador do localStorage:", err);
+    return null;
+  }
+}
+
 function TM_DefinicoesPage() {
   const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
 
-  // Dados Pessoais
+  // 📝 Dados Pessoais & Corporativos (Estados trazidos e adaptados da Versão 2)
   const [nome, setNome] = useState("");
   const [contacto, setContacto] = useState("");
+  const [emailBD, setEmailBD] = useState("");
+  const [especializacao, setEspecializacao] = useState("");
+  const [estadoConta, setEstadoConta] = useState("");
+  const [estadoTm, setEstadoTm] = useState("");
+
+  // Controladores de Foto e Salvamento (Versão 1)
   const [fotoPerfil, setFotoPerfil] = useState(null); 
   const [ficheiroFoto, setFicheiroFoto] = useState(null); 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingFoto, setIsUploadingFoto] = useState(false);
 
-  // Password
+  // Segurança (Versão 1)
   const [passwordAtual, setPasswordAtual] = useState("");
   const [novaPassword, setNovaPassword] = useState("");
   const [confirmarPassword, setConfirmarPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // 🌟 Preferências Simplificadas (E-mail e Plataforma)
+  // Preferências de Notificação (Versão 1)
   const [notificacoesEmail, setNotificacoesEmail] = useState(true);
   const [notificacoesPlataforma, setNotificacoesPlataforma] = useState(true);
 
-  // Modais
+  // Modais de Controle (Versão 1)
   const [showTermos, setShowTermos] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const userData = obterUtilizadorGuardado();
 
-    if (!storedUser) {
+    if (!userData) {
       navigate("/login", { replace: true });
       return;
     }
 
-    const userData = JSON.parse(storedUser);
-    const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
-
+    const userId = userData.id_utilizador || userData.ID_UTILIZADOR || userData.id;
     setUser(userData);
+    
+    // Valores base iniciais vindos do localStorage por segurança
     setNome(userData.nome_completo || userData.nome || "");
     setContacto(userData.contacto || "");
     setFotoPerfil(userData.foto_perfil || null);
     setNotificacoesEmail(userData.notificacoes_email ?? true);
     setNotificacoesPlataforma(userData.notificacoes_plataforma ?? true);
 
-    // Procurar dados em tempo real da BD
-    api.get(`/utilizadores/${userId}`)
+    // 🔄 Rota de carregamento de dados da VERSÃO 2
+    api.get(`/tm/${userId}/definicoes`)
       .then((res) => {
-        const utilizador = res.data;
+        const informacao = res.data || {};
 
+        // Atualiza os estados específicos da Versão 2
+        setNome(informacao.nome_completo || "");
+        setContacto(informacao.contacto || "");
+        setEmailBD(informacao.email || userData.email || "");
+        setEspecializacao(informacao.especializacao_tm || "");
+        setEstadoConta(informacao.estado_conta || "");
+        setEstadoTm(informacao.estado_tm || "");
+
+        // Mantém sincronizado o localStorage global
         const userAtualizado = {
           ...userData,
-          ...utilizador,
-          nome: utilizador.nome_completo || utilizador.nome || userData.nome,
-          nome_completo: utilizador.nome_completo || userData.nome_completo,
-          contacto: utilizador.contacto || "",
-          foto_perfil: utilizador.foto_perfil || null,
-          notificacoes_email: utilizador.notificacoes_email ?? true,
-          notificacoes_plataforma: utilizador.notificacoes_plataforma ?? true,
+          nome_completo: informacao.nome_completo,
+          contacto: informacao.contacto,
+          especializacao_tm: informacao.especializacao_tm,
+          estado_conta: informacao.estado_conta,
+          estado_tm: informacao.estado_tm,
         };
-
         localStorage.setItem("user", JSON.stringify(userAtualizado));
-
         setUser(userAtualizado);
-        setNome(userAtualizado.nome_completo || userAtualizado.nome || "");
-        setContacto(userAtualizado.contacto || "");
-        setFotoPerfil(userAtualizado.foto_perfil || null);
-        setNotificacoesEmail(userAtualizado.notificacoes_email);
-        setNotificacoesPlataforma(userAtualizado.notificacoes_plataforma);
       })
       .catch((err) => {
-        console.error("Erro ao carregar utilizador:", err);
+        console.error("Erro ao carregar definições do TM (Versão 2):", err);
       });
   }, [navigate]);
 
   const getUserId = () => {
-    return user?.id_utilizador || user?.ID_UTILIZADOR;
+    return user?.id_utilizador || user?.ID_UTILIZADOR || user?.id;
   };
 
-  const atualizarLocalStorage = (utilizadorAtualizado) => {
-    const userAtualizado = {
+  const atualizarLocalStorageGlobal = (utilizadorAtualizado) => {
+    const novoUserObj = {
       ...user,
-      id_utilizador: utilizadorAtualizado.id_utilizador || utilizadorAtualizado.ID_UTILIZADOR || user.id_utilizador,
-      email: utilizadorAtualizado.email || utilizadorAtualizado.EMAIL || user.email,
-      nome: utilizadorAtualizado.nome_completo || utilizadorAtualizado.NOME_COMPLETO || utilizadorAtualizado.nome || user.nome,
-      nome_completo: utilizadorAtualizado.nome_completo || utilizadorAtualizado.NOME_COMPLETO || user.nome_completo,
-      contacto: utilizadorAtualizado.contacto ?? utilizadorAtualizado.CONTACTO ?? contacto,
-      foto_perfil: utilizadorAtualizado.foto_perfil ?? user.foto_perfil,
-      estado_conta: utilizadorAtualizado.estado_conta || utilizadorAtualizado.ESTADO_CONTA || user.estado_conta,
+      nome_completo: utilizadorAtualizado.nome_completo || nome,
+      contacto: utilizadorAtualizado.contacto || contacto,
+      foto_perfil: utilizadorAtualizado.foto_perfil ?? user?.foto_perfil,
       notificacoes_email: utilizadorAtualizado.notificacoes_email ?? notificacoesEmail,
       notificacoes_plataforma: utilizadorAtualizado.notificacoes_plataforma ?? notificacoesPlataforma,
     };
-
-    localStorage.setItem("user", JSON.stringify(userAtualizado));
-    setUser(userAtualizado);
+    localStorage.setItem("user", JSON.stringify(novoUserObj));
+    setUser(novoUserObj);
   };
 
-  // 📸 Lógica para detetar a mudança de ficheiro da foto
+  // 📸 Upload de Foto (Mantido da Versão 1)
   const handleFotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -124,7 +139,6 @@ function TM_DefinicoesPage() {
     }
   };
 
-  // 📸 Enviar a foto de perfil para o backend
   const handleUploadFoto = async () => {
     const id = getUserId();
     if (!ficheiroFoto || !id) return;
@@ -135,15 +149,13 @@ function TM_DefinicoesPage() {
       formData.append("foto", ficheiroFoto);
 
       const response = await api.put(`/utilizadores/${id}/foto`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const dadosAtualizados = response.data?.utilizador || response.data;
-      atualizarLocalStorage(dadosAtualizados);
+      atualizarLocalStorageGlobal(dadosAtualizados);
       setFicheiroFoto(null);
-      alert("Foto de perfil updated!");
+      alert("Foto de perfil atualizada!");
     } catch (err) {
       console.error("Erro ao enviar foto:", err);
       alert(err.response?.data?.error || "Erro ao fazer upload da foto.");
@@ -152,12 +164,40 @@ function TM_DefinicoesPage() {
     }
   };
 
-  // 🌟 Gravação instantânea de preferências (Email / Plataforma) na BD
+  // 💾 Guardar Perfil com a Lógica e Endpoint da VERSÃO 2
+  const handleGuardarPerfil = async (e) => {
+    if (e) e.preventDefault();
+    const id = getUserId();
+    
+    if (!nome.trim()) {
+      alert("O nome completo é obrigatório.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      // Rota e Payload da Versão 2
+      const response = await api.put(`/tm/${id}/definicoes`, {
+        nome_completo: nome.trim(),
+        contacto: contacto.trim(),
+      });
+
+      const utilizadorAtualizado = response.data?.utilizador || {};
+      atualizarLocalStorageGlobal(utilizadorAtualizado);
+      alert(response.data?.message || "Definições atualizadas com sucesso.");
+    } catch (err) {
+      console.error("Erro ao guardar definições:", err);
+      alert(err.response?.data?.error || "Não foi possível guardar as definições.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 🌟 Preferências (Versão 1)
   const handleTogglePreference = async (tipo, valorNovo) => {
     const id = getUserId();
     if (!id) return;
 
-    // Determina os valores corretos a enviar com base no tipo alterado
     const novoEmail = tipo === "email" ? valorNovo : notificacoesEmail;
     const novaPlataforma = tipo === "plataforma" ? valorNovo : notificacoesPlataforma;
 
@@ -166,37 +206,21 @@ function TM_DefinicoesPage() {
         notificacoes_email: novoEmail,
         notificacoes_plataforma: novaPlataforma
       });
-      
       const dadosAtualizados = response.data?.utilizador || response.data;
-      atualizarLocalStorage(dadosAtualizados);
+      atualizarLocalStorageGlobal(dadosAtualizados);
     } catch (err) {
       console.error("Erro ao guardar preferência:", err);
     }
   };
 
-  const handleGuardarPerfil = async () => {
-    const id = getUserId();
-    if (!id || !nome.trim()) return;
-
-    try {
-      setIsSaving(true);
-      const response = await api.put(`/utilizadores/${id}/perfil`, {
-        nome_completo: nome.trim(),
-        contacto: contacto.trim(),
-      });
-      const utilizadorAtualizado = response.data?.utilizador || response.data;
-      atualizarLocalStorage(utilizadorAtualizado);
-      alert("Dados atualizados com sucesso.");
-    } catch (err) {
-      alert("Erro ao atualizar dados.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+  // 🔐 Alterar Password (Versão 1)
   const handleAlterarPassword = async () => {
     const id = getUserId();
     if (!id || !passwordAtual || !novaPassword) return;
+    if (novaPassword !== confirmarPassword) {
+      alert("As passwords não coincidem.");
+      return;
+    }
 
     try {
       setIsChangingPassword(true);
@@ -237,8 +261,6 @@ function TM_DefinicoesPage() {
     }
   };
 
-  if (!user) return null;
-
   return (
     <div style={{ backgroundColor: "#f0f2f5", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
@@ -266,6 +288,7 @@ function TM_DefinicoesPage() {
           <div style={columnsLayout}>
             <div style={leftCol}>
               
+              {/* Foto de Perfil (Versão 1) */}
               <SectionCard titulo="Foto de Perfil">
                 <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 12 }}>
                   <div style={avatarContainer}>
@@ -294,26 +317,58 @@ function TM_DefinicoesPage() {
                 </div>
               </SectionCard>
 
+              {/* 🌟 FORMULÁRIO DE DADOS PESSOAIS DA VERSÃO 2 (Integrado no Design da Versão 1) */}
               <SectionCard titulo="Dados Pessoais & Corporativos">
-                <FieldGroup label="Nome completo" icon={<HiOutlineUser size={17} />} value={nome} onChange={(e) => setNome(e.target.value)} />
-                <FieldGroup label="Contacto" icon={<HiOutlinePhone size={17} />} type="tel" value={contacto} onChange={(e) => setContacto(e.target.value)} />
+                <form onSubmit={handleGuardarPerfil}>
+                  <FieldGroup 
+                    label="Nome completo" 
+                    icon={<HiOutlineUser size={17} />} 
+                    value={nome} 
+                    onChange={(e) => setNome(e.target.value)} 
+                  />
+                  
+                  <FieldGroup 
+                    label="Contacto" 
+                    icon={<HiOutlinePhone size={17} />} 
+                    type="tel" 
+                    value={contacto} 
+                    onChange={(e) => setContacto(e.target.value)} 
+                  />
 
-                <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={fieldLabel}>Cargo</label>
-                    <div style={disabledInputWrap}>Talent Manager</div>
+                  {/* Campos Corporativos Desativados da Versão 2 */}
+                  <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={fieldLabel}>E-mail Institucional</label>
+                      <div style={{...disabledInputWrap, fontSize: 12}}>{emailBD || user?.email || "Sem e-mail"}</div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={fieldLabel}>Especialização</label>
+                      <div style={disabledInputWrap}>{especializacao || "Não definida"}</div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={fieldLabel}>E-mail Institucional</label>
-                    <div style={{...disabledInputWrap, fontSize: 12}}>{user.email}</div>
-                  </div>
-                </div>
 
-                <button style={{ ...primaryBtn, opacity: isSaving ? 0.7 : 1 }} onClick={handleGuardarPerfil} disabled={isSaving}>
-                  {isSaving ? "A guardar..." : "Guardar alterações"}
-                </button>
+                  <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={fieldLabel}>Estado da Conta</label>
+                      <div style={disabledInputWrap}>{estadoConta || "Não definido"}</div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={fieldLabel}>Estado de Talent Manager</label>
+                      <div style={disabledInputWrap}>{estadoTm || "Não definido"}</div>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    style={{ ...primaryBtn, opacity: isSaving ? 0.7 : 1 }} 
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "A guardar..." : "Guardar alterações"}
+                  </button>
+                </form>
               </SectionCard>
 
+              {/* Segurança (Versão 1) */}
               <SectionCard titulo="Segurança">
                 <FieldGroup label="Password atual" icon={<HiOutlineLockClosed size={17} />} type="password" value={passwordAtual} onChange={(e) => setPasswordAtual(e.target.value)} />
                 <FieldGroup label="Nova password" icon={<HiOutlineLockClosed size={17} />} type="password" value={novaPassword} onChange={(e) => setNovaPassword(e.target.value)} />
@@ -326,7 +381,7 @@ function TM_DefinicoesPage() {
             </div>
 
             <div style={rightCol}>
-              {/* 🌟 FILTRADO: Canais de Notificação simplificados */}
+              {/* Preferências de Notificações (Versão 1) */}
               <SectionCard titulo="Preferências de Notificações">
                 <div style={preferenceRow}>
                   <div style={{ flex: 1 }}>
@@ -363,6 +418,7 @@ function TM_DefinicoesPage() {
                 </div>
               </SectionCard>
 
+              {/* Gestão de Conta (Versão 1) */}
               <SectionCard titulo="Conta">
                 <OptionRow icon={<HiOutlineDocumentText size={18} />} titulo="Termos e Serviços" subtitulo="Rever condições de utilização" onTap={() => setShowTermos(true)} color="#4470AF" />
                 <OptionRow icon={<HiOutlineLogout size={18} />} titulo="Terminar sessão" subtitulo="Voltar à página de login" onTap={handleTerminarSessao} color="#f59e0b" />
@@ -371,6 +427,7 @@ function TM_DefinicoesPage() {
             </div>
           </div>
 
+          {/* Modais de Suporte */}
           {showTermos && (
             <ModalBase onClose={() => setShowTermos(false)}>
               <div style={modalTitle}>Termos e Serviços</div>
@@ -401,7 +458,9 @@ function TM_DefinicoesPage() {
   );
 }
 
-// Sub-componentes e Estilos mantidos intocados para não quebrar o layout
+/* =========================================================
+   SUB-COMPONENTES AUXILIARES & ESTILOS GLOBAIS
+========================================================= */
 function SectionCard({ titulo, children }) { return <div style={sectionCard}><div style={sectionTitle}>{titulo}</div><div style={{ marginTop: 16 }}>{children}</div></div>; }
 function FieldGroup({ label, icon, type = "text", value, onChange, placeholder }) { return <div style={{ marginBottom: 14 }}><label style={fieldLabel}>{label}</label><div style={inputWrap}><span style={inputIcon}>{icon}</span><input type={type} value={value} onChange={onChange} placeholder={placeholder || label} style={inputStyle} /></div></div>; }
 function OptionRow({ icon, titulo, subtitulo, onTap, color = "#4470AF", noBorder }) { const [hovered, setHovered] = useState(false); return <><div style={{ ...optionRow, background: hovered ? "#f7f8fb" : "transparent", cursor: "pointer", borderRadius: 8 }} onClick={onTap} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}><div style={{ ...optionIconCircle, background: color + "18" }}><span style={{ color, display: "flex", alignItems: "center" }}>{icon}</span></div><div style={{ flex: 1, marginLeft: 12 }}><div style={{ fontSize: 14, fontWeight: 600, color }}>{titulo}</div><div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{subtitulo}</div></div><BiChevronRight size={20} color="#d1d5db" /></div>{!noBorder && <hr style={{ border: "none", borderTop: "1px solid #f0f0f0", margin: "2px 0" }} />}</>; }
