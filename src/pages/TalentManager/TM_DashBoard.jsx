@@ -230,55 +230,76 @@ function DashboardTMUnificado() {
               </section>
 
               {/* Grid Principal (Consultores + Mini Cards Laterais) */}
-              <div style={dashboardGrid}>
-                <section style={consultoresArea}>
-                  <div style={peopleHeader}>
-                    <div>
-                      <h3 style={areaTitle}>
-                        Especialização: <span style={areaName}>{resumo.especializacao_tm}</span>
-                      </h3>
-                      <div style={areaTotal}>{configuracao.descricaoLista}</div>
-                      <div style={topText}>{configuracao.tituloLista}</div>
+              <div style={statsRow}>
+                {configuracao.cards.map((card) => (
+                  <StatCard
+                    key={card.tipo}
+                    icon={
+                      card.tipo === "EXPIRADOS" ||
+                      card.tipo === "CANDIDATURAS" ||
+                      card.tipo === "RENOVACOES"
+                        ? <BiTimeFive size={42} />
+                        : card.tipo === "CONSULTORES" ||
+                          card.tipo === "NOVOS"
+                        ? <BiUser size={42} />
+                        : <BiMedal size={42} />
+                    }
+                    value={card.valor}
+                    label={card.label}
+                    secondary={
+                      card.tipo === "CANDIDATURAS"
+                        ? "Pendentes de avaliação"
+                        : null
+                    }
+                    secondaryColor="#dc2626"
+                  />
+                ))}
+              </div>
+
+              {/* Consultores em destaque esticados */}
+              <section style={consultoresSection}>
+                <div style={peopleHeader}>
+                  <div>
+                    <h3 style={areaTitle}>
+                      Especialização:{" "}
+                      <span style={areaName}>
+                        {resumo.especializacao_tm}
+                      </span>
+                    </h3>
+
+                    <div style={areaTotal}>
+                      {configuracao.descricaoLista}
                     </div>
 
-                    <button type="button" onClick={() => navigate("/tm/consultores")} style={viewAllButton}>
-                      <BiBookOpen size={15} /> Ver Todos
-                    </button>
+                    <div style={topText}>
+                      {configuracao.tituloLista}
+                    </div>
                   </div>
 
-                  {consultores.length > 0 ? (
-                    consultores.slice(0, 3).map((consultor, index) => (
-                      <ConsultorCard 
-                        key={consultor.id_utilizador || index} 
-                        consultor={consultor} 
-                        onVerPerfil={() => abrirPerfil(consultor)} 
-                      />
-                    ))
-                  ) : (
-                    <div style={emptyBox}>Ainda não existem consultores em destaque.</div>
-                  )}
-                </section>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/tm/consultores")}
+                    style={viewAllButton}
+                  >
+                    <BiBookOpen size={15} />
+                    Ver Todos
+                  </button>
+                </div>
 
-                {/* Coluna Lateral com Cards Dinâmicos (Muda por Especialização) */}
-                <aside style={statsColumn}>
-                  {configuracao.cards.map((card) => (
-                    <StatCard
-                      key={card.tipo}
-                      icon={
-                        card.tipo === "EXPIRADOS" || card.tipo === "CANDIDATURAS" || card.tipo === "RENOVACOES" 
-                          ? <BiTimeFive size={46} /> 
-                          : card.tipo === "CONSULTORES" || card.tipo === "NOVOS" 
-                          ? <BiUser size={46} /> 
-                          : <BiMedal size={46} />
-                      }
-                      value={card.valor}
-                      label={card.label}
-                      secondary={card.tipo === "CANDIDATURAS" ? "Pendentes de avaliação" : null}
-                      secondaryColor="#dc2626"
+                {consultores.length > 0 ? (
+                  consultores.slice(0, 3).map((consultor, index) => (
+                    <ConsultorCard
+                      key={consultor.id_utilizador || index}
+                      consultor={consultor}
+                      onVerPerfil={() => abrirPerfil(consultor)}
                     />
-                  ))}
-                </aside>
-              </div>
+                  ))
+                ) : (
+                  <div style={emptyBox}>
+                    Ainda não existem consultores em destaque.
+                  </div>
+                )}
+              </section>
 
               {/* 3. Seção do Gráfico (Versão 2 Recharts) + 2. Filtro Dropdown (Versão 1) */}
               <section style={chartCard}>
@@ -422,39 +443,119 @@ const CORES_GRAFICO = ["#9bb8e8", "#64d8cc", "#111111", "#f59e0b", "#8b5cf6"];
 const page = { background: "#f3f4f6", minHeight: "100vh", display: "flex", flexDirection: "column" };
 const body = { display: "flex", flex: 1, overflow: "hidden" };
 const main = { flex: 1, minWidth: 0, padding: "22px 30px 50px", overflowY: "auto" };
-const welcomeCard = { background: "#1269ed", color: "white", borderRadius: 13, padding: "24px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 8px 18px rgba(37, 99, 235, 0.22)", marginBottom: 18 };
+const welcomeCard = {
+  background: "#1269ed",
+  color: "white",
+  borderRadius: 13,
+  padding: "22px 36px",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  boxShadow: "0 8px 18px rgba(37, 99, 235, 0.22)",
+  marginBottom: 18,
+};
 const welcomeTitle = { fontSize: 18, fontWeight: 500, margin: "0 0 18px" };
-const welcomeStats = { display: "flex", gap: 36, flexWrap: "wrap" };
+const welcomeStats = {
+  display: "flex",
+  gap: 34,
+  flexWrap: "wrap",
+  alignItems: "center",
+};
 const welcomeItem = { display: "flex", alignItems: "center", gap: 8 };
 const welcomeItemIcon = { width: 34, height: 34, borderRadius: 7, background: "rgba(255,255,255,0.17)", display: "flex", alignItems: "center", justifyContent: "center" };
 const welcomeItemLabel = { fontSize: 10, color: "rgba(255,255,255,0.78)" };
 const welcomeItemValue = { fontSize: 12, fontWeight: 500 };
 const welcomeAvatar = { width: 68, height: 68, borderRadius: "50%", background: "rgba(255,255,255,0.17)", display: "flex", alignItems: "center", justifyContent: "center" };
-const dashboardGrid = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) 250px", gap: 28, alignItems: "start" };
-const consultoresArea = { minWidth: 0 };
+const statsRow = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 18,
+  marginBottom: 22,
+};
+
+const consultoresSection = {
+  width: "100%",
+  minWidth: 0,
+  marginBottom: 18,
+};
 const peopleHeader = { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 };
 const areaTitle = { fontSize: 17, fontWeight: 800, color: "#111827", margin: 0 };
 const areaName = { fontWeight: 400 };
 const areaTotal = { fontSize: 12, color: "#111827" };
 const topText = { fontSize: 15, color: "#111827", marginTop: 12 };
 const viewAllButton = { display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #d1d5db", borderRadius: 8, background: "white", color: "#111827", padding: "7px 13px", fontSize: 12, cursor: "pointer" };
-const consultorCard = { background: "white", border: "1px solid #bfdbfe", borderRadius: 9, marginBottom: 12, overflow: "hidden" };
-const consultorMain = { display: "flex", alignItems: "center", gap: 12, padding: "13px 15px" };
+const consultorCard = {
+  width: "100%",
+  background: "white",
+  border: "1px solid #bfdbfe",
+  borderRadius: 12,
+  marginBottom: 14,
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+const consultorMain = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  padding: "16px 18px",
+};
 const consultorAvatar = { width: 48, height: 48, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
 const consultorInfo = { flex: 1, minWidth: 0 };
 const consultorTopLine = { display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" };
 const consultorName = { fontSize: 14, color: "#111827", fontWeight: 500 };
 const consultorEmail = { display: "inline-flex", alignItems: "center", gap: 5, color: "#64748b", fontSize: 11 };
-const consultorFooter = { borderTop: "1px solid #e5e7eb", padding: "7px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" };
+const consultorFooter = {
+  borderTop: "1px solid #e5e7eb",
+  padding: "9px 14px",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  background: "#f8fafc",
+};
 const badgeCount = { display: "inline-flex", alignItems: "center", gap: 5, color: "#475569", fontSize: 11 };
 const profileLink = { border: "none", background: "none", padding: 0, color: "#2563eb", textDecoration: "underline", fontSize: 11, cursor: "pointer" };
-const statsColumn = { display: "flex", flexDirection: "column", gap: 16, paddingTop: 82 };
-const statCard = { minHeight: 92, background: "white", border: "1px solid #2563eb", borderRadius: 12, display: "flex", alignItems: "center", gap: 18, padding: "14px 17px", boxShadow: "0 2px 5px rgba(15,23,42,0.06)" };
-const statIcon = { width: 58, height: 58, display: "flex", alignItems: "center", justifyContent: "center", color: "#000000", flexShrink: 0 };
+const statCard = {
+  minHeight: 104,
+  background: "white",
+  border: "1px solid #bfdbfe",
+  borderRadius: 14,
+  display: "flex",
+  alignItems: "center",
+  gap: 18,
+  padding: "18px 22px",
+  boxShadow: "0 2px 5px rgba(15,23,42,0.06)",
+};
+
+const statIcon = {
+  width: 58,
+  height: 58,
+  borderRadius: "50%",
+  background: "#f8fafc",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#111827",
+  flexShrink: 0,
+};
+
+const statValue = {
+  fontSize: 18,
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const statLabel = {
+  marginTop: 3,
+  fontSize: 13,
+  color: "#111827",
+  lineHeight: 1.3,
+};
+
+const statSecondary = {
+  marginTop: 4,
+  fontSize: 12,
+};
 const statContent = { flex: 1, minWidth: 0 };
-const statValue = { fontSize: 13, color: "#111827" };
-const statLabel = { marginTop: 3, fontSize: 12, color: "#111827", lineHeight: 1.3 };
-const statSecondary = { marginTop: 2, fontSize: 11 };
 const chartCard = { background: "white", borderRadius: 14, padding: "20px", marginTop: 18, minHeight: 290 };
 const chartTitle = { margin: "0 0 16px", fontSize: 13, fontWeight: 700, color: "#111827" };
 const chartLayout = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 28, alignItems: "center" };
