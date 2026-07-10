@@ -78,7 +78,7 @@ function HistoricoCandidaturasTM() {
             <Header />
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                <tmLeftSidebar />
+                <TmLeftSidebar />
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
                     <Button variant="link" className="text-decoration-none text-secondary p-0 mb-3 d-flex align-items-center gap-2" onClick={() => navigate(-1)}>
@@ -198,7 +198,7 @@ function HistoricoCandidaturasTM() {
                     </div>
                 </div>
 
-                <tmRightSidebar />
+                <TmRightSidebar />
             </div>
         </div>
     );

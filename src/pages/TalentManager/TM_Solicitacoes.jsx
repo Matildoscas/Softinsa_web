@@ -65,7 +65,7 @@ function SolicitacaoBadges() {
   return (
     <div style={pageLayout}>
       {/* Barra Lateral do Gestor */}
-      <tmLeftSidebar />
+      <TmLeftSidebar />
 
       <div style={mainContentWrapper}>
         <Header />
@@ -183,7 +183,7 @@ function SolicitacaoBadges() {
 
           </main>
 
-          <tmRightSidebar />
+          <TmRightSidebar />
         </div>
       </div>
     </div>

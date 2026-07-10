@@ -340,7 +340,7 @@ function DashboardTMUnificado() {
           )}
         </main>
 
-        <TmRightSidebar />
+        <TmRightSidebar/>
       </div>
     </div>
   );

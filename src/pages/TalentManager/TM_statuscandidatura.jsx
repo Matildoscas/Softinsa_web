@@ -234,7 +234,7 @@ function StatusCandidaturasTM() {
       <Header />
 
       <div style={corpo}>
-        <tmLeftSidebar />
+        <TmLeftSidebar />
 
         <main style={conteudo}>
           <div style={topoBarra}>

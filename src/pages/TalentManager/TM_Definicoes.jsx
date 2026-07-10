@@ -266,7 +266,7 @@ function TM_DefinicoesPage() {
       <Header />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <tmLeftSidebar />
+        <TmLeftSidebar />
 
         <main style={mainStyle}>
           <button style={backBtn} onClick={() => navigate(-1)}>
@@ -452,7 +452,7 @@ function TM_DefinicoesPage() {
           )}
         </main>
 
-        <tmRightSidebar />
+        <TmRightSidebar />
       </div>
     </div>
   );

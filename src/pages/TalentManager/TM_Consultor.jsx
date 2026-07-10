@@ -265,7 +265,7 @@ function ListaConsultoresTm() {
       <Header />
 
       <div style={styles.corpo}>
-        <tmLeftSidebar />
+        <TmLeftSidebar />
 
         <main style={styles.conteudo}>
           {/* Topo / Voltar */}
@@ -366,7 +366,7 @@ function ListaConsultoresTm() {
           )}
         </main>
 
-        <tmRightSidebar />
+        <TmRightSidebar />
       </div>
     </div>
   );

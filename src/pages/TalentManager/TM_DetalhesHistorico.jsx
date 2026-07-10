@@ -240,7 +240,7 @@ function DetalhesHistoricoTM() {
       <Header />
 
       <div style={corpo}>
-        <tmLeftSidebar />
+        <TmLeftSidebar />
 
         <main style={conteudo}>
           <button type="button" onClick={() => navigate(-1)} style={voltarButton}>
@@ -336,7 +336,7 @@ function DetalhesHistoricoTM() {
           </section>
         </main>
 
-        <tmRightSidebar />
+        <TmRightSidebar />
       </div>
     </div>
   );
