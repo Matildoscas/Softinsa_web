@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Container, Row, Col, Card, Form, Button, InputGroup, Alert } from "react-bootstrap";
+import { Container, Row, Col, Card, Form, Button, InputGroup, Alert, Spinner } from "react-bootstrap";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api.js"; // Importa a instância do Axios configurada anteriormente
+import api from "../../services/api"; // Importa a instância do Axios configurada anteriormente
 import ImagemLogin from "../../assets/imagem_login.png";
 import {
   definirUtilizadorAnalytics,
@@ -13,6 +13,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -34,6 +35,8 @@ function LoginPage() {
 
       return;
     }
+
+    setLoading(true);
 
     try {
       const response = await api.post(
@@ -59,7 +62,36 @@ function LoginPage() {
           "O servidor não devolveu os dados do utilizador.",
         );
 
-        return;
+        const apiUser = data.user || {};
+        const utilizadorSeguro = {
+          id_utilizador: apiUser.id_utilizador || apiUser.ID_UTILIZADOR || data.id_utilizador || data.ID_UTILIZADOR,
+          nome_completo: apiUser.nome_completo || apiUser.NOME_COMPLETO || data.nome_completo || data.NOME_COMPLETO,
+          email: apiUser.email || apiUser.EMAIL || data.email || data.EMAIL,
+          email_softinsa: apiUser.email_softinsa || apiUser.EMAIL_SOFTINSA || data.email_softinsa || data.EMAIL_SOFTINSA,
+          estado_conta: apiUser.estado_conta || apiUser.ESTADO_CONTA || data.estado_conta || data.ESTADO_CONTA,
+          tipo_utilizador: apiUser.tipo_utilizador || data.tipo_utilizador || "utilizador",
+        };
+
+        localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
+
+        const tipo = String(utilizadorSeguro.tipo_utilizador || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "");
+
+        if (tipo.includes("administrador") || tipo.includes("admin")) {
+          navigate("/admin");
+        } else if (tipo.includes("talent_manager") || tipo.includes("talentmanager")) {
+          navigate("/tm");
+        } else if (tipo.includes("consultor")) {
+          navigate("/pag_consultor");
+        } else {
+          navigate("/pag_consultor");
+        }
+      } else {
+        setError(data.message || data.error || "Erro ao iniciar sessão.");
       }
 
       const utilizadorSeguro = {
@@ -209,6 +241,8 @@ function LoginPage() {
           "Email ou password incorretos!",
         );
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -238,6 +272,7 @@ function LoginPage() {
                       placeholder="Email" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading} 
                     />
                   </InputGroup>
                 </Form.Group>
@@ -250,16 +285,22 @@ function LoginPage() {
                       placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading} 
                     />
-                    <InputGroup.Text style={{ cursor: 'pointer' }} onClick={() => setShowPassword(!showPassword)}>
+                    <InputGroup.Text 
+                      style={{ cursor: loading ? 'not-allowed' : 'pointer' }} 
+                      onClick={() => !loading && setShowPassword(!showPassword)}
+                    >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </InputGroup.Text>
                   </InputGroup>
                 </Form.Group>
 
+                {/* BOTÃO DINÂMICO COM ANIMAÇÃO */}
                 <Button 
                   type="submit"
                   variant="primary" 
+                  disabled={loading} 
                   className="w-100 d-flex align-items-center justify-content-center gap-2 mb-5" 
                   style={{ 
                     backgroundColor: '#1d61ff', 
@@ -267,10 +308,26 @@ function LoginPage() {
                     borderRadius: '8px', 
                     height: '50px',
                     fontSize: '1rem',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    opacity: loading ? 0.7 : 1 
                   }}
                 >
-                  Entrar <ArrowRight size={18} />
+                  {loading ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                      />
+                      <span>A iniciar sessão...</span>
+                    </>
+                  ) : (
+                    <>
+                      Entrar <ArrowRight size={18} />
+                    </>
+                  )}
                 </Button>
 
                 <div className="text-center">
@@ -279,14 +336,16 @@ function LoginPage() {
                     Registar
                   </a>
                 </div>
-                  <Button
-                    type="button"
-                    variant="outline-primary"
-                    className="w-100 mt-3"
-                    onClick={() => navigate("/galeria-badges")}
-                  >
-                    Ver galeria de badges
-                  </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline-primary"
+                  className="w-100 mt-3"
+                  disabled={loading} 
+                  onClick={() => navigate("/galeria-badges")}
+                >
+                  Ver galeria de badges
+                </Button>
               </Form>
             </Card.Body>
           </Card>

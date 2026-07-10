@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+
+
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
-import LoginPage from './pages/Login/Login.jsx';
-import RegisterPage from './pages/Login/Register.jsx';
+import LoginPage from './pages/Login/login.jsx';
+import RegisterPage from './pages/Login/register.jsx';
 import AreaPage from './pages/Login/AreaRegister.jsx';
 import BadgePublicoIndividualPage from './pages/Galeria_Pública/BadgePublicoIndividual.jsx';
 import VerificarCertificadoPage from './pages/Galeria_Pública/VerificarCertificado.jsx';
@@ -42,7 +44,6 @@ import CriarLearningPath from "./pages/Admin/criar_learningpaths.jsx";
 import EditarLearningPath from "./pages/Admin/editar_learningpaths.jsx";
 import InformacoesAvisos from "./pages/Admin/avisos_informacoes.jsx";
 import PoliticasRGPD from "./pages/Admin/politicas_rgpd.jsx";
-import EdicaoRGPD from "./pages/Admin/editar_politicas_rgpd.jsx";
 import ConfigurarNotificacoes from "./pages/Admin/config_notificacao.jsx";
 import GestaoBadges from "./pages/Admin/gestao_badges.jsx";
 import CriarBadge from "./pages/Admin/criar_badges.jsx";
@@ -65,23 +66,45 @@ import NotificacoesSllPage from "./pages/ServiceLineLeader/notificacoes_sll.jsx"
 import StatusCandidaturasSllPage from "./pages/ServiceLineLeader/status_candidaturas_sll.jsx";
 
 import DashboardTm from "./pages/TalentManager/dashboard_tm.jsx";
-import CatalogoBadgesTm from "./pages/TalentManager/catalogo_badges_tm.jsx";
-import InformacaoBadgeTm from "./pages/TalentManager/informacao_badge_tm.jsx";
-import SolicitacoesBadgesTm from "./pages/TalentManager/solicitacoes_badges_tm.jsx";
+import CatalogoBadgesTm from "./pages/TalentManager/TM_catalogo_badges.jsx";
+import InformacaoBadgeTm from "./pages/TalentManager/TM_informacao_badge.jsx";
+
+import SolicitacoesBadgesTm from "./pages/TalentManager/solicitacoes_badges_tm.jsx";// este
+
 import AvaliacaoBadgeTm from "./pages/TalentManager/avaliacao_badge_tm.jsx";
-import InformacaoConsultorTm from "./pages/TalentManager/informacao_consultor_tm.jsx";
+import InformacaoConsultorTm from "./pages/TalentManager/TM_informacao_consultor.jsx";
 import HistoricoCandidaturasTm from "./pages/TalentManager/historico_candidaturas_tm.jsx";
 import DetalheHistoricoTm from "./pages/TalentManager/detalhe_historico_tm.jsx";
-import BadgesExpiracaoTm from "./pages/TalentManager/badges_expiracao_tm.jsx";
-import DetalheExpiracaoBadgeTm from "./pages/TalentManager/detalhe_expiracao_badge_tm.jsx";
-import GerarRelatorioTm from "./pages/TalentManager/gerar_relatorio_tm.jsx";
-import ListaConsultoresTm from "./pages/TalentManager/lista_consultores_tm.jsx";
-import NotificacoesTm from "./pages/TalentManager/notificacoes_tm.jsx";
-import DefinicoesTm from "./pages/TalentManager/definicoes_tm.jsx";
-import PerfilTm from "./pages/TalentManager/perfil_tm.jsx";
-import GerarCertificadoTm from "./pages/TalentManager/gerar_certificado_tm.jsx";
-import CriarDesafioTm from "./pages/TalentManager/criar_desafio_tm.jsx";
+import BadgesExpiracaoTm from "./pages/TalentManager/TM_badges_expiracao.jsx";
+import DetalheExpiracaoBadgeTm from "./pages/TalentManager/TM_detalhe_expiracao_badge.jsx";
+import GerarRelatorioTm from "./pages/TalentManager/TM_gerar_relatorio.jsx";
 
+import ListaConsultoresTm from "./pages/TalentManager/lista_consultores_tm.jsx";// este
+
+import NotificacoesTm from "./pages/TalentManager/TM_notificacoes.jsx";
+
+import DefinicoesTm from "./pages/TalentManager/definicoes_tm.jsx";// este
+
+import PerfilTm from "./pages/TalentManager/perfil_tm.jsx";
+import GerarCertificadoTm from "./pages/TalentManager/TM_gerar_certificado.jsx";
+import CriarDesafioTm from "./pages/TalentManager/TM_criar_desafio.jsx";
+
+// Talent Manager
+import TM_Dashboard from './pages/TalentManager/TM_DashBoard.jsx';
+
+import TM_CatalogoBadges from './pages/TalentManager/CatalogoBadges.jsx';// este
+
+import SolicitacoesTM from './pages/TalentManager/TM_Solicitacoes.jsx';
+import AvaliacaoTM from './pages/TalentManager/Avaliacaotm.jsx';
+import AvaliacaoSolicitacaoTM from './pages/TalentManager/TM_AvaliacaoSolicitacao.jsx';
+import HistoricoCandidaturasTM from './pages/TalentManager/TM_HistoricoCandidaturas.jsx';
+import DetalhesHistoricoTM from './pages/TalentManager/TM_DetalhesHistorico.jsx';
+
+import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';// este
+
+import TM_Definicoes from './pages/TalentManager/TM_Definicoes.jsx';
+import TM_consultores from './pages/TalentManager/TM_Consultor.jsx';
+import TM_statuscandidatura from './pages/TalentManager/TM_statuscandidatura.jsx';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
@@ -120,7 +143,6 @@ function App() {
         
         // Rotas Admin
         <Route path="/admin" element={<PaginaPrincipalAdmin />} />
-
         <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
         <Route path="/admin/contas" element={<GestaoContas />} />
         <Route path="/admin/contas/novo" element={<CriarConta />} />
@@ -137,7 +159,6 @@ function App() {
         <Route path="/admin/learning-paths/editar/:id" element={<EditarLearningPath />} />
         <Route path="/admin/avisos" element={<InformacoesAvisos />} />
         <Route path="/admin/rgpd" element={<PoliticasRGPD />} />
-        <Route path="/admin/rgpd/editar" element={<EdicaoRGPD />} />
         <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
         <Route path="/admin/badges" element={<GestaoBadges />} />
         <Route path="/admin/badges/novo" element={<CriarBadge />} />
@@ -160,20 +181,45 @@ function App() {
         <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
         <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSllPage />}/>
 
-        <Route path="/tm" element={<DashboardTm />} />
+        {/* Rotas para o Talent Manager */}
+        <Route path="/tm" element={<TM_Dashboard />} />
+
+            <Route path="/tm/CatalogoBadgesCaga" element={<TM_CatalogoBadges/>} />
+
+        <Route path="/tm/Solicitacoes" element={<SolicitacoesTM />} />
+
+            <Route path="/tm/avaliacao/:id" element={<AvaliacaoTM />} />
+
+        <Route path="/tm/avaliacao-solicitacao/:id" element={<AvaliacaoSolicitacaoTM />} />
+        <Route path="/tm/HistoricoCandidaturas" element={<HistoricoCandidaturasTM />} />
+        <Route path="/tm/detalhes-historico/:id" element={<DetalhesHistoricoTM />} />
+
+            <Route path="/tm/perfilCaga" element={<TM_Perfil />} />
+
+        <Route path="/tm/definicoes" element={<TM_Definicoes />} />
+        <Route path="/tm/consultores" element={<TM_consultores />} />
+        <Route path="/tm/status-candidaturas" element={<TM_statuscandidatura />} />
+
+        
         <Route path="/tm/badges" element={<CatalogoBadgesTm />}/>
         <Route path="/tm/badges/:idBadge" element={<InformacaoBadgeTm />}/>
-        <Route path="/tm/solicitacoes" element={<SolicitacoesBadgesTm />}/>
-        <Route path="/tm/solicitacoes/:idCandidatura" element={<AvaliacaoBadgeTm />}/>
+
+           <Route path="/tm/solicitacoesCaga" element={<SolicitacoesBadgesTm />}/>
+
+        <Route path="/tm/solicitacoes23/:idCandidatura" element={<AvaliacaoBadgeTm />}/>
         <Route path="/tm/consultores/:idConsultor" element={<InformacaoConsultorTm />}/>
         <Route path="/tm/historico" element={<HistoricoCandidaturasTm />}/>
         <Route path="/tm/historico/:idHistorico" element={<DetalheHistoricoTm />}/>
         <Route path="/tm/expiracao" element={<BadgesExpiracaoTm />}/>
         <Route path="/tm/expiracao/:idBadgeAtribuido" element={<DetalheExpiracaoBadgeTm />}/>
         <Route path="/tm/relatorios" element={<GerarRelatorioTm />}/>
-        <Route path="/tm/consultores" element={<ListaConsultoresTm />}/>
+
+            <Route path="/tm/consultorescaga" element={<ListaConsultoresTm />}/>
+
         <Route path="/tm/notificacoes" element={<NotificacoesTm />}/>
-        <Route path="/tm/definicoes" element={<DefinicoesTm />}/>
+
+            <Route path="/tm/definicoescaga" element={<DefinicoesTm />}/>
+
         <Route path="/tm/perfil" element={<PerfilTm />}/>
         <Route path="/tm/certificados" element={<GerarCertificadoTm />}/>
         <Route path="/tm/desafios/novo" element={<CriarDesafioTm />}/>

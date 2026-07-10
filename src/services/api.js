@@ -1,40 +1,47 @@
-/*import axios from "axios";
+
+import axios from 'axios';
 
 const api = axios.create({
-  baseURL: "https://softinsa-api.onrender.com/api",
+  // 🛑 COMENTADO AGORA: Servidor de produção na Nuvem
+  // baseURL: 'https://softinsa-api.onrender.com/api' 
+
+  // 🚀 ATIVADO PARA TESTES LOCAIS: Aponta para o teu PC
+  baseURL: 'http://localhost:3000/api' 
 });
 
-api.interceptors.request.use(
-  (config) => {
-    const token =
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
-      localStorage.getItem("jwt");
+const buildUploadUrl = (path) => {
+  if (!path) return null;
+  if (/^(https?:|data:|blob:|\/\/)/i.test(path)) {
+    return path;
+  }
 
+  const baseUrl = api.defaults.baseURL || '';
+  const apiRoot = baseUrl.replace(/\/api\/?$/, '');
+  return path.startsWith('/') ? `${apiRoot}${path}` : `${apiRoot}/${path}`;
+};
+
+// O resto do teu código (interceptor) fica exatamente igual...
+api.interceptors.request.use(
+  async (config) => {
+    // 💡 Procura por todos os nomes possíveis que o teu Login possa ter usado
+    const token = 
+      localStorage.getItem('token') || 
+      localStorage.getItem('authToken') || 
+      localStorage.getItem('jwt');
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
+    
     return config;
   },
   (error) => Promise.reject(error)
 );
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (
-      error.response?.status === 401 ||
-      error.response?.data?.message === "Token indisponível."
-    ) {
-      console.warn("Token ausente ou inválido. Faz login novamente.");
-    }
-
-    return Promise.reject(error);
-  }
-);
+export { buildUploadUrl };
 export default api;
-*/
+
+
+/*
 import axios from 'axios';
 import {
   resolveDebugEnabledForRequest,
@@ -72,3 +79,4 @@ api.interceptors.request.use(
 );
 
 export default api;
+*/

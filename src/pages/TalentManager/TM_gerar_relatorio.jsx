@@ -1,8 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   BiArrowBack,
@@ -25,18 +21,16 @@ import {
   YAxis,
 } from "recharts";
 
-import {
-  useNavigate,
-} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
 import api from "../../services/api.js";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
-import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/LeftBarTM.jsx";
+import TmRightSidebar from "../../components/TM_RightBar.jsx";
 
 import LogoSoftinsa from "../../assets/logo.png";
 
@@ -45,8 +39,7 @@ import LogoSoftinsa from "../../assets/logo.png";
 ========================================================= */
 
 function obterUtilizadorGuardado() {
-  const guardado =
-    localStorage.getItem("user");
+  const guardado = localStorage.getItem("user");
 
   if (!guardado) {
     return null;
@@ -55,10 +48,7 @@ function obterUtilizadorGuardado() {
   try {
     return JSON.parse(guardado);
   } catch (err) {
-    console.error(
-      "Erro ao ler utilizador:",
-      err
-    );
+    console.error("Erro ao ler utilizador:", err);
 
     return null;
   }
@@ -69,16 +59,11 @@ function obterUtilizadorGuardado() {
 ========================================================= */
 
 function paraInputDate(data) {
-  const ano =
-    data.getFullYear();
+  const ano = data.getFullYear();
 
-  const mes = String(
-    data.getMonth() + 1
-  ).padStart(2, "0");
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
 
-  const dia = String(
-    data.getDate()
-  ).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
 
   return `${ano}-${mes}-${dia}`;
 }
@@ -88,20 +73,13 @@ function formatarData(data) {
     return "Não disponível";
   }
 
-  const date =
-    new Date(`${data}T12:00:00`);
+  const date = new Date(`${data}T12:00:00`);
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return data;
   }
 
-  return date.toLocaleDateString(
-    "pt-PT"
-  );
+  return date.toLocaleDateString("pt-PT");
 }
 
 /* =========================================================
@@ -110,36 +88,27 @@ function formatarData(data) {
 
 const graficoConfig = {
   SUBMETIDAS: {
-    titulo:
-      "Total de Badges Submetidas",
+    titulo: "Total de Badges Submetidas",
 
-    atual:
-      "submetidas_atual",
+    atual: "submetidas_atual",
 
-    anterior:
-      "submetidas_anterior",
+    anterior: "submetidas_anterior",
   },
 
   APROVADAS: {
-    titulo:
-      "Total de badges aprovadas",
+    titulo: "Total de badges aprovadas",
 
-    atual:
-      "aprovadas_atual",
+    atual: "aprovadas_atual",
 
-    anterior:
-      "aprovadas_anterior",
+    anterior: "aprovadas_anterior",
   },
 
   REJEITADAS: {
-    titulo:
-      "Total de badges recusadas",
+    titulo: "Total de badges recusadas",
 
-    atual:
-      "rejeitadas_atual",
+    atual: "rejeitadas_atual",
 
-    anterior:
-      "rejeitadas_anterior",
+    anterior: "rejeitadas_anterior",
   },
 };
 
@@ -148,100 +117,49 @@ const graficoConfig = {
 ========================================================= */
 
 function GerarRelatorioTm() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  const pdfRef =
-    useRef(null);
+  const pdfRef = useRef(null);
 
-  const [
-    serviceLines,
-    setServiceLines,
-  ] = useState([]);
+  const [serviceLines, setServiceLines] = useState([]);
 
-  const [
-    especializacao,
-    setEspecializacao,
-  ] = useState("");
+  const [especializacao, setEspecializacao] = useState("");
 
-  const [
-    idServiceLine,
-    setIdServiceLine,
-  ] = useState("");
+  const [idServiceLine, setIdServiceLine] = useState("");
 
   const hoje = new Date();
 
-  const seisMesesAntes =
-    new Date(
-      hoje.getFullYear(),
-      hoje.getMonth() - 6,
-      1
-    );
+  const seisMesesAntes = new Date(hoje.getFullYear(), hoje.getMonth() - 6, 1);
 
-  const [
-    dataInicio,
-    setDataInicio,
-  ] = useState(
-    paraInputDate(
-      seisMesesAntes
-    )
-  );
+  const [dataInicio, setDataInicio] = useState(paraInputDate(seisMesesAntes));
 
-  const [
-    dataFim,
-    setDataFim,
-  ] = useState(
-    paraInputDate(hoje)
-  );
+  const [dataFim, setDataFim] = useState(paraInputDate(hoje));
 
-  const [
-    relatorio,
-    setRelatorio,
-  ] = useState(null);
+  const [relatorio, setRelatorio] = useState(null);
 
-  const [
-    graficoSelecionado,
-    setGraficoSelecionado,
-  ] = useState("SUBMETIDAS");
+  const [graficoSelecionado, setGraficoSelecionado] = useState("SUBMETIDAS");
 
-  const [
-    isLoading,
-    setIsLoading,
-  ] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [
-    isLoadingDados,
-    setIsLoadingDados,
-  ] = useState(true);
+  const [isLoadingDados, setIsLoadingDados] = useState(true);
 
-  const [
-    isExporting,
-    setIsExporting,
-  ] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const [
-    isSending,
-    setIsSending,
-  ] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
-  const [erro, setErro] =
-    useState("");
+  const [erro, setErro] = useState("");
 
-  const [mensagem, setMensagem] =
-    useState("");
+  const [mensagem, setMensagem] = useState("");
 
   useEffect(() => {
     carregarServiceLines();
   }, []);
 
   async function carregarServiceLines() {
-    const utilizador =
-      obterUtilizadorGuardado();
+    const utilizador = obterUtilizadorGuardado();
 
     const idUtilizador =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+      utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
 
     if (!idUtilizador) {
       navigate("/login", {
@@ -255,56 +173,34 @@ function GerarRelatorioTm() {
       setIsLoadingDados(true);
       setErro("");
 
-      const response =
-        await api.get(
-          `/tm/${idUtilizador}/relatorios/service-lines`
-        );
-
-      const dados =
-        response.data || {};
-
-      setEspecializacao(
-        dados.talentManager
-          ?.especializacao_tm ||
-          ""
+      const response = await api.get(
+        `/tm/${idUtilizador}/relatorios/service-lines`,
       );
 
-      const lista =
-        Array.isArray(
-          dados.serviceLines
-        )
-          ? dados.serviceLines
-          : [];
+      const dados = response.data || {};
+
+      setEspecializacao(dados.talentManager?.especializacao_tm || "");
+
+      const lista = Array.isArray(dados.serviceLines) ? dados.serviceLines : [];
 
       setServiceLines(lista);
 
       if (lista.length > 0) {
-        setIdServiceLine(
-          String(
-            lista[0]
-              .id_serviceline
-          )
-        );
+        setIdServiceLine(String(lista[0].id_serviceline));
       }
     } catch (err) {
-      console.error(
-        "Erro ao carregar Service Lines:",
-        err
-      );
+      console.error("Erro ao carregar Service Lines:", err);
 
       setErro(
         err.response?.data?.error ||
-          "Não foi possível carregar as Service Lines."
+          "Não foi possível carregar as Service Lines.",
       );
     } finally {
       setIsLoadingDados(false);
     }
   }
 
-  function alterarFormulario(
-    setter,
-    valor
-  ) {
+  function alterarFormulario(setter, valor) {
     setter(valor);
 
     setRelatorio(null);
@@ -313,33 +209,19 @@ function GerarRelatorioTm() {
   }
 
   async function gerarRelatorio() {
-    const utilizador =
-      obterUtilizadorGuardado();
+    const utilizador = obterUtilizadorGuardado();
 
     const idUtilizador =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+      utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
 
-    if (
-      !dataInicio ||
-      !dataFim ||
-      !idServiceLine
-    ) {
-      setErro(
-        "Preenche o período e a Service Line."
-      );
+    if (!dataInicio || !dataFim || !idServiceLine) {
+      setErro("Preenche o período e a Service Line.");
 
       return;
     }
 
-    if (
-      new Date(dataInicio) >
-      new Date(dataFim)
-    ) {
-      setErro(
-        "A data inicial não pode ser posterior à data final."
-      );
+    if (new Date(dataInicio) > new Date(dataFim)) {
+      setErro("A data inicial não pode ser posterior à data final.");
 
       return;
     }
@@ -350,41 +232,26 @@ function GerarRelatorioTm() {
       setMensagem("");
       setRelatorio(null);
 
-      const response =
-        await api.post(
-          `/tm/${idUtilizador}/relatorios/gerar`,
-          {
-            id_serviceline:
-              idServiceLine,
+      const response = await api.post(`/tm/${idUtilizador}/relatorios/gerar`, {
+        id_serviceline: idServiceLine,
 
-            data_inicio:
-              dataInicio,
+        data_inicio: dataInicio,
 
-            data_fim:
-              dataFim,
-          }
-        );
+        data_fim: dataFim,
+      });
 
-      setRelatorio(
-        response.data
-      );
+      setRelatorio(response.data);
 
-      setGraficoSelecionado(
-        "SUBMETIDAS"
-      );
+      setGraficoSelecionado("SUBMETIDAS");
 
       setMensagem(
-        "Relatório gerado. Confirma a pré-visualização antes de enviar ou gerar o PDF."
+        "Relatório gerado. Confirma a pré-visualização antes de enviar ou gerar o PDF.",
       );
     } catch (err) {
-      console.error(
-        "Erro ao gerar relatório:",
-        err
-      );
+      console.error("Erro ao gerar relatório:", err);
 
       setErro(
-        err.response?.data?.error ||
-          "Não foi possível gerar o relatório."
+        err.response?.data?.error || "Não foi possível gerar o relatório.",
       );
     } finally {
       setIsLoading(false);
@@ -396,40 +263,28 @@ function GerarRelatorioTm() {
       return;
     }
 
-    const utilizador =
-      obterUtilizadorGuardado();
+    const utilizador = obterUtilizadorGuardado();
 
     const idUtilizador =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+      utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
 
     try {
       setIsSending(true);
       setErro("");
       setMensagem("");
 
-      const response =
-        await api.post(
-          `/tm/${idUtilizador}/relatorios/enviar`,
-          {
-            relatorio,
-          }
-        );
+      const response = await api.post(`/tm/${idUtilizador}/relatorios/enviar`, {
+        relatorio,
+      });
 
       setMensagem(
-        response.data?.message ||
-          "Relatório enviado ao Service Line Leader."
+        response.data?.message || "Relatório enviado ao Service Line Leader.",
       );
     } catch (err) {
-      console.error(
-        "Erro ao enviar relatório:",
-        err
-      );
+      console.error("Erro ao enviar relatório:", err);
 
       setErro(
-        err.response?.data?.error ||
-          "Não foi possível enviar o relatório."
+        err.response?.data?.error || "Não foi possível enviar o relatório.",
       );
     } finally {
       setIsSending(false);
@@ -437,10 +292,7 @@ function GerarRelatorioTm() {
   }
 
   async function gerarPdf() {
-    if (
-      !relatorio ||
-      !pdfRef.current
-    ) {
+    if (!relatorio || !pdfRef.current) {
       return;
     }
 
@@ -452,29 +304,18 @@ function GerarRelatorioTm() {
         await document.fonts.ready;
       }
 
-      await new Promise(
-        (resolve) =>
-          setTimeout(resolve, 350)
-      );
+      await new Promise((resolve) => setTimeout(resolve, 350));
 
-      const canvas =
-        await html2canvas(
-          pdfRef.current,
-          {
-            scale: 2,
-            useCORS: true,
-            allowTaint: false,
-            backgroundColor:
-              "#ffffff",
-            logging: false,
-            windowWidth: 1200,
-          }
-        );
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowWidth: 1200,
+      });
 
-      const imagem =
-        canvas.toDataURL(
-          "image/png"
-        );
+      const imagem = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -482,38 +323,22 @@ function GerarRelatorioTm() {
         format: "a4",
       });
 
-      const larguraPagina =
-        pdf.internal.pageSize
-          .getWidth();
+      const larguraPagina = pdf.internal.pageSize.getWidth();
 
-      const alturaPagina =
-        pdf.internal.pageSize
-          .getHeight();
+      const alturaPagina = pdf.internal.pageSize.getHeight();
 
       const margem = 8;
 
-      const larguraImagem =
-        larguraPagina -
-        margem * 2;
+      const larguraImagem = larguraPagina - margem * 2;
 
-      const alturaImagem =
-        canvas.height *
-        (
-          larguraImagem /
-          canvas.width
-        );
+      const alturaImagem = canvas.height * (larguraImagem / canvas.width);
 
-      const alturaUtil =
-        alturaPagina -
-        margem * 2;
+      const alturaUtil = alturaPagina - margem * 2;
 
       let deslocamento = 0;
       let paginaAtual = 0;
 
-      while (
-        deslocamento <
-        alturaImagem
-      ) {
+      while (deslocamento < alturaImagem) {
         if (paginaAtual > 0) {
           pdf.addPage();
         }
@@ -522,30 +347,21 @@ function GerarRelatorioTm() {
           imagem,
           "PNG",
           margem,
-          margem -
-            deslocamento,
+          margem - deslocamento,
           larguraImagem,
-          alturaImagem
+          alturaImagem,
         );
 
-        deslocamento +=
-          alturaUtil;
+        deslocamento += alturaUtil;
 
         paginaAtual += 1;
       }
 
-      pdf.save(
-        `relatorio_${relatorio.id_relatorio}.pdf`
-      );
+      pdf.save(`relatorio_${relatorio.id_relatorio}.pdf`);
     } catch (err) {
-      console.error(
-        "Erro ao gerar PDF:",
-        err
-      );
+      console.error("Erro ao gerar PDF:", err);
 
-      setErro(
-        "Não foi possível gerar o PDF."
-      );
+      setErro("Não foi possível gerar o PDF.");
     } finally {
       setIsExporting(false);
     }
@@ -561,9 +377,7 @@ function GerarRelatorioTm() {
         <main style={conteudo}>
           <button
             type="button"
-            onClick={() =>
-              navigate("/tm")
-            }
+            onClick={() => navigate("/tm")}
             style={voltarButton}
           >
             <BiArrowBack size={18} />
@@ -573,9 +387,7 @@ function GerarRelatorioTm() {
           <div style={separador} />
 
           <div style={cabecalhoPagina}>
-            <h1 style={tituloPagina}>
-              Gerar relatório
-            </h1>
+            <h1 style={tituloPagina}>Gerar relatório</h1>
 
             <div style={subtituloPagina}>
               {especializacao
@@ -584,11 +396,7 @@ function GerarRelatorioTm() {
             </div>
           </div>
 
-          {erro && (
-            <div style={erroBox}>
-              {erro}
-            </div>
-          )}
+          {erro && <div style={erroBox}>{erro}</div>}
 
           {mensagem && (
             <div style={sucessoBox}>
@@ -599,51 +407,35 @@ function GerarRelatorioTm() {
 
           <section style={formularioCard}>
             <div style={tituloFormulario}>
-              <BiUser
-                size={18}
-                color="#2563eb"
-              />
-
+              <BiUser size={18} color="#2563eb" />
               Informações do relatório
             </div>
 
             {isLoadingDados ? (
-              <div style={mensagemForm}>
-                A carregar dados...
-              </div>
+              <div style={mensagemForm}>A carregar dados...</div>
             ) : (
               <>
                 <div style={formularioGrid}>
                   <div style={campo}>
-                    <label style={label}>
-                      Período
-                    </label>
+                    <label style={label}>Período</label>
 
                     <div style={periodoLinha}>
                       <input
                         type="date"
                         value={dataInicio}
                         onChange={(event) =>
-                          alterarFormulario(
-                            setDataInicio,
-                            event.target.value
-                          )
+                          alterarFormulario(setDataInicio, event.target.value)
                         }
                         style={input}
                       />
 
-                      <span style={traco}>
-                        —
-                      </span>
+                      <span style={traco}>—</span>
 
                       <input
                         type="date"
                         value={dataFim}
                         onChange={(event) =>
-                          alterarFormulario(
-                            setDataFim,
-                            event.target.value
-                          )
+                          alterarFormulario(setDataFim, event.target.value)
                         }
                         style={input}
                       />
@@ -651,42 +443,26 @@ function GerarRelatorioTm() {
                   </div>
 
                   <div style={campo}>
-                    <label style={label}>
-                      Service Line
-                    </label>
+                    <label style={label}>Service Line</label>
 
                     <select
                       value={idServiceLine}
                       onChange={(event) =>
-                        alterarFormulario(
-                          setIdServiceLine,
-                          event.target.value
-                        )
+                        alterarFormulario(setIdServiceLine, event.target.value)
                       }
                       style={input}
                     >
-                      {serviceLines.length ===
-                      0 ? (
-                        <option value="">
-                          Sem Service Lines disponíveis
-                        </option>
+                      {serviceLines.length === 0 ? (
+                        <option value="">Sem Service Lines disponíveis</option>
                       ) : (
-                        serviceLines.map(
-                          (serviceLine) => (
-                            <option
-                              key={
-                                serviceLine.id_serviceline
-                              }
-                              value={
-                                serviceLine.id_serviceline
-                              }
-                            >
-                              {
-                                serviceLine.nome_serviceline
-                              }
-                            </option>
-                          )
-                        )
+                        serviceLines.map((serviceLine) => (
+                          <option
+                            key={serviceLine.id_serviceline}
+                            value={serviceLine.id_serviceline}
+                          >
+                            {serviceLine.nome_serviceline}
+                          </option>
+                        ))
                       )}
                     </select>
                   </div>
@@ -695,27 +471,16 @@ function GerarRelatorioTm() {
                 <button
                   type="button"
                   onClick={gerarRelatorio}
-                  disabled={
-                    isLoading ||
-                    serviceLines.length ===
-                      0
-                  }
+                  disabled={isLoading || serviceLines.length === 0}
                   style={{
                     ...gerarButton,
 
-                    opacity:
-                      isLoading ||
-                      serviceLines.length ===
-                        0
-                        ? 0.6
-                        : 1,
+                    opacity: isLoading || serviceLines.length === 0 ? 0.6 : 1,
                   }}
                 >
                   <BiSave size={18} />
 
-                  {isLoading
-                    ? "A gerar..."
-                    : "Gerar relatório"}
+                  {isLoading ? "A gerar..." : "Gerar relatório"}
                 </button>
               </>
             )}
@@ -726,16 +491,9 @@ function GerarRelatorioTm() {
               <section style={previewCard}>
                 <div style={cabecalhoPreview}>
                   <div>
-                    <h2 style={tituloPreview}>
-                      Pré-visualização do relatório
-                    </h2>
+                    <h2 style={tituloPreview}>Pré-visualização do relatório</h2>
 
-                    <div style={idPreview}>
-                      ID:{" "}
-                      {
-                        relatorio.id_relatorio
-                      }
-                    </div>
+                    <div style={idPreview}>ID: {relatorio.id_relatorio}</div>
                   </div>
 
                   <div style={acoesPreview}>
@@ -747,9 +505,7 @@ function GerarRelatorioTm() {
                     >
                       <BiSend size={17} />
 
-                      {isSending
-                        ? "A enviar..."
-                        : "Enviar para SLL"}
+                      {isSending ? "A enviar..." : "Enviar para SLL"}
                     </button>
 
                     <button
@@ -760,114 +516,63 @@ function GerarRelatorioTm() {
                     >
                       <BiFile size={17} />
 
-                      {isExporting
-                        ? "A gerar..."
-                        : "Gerar PDF"}
+                      {isExporting ? "A gerar..." : "Gerar PDF"}
                     </button>
                   </div>
                 </div>
 
                 <div style={documentoPreview}>
-                  <CabecalhoDocumento
-                    relatorio={relatorio}
-                  />
+                  <CabecalhoDocumento relatorio={relatorio} />
 
                   <AbasGrafico
-                    selecionado={
-                      graficoSelecionado
-                    }
-                    onSelecionar={
-                      setGraficoSelecionado
-                    }
+                    selecionado={graficoSelecionado}
+                    onSelecionar={setGraficoSelecionado}
                   />
 
                   <LegendaGrafico />
 
                   <div style={graficoBox}>
                     <GraficoRelatorio
-                      tipo={
-                        graficoSelecionado
-                      }
-                      dados={
-                        relatorio.grafico
-                      }
+                      tipo={graficoSelecionado}
+                      dados={relatorio.grafico}
                     />
                   </div>
 
-                  <CardsResumo
-                    resumo={
-                      relatorio.resumo
-                    }
-                  />
+                  <CardsResumo resumo={relatorio.resumo} />
 
                   <div style={totalSubmetidas}>
-                    Total de candidaturas
-                    submetidas:{" "}
-                    <strong>
-                      {
-                        relatorio
-                          .resumo
-                          .total_submetidas
-                      }
-                    </strong>
+                    Total de candidaturas submetidas:{" "}
+                    <strong>{relatorio.resumo.total_submetidas}</strong>
                   </div>
                 </div>
               </section>
 
               {/* CONTEÚDO FORA DO ECRÃ PARA O PDF */}
 
-              <section
-                ref={pdfRef}
-                style={documentoPdf}
-              >
-                <CabecalhoDocumento
-                  relatorio={relatorio}
-                />
+              <section ref={pdfRef} style={documentoPdf}>
+                <CabecalhoDocumento relatorio={relatorio} />
 
-                {[
-                  "SUBMETIDAS",
-                  "APROVADAS",
-                  "REJEITADAS",
-                ].map((tipo) => (
-                  <div
-                    key={tipo}
-                    style={graficoPdfSecao}
-                  >
+                {["SUBMETIDAS", "APROVADAS", "REJEITADAS"].map((tipo) => (
+                  <div key={tipo} style={graficoPdfSecao}>
                     <h3 style={tituloGraficoPdf}>
-                      {
-                        graficoConfig[tipo]
-                          .titulo
-                      }
+                      {graficoConfig[tipo].titulo}
                     </h3>
 
                     <LegendaGrafico />
 
                     <GraficoRelatorio
                       tipo={tipo}
-                      dados={
-                        relatorio.grafico
-                      }
+                      dados={relatorio.grafico}
                       fixo
                     />
                   </div>
                 ))}
 
-                <CardsResumo
-                  resumo={
-                    relatorio.resumo
-                  }
-                />
+                <CardsResumo resumo={relatorio.resumo} />
 
                 <div style={totalSubmetidasPdf}>
-                  Total de candidaturas
-                  submetidas:{" "}
-                  <strong>
-                    {
-                      relatorio
-                        .resumo
-                        .total_submetidas
-                    }
-                  </strong>
+                  Total de candidaturas submetidas:{" "}
+                  <strong>{relatorio.resumo.total_submetidas}</strong>
                 </div>
               </section>
             </>
@@ -884,77 +589,36 @@ function GerarRelatorioTm() {
    COMPONENTES DO RELATÓRIO
 ========================================================= */
 
-function CabecalhoDocumento({
-  relatorio,
-}) {
+function CabecalhoDocumento({ relatorio }) {
   return (
     <>
       <div style={cabecalhoDocumento}>
-        <img
-          src={LogoSoftinsa}
-          alt="Softinsa"
-          style={logoRelatorio}
-        />
+        <img src={LogoSoftinsa} alt="Softinsa" style={logoRelatorio} />
 
         <div style={informacaoDocumento}>
-          <h2 style={tituloDocumento}>
-            Relatório de Badges
-          </h2>
+          <h2 style={tituloDocumento}>Relatório de Badges</h2>
 
           <div style={detalhesDocumento}>
             Talent Manager:{" "}
-            <strong>
-              {
-                relatorio
-                  .talentManager
-                  .nome_completo
-              }
-            </strong>
+            <strong>{relatorio.talentManager.nome_completo}</strong>
           </div>
 
           <div style={detalhesDocumento}>
             Especialização:{" "}
-            <strong>
-              {
-                relatorio
-                  .talentManager
-                  .especializacao_tm
-              }
-            </strong>
+            <strong>{relatorio.talentManager.especializacao_tm}</strong>
           </div>
 
           <div style={detalhesDocumento}>
             Service Line:{" "}
-            <strong>
-              {
-                relatorio
-                  .serviceLine
-                  .nome_serviceline
-              }
-            </strong>
+            <strong>{relatorio.serviceLine.nome_serviceline}</strong>
           </div>
 
           <div style={detalhesDocumento}>
-            Período:{" "}
-            {formatarData(
-              relatorio
-                .periodo
-                .data_inicio
-            )}{" "}
-            a{" "}
-            {formatarData(
-              relatorio
-                .periodo
-                .data_fim
-            )}
+            Período: {formatarData(relatorio.periodo.data_inicio)} a{" "}
+            {formatarData(relatorio.periodo.data_fim)}
           </div>
 
-          <div style={idDocumento}>
-            Relatório{" "}
-            {
-              relatorio.id_relatorio
-            }
-          </div>
+          <div style={idDocumento}>Relatório {relatorio.id_relatorio}</div>
         </div>
       </div>
 
@@ -963,38 +627,25 @@ function CabecalhoDocumento({
   );
 }
 
-function AbasGrafico({
-  selecionado,
-  onSelecionar,
-}) {
+function AbasGrafico({ selecionado, onSelecionar }) {
   return (
     <div style={abasGrafico}>
-      {Object.entries(
-        graficoConfig
-      ).map(([chave, config]) => (
+      {Object.entries(graficoConfig).map(([chave, config]) => (
         <button
           key={chave}
           type="button"
-          onClick={() =>
-            onSelecionar(chave)
-          }
+          onClick={() => onSelecionar(chave)}
           style={{
             ...graficoTab,
 
-            color:
-              selecionado === chave
-                ? "#111827"
-                : "#94a3b8",
+            color: selecionado === chave ? "#111827" : "#94a3b8",
 
             borderBottom:
               selecionado === chave
                 ? "3px solid #2563eb"
                 : "3px solid transparent",
 
-            fontWeight:
-              selecionado === chave
-                ? 700
-                : 400,
+            fontWeight: selecionado === chave ? 700 : 400,
           }}
         >
           {config.titulo}
@@ -1014,7 +665,6 @@ function LegendaGrafico() {
             background: "#111827",
           }}
         />
-
         Este período
       </div>
 
@@ -1025,20 +675,14 @@ function LegendaGrafico() {
             background: "#93c5fd",
           }}
         />
-
         Ano anterior ao período
       </div>
     </div>
   );
 }
 
-function GraficoRelatorio({
-  tipo,
-  dados,
-  fixo = false,
-}) {
-  const config =
-    graficoConfig[tipo];
+function GraficoRelatorio({ tipo, dados, fixo = false }) {
+  const config = graficoConfig[tipo];
 
   const grafico = (
     <LineChart
@@ -1052,10 +696,7 @@ function GraficoRelatorio({
         bottom: 4,
       }}
     >
-      <CartesianGrid
-        strokeDasharray="4 4"
-        vertical={false}
-      />
+      <CartesianGrid strokeDasharray="4 4" vertical={false} />
 
       <XAxis
         dataKey="mes"
@@ -1110,10 +751,7 @@ function GraficoRelatorio({
   }
 
   return (
-    <ResponsiveContainer
-      width="100%"
-      height="100%"
-    >
+    <ResponsiveContainer width="100%" height="100%">
       {grafico}
     </ResponsiveContainer>
   );
@@ -1123,55 +761,35 @@ function CardsResumo({ resumo }) {
   return (
     <div style={cardsResumo}>
       <ResumoCard
-        icon={
-          <BiCheck size={46} />
-        }
-        valor={
-          resumo.total_aprovadas
-        }
+        icon={<BiCheck size={46} />}
+        valor={resumo.total_aprovadas}
         texto="Badges aprovadas pelo TM"
       />
 
       <ResumoCard
-        icon={
-          <BiMedal size={46} />
-        }
-        valor={
-          resumo.total_atribuidas
-        }
+        icon={<BiMedal size={46} />}
+        valor={resumo.total_atribuidas}
         texto="Badges atribuídos neste período"
       />
 
       <ResumoCard
         icon={<BiX size={48} />}
-        valor={
-          resumo.total_rejeitadas
-        }
+        valor={resumo.total_rejeitadas}
         texto="Badges recusadas"
       />
     </div>
   );
 }
 
-function ResumoCard({
-  icon,
-  valor,
-  texto,
-}) {
+function ResumoCard({ icon, valor, texto }) {
   return (
     <div style={resumoCard}>
-      <div style={resumoIcon}>
-        {icon}
-      </div>
+      <div style={resumoIcon}>{icon}</div>
 
       <div>
-        <div style={resumoValor}>
-          {valor}
-        </div>
+        <div style={resumoValor}>{valor}</div>
 
-        <div style={resumoTexto}>
-          {texto}
-        </div>
+        <div style={resumoTexto}>{texto}</div>
       </div>
     </div>
   );
@@ -1259,8 +877,7 @@ const tituloFormulario = {
 
 const formularioGrid = {
   display: "grid",
-  gridTemplateColumns:
-    "repeat(2, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: 30,
 };
 
@@ -1277,8 +894,7 @@ const label = {
 
 const periodoLinha = {
   display: "grid",
-  gridTemplateColumns:
-    "minmax(0, 1fr) 20px minmax(0, 1fr)",
+  gridTemplateColumns: "minmax(0, 1fr) 20px minmax(0, 1fr)",
   gap: 8,
   alignItems: "center",
 };
@@ -1489,8 +1105,7 @@ const graficoBox = {
 
 const cardsResumo = {
   display: "grid",
-  gridTemplateColumns:
-    "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: 28,
   marginTop: 28,
 };

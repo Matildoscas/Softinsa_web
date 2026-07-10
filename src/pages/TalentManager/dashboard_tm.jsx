@@ -1,12 +1,6 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
-import {
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   BiAward,
@@ -38,290 +32,201 @@ import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 function obterUtilizadorGuardado() {
-  const storedUser =
-    localStorage.getItem("user");
+  const storedUser = localStorage.getItem("user");
 
   if (!storedUser) {
     return null;
   }
 
   try {
-    return JSON.parse(
-      storedUser
-    );
+    return JSON.parse(storedUser);
   } catch (err) {
-    console.error(
-      "Erro ao ler utilizador:",
-      err
-    );
+    console.error("Erro ao ler utilizador:", err);
 
     return null;
   }
 }
 
-function obterConfiguracaoDashboard(
-  resumo
-) {
-  if (
-    resumo.tipo_especializacao ===
-    "RECRUTAMENTO"
-  ) {
+function obterConfiguracaoDashboard(resumo) {
+  if (resumo.tipo_especializacao === "RECRUTAMENTO") {
     return {
-      descricaoConsultores:
-        `${resumo.total_consultores_acompanhados} consultores iniciantes`,
+      descricaoConsultores: `${resumo.total_consultores_acompanhados} consultores iniciantes`,
 
-      descricaoBadges:
-        `${resumo.badges_atribuidos_mes} badges atribuídos a iniciantes este mês`,
+      descricaoBadges: `${resumo.badges_atribuidos_mes} badges atribuídos a iniciantes este mês`,
 
-      descricaoSll:
-        `${resumo.total_sll_ativos} Service Line Leaders ativos`,
+      descricaoSll: `${resumo.total_sll_ativos} Service Line Leaders ativos`,
 
-      tituloLista:
-        "Consultores iniciantes",
+      tituloLista: "Consultores iniciantes",
 
-      descricaoLista:
-        `Acompanha ${resumo.total_consultores_acompanhados} consultores registados há menos de 1 ano`,
+      descricaoLista: `Acompanha ${resumo.total_consultores_acompanhados} consultores registados há menos de 1 ano`,
 
-      graficoTitulo:
-        "Consultores iniciantes em cada área",
+      graficoTitulo: "Consultores iniciantes em cada área",
 
       cards: [
         {
           tipo: "NOVOS",
-          valor:
-            resumo.novos_consultores_mes,
-          label:
-            "Novos consultores este mês",
+          valor: resumo.novos_consultores_mes,
+          label: "Novos consultores este mês",
         },
         {
           tipo: "BADGES",
-          valor:
-            resumo.badges_atribuidos_mes,
-          label:
-            "Badges atribuídos a iniciantes",
+          valor: resumo.badges_atribuidos_mes,
+          label: "Badges atribuídos a iniciantes",
         },
         {
           tipo: "CANDIDATURAS",
-          valor:
-            resumo.candidaturas_por_ver,
-          label:
-            "Candidaturas por avaliar",
+          valor: resumo.candidaturas_por_ver,
+          label: "Candidaturas por avaliar",
         },
       ],
     };
   }
 
-  if (
-    resumo.tipo_especializacao ===
-    "DESENVOLVIMENTO"
-  ) {
+  if (resumo.tipo_especializacao === "DESENVOLVIMENTO") {
     return {
-      descricaoConsultores:
-        `${resumo.total_consultores_acompanhados} consultores experientes`,
+      descricaoConsultores: `${resumo.total_consultores_acompanhados} consultores experientes`,
 
-      descricaoBadges:
-        `${resumo.total_badges} badges e competências obtidas`,
+      descricaoBadges: `${resumo.total_badges} badges e competências obtidas`,
 
-      descricaoSll:
-        `${resumo.total_sll_ativos} Service Line Leaders ativos`,
+      descricaoSll: `${resumo.total_sll_ativos} Service Line Leaders ativos`,
 
-      tituloLista:
-        "Consultores experientes",
+      tituloLista: "Consultores experientes",
 
-      descricaoLista:
-        `Acompanha ${resumo.total_consultores_acompanhados} consultores registados há pelo menos 1 ano`,
+      descricaoLista: `Acompanha ${resumo.total_consultores_acompanhados} consultores registados há pelo menos 1 ano`,
 
-      graficoTitulo:
-        "Consultores experientes em cada área",
+      graficoTitulo: "Consultores experientes em cada área",
 
       cards: [
         {
           tipo: "CONSULTORES",
-          valor:
-            resumo.consultores_com_badges,
-          label:
-            "Consultores com competências",
+          valor: resumo.consultores_com_badges,
+          label: "Consultores com competências",
         },
         {
           tipo: "BADGES",
-          valor:
-            resumo.badges_atribuidos_mes,
-          label:
-            "Badges atribuídos este mês",
+          valor: resumo.badges_atribuidos_mes,
+          label: "Badges atribuídos este mês",
         },
         {
           tipo: "CANDIDATURAS",
-          valor:
-            resumo.candidaturas_por_ver,
-          label:
-            "Candidaturas por avaliar",
+          valor: resumo.candidaturas_por_ver,
+          label: "Candidaturas por avaliar",
         },
       ],
     };
   }
 
-  if (
-    resumo.tipo_especializacao ===
-    "RH_BADGES"
-  ) {
+  if (resumo.tipo_especializacao === "RH_BADGES") {
     return {
-      descricaoConsultores:
-        `${resumo.total_consultores_acompanhados} consultores visíveis`,
+      descricaoConsultores: `${resumo.total_consultores_acompanhados} consultores visíveis`,
 
-      descricaoBadges:
-        `${resumo.badges_expirados} badges expirados`,
+      descricaoBadges: `${resumo.badges_expirados} badges expirados`,
 
-      descricaoSll:
-        `${resumo.total_sll_ativos} Service Line Leaders ativos`,
+      descricaoSll: `${resumo.total_sll_ativos} Service Line Leaders ativos`,
 
-      tituloLista:
-        "Todos os consultores",
+      tituloLista: "Todos os consultores",
 
-      descricaoLista:
-        `Pode consultar os ${resumo.total_consultores_acompanhados} consultores ativos`,
+      descricaoLista: `Pode consultar os ${resumo.total_consultores_acompanhados} consultores ativos`,
 
-      graficoTitulo:
-        "Todos os consultores em cada área",
+      graficoTitulo: "Todos os consultores em cada área",
 
       cards: [
         {
           tipo: "EXPIRADOS",
-          valor:
-            resumo.badges_expirados,
-          label:
-            "Badges expirados",
+          valor: resumo.badges_expirados,
+          label: "Badges expirados",
         },
         {
           tipo: "RENOVACOES",
-          valor:
-            resumo.renovacoes_ativas,
-          label:
-            "Renovações ativas",
+          valor: resumo.renovacoes_ativas,
+          label: "Renovações ativas",
         },
         {
           tipo: "CANDIDATURAS",
-          valor:
-            resumo.candidaturas_por_ver,
-          label:
-            "Renovações por avaliar",
+          valor: resumo.candidaturas_por_ver,
+          label: "Renovações por avaliar",
         },
       ],
     };
   }
 
   return {
-    descricaoConsultores:
-      "0 consultores acompanhados",
+    descricaoConsultores: "0 consultores acompanhados",
 
-    descricaoBadges:
-      "0 badges",
+    descricaoBadges: "0 badges",
 
-    descricaoSll:
-      "0 Service Line Leaders",
+    descricaoSll: "0 Service Line Leaders",
 
-    tituloLista:
-      "Consultores",
+    tituloLista: "Consultores",
 
-    descricaoLista:
-      "Especialização não reconhecida",
+    descricaoLista: "Especialização não reconhecida",
 
-    graficoTitulo:
-      "Consultores em cada área",
+    graficoTitulo: "Consultores em cada área",
 
     cards: [],
   };
 }
 
 function PaginaPrincipalTm() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-  const location =
-    useLocation();
+  const location = useLocation();
 
-  const [
-    isLoading,
-    setIsLoading,
-  ] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [erro, setErro] =
-    useState("");
+  const [erro, setErro] = useState("");
 
-  const [resumo, setResumo] =
-    useState({
-        nome_completo:
-        "Talent Manager",
+  const [resumo, setResumo] = useState({
+    nome_completo: "Talent Manager",
 
-        especializacao_tm:
-        "Especialização não definida",
+    especializacao_tm: "Especialização não definida",
 
-        tipo_especializacao:
-        "",
+    tipo_especializacao: "",
 
-        total_consultores_acompanhados:
-        0,
+    total_consultores_acompanhados: 0,
 
-        total_consultores_online:
-        0,
+    total_consultores_online: 0,
 
-        total_consultores: 0,
+    total_consultores: 0,
 
-        total_badges: 0,
+    total_badges: 0,
 
-        consultores_com_badges:
-        0,
+    consultores_com_badges: 0,
 
-        badges_atribuidos_mes:
-        0,
+    badges_atribuidos_mes: 0,
 
-        badges_expirados: 0,
+    badges_expirados: 0,
 
-        novos_consultores_mes:
-        0,
+    novos_consultores_mes: 0,
 
-        candidaturas_ativas:
-        0,
+    candidaturas_ativas: 0,
 
-        candidaturas_por_ver:
-        0,
+    candidaturas_por_ver: 0,
 
-        renovacoes_ativas: 0,
+    renovacoes_ativas: 0,
 
-        total_sll_ativos: 0,
+    total_sll_ativos: 0,
 
-        total_sll_online: 0,
-    });
+    total_sll_online: 0,
+  });
 
-  const [
-    consultores,
-    setConsultores,
-  ] = useState([]);
+  const [consultores, setConsultores] = useState([]);
 
-  const [
-    consultoresPorArea,
-    setConsultoresPorArea,
-  ] = useState([]);
+  const [consultoresPorArea, setConsultoresPorArea] = useState([]);
 
-  const configuracao =
-  obterConfiguracaoDashboard(resumo);
+  const configuracao = obterConfiguracaoDashboard(resumo);
 
   useEffect(() => {
     carregarDashboard();
   }, []);
 
   async function carregarDashboard() {
-    const user =
-      obterUtilizadorGuardado();
+    const user = obterUtilizadorGuardado();
 
-    const userId =
-      user?.id_utilizador ||
-      user?.ID_UTILIZADOR ||
-      user?.id;
+    const userId = user?.id_utilizador || user?.ID_UTILIZADOR || user?.id;
 
     if (!userId) {
-      setErro(
-        "Não foi possível identificar o Talent Manager."
-      );
+      setErro("Não foi possível identificar o Talent Manager.");
 
       setIsLoading(false);
       return;
@@ -331,242 +236,111 @@ function PaginaPrincipalTm() {
       setIsLoading(true);
       setErro("");
 
-      const resultados =
-        await Promise.allSettled([
-          api.get(
-            `/dashboard/tm/${userId}/resumo`
-          ),
+      const resultados = await Promise.allSettled([
+        api.get(`/dashboard/tm/${userId}/resumo`),
 
-          api.get(
-            `/dashboard/tm/${userId}/consultores-destaque`
-          ),
+        api.get(`/dashboard/tm/${userId}/consultores-destaque`),
 
-          api.get(
-            `/dashboard/tm/${userId}/consultores-por-area`
-          ),
-        ]);
+        api.get(`/dashboard/tm/${userId}/consultores-por-area`),
+      ]);
 
-      const resumoResultado =
-        resultados[0];
+      const resumoResultado = resultados[0];
 
-      const consultoresResultado =
-        resultados[1];
+      const consultoresResultado = resultados[1];
 
-      const graficoResultado =
-        resultados[2];
+      const graficoResultado = resultados[2];
 
-      if (
-        resumoResultado.status ===
-        "rejected"
-      ) {
+      if (resumoResultado.status === "rejected") {
         throw resumoResultado.reason;
       }
 
-      const dadosResumo =
-        resumoResultado.value.data ||
-        {};
+      const dadosResumo = resumoResultado.value.data || {};
 
       setResumo({
         nome_completo:
-            dadosResumo.nome_completo ||
-            user?.nome_completo ||
-            user?.nome ||
-            "Talent Manager",
+          dadosResumo.nome_completo || user?.nome_completo || user?.nome || "Talent Manager",
 
-        especializacao_tm:
-            dadosResumo.especializacao_tm ||
-            "Especialização não definida",
+        especializacao_tm: dadosResumo.especializacao_tm || "Especialização não definida",
 
-        tipo_especializacao:
-            dadosResumo.tipo_especializacao ||
-            "",
+        tipo_especializacao: dadosResumo.tipo_especializacao || "",
 
-        total_consultores_acompanhados:
-            Number(
-            dadosResumo
-                .total_consultores_acompanhados ||
-                0
-            ),
+        total_consultores_acompanhados: Number(dadosResumo.total_consultores_acompanhados || 0),
 
-        total_consultores_online:
-            Number(
-            dadosResumo
-                .total_consultores_online ||
-                0
-            ),
+        total_consultores_online: Number(dadosResumo.total_consultores_online || 0),
 
-        total_consultores:
-            Number(
-            dadosResumo.total_consultores ||
-                0
-            ),
+        total_consultores: Number(dadosResumo.total_consultores || 0),
 
-        total_badges:
-            Number(
-            dadosResumo.total_badges ||
-                0
-            ),
+        total_badges: Number(dadosResumo.total_badges || 0),
 
-        consultores_com_badges:
-            Number(
-            dadosResumo
-                .consultores_com_badges ||
-                0
-            ),
+        consultores_com_badges: Number(dadosResumo.consultores_com_badges || 0),
 
-        badges_atribuidos_mes:
-            Number(
-            dadosResumo
-                .badges_atribuidos_mes ||
-                0
-            ),
+        badges_atribuidos_mes: Number(dadosResumo.badges_atribuidos_mes || 0),
 
-        badges_expirados:
-            Number(
-            dadosResumo
-                .badges_expirados ||
-                0
-            ),
+        badges_expirados: Number(dadosResumo.badges_expirados || 0),
 
-        novos_consultores_mes:
-            Number(
-            dadosResumo
-                .novos_consultores_mes ||
-                0
-            ),
+        novos_consultores_mes: Number(dadosResumo.novos_consultores_mes || 0),
 
-        candidaturas_ativas:
-            Number(
-            dadosResumo
-                .candidaturas_ativas ||
-                0
-            ),
+        candidaturas_ativas: Number(dadosResumo.candidaturas_ativas || 0),
 
-        candidaturas_por_ver:
-            Number(
-            dadosResumo
-                .candidaturas_por_ver ||
-                0
-            ),
+        candidaturas_por_ver: Number(dadosResumo.candidaturas_por_ver || 0),
 
-        renovacoes_ativas:
-            Number(
-            dadosResumo
-                .renovacoes_ativas ||
-                0
-            ),
+        renovacoes_ativas: Number(dadosResumo.renovacoes_ativas || 0),
 
-        total_sll_ativos:
-            Number(
-            dadosResumo.total_sll_ativos ||
-                0
-            ),
+        total_sll_ativos: Number(dadosResumo.total_sll_ativos || 0),
 
-        total_sll_online:
-            Number(
-            dadosResumo
-                .total_sll_online ||
-                0
-            ),
-        });
+        total_sll_online: Number(dadosResumo.total_sll_online || 0),
+      });
 
-      if (
-        consultoresResultado.status ===
-        "fulfilled"
-      ) {
+      if (consultoresResultado.status === "fulfilled") {
         setConsultores(
-          Array.isArray(
-            consultoresResultado
-              .value.data
-          )
-            ? consultoresResultado
-                .value.data
-            : []
+          Array.isArray(consultoresResultado.value.data) ? consultoresResultado.value.data : [],
         );
       } else {
-        console.error(
-          "Erro ao carregar consultores em destaque:",
-          consultoresResultado.reason
-        );
+        console.error("Erro ao carregar consultores em destaque:", consultoresResultado.reason);
 
         setConsultores([]);
       }
 
-      if (
-        graficoResultado.status ===
-        "fulfilled"
-      ) {
+      if (graficoResultado.status === "fulfilled") {
         setConsultoresPorArea(
-          Array.isArray(
-            graficoResultado
-              .value.data
-          )
-            ? graficoResultado
-                .value.data
-            : []
+          Array.isArray(graficoResultado.value.data) ? graficoResultado.value.data : [],
         );
       } else {
-        console.error(
-          "Erro ao carregar gráfico de áreas:",
-          graficoResultado.reason
-        );
+        console.error("Erro ao carregar gráfico de áreas:", graficoResultado.reason);
 
         setConsultoresPorArea([]);
       }
     } catch (err) {
-      console.error(
-        "Erro ao carregar dashboard TM:",
-        err
-      );
+      console.error("Erro ao carregar dashboard TM:", err);
 
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
+      console.error("STATUS:", err.response?.status);
 
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
+      console.error("BODY:", err.response?.data);
 
       setErro(
-        err.response?.data?.error ||
-          "Não foi possível carregar o dashboard do Talent Manager."
+        err.response?.data?.error || "Não foi possível carregar o dashboard do Talent Manager.",
       );
     } finally {
       setIsLoading(false);
     }
   }
 
-  function abrirPerfil(
-    consultor
-  ) {
-    const idConsultor =
-      consultor.id_utilizador ||
-      consultor.ID_UTILIZADOR ||
-      consultor.id;
+  function abrirPerfil(consultor) {
+    const idConsultor = consultor.id_utilizador || consultor.ID_UTILIZADOR || consultor.id;
 
     if (!idConsultor) {
-      console.error(
-        "O consultor não possui ID:",
-        consultor
-      );
+      console.error("O consultor não possui ID:", consultor);
 
       return;
     }
 
-    navigate(
-      `/tm/consultores/${idConsultor}`,
-      {
-        state: {
-          voltarPara:
-            location.pathname,
+    navigate(`/tm/consultores/${idConsultor}`, {
+      state: {
+        voltarPara: location.pathname,
 
-          textoVoltar:
-            "Voltar ao dashboard",
-        },
-      }
-    );
+        textoVoltar: "Voltar ao dashboard",
+      },
+    });
   }
 
   return (
@@ -577,64 +351,39 @@ function PaginaPrincipalTm() {
         <TmLeftSidebar />
 
         <main style={main}>
-          {erro && (
-            <div style={errorBox}>
-              {erro}
-            </div>
-          )}
+          {erro && <div style={errorBox}>{erro}</div>}
 
           {isLoading ? (
-            <div style={loadingBox}>
-              A carregar dashboard...
-            </div>
+            <div style={loadingBox}>A carregar dashboard...</div>
           ) : (
             <>
               <section style={welcomeCard}>
                 <div>
-                  <h2 style={welcomeTitle}>
-                    Bom dia,{" "}
-                    {resumo.nome_completo}!
-                  </h2>
+                  <h2 style={welcomeTitle}>Bom dia, {resumo.nome_completo}!</h2>
 
                   <div style={welcomeStats}>
                     <WelcomeItem
-                    icon={
-                        <BiUserCircle size={20} />
-                    }
-                    label="Consultores"
-                    value={
-                        configuracao
-                        .descricaoConsultores
-                    }
+                      icon={<BiUserCircle size={20} />}
+                      label="Consultores"
+                      value={configuracao.descricaoConsultores}
                     />
 
                     <WelcomeItem
-                    icon={<BiBadge size={20} />}
-                    label="Badges"
-                    value={
-                        configuracao
-                        .descricaoBadges
-                    }
+                      icon={<BiBadge size={20} />}
+                      label="Badges"
+                      value={configuracao.descricaoBadges}
                     />
 
                     <WelcomeItem
-                    icon={
-                        <BiBriefcase size={20} />
-                    }
-                    label="Service Line Leaders"
-                    value={
-                        configuracao
-                        .descricaoSll
-                    }
+                      icon={<BiBriefcase size={20} />}
+                      label="Service Line Leaders"
+                      value={configuracao.descricaoSll}
                     />
                   </div>
                 </div>
 
                 <div style={welcomeAvatar}>
-                  <BiUserCircle
-                    size={58}
-                    color="rgba(255,255,255,0.88)"
-                  />
+                  <BiUserCircle size={58} color="rgba(255,255,255,0.88)" />
                 </div>
               </section>
 
@@ -642,126 +391,73 @@ function PaginaPrincipalTm() {
                 <section style={consultoresArea}>
                   <div style={peopleHeader}>
                     <div>
-                        <h3 style={areaTitle}>
-                        Especialização:{" "}
-                        <span style={areaName}>
-                            {resumo.especializacao_tm}
-                        </span>
-                        </h3>
+                      <h3 style={areaTitle}>
+                        Especialização: <span style={areaName}>{resumo.especializacao_tm}</span>
+                      </h3>
 
-                        <div style={areaTotal}>
-                        {configuracao.descricaoLista}
-                        </div>
+                      <div style={areaTotal}>{configuracao.descricaoLista}</div>
 
-                      <div style={topText}>
-                        {configuracao.tituloLista}
-                        </div>
+                      <div style={topText}>{configuracao.tituloLista}</div>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() =>
-                        navigate(
-                          "/tm/consultores"
-                        )
-                      }
+                      onClick={() => navigate("/tm/consultores")}
                       style={viewAllButton}
                     >
-                      <BiBookOpen
-                        size={15}
-                      />
+                      <BiBookOpen size={15} />
                       Ver Todos
                     </button>
                   </div>
 
-                  {consultores.length >
-                  0 ? (
+                  {consultores.length > 0 ? (
                     consultores
                       .slice(0, 3)
-                      .map(
-                        (
-                          consultor,
-                          index
-                        ) => (
-                          <ConsultorCard
-                            key={
-                              consultor.id_utilizador ||
-                              index
-                            }
-                            consultor={
-                              consultor
-                            }
-                            onVerPerfil={() =>
-                              abrirPerfil(
-                                consultor
-                              )
-                            }
-                          />
-                        )
-                      )
+                      .map((consultor, index) => (
+                        <ConsultorCard
+                          key={consultor.id_utilizador || index}
+                          consultor={consultor}
+                          onVerPerfil={() => abrirPerfil(consultor)}
+                        />
+                      ))
                   ) : (
-                    <div style={emptyBox}>
-                      Ainda não existem
-                      consultores em
-                      destaque.
-                    </div>
+                    <div style={emptyBox}>Ainda não existem consultores em destaque.</div>
                   )}
                 </section>
 
                 <aside style={statsColumn}>
-                  {configuracao.cards.map(
-                    (card, index) => (
-                        <StatCard
-                        key={card.tipo}
-                        icon={
-                            card.tipo ===
-                            "EXPIRADOS" ? (
-                            <BiTimeFive size={46} />
-                            ) : card.tipo ===
-                                "CANDIDATURAS" ||
-                            card.tipo ===
-                                "RENOVACOES" ? (
-                            <BiTimeFive size={46} />
-                            ) : card.tipo ===
-                                "CONSULTORES" ||
-                            card.tipo === "NOVOS" ? (
-                            <BiUser size={46} />
-                            ) : (
-                            <BiMedal size={46} />
-                            )
-                        }
-                        value={card.valor}
-                        label={card.label}
-                        secondary={
-                            card.tipo ===
-                            "CANDIDATURAS"
-                            ? "Pendentes de avaliação"
-                            : null
-                        }
-                        secondaryColor="#dc2626"
-                        />
-                    )
-                    )}
+                  {configuracao.cards.map((card, index) => (
+                    <StatCard
+                      key={card.tipo}
+                      icon={
+                        card.tipo === "EXPIRADOS" ? (
+                          <BiTimeFive size={46} />
+                        ) : card.tipo === "CANDIDATURAS" || card.tipo === "RENOVACOES" ? (
+                          <BiTimeFive size={46} />
+                        ) : card.tipo === "CONSULTORES" || card.tipo === "NOVOS" ? (
+                          <BiUser size={46} />
+                        ) : (
+                          <BiMedal size={46} />
+                        )
+                      }
+                      value={card.valor}
+                      label={card.label}
+                      secondary={card.tipo === "CANDIDATURAS" ? "Pendentes de avaliação" : null}
+                      secondaryColor="#dc2626"
+                    />
+                  ))}
                 </aside>
               </div>
 
               <section style={chartCard}>
-                <h3 style={chartTitle}>
-                {configuracao.graficoTitulo}
-                </h3>
+                <h3 style={chartTitle}>{configuracao.graficoTitulo}</h3>
 
-                {consultoresPorArea.length >
-                0 ? (
+                {consultoresPorArea.length > 0 ? (
                   <div style={chartLayout}>
                     <div style={chartArea}>
-                      <ResponsiveContainer
-                        width="100%"
-                        height={245}
-                      >
+                      <ResponsiveContainer width="100%" height={245}>
                         <BarChart
-                          data={
-                            consultoresPorArea
-                          }
+                          data={consultoresPorArea}
                           margin={{
                             top: 20,
                             right: 20,
@@ -769,11 +465,7 @@ function PaginaPrincipalTm() {
                             bottom: 5,
                           }}
                         >
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            vertical={false}
-                            stroke="#f1f5f9"
-                          />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
 
                           <XAxis
                             dataKey="nome_area_curto"
@@ -795,103 +487,44 @@ function PaginaPrincipalTm() {
                             }}
                           />
 
-                          <Tooltip
-                            content={
-                              <AreaTooltip />
-                            }
-                          />
+                          <Tooltip content={<AreaTooltip />} />
 
-                          <Bar
-                            dataKey="total_consultores"
-                            radius={[
-                              8,
-                              8,
-                              0,
-                              0,
-                            ]}
-                            maxBarSize={32}
-                          >
-                            {consultoresPorArea.map(
-                              (
-                                item,
-                                index
-                              ) => (
-                                <Cell
-                                  key={
-                                    item.id_areas ||
-                                    index
-                                  }
-                                  fill={
-                                    CORES_GRAFICO[
-                                      index %
-                                        CORES_GRAFICO.length
-                                    ]
-                                  }
-                                />
-                              )
-                            )}
+                          <Bar dataKey="total_consultores" radius={[8, 8, 0, 0]} maxBarSize={32}>
+                            {consultoresPorArea.map((item, index) => (
+                              <Cell
+                                key={item.id_areas || index}
+                                fill={CORES_GRAFICO[index % CORES_GRAFICO.length]}
+                              />
+                            ))}
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
 
                     <div style={chartLegend}>
-                      {consultoresPorArea.map(
-                        (
-                          area,
-                          index
-                        ) => (
-                          <div
-                            key={
-                              area.id_areas ||
-                              index
-                            }
-                            style={legendRow}
-                          >
-                            <span
-                              style={{
-                                ...legendDot,
+                      {consultoresPorArea.map((area, index) => (
+                        <div key={area.id_areas || index} style={legendRow}>
+                          <span
+                            style={{
+                              ...legendDot,
 
-                                background:
-                                  CORES_GRAFICO[
-                                    index %
-                                      CORES_GRAFICO.length
-                                  ],
-                              }}
-                            />
+                              background: CORES_GRAFICO[index % CORES_GRAFICO.length],
+                            }}
+                          />
 
-                            <span
-                              style={
-                                legendLabel
-                              }
-                            >
-                              {area.nome_serviceline
-                                ? `${area.nome_serviceline} - `
-                                : ""}
+                          <span style={legendLabel}>
+                            {area.nome_serviceline ? `${area.nome_serviceline} - ` : ""}
 
-                              {area.nome_area}
-                            </span>
+                            {area.nome_area}
+                          </span>
 
-                            <strong
-                              style={
-                                legendValue
-                              }
-                            >
-                              {Number(
-                                area.total_consultores ||
-                                  0
-                              )}
-                            </strong>
-                          </div>
-                        )
-                      )}
+                          <strong style={legendValue}>{Number(area.total_consultores || 0)}</strong>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ) : (
-                  <div style={emptyChart}>
-                    Sem dados disponíveis
-                    para o gráfico.
-                  </div>
+                  <div style={emptyChart}>Sem dados disponíveis para o gráfico.</div>
                 )}
               </section>
             </>
@@ -908,67 +541,39 @@ function PaginaPrincipalTm() {
    COMPONENTES
 ========================================================= */
 
-function WelcomeItem({
-  icon,
-  label,
-  value,
-}) {
+function WelcomeItem({ icon, label, value }) {
   return (
     <div style={welcomeItem}>
-      <div style={welcomeItemIcon}>
-        {icon}
-      </div>
+      <div style={welcomeItemIcon}>{icon}</div>
 
       <div>
-        <div style={welcomeItemLabel}>
-          {label}
-        </div>
+        <div style={welcomeItemLabel}>{label}</div>
 
-        <div style={welcomeItemValue}>
-          {value}
-        </div>
+        <div style={welcomeItemValue}>{value}</div>
       </div>
     </div>
   );
 }
 
-function ConsultorCard({
-  consultor,
-  onVerPerfil,
-}) {
-  const nome =
-    consultor.nome_completo ||
-    consultor.nome ||
-    "Consultor";
+function ConsultorCard({ consultor, onVerPerfil }) {
+  const nome = consultor.nome_completo || consultor.nome || "Consultor";
 
-  const email =
-    consultor.email ||
-    consultor.email_softinsa ||
-    "Sem email";
+  const email = consultor.email || consultor.email_softinsa || "Sem email";
 
-  const area =
-    consultor.nome_area ||
-    "Sem área";
+  const area = consultor.nome_area || "Sem área";
 
-  const totalBadges = Number(
-    consultor.total_badges || 0
-  );
+  const totalBadges = Number(consultor.total_badges || 0);
 
   return (
     <article style={consultorCard}>
       <div style={consultorMain}>
         <div style={consultorAvatar}>
-          <BiUserCircle
-            size={42}
-            color="#6092bf"
-          />
+          <BiUserCircle size={42} color="#6092bf" />
         </div>
 
         <div style={consultorInfo}>
           <div style={consultorTopLine}>
-            <span style={consultorName}>
-              {nome}
-            </span>
+            <span style={consultorName}>{nome}</span>
 
             <span style={consultorEmail}>
               <BiEnvelope size={14} />
@@ -976,27 +581,17 @@ function ConsultorCard({
             </span>
           </div>
 
-          <div style={consultorArea}>
-            {area}
-          </div>
+          <div style={consultorArea}>{area}</div>
         </div>
       </div>
 
       <div style={consultorFooter}>
         <div style={badgeCount}>
           <BiAward size={15} />
-
-          {totalBadges}{" "}
-          {totalBadges === 1
-            ? "badge"
-            : "badges"}
+          {totalBadges} {totalBadges === 1 ? "badge" : "badges"}
         </div>
 
-        <button
-          type="button"
-          onClick={onVerPerfil}
-          style={profileLink}
-        >
+        <button type="button" onClick={onVerPerfil} style={profileLink}>
           Ver perfil
         </button>
       </div>
@@ -1004,36 +599,22 @@ function ConsultorCard({
   );
 }
 
-function StatCard({
-  icon,
-  value,
-  label,
-  secondary,
-  secondaryColor,
-}) {
+function StatCard({ icon, value, label, secondary, secondaryColor }) {
   return (
     <div style={statCard}>
-      <div style={statIcon}>
-        {icon}
-      </div>
+      <div style={statIcon}>{icon}</div>
 
       <div style={statContent}>
-        <div style={statValue}>
-          {value}
-        </div>
+        <div style={statValue}>{value}</div>
 
-        <div style={statLabel}>
-          {label}
-        </div>
+        <div style={statLabel}>{label}</div>
 
         {secondary && (
           <div
             style={{
               ...statSecondary,
 
-              color:
-                secondaryColor ||
-                "#64748b",
+              color: secondaryColor || "#64748b",
             }}
           >
             {secondary}
@@ -1044,33 +625,18 @@ function StatCard({
   );
 }
 
-function AreaTooltip({
-  active,
-  payload,
-}) {
-  if (
-    !active ||
-    !payload?.length
-  ) {
+function AreaTooltip({ active, payload }) {
+  if (!active || !payload?.length) {
     return null;
   }
 
-  const area =
-    payload[0].payload;
+  const area = payload[0].payload;
 
   return (
     <div style={tooltipBox}>
-      <div style={tooltipTitle}>
-        {area.nome_area}
-      </div>
+      <div style={tooltipTitle}>{area.nome_area}</div>
 
-      <div style={tooltipText}>
-        {Number(
-          area.total_consultores ||
-            0
-        )}{" "}
-        consultores
-      </div>
+      <div style={tooltipText}>{Number(area.total_consultores || 0)} consultores</div>
     </div>
   );
 }
@@ -1079,13 +645,7 @@ function AreaTooltip({
    ESTILOS
 ========================================================= */
 
-const CORES_GRAFICO = [
-  "#9bb8e8",
-  "#64d8cc",
-  "#111111",
-  "#f59e0b",
-  "#8b5cf6",
-];
+const CORES_GRAFICO = ["#9bb8e8", "#64d8cc", "#111111", "#f59e0b", "#8b5cf6"];
 
 const page = {
   background: "#f3f4f6",
@@ -1113,11 +673,9 @@ const welcomeCard = {
   borderRadius: 13,
   padding: "24px 28px",
   display: "flex",
-  justifyContent:
-    "space-between",
+  justifyContent: "space-between",
   alignItems: "center",
-  boxShadow:
-    "0 8px 18px rgba(37, 99, 235, 0.22)",
+  boxShadow: "0 8px 18px rgba(37, 99, 235, 0.22)",
   marginBottom: 18,
 };
 
@@ -1143,8 +701,7 @@ const welcomeItemIcon = {
   width: 34,
   height: 34,
   borderRadius: 7,
-  background:
-    "rgba(255,255,255,0.17)",
+  background: "rgba(255,255,255,0.17)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1152,8 +709,7 @@ const welcomeItemIcon = {
 
 const welcomeItemLabel = {
   fontSize: 10,
-  color:
-    "rgba(255,255,255,0.78)",
+  color: "rgba(255,255,255,0.78)",
 };
 
 const welcomeItemValue = {
@@ -1165,8 +721,7 @@ const welcomeAvatar = {
   width: 68,
   height: 68,
   borderRadius: "50%",
-  background:
-    "rgba(255,255,255,0.17)",
+  background: "rgba(255,255,255,0.17)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1174,8 +729,7 @@ const welcomeAvatar = {
 
 const dashboardGrid = {
   display: "grid",
-  gridTemplateColumns:
-    "minmax(0, 1fr) 250px",
+  gridTemplateColumns: "minmax(0, 1fr) 250px",
   gap: 28,
   alignItems: "start",
 };
@@ -1187,8 +741,7 @@ const consultoresArea = {
 const peopleHeader = {
   display: "flex",
   alignItems: "center",
-  justifyContent:
-    "space-between",
+  justifyContent: "space-between",
   marginBottom: 10,
 };
 
@@ -1218,8 +771,7 @@ const viewAllButton = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
-  border:
-    "1px solid #d1d5db",
+  border: "1px solid #d1d5db",
   borderRadius: 8,
   background: "white",
   color: "#111827",
@@ -1230,8 +782,7 @@ const viewAllButton = {
 
 const consultorCard = {
   background: "white",
-  border:
-    "1px solid #bfdbfe",
+  border: "1px solid #bfdbfe",
   borderRadius: 9,
   marginBottom: 12,
   overflow: "hidden",
@@ -1288,12 +839,10 @@ const consultorArea = {
 };
 
 const consultorFooter = {
-  borderTop:
-    "1px solid #e5e7eb",
+  borderTop: "1px solid #e5e7eb",
   padding: "7px 8px",
   display: "flex",
-  justifyContent:
-    "space-between",
+  justifyContent: "space-between",
   alignItems: "center",
 };
 
@@ -1325,15 +874,13 @@ const statsColumn = {
 const statCard = {
   minHeight: 92,
   background: "white",
-  border:
-    "1px solid #2563eb",
+  border: "1px solid #2563eb",
   borderRadius: 12,
   display: "flex",
   alignItems: "center",
   gap: 18,
   padding: "14px 17px",
-  boxShadow:
-    "0 2px 5px rgba(15,23,42,0.06)",
+  boxShadow: "0 2px 5px rgba(15,23,42,0.06)",
 };
 
 const statIcon = {
@@ -1385,8 +932,7 @@ const chartTitle = {
 
 const chartLayout = {
   display: "grid",
-  gridTemplateColumns:
-    "minmax(0, 1fr) 340px",
+  gridTemplateColumns: "minmax(0, 1fr) 340px",
   gap: 28,
   alignItems: "center",
 };
@@ -1403,8 +949,7 @@ const chartLegend = {
 
 const legendRow = {
   display: "grid",
-  gridTemplateColumns:
-    "8px minmax(0, 1fr) auto",
+  gridTemplateColumns: "8px minmax(0, 1fr) auto",
   alignItems: "center",
   gap: 7,
 };
@@ -1427,12 +972,10 @@ const legendValue = {
 
 const tooltipBox = {
   background: "white",
-  border:
-    "1px solid #e5e7eb",
+  border: "1px solid #e5e7eb",
   borderRadius: 8,
   padding: "8px 10px",
-  boxShadow:
-    "0 5px 15px rgba(15,23,42,0.12)",
+  boxShadow: "0 5px 15px rgba(15,23,42,0.12)",
 };
 
 const tooltipTitle = {
@@ -1449,8 +992,7 @@ const tooltipText = {
 
 const loadingBox = {
   background: "white",
-  border:
-    "1px solid #e5e7eb",
+  border: "1px solid #e5e7eb",
   borderRadius: 12,
   padding: 40,
   color: "#6b7280",
@@ -1459,8 +1001,7 @@ const loadingBox = {
 
 const errorBox = {
   background: "#fee2e2",
-  border:
-    "1px solid #fecaca",
+  border: "1px solid #fecaca",
   borderRadius: 10,
   padding: "10px 12px",
   color: "#991b1b",
@@ -1470,8 +1011,7 @@ const errorBox = {
 
 const emptyBox = {
   background: "white",
-  border:
-    "1px solid #e5e7eb",
+  border: "1px solid #e5e7eb",
   borderRadius: 10,
   padding: 26,
   textAlign: "center",

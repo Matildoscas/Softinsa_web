@@ -7,6 +7,9 @@ import api from "../../services/api.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
 
+// Fallback visual em SVG caso algum badge fique sem imagem na BD
+const IMAGEM_PROVISORIA = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%234470AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><polygon points='12 8 16 16 8 16'></polygon></svg>";
+
 function GaleriaBadgesPage() {
   const navigate = useNavigate();
 
@@ -41,6 +44,18 @@ function GaleriaBadgesPage() {
   const normalizarBadgesComRequisitos = (lista) => {
     const mapa = new Map();
 
+    // TESTE DE FORÇA BRUTA: Alerta visual com os campos reais vindos da API
+    if (lista && lista.length > 0 && !window.__apiVerificada) {
+      window.__apiVerificada = true;
+      const chavesDisponiveis = Object.keys(lista[0]);
+      alert(
+        "CAMPOS QUE O BACKEND ENVIOU:\n" + 
+        JSON.stringify(chavesDisponiveis) + 
+        "\n\nCONTEÚDO DA LINHA:\n" + 
+        JSON.stringify(lista[0]).substring(0, 300) + "..."
+      );
+    }
+
     lista.forEach((linha) => {
       const badgeId = Number(
         linha.id ||
@@ -57,6 +72,19 @@ function GaleriaBadgesPage() {
         );
 
       if (!mapa.has(badgeId)) {
+        // Tenta ler qualquer campo de imagem mapeado
+        let urlBruta = linha.imagem || linha.imagem_url || linha.imagem_badge || null;
+        let urlTratada = urlBruta ? String(urlBruta).trim() : null;
+        
+        if (urlTratada && urlTratada !== "null" && urlTratada !== "undefined") {
+          urlTratada = urlTratada.replace(/^http:\/\//i, "https://");
+          if (urlTratada.includes("image/upload/")) {
+            urlTratada = urlTratada.replace("image/upload/", "image/upload/c_fill,g_auto,w_300,h_300/");
+          }
+        } else {
+          urlTratada = null; // Deixa nulo para o CSS cinzento atuar se não houver link
+        }
+
         mapa.set(badgeId, {
           id: badgeId,
 
@@ -353,42 +381,27 @@ function GaleriaBadgesPage() {
       mapa.values()
     );
   };
-
   useEffect(() => {
     api
       .get("/badges/galeria/publica")
       .then((res) => {
         const dados = Array.isArray(res.data) ? res.data : [];
         const badgesNormalizados = normalizarBadgesComRequisitos(dados);
-
-        console.log("BADGES GALERIA:", badgesNormalizados);
-        console.log("TOTAL BADGES:", badgesNormalizados.length);
-        console.log(
-          "REQUISITOS:",
-          badgesNormalizados.map((b) => ({
-            id: b.id,
-            nome: b.nome,
-            requisitos: b.requisitos.length,
-          }))
-        );
-
+        
+        console.log("MEUS BADGES CARREGADOS:", badgesNormalizados);
         setBadges(badgesNormalizados);
       })
       .catch((err) => {
         console.error("Erro ao carregar galeria:", err);
-        console.error("STATUS:", err.response?.status);
-        console.error("BODY:", err.response?.data);
       })
       .finally(() => setLoading(false));
   }, []);
 // 1. Agrupa os badges por área
   const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
     const area = badge.nome_area || "Área não definida";
-
     if (!acc[area]) {
       acc[area] = [];
     }
-
     acc[area].push(badge);
     return acc;
   }, {});
@@ -422,7 +435,6 @@ function GaleriaBadgesPage() {
   );
 
   const totalPaginas = Math.ceil(areasOrdenadas.length / areasPorPagina);
-
   const inicio = (paginaAtual - 1) * areasPorPagina;
   const fim = inicio + areasPorPagina;
   const areasPaginaAtual = areasOrdenadas.slice(inicio, fim);
@@ -502,9 +514,7 @@ function GaleriaBadgesPage() {
           paginaAtual={paginaAtual}
           totalPaginas={totalPaginas}
           onAnterior={() => setPaginaAtual((p) => Math.max(1, p - 1))}
-          onProxima={() =>
-            setPaginaAtual((p) => Math.min(totalPaginas, p + 1))
-          }
+          onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
         />
       </main>
 
@@ -650,6 +660,7 @@ function BadgeGalleryCard({
           {textoConsultores}
         </span>
       </div>
+      <div style={badgeName}>{badge.nome || "Badge"}</div>
     </div>
   );
 }
@@ -669,13 +680,7 @@ function BadgePublicModal({ badge, show, onClose }) {
     null;
 
   return (
-    <Modal
-      show={show}
-      onHide={onClose}
-      centered
-      size="lg"
-      backdrop="static"
-    >
+    <Modal show={show} onHide={onClose} centered size="lg" backdrop="static">
       <Modal.Header closeButton style={{ borderBottom: "1px solid #e5e7eb" }}>
         <Modal.Title style={{ fontSize: 18, fontWeight: 700 }}>
           Informação do Badge
@@ -760,7 +765,6 @@ function BadgePublicModal({ badge, show, onClose }) {
         <Button variant="outline-secondary" onClick={onClose}>
           Fechar
         </Button>
-
         <Button variant="primary" onClick={() => window.location.href = "/login"}>
           Iniciar sessão para submeter evidências
         </Button>
@@ -773,7 +777,6 @@ function NivelSelector({ nivelAtual }) {
   return (
     <div style={sectionCard}>
       <div style={sectionTitle}>Nível</div>
-
       <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
         {niveis.map((n) => (
           <div
@@ -781,16 +784,10 @@ function NivelSelector({ nivelAtual }) {
             style={{
               ...nivelCircle,
               background: n === nivelAtual ? "#F5C518" : "#f0f0f0",
-              border:
-                n === nivelAtual
-                  ? "2px solid #e0a800"
-                  : "1.5px solid #d1d5db",
+              border: n === nivelAtual ? "2px solid #e0a800" : "1.5px solid #d1d5db",
               color: n === nivelAtual ? "#7a5800" : "#374151",
               fontWeight: n === nivelAtual ? 700 : 500,
-              boxShadow:
-                n === nivelAtual
-                  ? "0 2px 8px rgba(245,197,24,0.35)"
-                  : "none",
+              boxShadow: n === nivelAtual ? "0 2px 8px rgba(245,197,24,0.35)" : "none",
             }}
           >
             {n}
@@ -906,12 +903,7 @@ function RequisitoRow({
   );
 }
 
-function PaginacaoGaleria({
-  paginaAtual,
-  totalPaginas,
-  onAnterior,
-  onProxima,
-}) {
+function PaginacaoGaleria({ paginaAtual, totalPaginas, onAnterior, onProxima }) {
   if (totalPaginas <= 1) return null;
 
   const disabledAnterior = paginaAtual === 1;
@@ -920,29 +912,16 @@ function PaginacaoGaleria({
   return (
     <div style={paginationWrapper}>
       <button
-        style={{
-          ...paginationButton,
-          opacity: disabledAnterior ? 0.45 : 1,
-          cursor: disabledAnterior ? "not-allowed" : "pointer",
-        }}
+        style={{ ...paginationButton, opacity: disabledAnterior ? 0.45 : 1, cursor: disabledAnterior ? "not-allowed" : "pointer" }}
         disabled={disabledAnterior}
         onClick={onAnterior}
       >
         {"<"}
       </button>
-
       <div style={paginationCurrent}>{paginaAtual}</div>
-
-      <div style={paginationText}>
-        {paginaAtual}/{totalPaginas}
-      </div>
-
+      <div style={paginationText}>{paginaAtual}/{totalPaginas}</div>
       <button
-        style={{
-          ...paginationButton,
-          opacity: disabledProxima ? 0.45 : 1,
-          cursor: disabledProxima ? "not-allowed" : "pointer",
-        }}
+        style={{ ...paginationButton, opacity: disabledProxima ? 0.45 : 1, cursor: disabledProxima ? "not-allowed" : "pointer" }}
         disabled={disabledProxima}
         onClick={onProxima}
       >
@@ -954,13 +933,11 @@ function PaginacaoGaleria({
 
 function nivelParaLetra(idNivel) {
   const nivel = Number(idNivel);
-
   if (nivel === 1) return "A";
   if (nivel === 2) return "B";
   if (nivel === 3) return "C";
   if (nivel === 4) return "D";
   if (nivel === 5) return "E";
-
   return "";
 }
 

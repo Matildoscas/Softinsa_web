@@ -20,9 +20,9 @@ import {
 import api from "../../services/api.js";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
-import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/LeftBarTM.jsx";
+import TmRightSidebar from "../../components/TM_RightBar.jsx";
 
 const CODIGOS_NIVEIS = [
   "A",

@@ -31,8 +31,10 @@ function AreaPage() {
                 setAreas(res.data);
                 setIsLoading(false);
             })
-            .catch(() => {
-                setMessage({ type: "danger", text: "Erro ao carregar áreas." });
+            .catch((err) => {
+                console.error("Erro na requisição das áreas:", err);
+                setMessage({ type: "danger", text: "Erro ao carregar áreas da API." });
+                setAreas([]); // Garante array vazio em caso de erro de rede
                 setIsLoading(false);
             });
         }, []);
@@ -120,7 +122,9 @@ function AreaPage() {
 
                             {message.text && <Alert variant={message.type}>{message.text}</Alert>}
 
-                            {isLoading ? <div className="text-center"><Spinner animation="border" /></div> : (
+                            {isLoading ? (
+                                <div className="text-center"><Spinner animation="border" /></div>
+                            ) : (
                                 <Form>
                                     <Form.Group className="mb-4">
                                         <InputGroup>

@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { Button, Spinner, Form } from "react-bootstrap";
-import { HiOutlineArrowLeft, HiOutlineUpload, HiOutlineTrash } from "react-icons/hi";
+import {
+  HiOutlineArrowLeft,
+  HiOutlineUpload,
+  HiOutlineTrash,
+} from "react-icons/hi";
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 
-import Header from "../../components/Header.jsx";
-import LeftSidebar from "../../components/LeftSidebar.jsx";
+import Header from "../../components/header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
+import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
 import BadgeImage from "../../components/badge_image.jsx";
 import { resolverUrlFicheiro } from "../../utils/fileUrl.js";
@@ -31,17 +35,11 @@ function SubmeterEvidenciasPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const idLembrete =
-    location.state?.idLembrete ??
-    null;
+  const idLembrete = location.state?.idLembrete ?? null;
 
-  const voltarPara =
-    location.state?.voltarPara ||
-    "/catalogo-badges";
+  const voltarPara = location.state?.voltarPara || "/catalogo-badges";
 
-  const textoVoltar =
-    location.state?.textoVoltar ||
-    "Voltar";
+  const textoVoltar = location.state?.textoVoltar || "Voltar";
   const { id } = useParams();
   const utilizador = obterUtilizadorGuardado();
   const userId =
@@ -159,11 +157,7 @@ function SubmeterEvidenciasPage() {
           imagem;
       }
 
-      if (
-        linha.titulo ||
-        linha.nome_requisito ||
-        linha.descricao_requisito
-      ) {
+      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
         const idRequisito =
           linha.id_requisito ||
           linha.id_requisitos;
@@ -171,19 +165,13 @@ function SubmeterEvidenciasPage() {
         const requisitosAtuais =
           badgeAgrupado.requisitos;
 
-        const requisitoJaExiste =
-          requisitosAtuais.some(
-            (requisito) =>
-              String(
-                requisito.id_requisito
-              ) ===
-              String(idRequisito)
-          );
+        const requisitoJaExiste = requisitosAtuais.some(
+          (requisito) => String(requisito.id_requisito) === String(idRequisito),
+        );
 
         if (!requisitoJaExiste) {
           requisitosAtuais.push({
-            id_requisito:
-              idRequisito,
+            id_requisito: idRequisito,
 
             id_requisitos:
               idRequisito,
@@ -193,19 +181,11 @@ function SubmeterEvidenciasPage() {
               linha.nome_requisito ||
               "Requisito",
 
-            nome:
-              linha.nome_requisito ||
-              linha.titulo ||
-              "Requisito",
+            nome: linha.nome_requisito || linha.titulo || "Requisito",
 
-            descricao:
-              linha.descricao_requisito ||
-              "",
+            descricao: linha.descricao_requisito || "",
 
-            link:
-              linha.link_requisito ||
-              linha.link ||
-              "",
+            link: linha.link_requisito || linha.link || "",
           });
         }
       }
@@ -294,10 +274,7 @@ function SubmeterEvidenciasPage() {
 
     setFicheirosPorRequisito((prev) => ({
       ...prev,
-      [requisitoKey]: [
-        ...(prev[requisitoKey] || []),
-        ...novos,
-      ],
+      [requisitoKey]: [...(prev[requisitoKey] || []), ...novos],
     }));
   };
 
@@ -317,10 +294,7 @@ function SubmeterEvidenciasPage() {
   const totalFicheiros = totalFicheirosNovos + totalFicheirosGuardados;
 
   const temRequisitos =
-    Array.isArray(
-      badge?.requisitos
-    ) &&
-    badge.requisitos.length > 0;
+    Array.isArray(badge?.requisitos) && badge.requisitos.length > 0;
 
   const requisitosComEvidencia =
     temRequisitos
@@ -489,7 +463,10 @@ function SubmeterEvidenciasPage() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "100vh" }}
+      >
         <Spinner animation="border" variant="primary" />
       </div>
     );
@@ -497,7 +474,14 @@ function SubmeterEvidenciasPage() {
 
   if (!badge) {
     return (
-      <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <div
+        style={{
+          backgroundColor: "#f7f7f7",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Header />
 
         <div style={{ display: "flex", flex: 1 }}>
@@ -508,17 +492,13 @@ function SubmeterEvidenciasPage() {
               variant="link"
               className="d-flex align-items-center text-decoration-none p-0 mb-2"
               style={{ color: "#4A5568", fontSize: "1.05rem" }}
-              onClick={() =>
-                navigate(voltarPara)
-              }
+              onClick={() => navigate(voltarPara)}
             >
               <HiOutlineArrowLeft className="me-1" />
               <span>{textoVoltar}</span>
             </Button>
 
-            <div className="text-muted mt-4">
-              Badge não encontrado.
-            </div>
+            <div className="text-muted mt-4">Badge não encontrado.</div>
           </main>
 
           <RightSidebar />
@@ -528,7 +508,14 @@ function SubmeterEvidenciasPage() {
   }
 
   return (
-    <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        backgroundColor: "#f7f7f7",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Header />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -539,9 +526,7 @@ function SubmeterEvidenciasPage() {
             variant="link"
             className="d-flex align-items-center text-decoration-none p-0 mb-2"
             style={{ color: "#4A5568", fontSize: "1.05rem" }}
-            onClick={() =>
-              navigate(voltarPara)
-            }
+            onClick={() => navigate(voltarPara)}
           >
             <HiOutlineArrowLeft className="me-1" />
             <span>{textoVoltar}</span>
@@ -555,7 +540,14 @@ function SubmeterEvidenciasPage() {
               size={72}
             />
 
-            <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 10 }}>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#111827",
+                marginTop: 10,
+              }}
+            >
               Submeter Evidências
             </div>
 
@@ -584,7 +576,14 @@ function SubmeterEvidenciasPage() {
           <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
 
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#111827",
+                marginBottom: 10,
+              }}
+            >
               Requisitos e Evidências
             </div>
 
@@ -783,10 +782,12 @@ function NivelSelector({ nivelAtual }) {
             style={{
               ...nivelCircle,
               background: n === nivelAtual ? "#F5C518" : "#f0f0f0",
-              border: n === nivelAtual ? "2px solid #e0a800" : "1.5px solid #d1d5db",
+              border:
+                n === nivelAtual ? "2px solid #e0a800" : "1.5px solid #d1d5db",
               color: n === nivelAtual ? "#7a5800" : "#374151",
               fontWeight: n === nivelAtual ? 700 : 500,
-              boxShadow: n === nivelAtual ? "0 2px 8px rgba(245,197,24,0.35)" : "none",
+              boxShadow:
+                n === nivelAtual ? "0 2px 8px rgba(245,197,24,0.35)" : "none",
             }}
           >
             {n}
@@ -816,9 +817,7 @@ function RequisitoUploadRow({
             Requisito {req.titulo}
           </span>
           {" - "}
-          <span style={{ color: "#4470AF", fontWeight: 500 }}>
-            {req.nome}
-          </span>
+          <span style={{ color: "#4470AF", fontWeight: 500 }}>{req.nome}</span>
         </div>
 
         {open ? (
@@ -836,7 +835,12 @@ function RequisitoUploadRow({
 
           {req.link && (
             <div style={{ marginBottom: 10 }}>
-              <a href={req.link} target="_blank" rel="noreferrer" style={{ color: "#4470AF", fontSize: 13 }}>
+              <a
+                href={req.link}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#4470AF", fontSize: 13 }}
+              >
                 {req.link}
               </a>
             </div>
@@ -894,7 +898,13 @@ function RequisitoUploadRow({
               {ficheiros.map((file, index) => (
                 <div key={`${file.name}-${index}`} style={fileRow}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "#111827",
+                      }}
+                    >
                       {file.name}
                     </div>
                     <div style={{ fontSize: 11, color: "#6b7280" }}>
@@ -925,16 +935,9 @@ function RequisitoUploadRow({
   );
 }
 
-function getRequisitoKey(
-  req,
-  index
-) {
+function getRequisitoKey(req, index) {
   return String(
-    req.id_requisito ||
-    req.id_requisitos ||
-    req.titulo ||
-    req.nome ||
-    index
+    req.id_requisito || req.id_requisitos || req.titulo || req.nome || index,
   );
 }
 
@@ -1091,7 +1094,7 @@ function nivelParaLetra(idNivel) {
   if (nivel === 5) return "E";
 
   return "";
-};
+}
 
 const nivelCircle = {
   width: 52,
