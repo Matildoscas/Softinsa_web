@@ -106,8 +106,10 @@ function candidaturaEstaFinalizada(item) {
   return (
     estado.includes("REJEIT") ||
     estado.includes("RECUS") ||
+    estado.includes("CANCEL") ||
     estado.includes("FINAL") ||
     fase.includes("HISTORICO") ||
+    fase.includes("CANCEL") ||
     fase.includes("FINALIZ") ||
     fase.includes("REJEIT") ||
     fase.includes("CONCLUID")

@@ -55,6 +55,18 @@ function BadgeDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  function confirmarInicioCandidatura() {
+    const confirmar = window.confirm(
+      "Ao confirmar, irá iniciar uma candidatura para este badge. Antes de prosseguir, confirme que pretende mesmo avançar, para evitar submissões desnecessárias para os Talent Managers e Service Line Leaders."
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    navigate(`/submeter-evidencias/${badge.id}`);
+  }
+
   const [badge, setBadge] = useState(null);
   const [relacionados, setRelacionados] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1544,11 +1556,7 @@ const copiarAssinatura =
             ) : (
               <button
                 style={actionBtn}
-                onClick={() =>
-                  navigate(
-                    `/submeter-evidencias/${badge.id}`
-                  )
-                }
+                onClick={confirmarInicioCandidatura}
               >
                 <BiMedal
                   size={18}

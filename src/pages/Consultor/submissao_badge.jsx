@@ -9,8 +9,23 @@ import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import api from "../../services/api.js";
 import BadgeImage from "../../components/badge_image.jsx";
+import { resolverUrlFicheiro } from "../../utils/fileUrl.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
+
+function obterUtilizadorGuardado() {
+  const storedUser = localStorage.getItem("user");
+
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser);
+  } catch {
+    return null;
+  }
+}
 
 function SubmeterEvidenciasPage() {
   const navigate = useNavigate();
@@ -28,12 +43,18 @@ function SubmeterEvidenciasPage() {
     location.state?.textoVoltar ||
     "Voltar";
   const { id } = useParams();
+  const utilizador = obterUtilizadorGuardado();
+  const userId =
+    utilizador?.id_utilizador ||
+    utilizador?.ID_UTILIZADOR ||
+    utilizador?.id;
 
   const [badge, setBadge] = useState(null);
+  const [candidatura, setCandidatura] = useState(null);
   const [ficheirosPorRequisito, setFicheirosPorRequisito] = useState({});
-  const [comentario, setComentario] = useState("");
+  const [evidenciasGuardadas, setEvidenciasGuardadas] = useState({});
   const [loading, setLoading] = useState(true);
-  const [submeterLoading, setSubmeterLoading] = useState(false);
+  const [acaoLoading, setAcaoLoading] = useState(false);
   const [
     autorizaPublicacaoBadge,
     setAutorizaPublicacaoBadge,
@@ -43,6 +64,8 @@ function SubmeterEvidenciasPage() {
     linkedinPublicacaoBadge,
     setLinkedinPublicacaoBadge,
   ] = useState("");
+
+  const [mensagemInfo, setMensagemInfo] = useState("");
 
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
@@ -192,26 +215,78 @@ function SubmeterEvidenciasPage() {
     );
   };
 
+  function hidratarRascunho(payload) {
+    setCandidatura(payload?.candidatura || null);
+
+    const requisitos = Array.isArray(payload?.requisitos)
+      ? payload.requisitos
+      : [];
+
+    const guardadas = {};
+
+    requisitos.forEach((req, index) => {
+      const requisitoKey = getRequisitoKey(req, index);
+      guardadas[requisitoKey] = Array.isArray(req.evidencias)
+        ? req.evidencias
+        : [];
+    });
+
+    setEvidenciasGuardadas(guardadas);
+  }
+
+  async function carregarPagina() {
+    if (!userId) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setMensagemInfo("");
+
+      const badgesResponse = await api.get("/badges/todos");
+      const dados = Array.isArray(badgesResponse.data)
+        ? badgesResponse.data
+        : [];
+      const badgesAgrupados = removerDuplicadosComRequisitos(dados);
+      const selecionado = badgesAgrupados.find(
+        (b) => Number(b.id) === Number(id)
+      );
+
+      setBadge(selecionado || null);
+
+      if (!selecionado) {
+        return;
+      }
+
+      const rascunhoResponse = await api.post(
+        "/candidaturas/iniciar",
+        {
+          id_utilizador: userId,
+          id_badge_modelo: selecionado.id,
+        }
+      );
+
+      hidratarRascunho(rascunhoResponse.data);
+      setMensagemInfo(
+        rascunhoResponse.data?.criada
+          ? "Candidatura iniciada em modo rascunho. Pode guardar progresso antes de enviar."
+          : "Rascunho carregado com sucesso."
+      );
+    } catch (err) {
+      console.error("Erro ao iniciar candidatura:", err);
+      const erro =
+        err.response?.data?.error ||
+        "Não foi possível abrir o fluxo de candidatura.";
+      alert(erro);
+      navigate(voltarPara, { replace: true });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    setLoading(true);
-
-    api.get("/badges/todos")
-      .then((res) => {
-        const dados = Array.isArray(res.data) ? res.data : [];
-        const badgesAgrupados = removerDuplicadosComRequisitos(dados);
-
-        const selecionado = badgesAgrupados.find(
-          (b) => Number(b.id) === Number(id)
-        );
-
-        setBadge(selecionado || null);
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar badge:", err);
-        console.error("STATUS:", err.response?.status);
-        console.error("BODY:", err.response?.data);
-      })
-      .finally(() => setLoading(false));
+    carregarPagina();
   }, [id]);
 
   const adicionarFicheiros = (requisitoKey, files) => {
@@ -233,8 +308,13 @@ function SubmeterEvidenciasPage() {
     }));
   };
 
-  const totalFicheiros = Object.values(ficheirosPorRequisito)
+  const totalFicheirosNovos = Object.values(ficheirosPorRequisito)
     .reduce((total, lista) => total + lista.length, 0);
+
+  const totalFicheirosGuardados = Object.values(evidenciasGuardadas)
+    .reduce((total, lista) => total + lista.length, 0);
+
+  const totalFicheiros = totalFicheirosNovos + totalFicheirosGuardados;
 
   const temRequisitos =
     Array.isArray(
@@ -242,232 +322,170 @@ function SubmeterEvidenciasPage() {
     ) &&
     badge.requisitos.length > 0;
 
-  const podeSubmeter =
-    temRequisitos &&
-    badge.requisitos.every(
-      (req, index) => {
-        const requisitoKey =
-          getRequisitoKey(
-            req,
-            index
-          );
+  const requisitosComEvidencia =
+    temRequisitos
+      ? badge.requisitos.filter((req, index) => {
+          const requisitoKey = getRequisitoKey(req, index);
+          const ficheirosNovos = (ficheirosPorRequisito[requisitoKey] || []).length;
+          const ficheirosGuardados = (evidenciasGuardadas[requisitoKey] || []).length;
+          return ficheirosNovos + ficheirosGuardados > 0;
+        }).length
+      : 0;
 
-        return (
-          ficheirosPorRequisito[
-            requisitoKey
-          ] || []
-        ).length > 0;
-      }
-    );
+  const minimoParaEnviar =
+    temRequisitos
+      ? Math.min(3, badge.requisitos.length)
+      : 0;
 
-  const submeterEvidencias =
-  async () => {
-    if (!badge) {
+  const podeEnviar =
+    minimoParaEnviar > 0 &&
+    totalFicheiros >= minimoParaEnviar &&
+    requisitosComEvidencia >= minimoParaEnviar;
+
+  async function guardarDados(silencioso = false) {
+    if (!badge || !candidatura || !userId) {
       return;
     }
-
-    if (!podeSubmeter) {
-      alert(
-        "Tem de anexar pelo menos um ficheiro em cada requisito."
-      );
-
-      return;
-    }
-
-    const storedUser =
-      localStorage.getItem(
-        "user"
-      );
-
-    if (!storedUser) {
-      navigate(
-        "/login",
-        {
-          replace: true,
-        }
-      );
-
-      return;
-    }
-
-    let userData;
 
     try {
-      userData =
-        JSON.parse(
-          storedUser
-        );
-    } catch (err) {
-      console.error(
-        "Erro ao ler utilizador:",
-        err
-      );
+      setAcaoLoading(true);
 
-      navigate(
-        "/login",
-        {
-          replace: true,
-        }
-      );
-
-      return;
-    }
-
-    const userId =
-      userData.id_utilizador ||
-      userData.ID_UTILIZADOR ||
-      userData.id;
-
-    if (!userId) {
-      alert(
-        "Não foi possível identificar o utilizador."
-      );
-
-      return;
-    }
-
-    const formData =
-      new FormData();
-
-    formData.append(
-      "id_utilizador",
-      userId
-    );
-
-    formData.append(
-      "id_badge_modelo",
-      badge.id
-    );
-
-    formData.append(
-      "comentario",
-      comentario
-    );
-
-    formData.append(
-      "autoriza_publicacao_badge",
-      autorizaPublicacaoBadge
-        ? "true"
-        : "false"
-    );
-
-    formData.append(
-      "linkedin_publicacao_badge",
-      linkedinPublicacaoBadge
-        .trim()
-    );
-
-    if (idLembrete) {
+      const formData = new FormData();
+      formData.append("id_utilizador", userId);
       formData.append(
-        "id_lembrete",
-        String(idLembrete)
+        "autoriza_publicacao_badge",
+        autorizaPublicacaoBadge ? "true" : "false"
       );
+      formData.append(
+        "linkedin_publicacao_badge",
+        linkedinPublicacaoBadge.trim()
+      );
+
+      badge.requisitos.forEach((req, index) => {
+        const requisitoKey = getRequisitoKey(req, index);
+        const ficheiros = ficheirosPorRequisito[requisitoKey] || [];
+
+        ficheiros.forEach((file) => {
+          formData.append("ficheiros", file);
+          formData.append(
+            "metadados",
+            JSON.stringify({
+              requisito_key: requisitoKey,
+              id_requisito:
+                req.id_requisito ||
+                req.id_requisitos ||
+                null,
+              titulo: req.titulo,
+              nome: req.nome,
+              descricao: req.descricao || "",
+              ficheiro_nome: file.name,
+            })
+          );
+        });
+      });
+
+      const response = await api.post(
+        `/candidaturas/${candidatura.id_candidatura_pedido}/guardar-dados`,
+        formData
+      );
+
+      hidratarRascunho(response.data);
+      setFicheirosPorRequisito({});
+      setMensagemInfo(
+        silencioso
+          ? ""
+          : "Dados guardados na candidatura em rascunho."
+      );
+    } catch (err) {
+      const erro =
+        err.response?.data?.error ||
+        "Não foi possível guardar o rascunho.";
+      if (!silencioso) {
+        alert(erro);
+      }
+      throw err;
+    } finally {
+      setAcaoLoading(false);
+    }
+  }
+
+  async function enviarCandidatura() {
+    if (!candidatura || !userId) {
+      return;
     }
 
-    badge.requisitos.forEach(
-      (req, index) => {
-        const requisitoKey =
-          getRequisitoKey(
-            req,
-            index
-          );
-
-        const ficheiros =
-          ficheirosPorRequisito[
-            requisitoKey
-          ] || [];
-
-        ficheiros.forEach(
-          (file) => {
-            formData.append(
-              "ficheiros",
-              file
-            );
-
-            formData.append(
-              "metadados",
-              JSON.stringify({
-                requisito_key:
-                  requisitoKey,
-
-                id_requisito:
-                  req.id_requisito ||
-                  req.id_requisitos ||
-                  null,
-
-                titulo:
-                  req.titulo,
-
-                nome:
-                  req.nome,
-
-                descricao:
-                  req.descricao ||
-                  "",
-
-                ficheiro_nome:
-                  file.name,
-              })
-            );
-          }
-        );
-      }
-    );
-
     try {
-      setSubmeterLoading(
-        true
-      );
+      if (totalFicheirosNovos > 0) {
+        await guardarDados(true);
+      }
 
-      const response =
-        await api.post(
-          "/candidaturas/submeter-evidencias",
-          formData
-        );
+      setAcaoLoading(true);
 
-      console.log(
-        "Candidatura submetida:",
-        response.data
+      await api.post(
+        `/candidaturas/${candidatura.id_candidatura_pedido}/enviar`,
+        {
+          id_utilizador: userId,
+          id_lembrete: idLembrete,
+        }
       );
 
       alert(
         idLembrete
-          ? "Evidências submetidas. O objetivo está agora em validação."
-          : "Evidências submetidas com sucesso."
+          ? "Candidatura enviada. O objetivo está agora em validação."
+          : "Candidatura enviada para avaliação com sucesso."
       );
 
-      navigate(
-        voltarPara,
-        {
-          replace: true,
-        }
-      );
+      navigate(voltarPara, { replace: true });
     } catch (err) {
-      console.error(
-        "Erro ao submeter evidências:",
-        err
-      );
-
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
-
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
-
       alert(
         err.response?.data?.error ||
-          "Erro ao submeter evidências."
+          "Não foi possível enviar a candidatura."
       );
     } finally {
-      setSubmeterLoading(
-        false
-      );
+      setAcaoLoading(false);
     }
-  };
+  }
+
+  async function cancelarCandidatura() {
+    if (!candidatura || !userId) {
+      return;
+    }
+
+    const motivo = window.prompt(
+      "Indique o motivo do cancelamento da candidatura:"
+    );
+
+    if (motivo === null) {
+      return;
+    }
+
+    if (!String(motivo).trim()) {
+      alert("O motivo do cancelamento é obrigatório.");
+      return;
+    }
+
+    try {
+      setAcaoLoading(true);
+
+      await api.post(
+        `/candidaturas/${candidatura.id_candidatura_pedido}/cancelar`,
+        {
+          id_utilizador: userId,
+          motivo: String(motivo).trim(),
+        }
+      );
+
+      alert("Candidatura cancelada com sucesso.");
+      navigate(voltarPara, { replace: true });
+    } catch (err) {
+      alert(
+        err.response?.data?.error ||
+          "Não foi possível cancelar a candidatura."
+      );
+    } finally {
+      setAcaoLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -555,9 +573,13 @@ function SubmeterEvidenciasPage() {
           <div style={sectionCard}>
             <div style={sectionTitle}>Descrição</div>
             <p style={{ fontSize: 13, color: "#374151", marginTop: 8, marginBottom: 0, lineHeight: 1.65 }}>
-              Anexe as evidências necessárias para cada requisito do badge. Cada requisito deve ter pelo menos um ficheiro associado.
+              A candidatura é iniciada em modo rascunho. Pode guardar progresso, cancelar com motivo ou enviar quando tiver pelo menos 3 ficheiros distribuídos por 3 requisitos.
             </p>
           </div>
+
+          {mensagemInfo && (
+            <div style={infoBox}>{mensagemInfo}</div>
+          )}
 
           <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
 
@@ -576,6 +598,7 @@ function SubmeterEvidenciasPage() {
                     req={req}
                     requisitoKey={requisitoKey}
                     ficheiros={ficheirosPorRequisito[requisitoKey] || []}
+                    evidenciasGuardadas={evidenciasGuardadas[requisitoKey] || []}
                     onAddFiles={(files) => adicionarFicheiros(requisitoKey, files)}
                     onRemoveFile={(fileIndex) => removerFicheiro(requisitoKey, fileIndex)}
                     defaultOpen={index === 0}
@@ -591,22 +614,6 @@ function SubmeterEvidenciasPage() {
             )}
           </div>
 
-          <div style={sectionCard}>
-            <div style={sectionTitle}>Comentário geral</div>
-
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-              placeholder="Escreva uma observação geral sobre a candidatura..."
-              style={{
-                marginTop: 10,
-                borderRadius: 10,
-                fontSize: 13,
-              }}
-            />
-          </div>
           <div style={consentimentoCard}>
             <div
               style={{
@@ -709,29 +716,52 @@ function SubmeterEvidenciasPage() {
             <button
               style={{
                 ...actionBtn,
+                background: "#fff5f5",
+                color: "#b42318",
+                border: "1px solid #fecdca",
 
                 opacity:
-                  submeterLoading ||
-                  !podeSubmeter
+                  acaoLoading
                     ? 0.55
                     : 1,
 
                 cursor:
-                  submeterLoading ||
-                  !podeSubmeter
+                  acaoLoading
                     ? "not-allowed"
                     : "pointer",
               }}
-              disabled={
-                submeterLoading ||
-                !podeSubmeter
-              }
-              onClick={submeterEvidencias}
+              disabled={acaoLoading}
+              onClick={cancelarCandidatura}
+            >
+              <HiOutlineTrash size={18} style={{ marginRight: 8 }} />
+              Cancelar candidatura
+            </button>
+
+            <button
+              style={{
+                ...actionBtn,
+                background: podeEnviar ? "#2e7d32" : actionBtn.background,
+                border: podeEnviar ? "1px solid #2e7d32" : actionBtn.border,
+
+                opacity:
+                  acaoLoading
+                    ? 0.55
+                    : 1,
+
+                cursor:
+                  acaoLoading
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+              disabled={acaoLoading}
+              onClick={podeEnviar ? enviarCandidatura : () => guardarDados(false)}
             >
               <HiOutlineUpload size={18} style={{ marginRight: 8 }} />
-              {submeterLoading
-                ? "A submeter..."
-                : `Submeter Evidências (${totalFicheiros})`}
+              {acaoLoading
+                ? "A processar..."
+                : podeEnviar
+                  ? `Enviar Candidatura (${totalFicheiros})`
+                  : `Guardar Dados (${totalFicheiros})`}
             </button>
           </div>
         </main>
@@ -771,6 +801,7 @@ function RequisitoUploadRow({
   req,
   requisitoKey,
   ficheiros,
+  evidenciasGuardadas = [],
   onAddFiles,
   onRemoveFile,
   defaultOpen,
@@ -808,6 +839,38 @@ function RequisitoUploadRow({
               <a href={req.link} target="_blank" rel="noreferrer" style={{ color: "#4470AF", fontSize: 13 }}>
                 {req.link}
               </a>
+            </div>
+          )}
+
+          {evidenciasGuardadas.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 8 }}>
+                Evidências já guardadas
+              </div>
+
+              {evidenciasGuardadas.map((evidencia) => (
+                <div key={evidencia.id_evidencia} style={fileRow}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>
+                      {evidencia.nome_ficheiro}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#6b7280" }}>
+                      Guardado em {new Date(evidencia.data_submissao).toLocaleString("pt-PT")}
+                    </div>
+                  </div>
+
+                  {evidencia.caminho_ficheiro && (
+                    <a
+                      href={resolverUrlFicheiro(evidencia.caminho_ficheiro)}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={savedFileLink}
+                    >
+                      Ver ficheiro
+                    </a>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
@@ -851,7 +914,7 @@ function RequisitoUploadRow({
             </div>
           )}
 
-          {ficheiros.length === 0 && (
+          {ficheiros.length === 0 && evidenciasGuardadas.length === 0 && (
             <div style={{ fontSize: 12, color: "#D32F2F", marginTop: 8 }}>
               Este requisito ainda não tem ficheiros anexados.
             </div>
@@ -882,6 +945,16 @@ const consentimentoCard = {
   padding: 18,
   marginTop: 18,
   marginBottom: 18,
+};
+
+const infoBox = {
+  border: "1px solid #dbeafe",
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  borderRadius: 10,
+  padding: 14,
+  marginBottom: 16,
+  fontSize: 13,
 };
 
 const heroCard = {
@@ -984,6 +1057,14 @@ const removeFileBtn = {
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+};
+
+const savedFileLink = {
+  color: "#1d4ed8",
+  fontSize: 12,
+  fontWeight: 600,
+  textDecoration: "none",
+  whiteSpace: "nowrap",
 };
 
 const actionBtn = {
