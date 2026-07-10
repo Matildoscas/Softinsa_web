@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import './App.css';
 
@@ -159,47 +159,35 @@ function App() {
         <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
         <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSllPage />}/>
 
-        {/* Rotas Talent Manager */}
+        {/* Rotas para o Talent Manager */}
         <Route path="/tm" element={<TM_DashBoard />} />
+        <Route path="/tm/CatalogoBadgesCaga" element={<TM_catalogo_badges />} />
+        <Route path="/tm/Solicitacoes" element={<TM_Solicitacoes />} />
+        <Route path="/tm/avaliacao/:id" element={<TM_AvaliacaoSolicitacao />} />
+        <Route path="/tm/avaliacao-solicitacao/:id" element={<TM_AvaliacaoSolicitacao />} />
+        <Route path="/tm/HistoricoCandidaturas" element={<TM_HistoricoCandidaturas />} />
+        <Route path="/tm/detalhes-historico/:id" element={<TM_DetalhesHistorico />} />
+        <Route path="/tm/perfilCaga" element={<TM_Perfil />} />
+        <Route path="/tm/definicoes" element={<TM_Definicoes />} />
+        <Route path="/tm/consultores" element={<TM_Consultor />} />
+        <Route path="/tm/status-candidaturas" element={<TM_statuscandidatura />} />
 
         <Route path="/tm/badges" element={<TM_catalogo_badges />} />
         <Route path="/tm/badges/:idBadge" element={<TM_informacao_badge />} />
-
-        <Route path="/tm/solicitacoes" element={<TM_Solicitacoes />} />
-        <Route path="/tm/solicitacoes/:idCandidatura" element={<TM_AvaliacaoSolicitacao />} />
-        <Route path="/tm/avaliacao/:id" element={<TM_AvaliacaoSolicitacao />} />
-        <Route path="/tm/avaliacao-solicitacao/:id" element={<TM_AvaliacaoSolicitacao />} />
-
-        <Route path="/tm/status-candidaturas" element={<TM_statuscandidatura />} />
-
+        <Route path="/tm/solicitacoesCaga" element={<TM_Solicitacoes />} />
+        <Route path="/tm/solicitacoes23/:idCandidatura" element={<TM_AvaliacaoSolicitacao />} />
+        <Route path="/tm/consultores/:idConsultor" element={<TM_informacao_consultor />} />
         <Route path="/tm/historico" element={<TM_HistoricoCandidaturas />} />
         <Route path="/tm/historico/:idHistorico" element={<TM_DetalhesHistorico />} />
-        <Route path="/tm/detalhes-historico/:id" element={<TM_DetalhesHistorico />} />
-
         <Route path="/tm/expiracao" element={<TM_badges_expiracao />} />
         <Route path="/tm/expiracao/:idBadgeAtribuido" element={<TM_detalhe_expiracao_badge />} />
-
         <Route path="/tm/relatorios" element={<TM_gerar_relatorio />} />
-        <Route path="/tm/certificados" element={<TM_gerar_certificado />} />
-
-        <Route path="/tm/consultores" element={<TM_Consultor />} />
-        <Route path="/tm/consultores/:idConsultor" element={<TM_informacao_consultor />} />
-
-        <Route path="/tm/desafios/novo" element={<TM_criar_desafio />} />
-
+        <Route path="/tm/consultorescaga" element={<TM_Consultor />} />
         <Route path="/tm/notificacoes" element={<TM_notificacoes />} />
+        <Route path="/tm/definicoescaga" element={<TM_Definicoes />} />
         <Route path="/tm/perfil" element={<TM_Perfil />} />
-        <Route path="/tm/definicoes" element={<TM_Definicoes />} />
-
-        {/* Rotas antigas TM, só para não partir links antigos */}
-        <Route path="/tm/CatalogoBadgesCaga" element={<Navigate to="/tm/badges" replace />} />
-        <Route path="/tm/Solicitacoes" element={<Navigate to="/tm/solicitacoes" replace />} />
-        <Route path="/tm/HistoricoCandidaturas" element={<Navigate to="/tm/historico" replace />} />
-        <Route path="/tm/perfilCaga" element={<Navigate to="/tm/perfil" replace />} />
-        <Route path="/tm/solicitacoesCaga" element={<Navigate to="/tm/solicitacoes" replace />} />
-        <Route path="/tm/solicitacoes23/:idCandidatura" element={<Navigate to="/tm/solicitacoes" replace />} />
-        <Route path="/tm/consultorescaga" element={<Navigate to="/tm/consultores" replace />} />
-        <Route path="/tm/definicoescaga" element={<Navigate to="/tm/definicoes" replace />} />
+        <Route path="/tm/certificados" element={<TM_gerar_certificado />} />
+        <Route path="/tm/desafios/novo" element={<TM_criar_desafio />} />
 
       </Routes>
     </Router>

@@ -6,8 +6,8 @@ import api, { buildUploadUrl } from '../../services/api.js';
 
 // Componentes Estruturais Adaptados ao Contexto do TM
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import RightSidebarTM from "../../components/tm_left_sidebar.jsx";
+import LeftSidebarTM from "../../components/tm_right_sidebar.jsx";
 
 function TM_Perfil() {
     const navigate = useNavigate();
