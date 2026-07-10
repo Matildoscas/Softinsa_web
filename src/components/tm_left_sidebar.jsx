@@ -165,7 +165,7 @@ function TmLeftSidebar() {
         />
 
         <SubLink
-          to="/tm/desafios"
+          to="/tm/desafios/novo"
           label="Desafios e lembretes"
         />
       </MenuGroup>
