@@ -65,153 +65,400 @@ function TM_DefinicoesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [erro, setErro] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [previewFoto, setPreviewFoto] = useState(null);
+
   useEffect(() => {
-    const userData = obterUtilizadorGuardado();
+  carregarUtilizador();
+    }, []);
 
-    if (!userData) {
-      navigate("/login", { replace: true });
-      return;
-    }
+    async function carregarUtilizador() {
+      const userData = obterUtilizadorGuardado();
 
-    const userId = userData.id_utilizador || userData.ID_UTILIZADOR || userData.id;
-    setUser(userData);
-    
-    // Valores base iniciais vindos do localStorage por segurança
-    setNome(userData.nome_completo || userData.nome || "");
-    setContacto(userData.contacto || "");
-    setFotoPerfil(userData.foto_perfil || null);
-    setNotificacoesEmail(userData.notificacoes_email ?? true);
-    setNotificacoesPlataforma(userData.notificacoes_plataforma ?? true);
+      if (!userData) {
+        navigate("/login", { replace: true });
+        return;
+      }
 
-    // 🔄 Rota de carregamento de dados da VERSÃO 2
-    api.get(`/tm/${userId}/definicoes`)
-      .then((res) => {
-        const informacao = res.data || {};
+      const userId =
+        userData.id_utilizador ||
+        userData.ID_UTILIZADOR ||
+        userData.id;
 
-        // Atualiza os estados específicos da Versão 2
-        setNome(informacao.nome_completo || "");
-        setContacto(informacao.contacto || "");
-        setEmailBD(informacao.email || userData.email || "");
-        setEspecializacao(informacao.especializacao_tm || "");
-        setEstadoConta(informacao.estado_conta || "");
-        setEstadoTm(informacao.estado_tm || "");
+      if (!userId) {
+        localStorage.clear();
+        navigate("/login", { replace: true });
+        return;
+      }
 
-        // Mantém sincronizado o localStorage global
+      setUser(userData);
+      setNome(userData.nome_completo || userData.nome || "");
+      setContacto(userData.contacto || "");
+      setFotoPerfil(userData.foto_perfil || null);
+      setNotificacoesEmail(userData.notificacoes_email ?? true);
+      setNotificacoesPlataforma(userData.notificacoes_plataforma ?? true);
+
+      try {
+        setIsLoading(true);
+        setErro("");
+
+        const [utilizadorRes, tmRes] = await Promise.allSettled([
+          api.get(`/utilizadores/${userId}`),
+          api.get(`/tm/${userId}/definicoes`),
+        ]);
+
+        if (utilizadorRes.status === "rejected") {
+          throw utilizadorRes.reason;
+        }
+
+        const utilizador = utilizadorRes.value.data || {};
+
+        const definicoesTm =
+          tmRes.status === "fulfilled"
+            ? tmRes.value.data || {}
+            : {};
+
         const userAtualizado = {
           ...userData,
-          nome_completo: informacao.nome_completo,
-          contacto: informacao.contacto,
-          especializacao_tm: informacao.especializacao_tm,
-          estado_conta: informacao.estado_conta,
-          estado_tm: informacao.estado_tm,
+          ...utilizador,
+
+          id_utilizador:
+            utilizador.id_utilizador ||
+            utilizador.ID_UTILIZADOR ||
+            userData.id_utilizador ||
+            userId,
+
+          nome:
+            utilizador.nome_completo ||
+            utilizador.NOME_COMPLETO ||
+            utilizador.nome ||
+            userData.nome ||
+            "",
+
+          nome_completo:
+            utilizador.nome_completo ||
+            utilizador.NOME_COMPLETO ||
+            userData.nome_completo ||
+            userData.nome ||
+            "",
+
+          email:
+            utilizador.email_softinsa ||
+            utilizador.EMAIL_SOFTINSA ||
+            utilizador.email ||
+            utilizador.EMAIL ||
+            userData.email ||
+            "",
+
+          contacto:
+            utilizador.contacto ??
+            utilizador.CONTACTO ??
+            userData.contacto ??
+            "",
+
+          foto_perfil:
+            utilizador.foto_perfil ??
+            utilizador.FOTO_PERFIL ??
+            userData.foto_perfil ??
+            null,
+
+          notificacoes_email:
+            utilizador.notificacoes_email ??
+            utilizador.NOTIFICACOES_EMAIL ??
+            userData.notificacoes_email ??
+            true,
+
+          notificacoes_plataforma:
+            utilizador.notificacoes_plataforma ??
+            utilizador.NOTIFICACOES_PLATAFORMA ??
+            userData.notificacoes_plataforma ??
+            true,
+
+          estado_conta:
+            utilizador.estado_conta ||
+            utilizador.ESTADO_CONTA ||
+            definicoesTm.estado_conta ||
+            userData.estado_conta ||
+            "",
+
+          tipo_utilizador:
+            userData.tipo_utilizador || "Talent Manager",
+
+          especializacao_tm:
+            definicoesTm.especializacao_tm ||
+            userData.especializacao_tm ||
+            "",
+
+          estado_tm:
+            definicoesTm.estado_tm ||
+            userData.estado_tm ||
+            "",
         };
+
         localStorage.setItem("user", JSON.stringify(userAtualizado));
         setUser(userAtualizado);
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar definições do TM (Versão 2):", err);
-      });
-  }, [navigate]);
+
+        setNome(userAtualizado.nome_completo || userAtualizado.nome || "");
+        setContacto(userAtualizado.contacto || "");
+        setFotoPerfil(userAtualizado.foto_perfil || null);
+        setNotificacoesEmail(userAtualizado.notificacoes_email ?? true);
+        setNotificacoesPlataforma(userAtualizado.notificacoes_plataforma ?? true);
+
+        setEmailBD(definicoesTm.email || userAtualizado.email || "");
+        setEspecializacao(definicoesTm.especializacao_tm || "");
+        setEstadoConta(definicoesTm.estado_conta || userAtualizado.estado_conta || "");
+        setEstadoTm(definicoesTm.estado_tm || "");
+      } catch (err) {
+        console.error("Erro ao carregar definições do TM:", err);
+        setErro(
+          err.response?.data?.error ||
+          "Não foi possível carregar os dados da conta."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
   const getUserId = () => {
     return user?.id_utilizador || user?.ID_UTILIZADOR || user?.id;
   };
 
-  const atualizarLocalStorageGlobal = (utilizadorAtualizado) => {
-    const novoUserObj = {
+  function atualizarLocalStorageGlobal(utilizadorAtualizado = {}) {
+    const userFinal = {
       ...user,
-      nome_completo: utilizadorAtualizado.nome_completo || nome,
-      contacto: utilizadorAtualizado.contacto || contacto,
-      foto_perfil: utilizadorAtualizado.foto_perfil ?? user?.foto_perfil,
-      notificacoes_email: utilizadorAtualizado.notificacoes_email ?? notificacoesEmail,
-      notificacoes_plataforma: utilizadorAtualizado.notificacoes_plataforma ?? notificacoesPlataforma,
+      ...utilizadorAtualizado,
+
+      id_utilizador:
+        utilizadorAtualizado.id_utilizador ||
+        utilizadorAtualizado.ID_UTILIZADOR ||
+        user?.id_utilizador,
+
+      nome:
+        utilizadorAtualizado.nome_completo ||
+        utilizadorAtualizado.NOME_COMPLETO ||
+        utilizadorAtualizado.nome ||
+        nome,
+
+      nome_completo:
+        utilizadorAtualizado.nome_completo ||
+        utilizadorAtualizado.NOME_COMPLETO ||
+        utilizadorAtualizado.nome ||
+        nome,
+
+      contacto:
+        utilizadorAtualizado.contacto ??
+        utilizadorAtualizado.CONTACTO ??
+        contacto,
+
+      foto_perfil:
+        utilizadorAtualizado.foto_perfil ??
+        utilizadorAtualizado.FOTO_PERFIL ??
+        user?.foto_perfil ??
+        null,
+
+      notificacoes_email:
+        utilizadorAtualizado.notificacoes_email ??
+        utilizadorAtualizado.NOTIFICACOES_EMAIL ??
+        notificacoesEmail,
+
+      notificacoes_plataforma:
+        utilizadorAtualizado.notificacoes_plataforma ??
+        utilizadorAtualizado.NOTIFICACOES_PLATAFORMA ??
+        notificacoesPlataforma,
+
+      tipo_utilizador:
+        user?.tipo_utilizador || "Talent Manager",
+
+      especializacao_tm:
+        user?.especializacao_tm || especializacao,
+
+      estado_tm:
+        user?.estado_tm || estadoTm,
     };
-    localStorage.setItem("user", JSON.stringify(novoUserObj));
-    setUser(novoUserObj);
-  };
+
+    localStorage.setItem("user", JSON.stringify(userFinal));
+    setUser(userFinal);
+  }
 
   // 📸 Upload de Foto (Mantido da Versão 1)
-  const handleFotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFicheiroFoto(file);
-      setFotoPerfil(URL.createObjectURL(file));
-    }
-  };
+  function handleFotoChange(event) {
+    const file = event.target.files?.[0];
 
-  const handleUploadFoto = async () => {
+    if (!file) {
+      return;
+    }
+
+    setFicheiroFoto(file);
+    setPreviewFoto(URL.createObjectURL(file));
+    setErro("");
+    setMensagem("");
+  }
+
+  async function handleUploadFoto() {
     const id = getUserId();
-    if (!ficheiroFoto || !id) return;
+
+    if (!ficheiroFoto || !id) {
+      return;
+    }
 
     try {
       setIsUploadingFoto(true);
+      setErro("");
+      setMensagem("");
+
       const formData = new FormData();
       formData.append("foto", ficheiroFoto);
 
-      const response = await api.put(`/utilizadores/${id}/foto`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await api.put(
+        `/utilizadores/${id}/foto`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      const dadosAtualizados = response.data?.utilizador || response.data;
+      const dadosAtualizados =
+        response.data?.utilizador ||
+        response.data ||
+        {};
+
       atualizarLocalStorageGlobal(dadosAtualizados);
+
+      setFotoPerfil(
+        dadosAtualizados.foto_perfil ||
+        dadosAtualizados.FOTO_PERFIL ||
+        null
+      );
+
       setFicheiroFoto(null);
-      alert("Foto de perfil atualizada!");
+      setPreviewFoto(null);
+
+      setMensagem("Foto de perfil atualizada com sucesso.");
     } catch (err) {
       console.error("Erro ao enviar foto:", err);
-      alert(err.response?.data?.error || "Erro ao fazer upload da foto.");
+
+      setErro(
+        err.response?.data?.error ||
+        "Erro ao fazer upload da foto."
+      );
     } finally {
-      setIsUploadingFoto(false);
-    }
-  };
+    setIsUploadingFoto(false);
+  }
+}
 
   // 💾 Guardar Perfil com a Lógica e Endpoint da VERSÃO 2
-  const handleGuardarPerfil = async (e) => {
-    if (e) e.preventDefault();
+ async function handleGuardarPerfil(event) {
+    if (event) {
+      event.preventDefault();
+    }
+
     const id = getUserId();
-    
+
+    setErro("");
+    setMensagem("");
+
+    if (!id) {
+      setErro("Sessão inválida. Inicia sessão novamente.");
+      localStorage.clear();
+      navigate("/login", { replace: true });
+      return;
+    }
+
     if (!nome.trim()) {
-      alert("O nome completo é obrigatório.");
+      setErro("O nome completo é obrigatório.");
       return;
     }
 
     try {
       setIsSaving(true);
-      // Rota e Payload da Versão 2
-      const response = await api.put(`/tm/${id}/definicoes`, {
-        nome_completo: nome.trim(),
-        contacto: contacto.trim(),
-      });
 
-      const utilizadorAtualizado = response.data?.utilizador || {};
+      const response = await api.put(
+        `/utilizadores/${id}/perfil`,
+        {
+          nome_completo: nome.trim(),
+          contacto: contacto.trim(),
+        }
+      );
+
+      const utilizadorAtualizado =
+        response.data?.utilizador ||
+        response.data ||
+        {};
+
       atualizarLocalStorageGlobal(utilizadorAtualizado);
-      alert(response.data?.message || "Definições atualizadas com sucesso.");
+
+      setMensagem("Dados pessoais atualizados com sucesso.");
     } catch (err) {
       console.error("Erro ao guardar definições:", err);
-      alert(err.response?.data?.error || "Não foi possível guardar as definições.");
+
+      setErro(
+        err.response?.data?.error ||
+        "Não foi possível guardar as definições."
+      );
     } finally {
       setIsSaving(false);
     }
-  };
+  }
 
   // 🌟 Preferências (Versão 1)
-  const handleTogglePreference = async (tipo, valorNovo) => {
-    const id = getUserId();
-    if (!id) return;
+  async function handleTogglePreference(tipo, valorNovo) {
+  const id = getUserId();
 
-    const novoEmail = tipo === "email" ? valorNovo : notificacoesEmail;
-    const novaPlataforma = tipo === "plataforma" ? valorNovo : notificacoesPlataforma;
+  if (!id) {
+    return;
+  }
 
-    try {
-      const response = await api.put(`/utilizadores/${id}/preferencias`, {
+  const emailAnterior = notificacoesEmail;
+  const plataformaAnterior = notificacoesPlataforma;
+
+  const novoEmail =
+    tipo === "email"
+      ? valorNovo
+      : notificacoesEmail;
+
+  const novaPlataforma =
+    tipo === "plataforma"
+      ? valorNovo
+      : notificacoesPlataforma;
+
+  setNotificacoesEmail(novoEmail);
+  setNotificacoesPlataforma(novaPlataforma);
+  setErro("");
+  setMensagem("");
+
+  try {
+    const response = await api.put(
+      `/utilizadores/${id}/preferencias`,
+      {
         notificacoes_email: novoEmail,
-        notificacoes_plataforma: novaPlataforma
-      });
-      const dadosAtualizados = response.data?.utilizador || response.data;
-      atualizarLocalStorageGlobal(dadosAtualizados);
-    } catch (err) {
-      console.error("Erro ao guardar preferência:", err);
-    }
-  };
+        notificacoes_plataforma: novaPlataforma,
+      }
+    );
+
+    const dadosAtualizados =
+      response.data?.utilizador ||
+      response.data ||
+      {};
+
+    atualizarLocalStorageGlobal(dadosAtualizados);
+
+    setMensagem("Preferências de notificações atualizadas.");
+  } catch (err) {
+    console.error("Erro ao guardar preferência:", err);
+
+    setNotificacoesEmail(emailAnterior);
+    setNotificacoesPlataforma(plataformaAnterior);
+
+    setErro(
+      err.response?.data?.error ||
+      "Não foi possível atualizar as preferências."
+    );
+  }
+}
 
   // 🔐 Alterar Password (Versão 1)
   const handleAlterarPassword = async () => {
@@ -262,28 +509,36 @@ function TM_DefinicoesPage() {
   };
 
   return (
-    <div style={{ backgroundColor: "#f0f2f5", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={pagina}>
       <Header />
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div style={corpo}>
         <TmLeftSidebar />
 
         <main style={mainStyle}>
-          <button style={backBtn} onClick={() => navigate(-1)}>
+          <button
+            type="button"
+            style={backBtn}
+            onClick={() => navigate("/tm")}
+          >
             <HiOutlineArrowLeft style={{ marginRight: 6 }} />
-            Voltar
+            Voltar ao dashboard
           </button>
 
-          <hr style={{ borderColor: "#e5e7eb", margin: "8px 0 24px" }} />
+          <div style={separador} />
 
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#111827" }}>
-              Definições de Talent Manager
+          <div style={cabecalhoPagina}>
+            <div style={tituloPagina}>
+              Definições do Talent Manager
             </div>
-            <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-              Gere os teus dados de avaliador, segurança e canais de alertas
+
+            <div style={subtituloPagina}>
+              Gere os teus dados pessoais, segurança e preferências da conta
             </div>
           </div>
+
+          {erro && <div style={erroBox}>{erro}</div>}
+          {mensagem && <div style={sucessoBox}>{mensagem}</div>}
 
           <div style={columnsLayout}>
             <div style={leftCol}>
@@ -293,7 +548,11 @@ function TM_DefinicoesPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 12 }}>
                   <div style={avatarContainer}>
                     {fotoPerfil ? (
-                      <img src={buildUploadUrl(fotoPerfil)} alt="Perfil" style={avatarImg} />
+                      <img
+                        src={previewFoto || buildUploadUrl(fotoPerfil)}
+                        alt="Perfil"
+                        style={avatarImg}
+                      />
                     ) : (
                       <div style={avatarPlaceholder}>
                         {nome ? nome.charAt(0).toUpperCase() : "TM"}
@@ -498,5 +757,58 @@ const preferenceRow = { display: "flex", alignItems: "center", justifyContent: "
 const preferenceTitle = { fontSize: 13, fontWeight: 600, color: "#374151" };
 const preferenceDesc = { fontSize: 11, color: "#6b7280", marginTop: 2, lineHeight: 1.3 };
 const toggleStyle = { width: 40, height: 20, accentColor: "#4470AF", cursor: "pointer" };
+const pagina = {
+  backgroundColor: "#f3f4f6",
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const corpo = {
+  display: "flex",
+  flex: 1,
+  overflow: "hidden",
+};
+
+const mainStyle = {
+  flex: 1,
+  minWidth: 0,
+  overflowY: "auto",
+  padding: "22px 30px 60px",
+  backgroundColor: "#f3f4f6",
+};
+
+const backBtn = {
+  display: "flex",
+  alignItems: "center",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  color: "#2563eb",
+  fontSize: 14,
+  padding: 0,
+};
+
+const separador = {
+  height: 1,
+  background: "#d1d5db",
+  margin: "16px 0 18px",
+};
+
+const cabecalhoPagina = {
+  marginBottom: 24,
+};
+
+const tituloPagina = {
+  fontSize: 22,
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const subtituloPagina = {
+  fontSize: 12,
+  color: "#64748b",
+  marginTop: 4,
+};
 
 export default TM_DefinicoesPage;
