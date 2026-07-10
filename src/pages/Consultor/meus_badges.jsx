@@ -171,7 +171,15 @@ function MeusBadgesPage() {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <LeftSidebar />
 
-        <main style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
+        <main
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "28px 32px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Button
             variant="link"
             className="d-flex align-items-center text-decoration-none p-0 mb-2"
@@ -256,6 +264,21 @@ function MeusBadgesPage() {
             );
           })}
 
+          {badgesFiltrados.length === 0 && (
+            <div
+              style={{
+                border: "1px dashed #cbd5e1",
+                background: "#f8fafc",
+                color: "#64748b",
+                borderRadius: 10,
+                padding: 16,
+                fontSize: 13,
+              }}
+            >
+              Ainda não tens badges conquistados.
+            </div>
+          )}
+
           <PaginacaoCatalogo
             paginaAtual={paginaAtual}
             totalPaginas={totalPaginas}
@@ -272,6 +295,7 @@ function MeusBadgesPage() {
               mb-4
               flex-wrap
             "
+            style={{ marginTop: "auto" }}
           >
             <Button
               variant="light"
