@@ -250,7 +250,7 @@ function normalizarBadge(badge) {
     };
 }
 
-function PaginaPrincipal() {
+function DashboardConsultor() {
     const navigate = useNavigate();
     
     // Estados para os dados da BD
@@ -1456,4 +1456,4 @@ const celebracaoButton = {
     "0 12px 24px rgba(37, 99, 235, 0.25)",
 };
 
-export default PaginaPrincipal;
+export default DashboardConsultor;
