@@ -8,7 +8,7 @@ import {
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 
-import Header from "../../components/header.jsx";
+import Header from "../../components/Header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
