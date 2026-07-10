@@ -145,6 +145,7 @@ function MeusBadgesPage() {
   const fim = inicio + badgesPorPagina;
 
   const badgesPaginaAtual = badgesFiltrados.slice(inicio, fim);
+  const semBadgesConquistados = badges.length === 0;
 
   useEffect(() => {
     setPaginaAtual(1);
@@ -246,56 +247,72 @@ function MeusBadgesPage() {
             </div>
           </div>
 
-          {badgesPaginaAtual.map((badge, index) => {
-            const badgeId = Number(badge.id || badge.id_badge_modelo);
-            const conquistadoBadge = badge;
-            const conquistado = true;
-            const pendente = null;
+          <div style={{ flex: 1 }}>
+            {badgesPaginaAtual.map((badge, index) => {
+              const badgeId = Number(badge.id || badge.id_badge_modelo);
+              const conquistadoBadge = badge;
+              const conquistado = true;
+              const pendente = null;
 
-            return (
-              <CatalogoBadgeRow
-                key={badgeId || index}
-                badge={badge}
-                conquistado={conquistado}
-                conquistadoBadge={conquistadoBadge}
-                pendente={pendente}
-                onClick={() => navigate(`/badge-detalhe/${badgeId}`)}
-              />
-            );
-          })}
+              return (
+                <CatalogoBadgeRow
+                  key={badgeId || index}
+                  badge={badge}
+                  conquistado={conquistado}
+                  conquistadoBadge={conquistadoBadge}
+                  pendente={pendente}
+                  onClick={() => navigate(`/badge-detalhe/${badgeId}`)}
+                />
+              );
+            })}
 
-          {badgesFiltrados.length === 0 && (
-            <div
-              style={{
-                border: "1px dashed #cbd5e1",
-                background: "#f8fafc",
-                color: "#64748b",
-                borderRadius: 10,
-                padding: 16,
-                fontSize: 13,
-              }}
-            >
-              Ainda não tens badges conquistados.
-            </div>
-          )}
+            {semBadgesConquistados && (
+              <div
+                style={{
+                  border: "1px dashed #cbd5e1",
+                  background: "#f8fafc",
+                  color: "#64748b",
+                  borderRadius: 10,
+                  padding: 16,
+                  fontSize: 13,
+                }}
+              >
+                Ainda não tens badges conquistados.
+              </div>
+            )}
 
-          <PaginacaoCatalogo
-            paginaAtual={paginaAtual}
-            totalPaginas={totalPaginas}
-            onAnterior={() => setPaginaAtual((p) => Math.max(1, p - 1))}
-            onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
-          />
+            {!semBadgesConquistados && badgesFiltrados.length === 0 && (
+              <div
+                style={{
+                  border: "1px dashed #cbd5e1",
+                  background: "#f8fafc",
+                  color: "#64748b",
+                  borderRadius: 10,
+                  padding: 16,
+                  fontSize: 13,
+                }}
+              >
+                Não existem badges para os filtros selecionados.
+              </div>
+            )}
+
+            <PaginacaoCatalogo
+              paginaAtual={paginaAtual}
+              totalPaginas={totalPaginas}
+              onAnterior={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+              onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+            />
+          </div>
 
           <div
             className="
               d-flex
               justify-content-center
               gap-2
-              mt-4
               mb-4
               flex-wrap
             "
-            style={{ marginTop: "auto" }}
+            style={{ marginTop: "auto", paddingTop: 16 }}
           >
             <Button
               variant="light"
