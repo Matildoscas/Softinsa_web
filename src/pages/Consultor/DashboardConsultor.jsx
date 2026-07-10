@@ -801,17 +801,23 @@ function PaginaPrincipal() {
 
                     {/* Seção: Recomendação */}
                     <BadgeSection title="Recomendação de badge" sub="Baseado no seu perfil e área:" onVerTodos={() => navigate('/catalogo-badges')}>
-                        {recomendados.map((b, i) => (
-                            <BadgeCard 
-                                key={b.id || b.id_badge_modelo || i}
-                                name={b.nome || b.nome_badge || "Badge"} 
-                                desc={b.descricao || b.descricao_badge_modelo || ""} 
-                                points={b.pontos || 0}
-                                imageUrl={b.imagem_url || b.imagem || b.url_imagem}
-                                dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
-                                onClick={() => navigate(`/badge-detalhe/${b.id || b.id_badge_modelo}`)}
-                            />
-                        ))}
+                        {recomendados.length > 0 ? (
+                            recomendados.map((b, i) => (
+                                <BadgeCard 
+                                    key={b.id || b.id_badge_modelo || i}
+                                    name={b.nome || b.nome_badge || "Badge"} 
+                                    desc={b.descricao || b.descricao_badge_modelo || ""} 
+                                    points={b.pontos || 0}
+                                    imageUrl={b.imagem_url || b.imagem || b.url_imagem}
+                                    dateConquered={b.tempo_limite ? "⚠️ Pontos em Dobro (Tempo Limite)" : "Por Conquistar"} 
+                                    onClick={() => navigate(`/badge-detalhe/${b.id || b.id_badge_modelo}`)}
+                                />
+                            ))
+                        ) : (
+                            <p className="text-muted small ms-2 mb-0">
+                                Sem recomendações disponíveis de momento.
+                            </p>
+                        )}
                     </BadgeSection>
                 </div>
 

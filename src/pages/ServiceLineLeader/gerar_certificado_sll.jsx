@@ -1270,7 +1270,9 @@ async function enviarParaTm() {
                   <option value="">
                     {isLoadingConsultores
                       ? "A carregar consultores..."
-                      : "Selecionar consultor"}
+                      : consultores.length === 0
+                        ? "Não existem consultores disponíveis"
+                        : "Selecionar consultor"}
                   </option>
 
                   {consultores.map(

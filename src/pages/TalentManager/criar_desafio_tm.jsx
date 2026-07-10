@@ -664,7 +664,9 @@ function CriarDesafioTm() {
                     }
                   >
                     <option value="">
-                      Selecionar consultor
+                      {consultores.length === 0
+                        ? "Não existem consultores disponíveis"
+                        : "Selecionar consultor"}
                     </option>
 
                     {consultores.map(
