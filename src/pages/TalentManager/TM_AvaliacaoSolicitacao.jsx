@@ -259,7 +259,7 @@ function AvaliacaoSolicitacaoTM() {
     <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <tmLeftSidebar />
+        <TmLeftSidebar />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
           <button 
@@ -468,7 +468,7 @@ function AvaliacaoSolicitacaoTM() {
 
           </div>
         </div>
-        <tmRightSidebar />
+        <TmRightSidebar />
       </div>
     </div>
   );
