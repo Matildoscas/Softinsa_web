@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 
 import {
-  useNavigate,
-} from "react-router-dom";
-
-import {
   BiBell,
-  BiGrid,
-  BiMedal,
+  BiTask,
+  BiHistory,
+  BiChevronRight,
+  BiBadgeCheck,
 } from "react-icons/bi";
+
+import { useNavigate } from "react-router-dom";
 
 import api from "../services/api.js";
 
 function obterUtilizadorGuardado() {
-  const storedUser =
-    localStorage.getItem("user");
+  const storedUser = localStorage.getItem("user");
 
   if (!storedUser) {
     return null;
@@ -30,23 +29,17 @@ function obterUtilizadorGuardado() {
 function TmRightSidebar() {
   const navigate = useNavigate();
 
-  const [
-    notificacoes,
-    setNotificacoes,
-  ] = useState([]);
-
-  const [
-    topUtilizadores,
-    setTopUtilizadores,
-  ] = useState([]);
+  const [totalPendentes, setTotalPendentes] = useState(0);
+  const [totalHistorico, setTotalHistorico] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     carregarDados();
   }, []);
 
   async function carregarDados() {
-    const user =
-      obterUtilizadorGuardado();
+    const user = obterUtilizadorGuardado();
 
     const userId =
       user?.id_utilizador ||
@@ -54,148 +47,187 @@ function TmRightSidebar() {
       user?.id;
 
     if (!userId) {
-      setNotificacoes([]);
-      setTopUtilizadores([]);
+      setTotalPendentes(0);
+      setTotalHistorico(0);
+      setNotifications([]);
+      setLoading(false);
       return;
     }
 
-    const [
-      notificacoesRes,
-      topRes,
-    ] = await Promise.allSettled([
-      api.get(`/notificacoes/${userId}`),
+    setLoading(true);
 
-      api.get(
-        `/dashboard/tm/${userId}/top-utilizadores`
-      ),
+    const resultados = await Promise.allSettled([
+      api.get("/candidaturas/tm/candidaturas"),
+      api.get("/candidaturas/tm/historico"),
+      api.get(`/notificacoes/${userId}`),
     ]);
 
-    if (
-      notificacoesRes.status ===
-      "fulfilled"
-    ) {
-      setNotificacoes(
-        Array.isArray(
-          notificacoesRes.value.data
-        )
-          ? notificacoesRes.value.data
+    if (resultados[0].status === "fulfilled") {
+      const dados = Array.isArray(resultados[0].value.data)
+        ? resultados[0].value.data
+        : [];
+
+      setTotalPendentes(dados.length);
+    } else {
+      console.error(
+        "Erro ao carregar solicitações TM:",
+        resultados[0].reason
+      );
+
+      setTotalPendentes(0);
+    }
+
+    if (resultados[1].status === "fulfilled") {
+      const dados = Array.isArray(resultados[1].value.data)
+        ? resultados[1].value.data
+        : [];
+
+      setTotalHistorico(dados.length);
+    } else {
+      console.error(
+        "Erro ao carregar histórico TM:",
+        resultados[1].reason
+      );
+
+      setTotalHistorico(0);
+    }
+
+    if (resultados[2].status === "fulfilled") {
+      setNotifications(
+        Array.isArray(resultados[2].value.data)
+          ? resultados[2].value.data
           : []
       );
     } else {
       console.error(
         "Erro ao carregar notificações TM:",
-        notificacoesRes.reason
+        resultados[2].reason
       );
 
-      setNotificacoes([]);
+      setNotifications([]);
     }
 
-    if (
-      topRes.status ===
-      "fulfilled"
-    ) {
-      setTopUtilizadores(
-        Array.isArray(
-          topRes.value.data
-        )
-          ? topRes.value.data
-          : []
-      );
-    } else {
-      console.error(
-        "Erro ao carregar top TM:",
-        topRes.reason
-      );
-
-      setTopUtilizadores([]);
-    }
+    setLoading(false);
   }
 
   return (
     <aside style={container}>
-      <div style={sectionTitle}>
-        Notificações
+      <div>
+        <div style={sectionTitle}>
+          Painel Operacional
+        </div>
+
+        <IndicadorMetrica
+          title="Pedidos por Analisar"
+          count={loading ? "..." : totalPendentes}
+          type="pending"
+          onClick={() => navigate("/tm/solicitacoes")}
+        />
+
+        <IndicadorMetrica
+          title="Total de Histórico"
+          count={loading ? "..." : totalHistorico}
+          type="history"
+          onClick={() => navigate("/tm/historico")}
+        />
       </div>
 
-      {notificacoes.length > 0 ? (
-        notificacoes
-          .slice(0, 3)
-          .map(
-            (
-              notificacao,
-              index
-            ) => (
-              <NotificationCard
-                key={
-                  notificacao.id_notificacoes ||
-                  notificacao.id ||
-                  index
-                }
-                notificacao={
-                  notificacao
-                }
-              />
-            )
-          )
-      ) : (
-        <div style={emptyText}>
-          Sem notificações recentes.
+      <div>
+        <div style={sectionTitle}>
+          Notificações Recentes
         </div>
-      )}
 
-      <div style={topTitle}>
-        Top Utilizadores
+        {notifications.length > 0 ? (
+          notifications.slice(0, 4).map((notificacao, index) => (
+            <NotificationCard
+              key={
+                notificacao.id_notificacoes ||
+                notificacao.id ||
+                index
+              }
+              notificacao={notificacao}
+            />
+          ))
+        ) : (
+          <div style={emptyBox}>
+            <BiBadgeCheck size={20} color="#adb5bd" />
+
+            <span style={emptyTitle}>
+              Tudo em dia!
+            </span>
+
+            <span style={emptySub}>
+              Sem alertas pendentes.
+            </span>
+          </div>
+        )}
       </div>
 
-      {topUtilizadores.length > 0 ? (
-        topUtilizadores
-          .slice(0, 3)
-          .map(
-            (
-              utilizador,
-              index
-            ) => (
-              <TopUserCard
-                key={
-                  utilizador.id_utilizador ||
-                  index
-                }
-                utilizador={
-                  utilizador
-                }
-                posicao={index + 1}
-              />
-            )
-          )
-      ) : (
-        <div style={emptyText}>
-          Ainda não existem utilizadores com badges.
-        </div>
-      )}
-
-      <div style={viewAllWrapper}>
+      <div style={footer}>
         <button
           type="button"
-          onClick={() =>
-            navigate(
-              "/tm/consultores"
-            )
-          }
-          style={viewAllButton}
+          onClick={() => navigate("/tm/notificacoes")}
+          style={verNotificacoesButton}
         >
-          <BiGrid size={14} />
-          Ver Todos
+          Ver Notificações
         </button>
       </div>
     </aside>
   );
 }
 
-function NotificationCard({
-  notificacao,
+function IndicadorMetrica({
+  title,
+  count,
+  type,
+  onClick,
 }) {
-  const titulo =
-    notificacao.titulo ||
+  const isHistory = type === "history";
+
+  return (
+    <div
+      onClick={onClick}
+      style={metricCard}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "#cbd5e1";
+        e.currentTarget.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "#e5e7eb";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      <div
+        style={{
+          ...metricIcon,
+          background: isHistory ? "#f8fafc" : "#eff6ff",
+          color: isHistory ? "#475569" : "#2563eb",
+        }}
+      >
+        {isHistory ? (
+          <BiHistory size={18} />
+        ) : (
+          <BiTask size={18} />
+        )}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={metricTitle}>
+          {title}
+        </div>
+
+        <div style={metricCount}>
+          {count}
+        </div>
+      </div>
+
+      <BiChevronRight size={16} color="#9ca3af" />
+    </div>
+  );
+}
+
+function NotificationCard({ notificacao }) {
+  const conteudo =
     notificacao.conteudo ||
     notificacao.mensagem ||
     notificacao.descricao ||
@@ -210,155 +242,21 @@ function NotificationCard({
   return (
     <div style={notificationCard}>
       <div style={notificationIcon}>
-        <BiBell
-          size={13}
-          color="#2563eb"
-        />
+        <BiBell size={13} color="#495057" />
       </div>
 
-      <div>
+      <div style={{ minWidth: 0 }}>
         <div style={notificationText}>
-          {titulo}
+          {conteudo}
         </div>
 
         <div style={notificationTime}>
           {data
-            ? formatarTempo(data)
+            ? new Date(data).toLocaleDateString("pt-PT")
             : "Agora"}
         </div>
       </div>
     </div>
-  );
-}
-
-function TopUserCard({
-  utilizador,
-  posicao,
-}) {
-  const nome =
-    utilizador.nome_completo ||
-    utilizador.nome ||
-    "Utilizador";
-
-  const cargo =
-    utilizador.tipo_utilizador ||
-    utilizador.cargo ||
-    "Consultor";
-
-  const badges = Number(
-    utilizador.total_badges || 0
-  );
-
-  const estilo =
-    obterEstiloRanking(posicao);
-
-  return (
-    <div
-      style={{
-        ...topUserCard,
-        background:
-          estilo.background,
-        border: `1px solid ${estilo.border}`,
-      }}
-    >
-      <div
-        style={{
-          ...avatar,
-          background:
-            estilo.avatar,
-        }}
-      >
-        <span style={{ fontSize: 18 }}>
-          {estilo.medalha}
-        </span>
-      </div>
-
-      <div style={{ flex: 1 }}>
-        <div style={userName}>
-          {nome}
-        </div>
-
-        <div style={userInfo}>
-          Cargo: {cargo}
-        </div>
-
-        <div
-          style={{
-            ...badgesText,
-            color: estilo.text,
-          }}
-        >
-          <BiMedal size={13} />
-          {badges} badges
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function obterEstiloRanking(posicao) {
-  if (posicao === 1) {
-    return {
-      medalha: "🥇",
-      background: "#fff8e1",
-      border: "#facc15",
-      avatar: "#fef3c7",
-      text: "#92400e",
-    };
-  }
-
-  if (posicao === 2) {
-    return {
-      medalha: "🥈",
-      background: "#f3f4f6",
-      border: "#9ca3af",
-      avatar: "#e5e7eb",
-      text: "#374151",
-    };
-  }
-
-  return {
-    medalha: "🥉",
-    background: "#fff1e6",
-    border: "#d97706",
-    avatar: "#fed7aa",
-    text: "#92400e",
-  };
-}
-
-function formatarTempo(data) {
-  const date = new Date(data);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "Agora";
-  }
-
-  const minutos = Math.floor(
-    (new Date() - date) / 60000
-  );
-
-  if (minutos < 1) {
-    return "Agora";
-  }
-
-  if (minutos < 60) {
-    return `${minutos} minuto(s) atrás`;
-  }
-
-  const horas = Math.floor(
-    minutos / 60
-  );
-
-  if (horas < 24) {
-    return `${horas} hora(s) atrás`;
-  }
-
-  return date.toLocaleDateString(
-    "pt-PT"
   );
 }
 
@@ -382,25 +280,58 @@ const sectionTitle = {
   marginBottom: 12,
 };
 
-const topTitle = {
-  fontSize: 14,
+const metricCard = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 12,
+  marginBottom: 8,
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+};
+
+const metricIcon = {
+  width: 36,
+  height: 36,
+  borderRadius: 10,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const metricTitle = {
+  fontSize: 11,
+  color: "#6b7280",
+  fontWeight: 600,
+  textTransform: "uppercase",
+};
+
+const metricCount = {
+  fontSize: 18,
   fontWeight: 700,
-  color: "#2563eb",
-  margin: "28px 0 12px",
+  color: "#1f2937",
+  marginTop: 1,
 };
 
 const notificationCard = {
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 12,
+  marginBottom: 8,
   display: "flex",
-  alignItems: "flex-start",
-  gap: 8,
-  padding: "8px 4px",
+  gap: 10,
+  background: "white",
 };
 
 const notificationIcon = {
   width: 24,
   height: 24,
   borderRadius: "50%",
-  background: "#eff6ff",
+  background: "#f1f3f5",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -409,76 +340,56 @@ const notificationIcon = {
 
 const notificationText = {
   fontSize: 12,
-  color: "#111827",
-  lineHeight: 1.35,
+  fontWeight: 500,
+  color: "#212529",
+  lineHeight: 1.3,
+  wordBreak: "break-word",
 };
 
 const notificationTime = {
-  fontSize: 11,
-  color: "#9ca3af",
-  marginTop: 2,
+  fontSize: 10,
+  color: "#adb5bd",
+  marginTop: 4,
 };
 
-const topUserCard = {
+const emptyBox = {
+  textAlign: "center",
+  padding: "30px 10px",
+  background: "#f8f9fa",
+  borderRadius: 12,
+  border: "1px dashed #dee2e6",
   display: "flex",
+  flexDirection: "column",
   alignItems: "center",
-  gap: 10,
-  borderRadius: 10,
-  padding: "9px 10px",
-  marginBottom: 10,
+  gap: 6,
 };
 
-const avatar = {
-  width: 40,
-  height: 40,
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-};
-
-const userName = {
+const emptyTitle = {
   fontSize: 12,
-  fontWeight: 700,
-  color: "#111827",
+  color: "#6c757d",
+  fontWeight: 600,
 };
 
-const userInfo = {
+const emptySub = {
   fontSize: 11,
-  color: "#6b7280",
+  color: "#adb5bd",
 };
 
-const badgesText = {
-  fontSize: 11,
-  fontWeight: 700,
-  marginTop: 2,
-  display: "flex",
-  alignItems: "center",
-  gap: 4,
-};
-
-const emptyText = {
-  fontSize: 12,
-  color: "#9ca3af",
-};
-
-const viewAllWrapper = {
+const footer = {
+  borderTop: "1px solid #f1f3f5",
+  paddingTop: 12,
+  textAlign: "right",
   marginTop: 16,
 };
 
-const viewAllButton = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 5,
-  border: "1px solid #e5e7eb",
-  borderRadius: 8,
-  padding: "7px 13px",
-  fontSize: 12,
-  textDecoration: "none",
-  color: "#111827",
-  background: "white",
+const verNotificacoesButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
   cursor: "pointer",
+  fontSize: 12,
+  fontWeight: 700,
+  padding: 0,
 };
 
 export default TmRightSidebar;
