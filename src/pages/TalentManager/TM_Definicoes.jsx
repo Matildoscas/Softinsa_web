@@ -14,8 +14,8 @@ import { BiChevronRight, BiBriefcase, BiEnvelope } from "react-icons/bi";
 
 // Componentes Estruturais da Versão 1
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api, { buildUploadUrl } from "../../services/api.js";
 
 /* =========================================================
@@ -266,7 +266,7 @@ function TM_DefinicoesPage() {
       <Header />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <LeftBarTM />
+        <tmLeftSidebar />
 
         <main style={mainStyle}>
           <button style={backBtn} onClick={() => navigate(-1)}>
@@ -452,7 +452,7 @@ function TM_DefinicoesPage() {
           )}
         </main>
 
-        <RightSidebar />
+        <tmRightSidebar />
       </div>
     </div>
   );

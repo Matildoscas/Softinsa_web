@@ -12,8 +12,8 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
 function obterUtilizadorGuardado() {
@@ -234,7 +234,7 @@ function StatusCandidaturasTM() {
       <Header />
 
       <div style={corpo}>
-        <LeftBarTM />
+        <tmLeftSidebar />
 
         <main style={conteudo}>
           <div style={topoBarra}>
@@ -429,7 +429,7 @@ function StatusCandidaturasTM() {
           </div>
         </main>
 
-        <RightSidebar />
+        <TmRightSidebar />
       </div>
     </div>
   );

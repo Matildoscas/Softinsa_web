@@ -4,8 +4,8 @@ import { BiArrowBack, BiSearch, BiFilter, BiSort, BiUser, BiBook, BiShow } from 
 import { useNavigate } from "react-router-dom";
 
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
 function HistoricoCandidaturasTM() {
@@ -78,7 +78,7 @@ function HistoricoCandidaturasTM() {
             <Header />
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                <LeftBarTM />
+                <tmLeftSidebar />
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
                     <Button variant="link" className="text-decoration-none text-secondary p-0 mb-3 d-flex align-items-center gap-2" onClick={() => navigate(-1)}>
@@ -198,7 +198,7 @@ function HistoricoCandidaturasTM() {
                     </div>
                 </div>
 
-                <RightSidebar />
+                <tmRightSidebar />
             </div>
         </div>
     );

@@ -16,8 +16,8 @@ import {
 
 // Componentes estruturais do ecossistema
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../services/api.js";
@@ -265,7 +265,7 @@ function ListaConsultoresTm() {
       <Header />
 
       <div style={styles.corpo}>
-        <LeftBarTM />
+        <tmLeftSidebar />
 
         <main style={styles.conteudo}>
           {/* Topo / Voltar */}
@@ -366,7 +366,7 @@ function ListaConsultoresTm() {
           )}
         </main>
 
-        <RightSidebar />
+        <tmRightSidebar />
       </div>
     </div>
   );

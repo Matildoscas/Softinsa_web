@@ -6,8 +6,8 @@ import { BiSearch, BiUserCircle, BiTimeFive, BiHistory } from "react-icons/bi";
 
 // Componentes estruturais do teu ecossistema
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
 function SolicitacaoBadges() {
@@ -65,7 +65,7 @@ function SolicitacaoBadges() {
   return (
     <div style={pageLayout}>
       {/* Barra Lateral do Gestor */}
-      <LeftBarTM />
+      <tmLeftSidebar />
 
       <div style={mainContentWrapper}>
         <Header />
@@ -183,7 +183,7 @@ function SolicitacaoBadges() {
 
           </main>
 
-          <RightSidebar />
+          <tmRightSidebar />
         </div>
       </div>
     </div>

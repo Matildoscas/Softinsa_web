@@ -21,8 +21,8 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
 /* =========================================================
@@ -240,7 +240,7 @@ function DetalhesHistoricoTM() {
       <Header />
 
       <div style={corpo}>
-        <LeftBarTM />
+        <tmLeftSidebar />
 
         <main style={conteudo}>
           <button type="button" onClick={() => navigate(-1)} style={voltarButton}>
@@ -336,7 +336,7 @@ function DetalhesHistoricoTM() {
           </section>
         </main>
 
-        <RightSidebar />
+        <tmRightSidebar />
       </div>
     </div>
   );

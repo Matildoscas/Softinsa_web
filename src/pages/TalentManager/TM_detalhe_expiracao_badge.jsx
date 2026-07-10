@@ -32,8 +32,8 @@ import autoTable from "jspdf-autotable";
 import api from "../../services/api.js";
 
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 /* =========================================================
    UTILIZADOR

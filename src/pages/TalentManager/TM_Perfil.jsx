@@ -6,8 +6,8 @@ import api, { buildUploadUrl } from '../../services/api.js';
 
 // Componentes Estruturais Adaptados ao Contexto do TM
 import Header from "../../components/Header.jsx";
-import RightSidebarTM from "../../components/tm_left_sidebar.jsx";
-import LeftSidebarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 function TM_Perfil() {
     const navigate = useNavigate();
@@ -70,7 +70,7 @@ function TM_Perfil() {
             <Header />
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                <LeftSidebarTM />
+                <TmLeftSidebar />
 
                 {/* Main Content */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
@@ -156,7 +156,7 @@ function TM_Perfil() {
                     </BadgeSection>
                 </div>
 
-                <RightSidebarTM />
+                <TmRightSidebar />
             </div>
         </div>
     );

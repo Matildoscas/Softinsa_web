@@ -6,8 +6,8 @@ import { Card, Button, Spinner } from 'react-bootstrap';
 //import RightSidebar from "../../components/TM_RightBar.jsx";
 //import LeftBarTM from "../../components/LeftBarTM.jsx";
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
 function AvaliacaoSolicitacaoTM() {
@@ -259,7 +259,7 @@ function AvaliacaoSolicitacaoTM() {
     <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <LeftBarTM />
+        <tmLeftSidebar />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
           <button 
@@ -468,7 +468,7 @@ function AvaliacaoSolicitacaoTM() {
 
           </div>
         </div>
-        <RightSidebar />
+        <tmRightSidebar />
       </div>
     </div>
   );

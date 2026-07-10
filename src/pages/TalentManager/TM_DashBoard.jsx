@@ -12,8 +12,8 @@ import {
 
 // 4. Componentes Globais da Versão 1
 import Header from "../../components/Header.jsx";
-import RightSidebar from "../../components/tm_left_sidebar.jsx";
-import LeftBarTM from "../../components/tm_right_sidebar.jsx";
+import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 // Simulação de chamadas de API externa (ajusta o import se necessário)
 import api from "../../services/api"; 
@@ -202,10 +202,10 @@ function DashboardTMUnificado() {
   return (
     <div style={page}>
       {/* 4. Layout Estrutural da Versão 1 */}
-      <TM_Header />
+      <Header />
 
       <div style={body}>
-        <LeftBarTM />
+        <tmLeftSidebar />
 
         <main style={main}>
           {erro && <div style={errorBox}>{erro}</div>}
@@ -340,7 +340,7 @@ function DashboardTMUnificado() {
           )}
         </main>
 
-        <TM_RightBar />
+        <tmRightSidebar />
       </div>
     </div>
   );
