@@ -11,9 +11,9 @@ import {
 } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 
-import Header from "../../components/TM_Header.jsx";
-import RightSidebar  from "../../components/TM_RightBar.jsx";
-import LeftBarTM from "../../components/LeftBarTM.jsx";
+import Header from "../../components/Header.jsx";
+import RightSidebar from "../../components/tm_left_sidebar.jsx";
+import LeftBarTM from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
 function obterUtilizadorGuardado() {

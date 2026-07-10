@@ -1,7 +1,4 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import {
   NavLink,
@@ -18,15 +15,19 @@ import {
   BiUserCircle,
   BiChevronRight,
   BiCertification,
+  BiFile,
 } from "react-icons/bi";
 
 function TmLeftSidebar() {
-  const [
-    badgesAberto,
-    setBadgesAberto,
-  ] = useState(true);
-
   const location = useLocation();
+
+  const [badgesAberto, setBadgesAberto] =
+    useState(true);
+
+  const [
+    certificadosAberto,
+    setCertificadosAberto,
+  ] = useState(true);
 
   const [
     consultoresAberto,
@@ -44,6 +45,31 @@ function TmLeftSidebar() {
       )
     ) {
       setConsultoresAberto(true);
+    }
+
+    if (
+      location.pathname.startsWith(
+        "/tm/solicitacoes"
+      ) ||
+      location.pathname.startsWith(
+        "/tm/status-candidaturas"
+      ) ||
+      location.pathname.startsWith(
+        "/tm/expiracao"
+      ) ||
+      location.pathname.startsWith(
+        "/tm/relatorios"
+      )
+    ) {
+      setBadgesAberto(true);
+    }
+
+    if (
+      location.pathname.startsWith(
+        "/tm/certificados"
+      )
+    ) {
+      setCertificadosAberto(true);
     }
   }, [location.pathname]);
 
@@ -74,7 +100,6 @@ function TmLeftSidebar() {
       <MenuGroup
         label="Badges"
         icon={<BiBadge size={16} />}
-        to="/tm/badges"
         aberto={badgesAberto}
         onToggle={() =>
           setBadgesAberto(
@@ -84,29 +109,43 @@ function TmLeftSidebar() {
       >
         <SubLink
           to="/tm/solicitacoes"
-          label="Solicitação de Badges"
+          label="Solicitações de badges"
         />
 
         <SubLink
-          to="/tm/historico"
-          label="Histórico de Candidaturas"
+          to="/tm/status-candidaturas"
+          label="Status de candidaturas"
         />
 
         <SubLink
           to="/tm/expiracao"
-          label="Badges em Expiração"
+          label="Badges em expiração"
         />
 
         <SubLink
           to="/tm/relatorios"
           label="Relatórios"
         />
+      </MenuGroup>
+
+      <MenuGroup
+        label="Certificados"
+        icon={<BiCertification size={16} />}
+        aberto={certificadosAberto}
+        onToggle={() =>
+          setCertificadosAberto(
+            (valor) => !valor
+          )
+        }
+      >
         <SubLink
           to="/tm/certificados"
-          label="Certificados"
-          icon={
-            <BiCertification size={18} />
-          }
+          label="Gerar certificado"
+        />
+
+        <SubLink
+          to="/tm/historico"
+          label="Histórico de candidaturas"
         />
       </MenuGroup>
 
@@ -124,8 +163,12 @@ function TmLeftSidebar() {
           to="/tm/consultores"
           label="Lista de consultores"
         />
-      </MenuGroup>
 
+        <SubLink
+          to="/tm/desafios"
+          label="Desafios e lembretes"
+        />
+      </MenuGroup>
     </aside>
   );
 }
@@ -169,7 +212,6 @@ function MainLink({
 function MenuGroup({
   label,
   icon,
-  to,
   aberto,
   onToggle,
   children,
@@ -202,30 +244,10 @@ function MenuGroup({
           />
         </button>
 
-        {to ? (
-          <NavLink
-            to={to}
-            style={({ isActive }) => ({
-              ...groupLabelLink,
-
-              color: isActive
-                ? "#2563eb"
-                : "#111827",
-
-              fontWeight: isActive
-                ? 600
-                : 400,
-            })}
-          >
-            {icon}
-            <span>{label}</span>
-          </NavLink>
-        ) : (
-          <div style={groupLabel}>
-            {icon}
-            <span>{label}</span>
-          </div>
-        )}
+        <div style={groupLabel}>
+          {icon}
+          <span>{label}</span>
+        </div>
       </div>
 
       {aberto && (
@@ -272,8 +294,7 @@ function SubLink({
 const container = {
   width: 250,
   background: "white",
-  borderRight:
-    "1px solid #e5e7eb",
+  borderRight: "1px solid #e5e7eb",
   padding: "14px 0",
   flexShrink: 0,
   overflowY: "auto",
@@ -345,20 +366,9 @@ const submenu = {
 
 const subLink = {
   display: "block",
-  padding:
-    "7px 24px 7px 64px",
+  padding: "7px 24px 7px 64px",
   fontSize: 13,
   textDecoration: "none",
-};
-
-const groupLabelLink = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  fontSize: 13,
-  textDecoration: "none",
-  cursor: "pointer",
-  flex: 1,
 };
 
 export default TmLeftSidebar;

@@ -11,9 +11,9 @@ import {
 } from "recharts"; // Gráficos profissionais da Versão 2
 
 // 4. Componentes Globais da Versão 1
-import TM_Header from "../../components/TM_Header";
-import LeftBarTM from "../../components/LeftBarTM";
-import TM_RightBar from "../../components/TM_RightBar";
+import Header from "../../components/Header.jsx";
+import RightSidebar from "../../components/tm_left_sidebar.jsx";
+import LeftBarTM from "../../components/tm_right_sidebar.jsx";
 
 // Simulação de chamadas de API externa (ajusta o import se necessário)
 import api from "../../services/api"; 

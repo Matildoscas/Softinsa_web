@@ -13,9 +13,9 @@ import {
 import { BiChevronRight, BiBriefcase, BiEnvelope } from "react-icons/bi";
 
 // Componentes Estruturais da Versão 1
-import Header from "../../components/TM_Header.jsx";
-import LeftBarTM from "../../components/LeftBarTM.jsx"; 
-import RightSidebar from "../../components/TM_RightBar.jsx";
+import Header from "../../components/Header.jsx";
+import RightSidebar from "../../components/tm_left_sidebar.jsx";
+import LeftBarTM from "../../components/tm_right_sidebar.jsx";
 import api, { buildUploadUrl } from "../../services/api.js";
 
 /* =========================================================

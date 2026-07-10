@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import api, { buildUploadUrl } from '../../services/api.js'; 
 
 // Componentes Estruturais Adaptados ao Contexto do TM
-import Header from "../../components/TM_Header.jsx"; 
-import LeftSidebarTM from "../../components/LeftBarTM.jsx"; 
-import RightSidebarTM from "../../components/TM_RightBar.jsx";
+import Header from "../../components/Header.jsx";
+import RightSidebar from "../../components/tm_left_sidebar.jsx";
+import LeftBarTM from "../../components/tm_right_sidebar.jsx";
 
 function TM_Perfil() {
     const navigate = useNavigate();

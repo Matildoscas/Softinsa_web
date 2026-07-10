@@ -1,18 +1,13 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import {
-  useLocation,
   useNavigate,
 } from "react-router-dom";
 
 import {
   BiBell,
-  BiBookOpen,
+  BiGrid,
   BiMedal,
-  BiUserCircle,
 } from "react-icons/bi";
 
 import api from "../services/api.js";
@@ -26,25 +21,14 @@ function obterUtilizadorGuardado() {
   }
 
   try {
-    return JSON.parse(
-      storedUser
-    );
-  } catch (err) {
-    console.error(
-      "Erro ao ler utilizador:",
-      err
-    );
-
+    return JSON.parse(storedUser);
+  } catch {
     return null;
   }
 }
 
 function TmRightSidebar() {
-  const navigate =
-    useNavigate();
-
-  const location =
-    useLocation();
+  const navigate = useNavigate();
 
   const [
     notificacoes,
@@ -57,10 +41,10 @@ function TmRightSidebar() {
   ] = useState([]);
 
   useEffect(() => {
-    carregarSidebar();
+    carregarDados();
   }, []);
 
-  async function carregarSidebar() {
+  async function carregarDados() {
     const user =
       obterUtilizadorGuardado();
 
@@ -75,90 +59,56 @@ function TmRightSidebar() {
       return;
     }
 
-    const resultados =
-      await Promise.allSettled([
-        api.get(
-          `/notificacoes/${userId}`
-        ),
+    const [
+      notificacoesRes,
+      topRes,
+    ] = await Promise.allSettled([
+      api.get(`/notificacoes/${userId}`),
 
-        api.get(
-          `/dashboard/tm/${userId}/top-utilizadores`
-        ),
-      ]);
-
-    const notificacoesResultado =
-      resultados[0];
-
-    const topResultado =
-      resultados[1];
+      api.get(
+        `/dashboard/tm/${userId}/top-utilizadores`
+      ),
+    ]);
 
     if (
-      notificacoesResultado.status ===
+      notificacoesRes.status ===
       "fulfilled"
     ) {
       setNotificacoes(
         Array.isArray(
-          notificacoesResultado
-            .value.data
+          notificacoesRes.value.data
         )
-          ? notificacoesResultado
-              .value.data
+          ? notificacoesRes.value.data
           : []
       );
     } else {
       console.error(
         "Erro ao carregar notificações TM:",
-        notificacoesResultado.reason
+        notificacoesRes.reason
       );
 
       setNotificacoes([]);
     }
 
     if (
-      topResultado.status ===
+      topRes.status ===
       "fulfilled"
     ) {
       setTopUtilizadores(
         Array.isArray(
-          topResultado.value.data
+          topRes.value.data
         )
-          ? topResultado.value.data
+          ? topRes.value.data
           : []
       );
     } else {
       console.error(
-        "Erro ao carregar top de utilizadores TM:",
-        topResultado.reason
+        "Erro ao carregar top TM:",
+        topRes.reason
       );
 
       setTopUtilizadores([]);
     }
-  }
-
-  function abrirPerfil(
-    utilizador
-  ) {
-    const idConsultor =
-      utilizador.id_utilizador ||
-      utilizador.ID_UTILIZADOR ||
-      utilizador.id;
-
-    if (!idConsultor) {
-      return;
-    }
-
-    navigate(
-      `/tm/consultores/${idConsultor}`,
-      {
-        state: {
-          voltarPara:
-            location.pathname,
-
-          textoVoltar:
-            "Voltar ao dashboard",
-        },
-      }
-    );
   }
 
   return (
@@ -167,8 +117,7 @@ function TmRightSidebar() {
         Notificações
       </div>
 
-      {notificacoes.length >
-      0 ? (
+      {notificacoes.length > 0 ? (
         notificacoes
           .slice(0, 3)
           .map(
@@ -198,8 +147,7 @@ function TmRightSidebar() {
         Top Utilizadores
       </div>
 
-      {topUtilizadores.length >
-      0 ? (
+      {topUtilizadores.length > 0 ? (
         topUtilizadores
           .slice(0, 3)
           .map(
@@ -215,18 +163,13 @@ function TmRightSidebar() {
                 utilizador={
                   utilizador
                 }
-                onPerfil={() =>
-                  abrirPerfil(
-                    utilizador
-                  )
-                }
+                posicao={index + 1}
               />
             )
           )
       ) : (
         <div style={emptyText}>
-          Ainda não existem
-          utilizadores com badges.
+          Ainda não existem utilizadores com badges.
         </div>
       )}
 
@@ -240,7 +183,7 @@ function TmRightSidebar() {
           }
           style={viewAllButton}
         >
-          <BiBookOpen size={14} />
+          <BiGrid size={14} />
           Ver Todos
         </button>
       </div>
@@ -273,7 +216,7 @@ function NotificationCard({
         />
       </div>
 
-      <div style={notificationContent}>
+      <div>
         <div style={notificationText}>
           {titulo}
         </div>
@@ -290,7 +233,7 @@ function NotificationCard({
 
 function TopUserCard({
   utilizador,
-  onPerfil,
+  posicao,
 }) {
   const nome =
     utilizador.nome_completo ||
@@ -306,16 +249,31 @@ function TopUserCard({
     utilizador.total_badges || 0
   );
 
+  const estilo =
+    obterEstiloRanking(posicao);
+
   return (
-    <div style={topUserCard}>
-      <div style={avatar}>
-        <BiUserCircle
-          size={38}
-          color="#6092bf"
-        />
+    <div
+      style={{
+        ...topUserCard,
+        background:
+          estilo.background,
+        border: `1px solid ${estilo.border}`,
+      }}
+    >
+      <div
+        style={{
+          ...avatar,
+          background:
+            estilo.avatar,
+        }}
+      >
+        <span style={{ fontSize: 18 }}>
+          {estilo.medalha}
+        </span>
       </div>
 
-      <div style={userContent}>
+      <div style={{ flex: 1 }}>
         <div style={userName}>
           {nome}
         </div>
@@ -324,21 +282,48 @@ function TopUserCard({
           Cargo: {cargo}
         </div>
 
-        <div style={badgesText}>
+        <div
+          style={{
+            ...badgesText,
+            color: estilo.text,
+          }}
+        >
           <BiMedal size={13} />
           {badges} badges
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={onPerfil}
-        style={profileButton}
-      >
-        Ver perfil
-      </button>
     </div>
   );
+}
+
+function obterEstiloRanking(posicao) {
+  if (posicao === 1) {
+    return {
+      medalha: "🥇",
+      background: "#fff8e1",
+      border: "#facc15",
+      avatar: "#fef3c7",
+      text: "#92400e",
+    };
+  }
+
+  if (posicao === 2) {
+    return {
+      medalha: "🥈",
+      background: "#f3f4f6",
+      border: "#9ca3af",
+      avatar: "#e5e7eb",
+      text: "#374151",
+    };
+  }
+
+  return {
+    medalha: "🥉",
+    background: "#fff1e6",
+    border: "#d97706",
+    avatar: "#fed7aa",
+    text: "#92400e",
+  };
 }
 
 function formatarTempo(data) {
@@ -353,8 +338,7 @@ function formatarTempo(data) {
   }
 
   const minutos = Math.floor(
-    (new Date() - date) /
-      60000
+    (new Date() - date) / 60000
   );
 
   if (minutos < 1) {
@@ -385,8 +369,7 @@ function formatarTempo(data) {
 const container = {
   width: 300,
   background: "white",
-  borderLeft:
-    "1px solid #e5e7eb",
+  borderLeft: "1px solid #e5e7eb",
   padding: 18,
   flexShrink: 0,
   overflowY: "auto",
@@ -424,10 +407,6 @@ const notificationIcon = {
   flexShrink: 0,
 };
 
-const notificationContent = {
-  minWidth: 0,
-};
-
 const notificationText = {
   fontSize: 12,
   color: "#111827",
@@ -441,32 +420,22 @@ const notificationTime = {
 };
 
 const topUserCard = {
-  minHeight: 72,
   display: "flex",
   alignItems: "center",
   gap: 10,
-  background: "#ffffff",
-  border:
-    "1px solid #f1f5f9",
   borderRadius: 10,
   padding: "9px 10px",
   marginBottom: 10,
 };
 
 const avatar = {
-  width: 43,
-  height: 43,
+  width: 40,
+  height: 40,
   borderRadius: "50%",
-  background: "#eff6ff",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   flexShrink: 0,
-};
-
-const userContent = {
-  flex: 1,
-  minWidth: 0,
 };
 
 const userName = {
@@ -482,22 +451,11 @@ const userInfo = {
 
 const badgesText = {
   fontSize: 11,
-  fontWeight: 600,
+  fontWeight: 700,
   marginTop: 2,
   display: "flex",
   alignItems: "center",
   gap: 4,
-  color: "#334155",
-};
-
-const profileButton = {
-  border: "none",
-  background: "transparent",
-  color: "#2563eb",
-  fontSize: 10,
-  cursor: "pointer",
-  padding: 0,
-  whiteSpace: "nowrap",
 };
 
 const emptyText = {
@@ -513,11 +471,11 @@ const viewAllButton = {
   display: "inline-flex",
   alignItems: "center",
   gap: 5,
-  border:
-    "1px solid #e5e7eb",
+  border: "1px solid #e5e7eb",
   borderRadius: 8,
   padding: "7px 13px",
   fontSize: 12,
+  textDecoration: "none",
   color: "#111827",
   background: "white",
   cursor: "pointer",
