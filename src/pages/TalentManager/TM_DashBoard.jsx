@@ -205,7 +205,7 @@ function DashboardTMUnificado() {
       <Header />
 
       <div style={body}>
-        <tmLeftSidebar />
+        <TmLeftSidebar />
 
         <main style={main}>
           {erro && <div style={errorBox}>{erro}</div>}
@@ -340,7 +340,7 @@ function DashboardTMUnificado() {
           )}
         </main>
 
-        <tmRightSidebar />
+        <TmRightSidebar />
       </div>
     </div>
   );
