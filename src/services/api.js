@@ -3,10 +3,10 @@ import axios from 'axios';
 
 const api = axios.create({
   // 🛑 COMENTADO AGORA: Servidor de produção na Nuvem
-  // baseURL: 'https://softinsa-api.onrender.com/api' 
+  baseURL: 'https://softinsa-api.onrender.com/api' 
 
   // 🚀 ATIVADO PARA TESTES LOCAIS: Aponta para o teu PC
-  baseURL: 'http://localhost:3000/api' 
+  //baseURL: 'http://localhost:3000/api' 
 });
 
 const buildUploadUrl = (path) => {
