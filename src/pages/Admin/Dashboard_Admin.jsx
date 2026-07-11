@@ -354,6 +354,25 @@ function PaginaPrincipalAdmin() {
     return area;
   }
 
+  const ORDEM_NIVEIS = [
+    "Júnior",
+    "Intermédio",
+    "Sénior",
+    "Especialista",
+    "Líder de Conhecimento",
+  ];
+
+  const badgesAgrupadosPorNivel = ORDEM_NIVEIS.map((nomeNivel) => {
+    const items = badgesPorNivelLearningPath.filter(
+      (item) => item.nome_nivel === nomeNivel
+    );
+
+    return {
+      nome_nivel: nomeNivel,
+      items,
+    };
+  });
+
   return (
     <div
       style={{
@@ -958,71 +977,85 @@ function PaginaPrincipalAdmin() {
 
               <div
                 style={{
-                  maxHeight: 240,
+                  maxHeight: 280,
                   overflowY: "auto",
                   paddingRight: 4,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
                 }}
               >
-                {badgesPorNivelLearningPath.length > 0 ? (
-                  badgesPorNivelLearningPath.map((item, index) => (
-                    <div
-                      key={`${item.id_learningpaths}-${item.id_nivel}-${index}`}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "minmax(0, 1fr) auto",
-                        gap: 12,
-                        alignItems: "center",
-                        padding: "9px 0",
-                        borderBottom: "1px solid #f1f5f9",
-                      }}
-                    >
-                      <div style={{ minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: "#111827",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                          title={item.nome_learningpaths}
-                        >
-                          {item.nome_learningpaths}
-                        </div>
-
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "#64748b",
-                            marginTop: 2,
-                          }}
-                        >
-                          {item.nome_nivel}
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 800,
-                          color: "#2563eb",
-                        }}
-                      >
-                        {item.total_badges}
-                      </div>
-                    </div>
-                  ))
-                ) : (
+                {badgesAgrupadosPorNivel.map((grupo, index) => (
                   <div
+                    key={grupo.nome_nivel}
                     style={{
-                      fontSize: 12,
-                      color: "#9ca3af",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 12,
+                      padding: 12,
+                      background: "#f9fafb",
                     }}
                   >
-                    Sem dados de badges por nível.
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 800,
+                        color: "#111827",
+                        marginBottom: 10,
+                      }}
+                    >
+                      {grupo.nome_nivel}
+                    </div>
+
+                    {grupo.items.length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {grupo.items.map((item, idx) => (
+                          <div
+                            key={`${grupo.nome_nivel}-${item.id_learningpaths}-${idx}`}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              background: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: 10,
+                              padding: "8px 12px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: "#374151",
+                              }}
+                            >
+                              {item.nome_learningpaths}
+                            </div>
+
+                            <div
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: "#2563eb",
+                              }}
+                            >
+                              {item.total_badges}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#9ca3af",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Sem badges neste nível.
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
             </div>
           </div>
