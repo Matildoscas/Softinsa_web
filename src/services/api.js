@@ -79,6 +79,28 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = Number(error?.response?.status || 0);
+    const data = error?.response?.data;
+    const method = String(error?.config?.method || "GET").toUpperCase();
+    const url = error?.config?.url || "";
+
+    if (status === 401 || status >= 500) {
+      console.error("[API][ERRO]", {
+        status,
+        method,
+        url,
+        body: data,
+      });
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export { buildUploadUrl };
 export default api;
 
