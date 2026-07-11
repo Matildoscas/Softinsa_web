@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -42,6 +43,9 @@ export default function
     setTotalNaoLidas,
   ] = useState(0);
 
+  const bloqueadoPor401Ref =
+    useRef(false);
+
   const carregarContador =
     useCallback(
       async () => {
@@ -64,6 +68,11 @@ export default function
         }
 
         if (!existeTokenSessao()) {
+          setTotalNaoLidas(0);
+          return;
+        }
+
+        if (bloqueadoPor401Ref.current) {
           setTotalNaoLidas(0);
           return;
         }
@@ -92,10 +101,11 @@ export default function
           );
 
           if (status === 401) {
+            bloqueadoPor401Ref.current = true;
             setTotalNaoLidas(0);
 
             console.warn(
-              "[NOTIFICAÇÕES] Sessão inválida para carregar contador."
+              "[NOTIFICAÇÕES] Sessão inválida para carregar contador. Pedidos seguintes serão ignorados até novo login."
             );
 
             return;

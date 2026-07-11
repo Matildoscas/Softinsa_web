@@ -98,11 +98,13 @@ function formatarData(data) {
 }
 
 function normalizarLinks(links) {
-  if (!Array.isArray(links)) {
+  const lista = normalizarArrayFlex(links);
+
+  if (!Array.isArray(lista)) {
     return [];
   }
 
-  return links
+  return lista
     .map((link) => {
       if (typeof link === "string") {
         return {
@@ -126,12 +128,55 @@ function normalizarLinks(links) {
     .filter((link) => link.url);
 }
 
+function normalizarArrayFlex(valor) {
+  if (Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (
+    valor &&
+    typeof valor === "object"
+  ) {
+    return Object.values(valor);
+  }
+
+  if (typeof valor === "string") {
+    const texto = valor.trim();
+
+    if (!texto) {
+      return [];
+    }
+
+    try {
+      const convertido =
+        JSON.parse(texto);
+
+      if (Array.isArray(convertido)) {
+        return convertido;
+      }
+
+      if (
+        convertido &&
+        typeof convertido === "object"
+      ) {
+        return Object.values(convertido);
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 function normalizarDocumentos(documentos) {
-  if (!Array.isArray(documentos)) {
+  const lista = normalizarArrayFlex(documentos);
+
+  if (!Array.isArray(lista)) {
     return [];
   }
 
-  return documentos
+  return lista
     .map((documento, index) => ({
       id:
         documento.id_documento ||
@@ -264,11 +309,9 @@ function normalizarRequisito(
   index
 ) {
   const evidenciasOriginais =
-    Array.isArray(
+    normalizarArrayFlex(
       requisito.evidencias
-    )
-      ? requisito.evidencias
-      : [];
+    );
 
   const evidencias =
     evidenciasOriginais.map(
@@ -308,12 +351,17 @@ function normalizarRequisito(
     ];
 
   const documentosNormalizados =
-    normalizarDocumentos(
-      evidencia?.documentos ||
-        requisito.documentos ||
-        requisito.ficheiros ||
-        []
-    ).map((doc) => ({
+    normalizarDocumentos([
+      ...normalizarArrayFlex(
+        evidencia?.documentos
+      ),
+      ...normalizarArrayFlex(
+        requisito.documentos
+      ),
+      ...normalizarArrayFlex(
+        requisito.ficheiros
+      ),
+    ]).map((doc) => ({
       ...doc,
       url:
         doc?.url ||
@@ -383,7 +431,7 @@ function normalizarRequisito(
     estado:
       resolverEstadoRequisitoUi(
         requisito,
-        evidencias
+        evidenciasDerivadas
       ) || "AGUARDAR_TM",
 
     descricao_evidencia:
@@ -923,7 +971,6 @@ function DetalheSolicitacaoSll() {
     const responseDetalhe =
       await api.get(
         `/sll/${idUtilizadorSll}/solicitacoes/${
-          idCandidaturaSllQuery ||
           idCandidatura
         }`
       );
@@ -989,6 +1036,23 @@ function DetalheSolicitacaoSll() {
       dadosNormalizados
         .candidatura
         .id_candidatura_sll
+    );
+
+    console.log(
+      "[SLL][DETALHE][RESUMO_EVIDENCIAS]",
+      (dadosNormalizados.requisitos || []).map(
+        (req) => ({
+          id: req.id,
+          requisito: req.titulo,
+          evidencias: Array.isArray(req.evidencias)
+            ? req.evidencias.length
+            : 0,
+          documentos: Array.isArray(req.documentos)
+            ? req.documentos.length
+            : 0,
+          estado: req.estado,
+        })
+      )
     );
 
     setDecisoesPendentes({});
@@ -1152,6 +1216,10 @@ async function rejeitarCandidatura() {
 
       return dados.requisitos.filter(
         (requisito) =>
+          (Array.isArray(
+            requisito.evidencias
+          ) &&
+            requisito.evidencias.length > 0) ||
           requisito.descricao_evidencia ||
           requisito.documentos.length > 0
       ).length;
