@@ -79,6 +79,18 @@ function mensagemErroCandidatura(err, fallback) {
     return message || "Já tens este badge ativo. Só podes voltar a submeter quando expirar.";
   }
 
+  if (code === "REQUISITO_INVALIDO") {
+    return message || "Não foi possível associar o ficheiro a um requisito válido. Reabre a candidatura e tenta novamente.";
+  }
+
+  if (code === "DADOS_INCOMPLETOS") {
+    return message || "Falta informação obrigatória para guardar o rascunho.";
+  }
+
+  if (code === "CONFLITO_DADOS") {
+    return message || "Foi detetado um conflito ao guardar a candidatura. Atualiza a página e tenta novamente.";
+  }
+
   if (status >= 500) {
     return "O servidor falhou ao processar a candidatura. Tenta novamente em instantes.";
   }

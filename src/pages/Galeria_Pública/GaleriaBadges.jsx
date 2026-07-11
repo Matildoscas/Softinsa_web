@@ -5,7 +5,7 @@ import { BiTrophy, BiStar, BiUser, BiChevronUp, BiChevronDown } from "react-icon
 import logoImg from "../../assets/logo.png";
 import api from "../../services/api.js";
 
-const GRUPOS_ORDEM = ["Junior", "Intermediate", "Partner", "Senior", "Specialist", "Leader"];
+const GRUPOS_ORDEM = ["Junior", "Intermediate ou Partner", "Senior", "Specialist", "Leader"];
 const niveis = ["A", "B", "C", "D", "E"];
 
 function GaleriaBadgesPage() {
@@ -146,13 +146,12 @@ const obterGrupoPorNivel = (badge) => {
   const nivel = String(badge.codigo_nivel || nivelParaLetra(badge.id_nivel)).toUpperCase();
   
   if (nivel === "A" || nivel === "1") return "Junior";
-  if (nivel === "B" || nivel === "2") return "Intermediate";
-  if (nivel === "C" || nivel === "3") return "Partner";
-  if (nivel === "D" || nivel === "4") return "Senior";
-  if (nivel === "E" || nivel === "5") return "Specialist";
-  if (nivel === "LEADER" || nivel === "6") return "Leader"; 
+  if (nivel === "B" || nivel === "2") return "Intermediate ou Partner";
+  if (nivel === "C" || nivel === "3") return "Senior";
+  if (nivel === "D" || nivel === "4") return "Specialist";
+  if (nivel === "E" || nivel === "5") return "Leader"; 
   
-  return "Junior"; // Fallback por defeito
+  return "Junior"; // Fallback de segurança
 };
 
 // Agrupamento dos Badges pelos novos grupos de Senioridade
