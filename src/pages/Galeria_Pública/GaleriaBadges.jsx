@@ -155,22 +155,6 @@ const obterGrupoPorNivel = (badge) => {
   return "Junior"; // Fallback por defeito
 };
 
-// Agrupamento dos Badges pelos novos grupos de Senioridade
-const badgesAgrupados = badges.reduce((acc, badge) => {
-  const grupo = obterGrupoPorNivel(badge);
-  if (!acc[grupo]) acc[grupo] = [];
-  acc[grupo].push(badge);
-  return acc;
-}, {});
-
-// Filtra apenas as categorias que realmente têm badges para não mostrar secções vazias
-const gruposFiltrados = GRUPOS_ORDEM.filter(grupo => badgesAgrupados[grupo] && badgesAgrupados[grupo].length > 0);
-
-// Paginação adaptada para a nova lista de grupos
-const totalPaginas = Math.ceil(gruposFiltrados.length / gruposPorPagina);
-const inicio = (paginaAtual - 1) * gruposPorPagina;
-const fim = inicio + gruposPorPagina;
-const gruposPaginaAtual = gruposFiltrados.slice(inicio, fim);
   const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) => a.localeCompare(b, "pt-PT"));
   const totalPaginas = Math.ceil(areasOrdenadas.length / areasPorPagina);
   const inicio = (paginaAtual - 1) * areasPorPagina;
