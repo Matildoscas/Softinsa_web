@@ -5,7 +5,7 @@ import { BiTrophy, BiStar, BiUser, BiChevronUp, BiChevronDown } from "react-icon
 import logoImg from "../../assets/logo.png";
 import api from "../../services/api.js";
 
-const GRUPOS_ORDEM = ["Junior", "Intermediate", "Partner", "Senior", "Specialist", "Leader"];
+const GRUPOS_ORDEM = ["Junior", "Intermediate ou Partner", "Senior", "Specialist", "Leader"];
 const niveis = ["A", "B", "C", "D", "E"];
 
 function GaleriaBadgesPage() {
@@ -142,18 +142,35 @@ function GaleriaBadgesPage() {
     return acc;
   }, {});
 // FUNÇÃO DE MAPEAMENTO: Converte o nível do badge para a nomenclatura correta
+// FUNÇÃO DE MAPEAMENTO CORRIGIDA: Mapeia de 1 a 5 (ou A a E) para as tuas 5 palavras-chave
 const obterGrupoPorNivel = (badge) => {
   const nivel = String(badge.codigo_nivel || nivelParaLetra(badge.id_nivel)).toUpperCase();
   
   if (nivel === "A" || nivel === "1") return "Junior";
-  if (nivel === "B" || nivel === "2") return "Intermediate";
-  if (nivel === "C" || nivel === "3") return "Partner";
-  if (nivel === "D" || nivel === "4") return "Senior";
-  if (nivel === "E" || nivel === "5") return "Specialist";
-  if (nivel === "LEADER" || nivel === "6") return "Leader"; 
+  if (nivel === "B" || nivel === "2") return "Intermediate ou Partner";
+  if (nivel === "C" || nivel === "3") return "Senior";
+  if (nivel === "D" || nivel === "4") return "Specialist";
+  if (nivel === "E" || nivel === "5") return "Leader"; 
   
-  return "Junior"; // Fallback por defeito
+  return "Junior"; // Fallback de segurança
 };
+
+// Agrupamento dos Badges pelos novos grupos de Senioridade
+const badgesAgrupados = badges.reduce((acc, badge) => {
+  const grupo = obterGrupoPorNivel(badge);
+  if (!acc[grupo]) acc[grupo] = [];
+  acc[grupo].push(badge);
+  return acc;
+}, {});
+
+// Filtra apenas as categorias que contêm badges para não quebrar o ecrã
+const gruposFiltrados = GRUPOS_ORDEM.filter(grupo => badgesAgrupados[grupo] && badgesAgrupados[grupo].length > 0);
+
+// Paginação adaptada
+const totalPaginas = Math.ceil(gruposFiltrados.length / gruposPorPagina);
+const inicio = (paginaAtual - 1) * gruposPorPagina;
+const fim = inicio + gruposPorPagina;
+const gruposPaginaAtual = gruposFiltrados.slice(inicio, fim);
 
 // Agrupamento dos Badges pelos novos grupos de Senioridade
 const badgesAgrupados = badges.reduce((acc, badge) => {
