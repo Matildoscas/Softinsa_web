@@ -35,7 +35,9 @@ import {
   useParams,
 } from "react-router-dom";
 
-import api from "../../services/api.js";
+import api, {
+  buildUploadUrl,
+} from "../../services/api.js";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 import {
   getDebugModeEnabled,
@@ -272,6 +274,14 @@ function normalizarRequisito(
     evidenciasOriginais.map(
       (item) => ({
         ...item,
+        url:
+          item?.url ||
+          buildUploadUrl(
+            item?.caminho_ficheiro ||
+              item?.path ||
+              item?.ficheiro_url ||
+              ""
+          ),
         estado_evidencia:
           resolverEstadoEvidenciaUi(
             item
@@ -296,6 +306,57 @@ function normalizarRequisito(
           .filter(Boolean)
       ),
     ];
+
+  const documentosNormalizados =
+    normalizarDocumentos(
+      evidencia?.documentos ||
+        requisito.documentos ||
+        requisito.ficheiros ||
+        []
+    ).map((doc) => ({
+      ...doc,
+      url:
+        doc?.url ||
+        buildUploadUrl(
+          doc?.caminho_ficheiro ||
+            doc?.path ||
+            doc?.ficheiro_url ||
+            ""
+        ),
+    }));
+
+  const evidenciasDerivadas =
+    evidencias.length > 0
+      ? evidencias
+      : documentosNormalizados.map(
+          (doc) => ({
+            id_evidencia:
+              doc.id || null,
+            nome_ficheiro:
+              doc.nome || "Documento",
+            url: doc.url,
+            caminho_ficheiro:
+              doc.caminho_ficheiro ||
+              doc.path ||
+              null,
+            formato_ficheiro:
+              doc.formato || "",
+            estado_evidencia:
+              resolverEstadoEvidenciaUi(
+                doc
+              ),
+            estado_evidencia_tm:
+              doc.estado_evidencia_tm ||
+              null,
+            estado_evidencia_sll:
+              doc.estado_evidencia_sll ||
+              null,
+            descricao:
+              requisito.descricao_evidencia ||
+              evidencia?.descricao ||
+              "",
+          })
+        );
 
   return {
     id:
@@ -338,14 +399,11 @@ function normalizarRequisito(
       requisito.links
     ),
 
-    documentos: normalizarDocumentos(
-      evidencia?.documentos ||
-      requisito.documentos ||
-      requisito.ficheiros ||
-      []
-    ),
+    documentos:
+      documentosNormalizados,
 
-    evidencias,
+    evidencias:
+      evidenciasDerivadas,
   };
 }
 

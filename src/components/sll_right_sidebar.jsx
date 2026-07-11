@@ -21,6 +21,21 @@ function obterUtilizadorGuardado() {
   }
 }
 
+function existeTokenSessao() {
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("jwt") ||
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("jwt") ||
+    "";
+
+  return Boolean(
+    String(token).trim()
+  );
+}
+
 function SllRightSidebar() {
   const navigate = useNavigate();
 
@@ -44,6 +59,17 @@ function SllRightSidebar() {
       return;
     }
 
+    if (!existeTokenSessao()) {
+      setNotificacoes([]);
+      setTopUtilizadores([]);
+
+      console.warn(
+        "[SLL] Sessão sem token; a sidebar não vai pedir notificações/top até novo login."
+      );
+
+      return;
+    }
+
     Promise.allSettled([
       api.get(`/notificacoes/${userId}`),
 
@@ -58,10 +84,21 @@ function SllRightSidebar() {
             : []
         );
       } else {
+        const status = Number(
+          notificacoesRes.reason?.response?.status ||
+            0
+        );
+
+        if (status === 401) {
+          console.warn(
+            "[SLL][NOTIFICACOES] Pedido sem sessão válida; a sidebar continua sem bloquear a página."
+          );
+        } else {
         console.error(
           "Erro ao carregar notificações SLL:",
           notificacoesRes.reason
         );
+        }
 
         setNotificacoes([]);
       }

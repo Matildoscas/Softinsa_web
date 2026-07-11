@@ -18,6 +18,21 @@ import {
   notificacaoNaoLida,
 } from "../utils/notificacoesUtils.js";
 
+function existeTokenSessao() {
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("jwt") ||
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("jwt") ||
+    "";
+
+  return Boolean(
+    String(token).trim()
+  );
+}
+
 export default function
   useNotificacoesRealtime(
     idUtilizador
@@ -48,6 +63,11 @@ export default function
           return;
         }
 
+        if (!existeTokenSessao()) {
+          setTotalNaoLidas(0);
+          return;
+        }
+
         try {
           const response =
             await api.get(
@@ -67,6 +87,20 @@ export default function
             ).length
           );
         } catch (err) {
+          const status = Number(
+            err?.response?.status || 0
+          );
+
+          if (status === 401) {
+            setTotalNaoLidas(0);
+
+            console.warn(
+              "[NOTIFICAÇÕES] Sessão inválida para carregar contador."
+            );
+
+            return;
+          }
+
           console.error(
             "[NOTIFICAÇÕES] Erro ao atualizar contador:",
             err
