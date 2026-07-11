@@ -166,10 +166,10 @@ const badgesAgrupados = badges.reduce((acc, badge) => {
 const gruposFiltrados = GRUPOS_ORDEM.filter(grupo => badgesAgrupados[grupo] && badgesAgrupados[grupo].length > 0);
 
 // Paginação adaptada para a nova lista de grupos
-const totalPaginas = Math.ceil(gruposFiltrados.length / gruposPorPagina);
-const inicio = (paginaAtual - 1) * gruposPorPagina;
-const fim = inicio + gruposPorPagina;
-const gruposPaginaAtual = gruposFiltrados.slice(inicio, fim);
+const totalPaginasGrupos = Math.ceil(gruposFiltrados.length / gruposPorPagina);
+const inicioGrupos = (paginaAtual - 1) * gruposPorPagina;
+const fimGrupos = inicioGrupos + gruposPorPagina;
+const gruposPaginaAtual = gruposFiltrados.slice(inicioGrupos, fimGrupos);
   const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) => a.localeCompare(b, "pt-PT"));
   const totalPaginas = Math.ceil(areasOrdenadas.length / areasPorPagina);
   const inicio = (paginaAtual - 1) * areasPorPagina;
