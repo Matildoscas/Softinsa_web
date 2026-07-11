@@ -162,6 +162,14 @@ function candidaturaEstaAprovada(item) {
   return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
 }
 
+function obterMotivoCancelamento(status) {
+  return String(
+    status?.motivo_cancelamento ||
+      status?.motivo_estado_final ||
+      ""
+  ).trim();
+}
+
 function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
 }
@@ -585,6 +593,13 @@ export default function StatusCandidaturasSll() {
                 <div style={mensagemBox}>Seleciona uma candidatura para ver o detalhe.</div>
               ) : (
                 <>
+                  {candidaturaEstaCancelada(detalhe?.status) && obterMotivoCancelamento(detalhe?.status) && (
+                    <div style={motivoCancelamentoBox}>
+                      <div style={motivoCancelamentoTitulo}>Motivo de cancelamento</div>
+                      <div style={motivoCancelamentoTexto}>{obterMotivoCancelamento(detalhe?.status)}</div>
+                    </div>
+                  )}
+
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Estados Explícitos por Fase</div>
                     <div style={estadoPrincipalWrapper}>
@@ -780,6 +795,29 @@ const erroBox = {
   padding: "10px 12px",
   fontSize: 13,
   marginBottom: 14,
+};
+
+const motivoCancelamentoBox = {
+  border: "1px solid #fbcfe8",
+  background: "#fff1f2",
+  color: "#831843",
+  borderRadius: 10,
+  padding: "10px 12px",
+  marginBottom: 10,
+};
+
+const motivoCancelamentoTitulo = {
+  fontSize: 12,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  letterSpacing: 0.2,
+  marginBottom: 4,
+};
+
+const motivoCancelamentoTexto = {
+  fontSize: 13,
+  lineHeight: 1.45,
+  whiteSpace: "pre-wrap",
 };
 
 const gridPrincipal = {
