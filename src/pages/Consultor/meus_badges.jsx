@@ -495,6 +495,24 @@ function CatalogoBadgeRow({
     conquistado &&
     ganhouBonus;
 
+  const pendenteTemEvidencias =
+    Number(
+      pendente?.total_evidencias_submetidas ||
+        pendente?.total_evidencias_enviadas ||
+        pendente?.total_evidencias ||
+        0
+    ) > 0 ||
+    Boolean(
+      pendente?.data_submissao
+    );
+
+  const estadoPendenteLegivel =
+    pendente
+      ? pendenteTemEvidencias
+        ? "Candidatura efetuada"
+        : "Candidatura iniciada"
+      : "";
+
   const estadoBase =
     conquistado
       ? conquistadoBadge
@@ -506,8 +524,7 @@ function CatalogoBadgeRow({
           )}`
         : "Conquistado recentemente"
       : pendente
-        ? pendente.estado_validacao ||
-          "Em progresso"
+        ? estadoPendenteLegivel
         : "Por Conquistar";
 
   const estadoTexto =

@@ -51,27 +51,90 @@ function tornarUrlAbsoluta(url) {
   return valor;
 }
 
+function candidaturaFinalizada(item) {
+  const estado = String(
+    item?.estado_geral ||
+      item?.estado_final ||
+      ""
+  )
+    .trim()
+    .toUpperCase();
+
+  const fase = String(
+    item?.fase_geral || ""
+  )
+    .trim()
+    .toUpperCase();
+
+  return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
+    estado.includes("CANCEL") ||
+    estado.includes("FINAL") ||
+    fase.includes("HISTORICO") ||
+    fase.includes("CANCEL") ||
+    fase.includes("FINALIZ") ||
+    fase.includes("REJEIT") ||
+    fase.includes("CONCLUID")
+  );
+}
+
+function obterNivelBadge(badge) {
+  if (!badge) {
+    return "";
+  }
+
+  const candidatos = [
+    badge.id_nivel,
+    badge.nivel,
+    badge.nivel_badge,
+    badge.nome_nivel,
+    badge.descricao_nivel,
+  ];
+
+  const numeroValido =
+    candidatos
+      .map((valor) => Number(valor))
+      .find(
+        (valor) =>
+          Number.isInteger(valor) &&
+          valor >= 1 &&
+          valor <= 5
+      ) || null;
+
+  if (numeroValido) {
+    return nivelParaLetra(
+      numeroValido
+    );
+  }
+
+  const texto = candidatos
+    .filter(Boolean)
+    .map((valor) => String(valor))
+    .join(" ")
+    .toUpperCase();
+
+  const match = texto.match(
+    /(?:N[IÍ]VEL\s*)?([A-E])\b/
+  );
+
+  return match
+    ? match[1]
+    : "";
+}
+
 function BadgeDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-
-  function confirmarInicioCandidatura() {
-    const confirmar = window.confirm(
-      "Ao confirmar, irá iniciar uma candidatura para este badge. Antes de prosseguir, confirme que pretende mesmo avançar, para evitar submissões desnecessárias para os Talent Managers e Service Line Leaders."
-    );
-
-    if (!confirmar) {
-      return;
-    }
-
-    navigate(`/submeter-evidencias/${badge.id}`);
-  }
 
   const [badge, setBadge] = useState(null);
   const [relacionados, setRelacionados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [conquistado, setConquistado] = useState(false);
   const [conquistadoBadge, setConquistadoBadge] = useState(null);
+  const [desafiosBadge, setDesafiosBadge] = useState([]);
+  const [temCandidaturaAberta, setTemCandidaturaAberta] = useState(false);
+  const [mostrarModalInicioCandidatura, setMostrarModalInicioCandidatura] = useState(false);
 
   const [
     consentimento,
@@ -293,8 +356,31 @@ function BadgeDetailPage() {
         .catch(() => ({
           data: userData,
         })),
+
+      api
+        .get(`/candidaturas/${userId}/status-candidaturas`)
+        .catch(() => ({
+          data: {
+            candidaturas: [],
+          },
+        })),
+
+      api
+        .get(`/lembretes/consultor/${userId}`)
+        .catch(() => ({
+          data: {
+            todos: [],
+          },
+        })),
     ])
-        .then(([todosRes, conquistadosRes, consentimentoRes, utilizadorRes]) => {
+        .then(([
+          todosRes,
+          conquistadosRes,
+          consentimentoRes,
+          utilizadorRes,
+          statusRes,
+          lembretesRes,
+        ]) => {
           setDadosUtilizador(
             utilizadorRes?.data || userData
           );
@@ -314,6 +400,55 @@ function BadgeDetailPage() {
 
         const badgeConquistado = conquistadosAgrupados.find(
             (b) => Number(b.id) === Number(id)
+        );
+
+        const listaStatus =
+          Array.isArray(
+            statusRes?.data
+              ?.candidaturas
+          )
+            ? statusRes.data
+                .candidaturas
+            : [];
+
+        const existeCandidaturaAberta =
+          listaStatus.some(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                  item.id_badge
+              ) === Number(id) &&
+              !candidaturaFinalizada(item)
+          );
+
+        setTemCandidaturaAberta(
+          existeCandidaturaAberta
+        );
+
+        const listaLembretes =
+          Array.isArray(
+            lembretesRes?.data
+              ?.todos
+          )
+            ? lembretesRes.data
+                .todos
+            : [];
+
+        const desafiosDoBadge =
+          listaLembretes.filter(
+            (item) =>
+              String(
+                item.tipo_lembrete ||
+                  ""
+              ).toUpperCase() ===
+                "DESAFIO_TM" &&
+              Number(
+                item.id_badge_modelo
+              ) === Number(id)
+          );
+
+        setDesafiosBadge(
+          desafiosDoBadge
         );
 
         setConquistado(!!badgeConquistado);
@@ -617,6 +752,24 @@ const revogarPublicacao =
       );
     }
   };
+
+  function confirmarInicioCandidatura() {
+    if (temCandidaturaAberta) {
+      navigate(`/submeter-evidencias/${badge.id}`);
+      return;
+    }
+
+    setMostrarModalInicioCandidatura(
+      true
+    );
+  }
+
+  function avancarInicioCandidatura() {
+    setMostrarModalInicioCandidatura(
+      false
+    );
+    navigate(`/submeter-evidencias/${badge.id}`);
+  }
 
   const obterUrlPublicaCertificado =
   async () => {
@@ -1339,12 +1492,42 @@ const copiarAssinatura =
             </p>
           </div>
 
-          <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
+          <NivelSelector nivelAtual={obterNivelBadge(badge)} />
 
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
               Requisitos do Nível
             </div>
+
+          {desafiosBadge.length > 0 && (
+            <div style={sectionCard}>
+              <div style={sectionTitle}>Desafios associados a este badge</div>
+
+              {desafiosBadge.map((desafio) => (
+                <div key={desafio.id_lembrete} style={desafioItem}>
+                  <div style={{ fontWeight: 700, color: "#111827", fontSize: 13 }}>
+                    {desafio.titulo || "Desafio de badge"}
+                  </div>
+
+                  <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
+                    {desafio.descricao || "Sem descrição."}
+                  </div>
+
+                  <div style={{ fontSize: 11, color: "#0f766e", marginTop: 6, fontWeight: 700 }}>
+                    Estado: {String(desafio.estado_lembrete || "PENDENTE").replace(/_/g, " ")}
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                style={desafioLinkButton}
+                onClick={() => navigate("/desafios")}
+              >
+                Ver todos os desafios
+              </button>
+            </div>
+          )}
 
             {badge.requisitos.length > 0 ? (
               badge.requisitos.map((req, i) => (
@@ -1674,6 +1857,34 @@ const copiarAssinatura =
         </Modal.Footer>
       </Modal>      
 
+      <Modal
+        show={mostrarModalInicioCandidatura}
+        onHide={() => setMostrarModalInicioCandidatura(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Iniciar candidatura</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          Ao continuar, vais iniciar uma candidatura para este badge.
+          Podes guardar progresso e submeter evidências quando estiveres pronto.
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setMostrarModalInicioCandidatura(false)}
+          >
+            Cancelar
+          </Button>
+
+          <Button onClick={avancarInicioCandidatura}>
+            Iniciar candidatura
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
     </div>
   );
 }
@@ -1835,6 +2046,25 @@ const signatureTextarea = {
   color: "#475569",
   resize: "vertical",
   outline: "none",
+};
+
+const desafioItem = {
+  border: "1px solid #dbeafe",
+  background: "#f8fbff",
+  borderRadius: 10,
+  padding: 10,
+  marginTop: 10,
+};
+
+const desafioLinkButton = {
+  marginTop: 12,
+  border: "none",
+  background: "transparent",
+  color: "#1d4ed8",
+  fontSize: 13,
+  fontWeight: 700,
+  padding: 0,
+  cursor: "pointer",
 };
 
 const publicLinkBox = {

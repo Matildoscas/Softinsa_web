@@ -9,6 +9,7 @@ import {
   BiGlobe,
   BiGrid,
   BiMedal,
+  BiTargetLock,
   BiUser,
   BiUserCircle,
   BiTimeFive,
@@ -144,6 +145,12 @@ function LeftSidebar() {
         to="/status-candidaturas"
         icon={<BiTimeFive size={18} />}
         label="Progresso das Candidaturas"
+      />
+
+      <SidebarItem
+        to="/desafios"
+        icon={<BiTargetLock size={18} />}
+        label="Desafios"
       />
 
       {/* Grupo Badges */}

@@ -364,6 +364,11 @@ function LembretePage() {
   ] = useState([]);
 
   const [
+    badgesConquistadosIds,
+    setBadgesConquistadosIds,
+  ] = useState(new Set());
+
+  const [
     isLoading,
     setIsLoading,
   ] = useState(true);
@@ -469,6 +474,7 @@ function LembretePage() {
       const [
         respostaLembretes,
         respostaBadges,
+        respostaConquistados,
       ] = await Promise.all([
         api.get(
           `/lembretes/consultor/${idConsultor}`
@@ -476,6 +482,10 @@ function LembretePage() {
 
         api.get(
           "/lembretes/badges"
+        ),
+
+        api.get(
+          `/badges/conquistados/${idConsultor}`
         ),
       ]);
 
@@ -497,12 +507,44 @@ function LembretePage() {
               .data.badges
           : [];
 
+      const listaConquistados =
+        Array.isArray(
+          respostaConquistados
+            .data
+        )
+          ? respostaConquistados
+              .data
+          : [];
+
+      const idsConquistados =
+        new Set(
+          listaConquistados
+            .map(
+              (badge) =>
+                Number(
+                  badge.id_badge_modelo ||
+                    badge.id
+                )
+            )
+            .filter(
+              (idBadge) =>
+                Number.isInteger(
+                  idBadge
+                ) &&
+                idBadge > 0
+            )
+        );
+
       setLembretes(
         listaLembretes
       );
 
       setBadgesDisponiveis(
         listaBadges
+      );
+
+      setBadgesConquistadosIds(
+        idsConquistados
       );
     } catch (err) {
       console.error(
@@ -620,7 +662,16 @@ function LembretePage() {
   const badgeSelecionado =
     useMemo(
       () =>
-        badgesDisponiveis.find(
+        badgesDisponiveis
+          .filter(
+            (badge) =>
+              !badgesConquistadosIds.has(
+                Number(
+                  badge.id_badge_modelo
+                )
+              )
+          )
+          .find(
           (badge) =>
             String(
               badge.id_badge_modelo
@@ -629,11 +680,29 @@ function LembretePage() {
               novoLembrete
                 .id_badge_modelo
             )
-        ) || null,
+          ) || null,
       [
         badgesDisponiveis,
+        badgesConquistadosIds,
         novoLembrete
           .id_badge_modelo,
+      ]
+    );
+
+  const badgesObjetivoDisponiveis =
+    useMemo(
+      () =>
+        badgesDisponiveis.filter(
+          (badge) =>
+            !badgesConquistadosIds.has(
+              Number(
+                badge.id_badge_modelo
+              )
+            )
+        ),
+      [
+        badgesDisponiveis,
+        badgesConquistadosIds,
       ]
     );
 
@@ -697,6 +766,27 @@ function LembretePage() {
       );
 
       return;
+    }
+
+    if (
+      tipoCriacao ===
+      "OBJETIVO_BADGE"
+    ) {
+      const idBadgeSelecionado =
+        Number(
+          novoLembrete.id_badge_modelo
+        );
+
+      if (
+        badgesConquistadosIds.has(
+          idBadgeSelecionado
+        )
+      ) {
+        setErro(
+          "Esse badge já foi conquistado. Seleciona um badge que ainda não tenhas."
+        );
+        return;
+      }
     }
 
     try {
@@ -1707,7 +1797,7 @@ function LembretePage() {
                       Selecionar badge
                     </option>
 
-                    {badgesDisponiveis.map(
+                    {badgesObjetivoDisponiveis.map(
                       (badge) => (
                         <option
                           key={
@@ -2291,6 +2381,17 @@ function LembreteCard({
         0
     );
 
+  const objetivoBadgePendente =
+    String(
+      lembrete.tipo_lembrete ||
+        ""
+    ).toUpperCase() ===
+      "OBJETIVO_BADGE" &&
+    [
+      "PENDENTE",
+      "ATRASADO",
+    ].includes(estado);
+
   const totalDesafio =
     isDesafio
       ? pontosBadge * 2
@@ -2540,7 +2641,11 @@ function LembreteCard({
 
             {podeConcluir && (
               <Button
-                variant="success"
+                variant={
+                  objetivoBadgePendente
+                    ? "secondary"
+                    : "success"
+                }
                 disabled={algumaAcao}
                 onClick={
                   onConcluir

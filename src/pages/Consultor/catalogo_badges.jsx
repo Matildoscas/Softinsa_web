@@ -1160,6 +1160,24 @@ function CatalogoBadgeRow({
     mensagemRealtime || ""
   ).trim();
 
+  const pendenteTemEvidencias =
+    Number(
+      pendente?.total_evidencias_submetidas ||
+        pendente?.total_evidencias_enviadas ||
+        pendente?.total_evidencias ||
+        0
+    ) > 0 ||
+    Boolean(
+      pendente?.data_submissao
+    );
+
+  const estadoPendenteLegivel =
+    pendente
+      ? pendenteTemEvidencias
+        ? "Candidatura efetuada"
+        : "Candidatura iniciada"
+      : "";
+
   const estadoNormal =
     conquistado
       ? conquistadoBadge
@@ -1172,9 +1190,7 @@ function CatalogoBadgeRow({
           )}`
         : "Conquistado recentemente"
       : pendente
-        ? pendente
-            .estado_validacao ||
-          "A aguardar validação"
+        ? estadoPendenteLegivel
         : "Por Conquistar";
 
   /*

@@ -29,6 +29,7 @@ import CertificadoPage from './pages/Consultor/certificado.jsx';
 import ConfiguracaoAssinaturaPage from './pages/Consultor/configuracao_assinatura.jsx';
 import CatalogoBadgesPage from './pages/Consultor/catalogo_badges.jsx';
 import DashboardConsultor from './pages/Consultor/DashboardConsultor.jsx';
+import DesafiosConsultorPage from './pages/Consultor/desafios_consultor.jsx';
 import DefinicoesConsultorPage from './pages/Consultor/definicoes_consultor.jsx';
 import HistoricoBadgesPage from './pages/Consultor/historico_badges.jsx';
 import IntegracaoSoftinsaPage from './pages/Consultor/integracao_softinsa.jsx';
@@ -106,6 +107,7 @@ function App() {
         <Route path="/pag_consultor" element={<DashboardConsultor />} />
         <Route path="/perfil_consultor" element={<PaginaPerfil />} />
         <Route path="/notificacoes" element={<NotificacaoPage />} />
+        <Route path="/desafios" element={<DesafiosConsultorPage />} />
         <Route path="/lembretes" element={<LembretePage />} />
         <Route path="/progresso" element={<ProgressoPage />} />
         <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />

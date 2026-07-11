@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button, Spinner, Form } from "react-bootstrap";
+import { Button, Spinner, Form, Modal } from "react-bootstrap";
 import {
   HiOutlineArrowLeft,
   HiOutlineUpload,
@@ -64,6 +64,8 @@ function SubmeterEvidenciasPage() {
   ] = useState("");
 
   const [mensagemInfo, setMensagemInfo] = useState("");
+  const [mostrarModalEnvio, setMostrarModalEnvio] = useState(false);
+  const [mensagemModalEnvio, setMensagemModalEnvio] = useState("");
 
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
@@ -403,13 +405,13 @@ function SubmeterEvidenciasPage() {
         }
       );
 
-      alert(
+      setMensagemModalEnvio(
         idLembrete
           ? "Candidatura enviada. O objetivo está agora em validação."
           : "Candidatura enviada para avaliação com sucesso."
       );
 
-      navigate(voltarPara, { replace: true });
+      setMostrarModalEnvio(true);
     } catch (err) {
       alert(
         err.response?.data?.error ||
@@ -573,7 +575,7 @@ function SubmeterEvidenciasPage() {
             <div style={infoBox}>{mensagemInfo}</div>
           )}
 
-          <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
+          <NivelSelector nivelAtual={obterNivelBadge(badge)} />
 
           <div style={{ marginBottom: 24 }}>
             <div
@@ -767,6 +769,34 @@ function SubmeterEvidenciasPage() {
 
         <RightSidebar />
       </div>
+
+      <Modal
+        show={mostrarModalEnvio}
+        onHide={() => {
+          setMostrarModalEnvio(false);
+          navigate(voltarPara, { replace: true });
+        }}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Candidatura enviada</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          {mensagemModalEnvio}
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            onClick={() => {
+              setMostrarModalEnvio(false);
+              navigate(voltarPara, { replace: true });
+            }}
+          >
+            Fechar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
@@ -939,6 +969,43 @@ function getRequisitoKey(req, index) {
   return String(
     req.id_requisito || req.id_requisitos || req.titulo || req.nome || index,
   );
+}
+
+function obterNivelBadge(badge) {
+  if (!badge) {
+    return "";
+  }
+
+  const candidatos = [
+    badge.id_nivel,
+    badge.nivel,
+    badge.nivel_badge,
+    badge.nome_nivel,
+    badge.descricao_nivel,
+  ];
+
+  const numeroValido =
+    candidatos
+      .map((valor) => Number(valor))
+      .find(
+        (valor) =>
+          Number.isInteger(valor) &&
+          valor >= 1 &&
+          valor <= 5
+      ) || null;
+
+  if (numeroValido) {
+    return nivelParaLetra(numeroValido);
+  }
+
+  const texto = candidatos
+    .filter(Boolean)
+    .map((valor) => String(valor))
+    .join(" ")
+    .toUpperCase();
+
+  const match = texto.match(/(?:N[IÍ]VEL\s*)?([A-E])\b/);
+  return match ? match[1] : "";
 }
 
 const consentimentoCard = {

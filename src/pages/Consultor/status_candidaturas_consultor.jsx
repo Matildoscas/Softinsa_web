@@ -25,6 +25,46 @@ function normalizarEstado(valor) {
   return String(valor || "").trim().toUpperCase();
 }
 
+function formatarEstadoHumano(valor) {
+  const textoOriginal = String(valor || "").trim();
+  const estado = normalizarEstado(valor);
+
+  if (!estado) {
+    return "Sem estado";
+  }
+
+  const mapa = {
+    EM_VALIDACAO_TM: "Talent Manager a validar",
+    EM_VALIDACAO_SLL: "Service Line Leader a validar",
+    AGUARDA_VALIDACAO_TM: "A aguardar validação do Talent Manager",
+    AGUARDA_VALIDACAO_SLL: "A aguardar validação do Service Line Leader",
+    AGUARDANDO_TM: "A aguardar avaliação do Talent Manager",
+    AGUARDANDO_SLL: "A aguardar avaliação do Service Line Leader",
+    EM_VALIDACAO: "Em validação",
+    PENDENTE: "Pendente",
+    APROVADO: "Aprovado",
+    APROVADA: "Aprovada",
+    APROVADO_FINAL: "Aprovado em definitivo",
+    REJEITADO: "Rejeitado",
+    RECUSADO: "Recusado",
+    CANCELADO: "Cancelado",
+    FINALIZADO: "Concluído",
+    CONCLUIDO: "Concluído",
+    HISTORICO: "Concluído",
+  };
+
+  if (mapa[estado]) {
+    return mapa[estado];
+  }
+
+  return textoOriginal
+    .replace(/_/g, " ")
+    .replace(/\bTM\b/g, "Talent Manager")
+    .replace(/\bSLL\b/g, "Service Line Leader")
+    .toLowerCase()
+    .replace(/^\w/, (letra) => letra.toUpperCase());
+}
+
 function formatarDataHora(data) {
   if (!data) {
     return "-";
@@ -47,20 +87,21 @@ function formatarDataHora(data) {
 
 function chipEstado(estado) {
   const valor = normalizarEstado(estado);
+  const labelHumana = formatarEstadoHumano(estado);
 
   if (valor.includes("APROV")) {
-    return { label: estado || "APROVADO", bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
+    return { label: labelHumana, bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
   }
 
   if (valor.includes("REJEIT") || valor.includes("RECUS")) {
-    return { label: estado || "REJEITADO", bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
+    return { label: labelHumana, bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
   }
 
   if (valor.includes("AGUARDA") || valor.includes("PEND")) {
-    return { label: estado || "PENDENTE", bg: "#fef3c7", color: "#92400e", border: "#fde68a" };
+    return { label: labelHumana, bg: "#fef3c7", color: "#92400e", border: "#fde68a" };
   }
 
-  return { label: estado || "-", bg: "#e5e7eb", color: "#475569", border: "#cbd5e1" };
+  return { label: labelHumana, bg: "#e5e7eb", color: "#475569", border: "#cbd5e1" };
 }
 
 function estadoEtapaRequisito(requisito, chaveEstado) {
@@ -314,7 +355,7 @@ export default function StatusCandidaturasConsultor() {
           </div>
 
           <h1 style={titulo}>Progresso das Candidaturas</h1>
-          <div style={subtitulo}>Consulta em tempo real das candidaturas que submeteste.</div>
+          <div style={subtitulo}>Acompanha, passo a passo, em que fase está cada candidatura aos teus badges.</div>
 
           <div style={tabsBox}>
             <button
@@ -336,7 +377,7 @@ export default function StatusCandidaturasConsultor() {
                 ...(modoLista === "FINALIZADAS" ? tabBtnAtivo : null),
               }}
             >
-              Finalizadas ({lista.filter(candidaturaEstaFinalizada).length})
+              Concluídas ({lista.filter(candidaturaEstaFinalizada).length})
             </button>
           </div>
 
@@ -395,7 +436,7 @@ export default function StatusCandidaturasConsultor() {
                               border: `1px solid ${geral.border}`,
                             }}
                           >
-                            {item.estado_geral}
+                            {formatarEstadoHumano(item.estado_geral)}
                           </span>
                         </div>
 
@@ -409,9 +450,9 @@ export default function StatusCandidaturasConsultor() {
                           <span>{item.email}</span>
                         </div>
 
-                        <div style={metaLinha}>Fase: <strong>{item.fase_geral}</strong></div>
+                        <div style={metaLinha}>Etapa: <strong>{formatarEstadoHumano(item.fase_geral)}</strong></div>
                         <div style={metaLinha}>
-                          Evidências TM/SLL: <strong>{item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>{item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
+                          Evidências decididas: <strong>Talent Manager {item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>Service Line Leader {item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
                         </div>
                       </button>
                     );
@@ -430,41 +471,41 @@ export default function StatusCandidaturasConsultor() {
               ) : (
                 <>
                   <div style={secaoDetalhe}>
-                    <div style={secaoTitulo}>Estados por Fase</div>
+                    <div style={secaoTitulo}>Estado da candidatura</div>
                     <div style={estadoPrincipalWrapper}>
-                      <EstadoPrincipalChip titulo="Estado Geral" valor={detalhe.candidatura?.estado_geral} />
+                      <EstadoPrincipalChip titulo="Estado geral" valor={detalhe.candidatura?.estado_geral} />
                     </div>
                     <div style={estadoGridFases}>
                       <EstadoChip titulo="Pedido" valor={detalhe.candidatura?.estado_candidatura_pedido} />
-                      <EstadoChip titulo="TM" valor={detalhe.candidatura?.estado_candidaturatm} />
-                      <EstadoChip titulo="SLL" valor={detalhe.candidatura?.estado_candidaturasll} />
+                      <EstadoChip titulo="Avaliação do Talent Manager" valor={detalhe.candidatura?.estado_candidaturatm} />
+                      <EstadoChip titulo="Avaliação do Service Line Leader" valor={detalhe.candidatura?.estado_candidaturasll} />
                     </div>
                     <div style={estadoRodapeGrid}>
                       <EstadoChip titulo="Etapa" valor={detalhe.candidatura?.fase_geral} />
-                      <EstadoChip titulo="Resultado Histórico" valor={detalhe.candidatura?.estado_final} />
+                      <EstadoChip titulo="Resultado concluído" valor={detalhe.candidatura?.estado_final} />
                     </div>
                   </div>
 
                   <div style={secaoDetalhe}>
-                    <div style={secaoTitulo}>Linha Temporal</div>
+                    <div style={secaoTitulo}>Linha temporal</div>
                     <LinhaTimeline label="Submissão" data={detalhe.candidatura?.data_submissao} />
-                    <LinhaTimeline label="Receção TM" data={detalhe.candidatura?.data_rececao_tm} />
-                    <LinhaTimeline label="Conclusão TM" data={detalhe.candidatura?.data_conclusao_tm} />
-                    <LinhaTimeline label="Receção SLL" data={detalhe.candidatura?.data_rececao_sll} />
-                    <LinhaTimeline label="Conclusão SLL" data={detalhe.candidatura?.data_conclusao_sll} />
-                    <LinhaTimeline label="Avaliação SLL" data={detalhe.candidatura?.data_avaliacao_sll} />
-                    <LinhaTimeline label="Entrada no histórico" data={detalhe.candidatura?.data_entrada_historico} />
+                    <LinhaTimeline label="Receção pelo Talent Manager" data={detalhe.candidatura?.data_rececao_tm} />
+                    <LinhaTimeline label="Conclusão pelo Talent Manager" data={detalhe.candidatura?.data_conclusao_tm} />
+                    <LinhaTimeline label="Receção pelo Service Line Leader" data={detalhe.candidatura?.data_rececao_sll} />
+                    <LinhaTimeline label="Conclusão pelo Service Line Leader" data={detalhe.candidatura?.data_conclusao_sll} />
+                    <LinhaTimeline label="Avaliação final pelo Service Line Leader" data={detalhe.candidatura?.data_avaliacao_sll} />
+                    <LinhaTimeline label="Entrada em concluído" data={detalhe.candidatura?.data_entrada_historico} />
                   </div>
 
                   <div style={secaoDetalhe}>
-                    <div style={secaoTitulo}>Requisitos e Estado Atual</div>
+                    <div style={secaoTitulo}>Requisitos e estado atual</div>
                     <div style={requisitosLista}>
                       {(detalhe.requisitos || []).map((req) => (
                         <div key={req.id_requisitos} style={requisitoLinha}>
                           <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
                           <div style={requisitoEstadosLinha}>
-                            <EstadoRequisitoChip titulo="TM" valor={estadoEtapaRequisito(req, "estado_evidencia_tm")} />
-                            <EstadoRequisitoChip titulo="SLL" valor={estadoEtapaRequisito(req, "estado_evidencia_sll")} />
+                            <EstadoRequisitoChip titulo="Talent Manager" valor={estadoEtapaRequisito(req, "estado_evidencia_tm")} />
+                            <EstadoRequisitoChip titulo="Service Line Leader" valor={estadoEtapaRequisito(req, "estado_evidencia_sll")} />
                           </div>
                         </div>
                       ))}
