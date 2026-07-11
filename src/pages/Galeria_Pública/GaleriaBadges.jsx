@@ -218,22 +218,30 @@ const gruposPaginaAtual = gruposFiltrados.slice(inicio, fim);
         </section>
 
         <div style={contentWrapper}>
-          {areasPaginaAtual.map((area) => (
-            <section key={area} style={areaSection}>
-              <h3 style={areaTitle}>{area}</h3>
-              <div style={badgeGrid}>
-                {badgesAgrupadosPorArea[area].map((badge) => (
-                  <BadgeGalleryCard
-                    key={badge.id}
-                    badge={badge}
-                    onClick={() => setBadgeSelecionado(badge)}
-                  />
-                ))}
-              </div>
-            </section>
+  {gruposPaginaAtual.map((grupo) => {
+    // 1. Pegamos nos badges deste grupo
+    const badgesDoGrupo = badgesAgrupados[grupo] || [];
+
+    // 2. Ordenamos os badges dentro do grupo pelo id_nivel (do menor para o maior)
+    const badgesOrdenados = [...badgesDoGrupo].sort((a, b) => Number(a.id_nivel) - Number(b.id_nivel));
+
+    return (
+      <section key={grupo} style={areaSection}>
+        {/* Agora o título da secção será "Junior", "Intermediate ou Partner", etc. */}
+        <h3 style={areaTitle}>{grupo}</h3>
+        <div style={badgeGrid}>
+          {badgesOrdenados.map((badge) => (
+            <BadgeGalleryCard
+              key={badge.id}
+              badge={badge}
+              onClick={() => setBadgeSelecionado(badge)}
+            />
           ))}
         </div>
-
+      </section>
+    );
+  })}
+</div>
         <PaginacaoGaleria
           paginaAtual={paginaAtual}
           totalPaginas={totalPaginas}
