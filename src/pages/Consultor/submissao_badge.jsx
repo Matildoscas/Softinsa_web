@@ -1154,27 +1154,43 @@ function obterNivelBadge(badge) {
     .join(" ")
     .toUpperCase();
 
-  if (texto.includes("INICIANTE")) {
+  const textoNormalizado = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (
+    textoNormalizado.includes("INICIANTE") ||
+    textoNormalizado.includes("JUNIOR")
+  ) {
     return "A";
   }
 
-  if (texto.includes("INTERMED")) {
+  if (textoNormalizado.includes("INTERMED")) {
     return "B";
   }
 
-  if (texto.includes("AVANC")) {
+  if (
+    textoNormalizado.includes("AVANC") ||
+    textoNormalizado.includes("SENIOR")
+  ) {
     return "C";
   }
 
-  if (texto.includes("EXPERT")) {
+  if (
+    textoNormalizado.includes("EXPERT") ||
+    textoNormalizado.includes("ESPECIALISTA")
+  ) {
     return "D";
   }
 
-  if (texto.includes("MASTER")) {
+  if (
+    textoNormalizado.includes("MASTER") ||
+    textoNormalizado.includes("LIDER DE CONHECIMENTO")
+  ) {
     return "E";
   }
 
-  const match = texto.match(/(?:N[IÍ]VEL\s*)?([A-E])\b/);
+  const match = textoNormalizado.match(/(?:NIVEL\s*)?([A-E])\b/);
   return match ? match[1] : "";
 }
 

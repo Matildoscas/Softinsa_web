@@ -224,28 +224,44 @@ function CertificadoPage() {
       .join(" ")
       .toUpperCase();
 
-    if (textoNivel.includes("INICIANTE")) {
+    const textoNivelNormalizado = textoNivel
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    if (
+      textoNivelNormalizado.includes("INICIANTE") ||
+      textoNivelNormalizado.includes("JUNIOR")
+    ) {
       return "Nível A";
     }
 
-    if (textoNivel.includes("INTERMED")) {
+    if (textoNivelNormalizado.includes("INTERMED")) {
       return "Nível B";
     }
 
-    if (textoNivel.includes("AVANC")) {
+    if (
+      textoNivelNormalizado.includes("AVANC") ||
+      textoNivelNormalizado.includes("SENIOR")
+    ) {
       return "Nível C";
     }
 
-    if (textoNivel.includes("EXPERT")) {
+    if (
+      textoNivelNormalizado.includes("EXPERT") ||
+      textoNivelNormalizado.includes("ESPECIALISTA")
+    ) {
       return "Nível D";
     }
 
-    if (textoNivel.includes("MASTER")) {
+    if (
+      textoNivelNormalizado.includes("MASTER") ||
+      textoNivelNormalizado.includes("LIDER DE CONHECIMENTO")
+    ) {
       return "Nível E";
     }
 
-    const nivelTexto = textoNivel.match(
-      /(?:N[IÍ]VEL\s*)?([A-E])\b/
+    const nivelTexto = textoNivelNormalizado.match(
+      /(?:NIVEL\s*)?([A-E])\b/
     );
 
     if (nivelTexto) {

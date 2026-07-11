@@ -73,11 +73,17 @@ function obterCodigoNivelBadge(badge) {
     .trim()
     .toUpperCase();
 
-  if (textoNivel.includes("INICIANTE") || /\bA\b/.test(textoNivel)) return "1";
+  if (
+    textoNivel.includes("INICIANTE") ||
+    textoNivel.includes("JUNIOR") ||
+    /\bA\b/.test(textoNivel)
+  ) {
+    return "1";
+  }
   if (textoNivel.includes("INTERMED") || /\bB\b/.test(textoNivel)) return "2";
-  if (textoNivel.includes("AVANC") || /\bC\b/.test(textoNivel)) return "3";
-  if (textoNivel.includes("EXPERT") || /\bD\b/.test(textoNivel)) return "4";
-  if (textoNivel.includes("MASTER") || /\bE\b/.test(textoNivel)) return "5";
+  if (textoNivel.includes("AVANC") || textoNivel.includes("SENIOR") || /\bC\b/.test(textoNivel)) return "3";
+  if (textoNivel.includes("EXPERT") || textoNivel.includes("ESPECIALISTA") || /\bD\b/.test(textoNivel)) return "4";
+  if (textoNivel.includes("MASTER") || textoNivel.includes("LIDER DE CONHECIMENTO") || /\bE\b/.test(textoNivel)) return "5";
 
   return "";
 }

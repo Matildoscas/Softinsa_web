@@ -114,28 +114,44 @@ function obterNivelBadge(badge) {
     .join(" ")
     .toUpperCase();
 
-  if (texto.includes("INICIANTE")) {
+  const textoNormalizado = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (
+    textoNormalizado.includes("INICIANTE") ||
+    textoNormalizado.includes("JUNIOR")
+  ) {
     return "A";
   }
 
-  if (texto.includes("INTERMED")) {
+  if (textoNormalizado.includes("INTERMED")) {
     return "B";
   }
 
-  if (texto.includes("AVANC")) {
+  if (
+    textoNormalizado.includes("AVANC") ||
+    textoNormalizado.includes("SENIOR")
+  ) {
     return "C";
   }
 
-  if (texto.includes("EXPERT")) {
+  if (
+    textoNormalizado.includes("EXPERT") ||
+    textoNormalizado.includes("ESPECIALISTA")
+  ) {
     return "D";
   }
 
-  if (texto.includes("MASTER")) {
+  if (
+    textoNormalizado.includes("MASTER") ||
+    textoNormalizado.includes("LIDER DE CONHECIMENTO")
+  ) {
     return "E";
   }
 
-  const match = texto.match(
-    /(?:N[IÍ]VEL\s*)?([A-E])\b/
+  const match = textoNormalizado.match(
+    /(?:NIVEL\s*)?([A-E])\b/
   );
 
   return match
@@ -155,6 +171,7 @@ function BadgeDetailPage() {
   const [desafiosBadge, setDesafiosBadge] = useState([]);
   const [temCandidaturaAberta, setTemCandidaturaAberta] = useState(false);
   const [estadoCandidaturaBadge, setEstadoCandidaturaBadge] = useState("");
+  const [ocultarAcaoCandidatura, setOcultarAcaoCandidatura] = useState(false);
   const [mostrarModalInicioCandidatura, setMostrarModalInicioCandidatura] = useState(false);
 
   const [
@@ -510,11 +527,6 @@ function BadgeDetailPage() {
               ) === Number(id)
           );
 
-        setTemCandidaturaAberta(
-          existeCandidaturaAberta ||
-            existePendenteNoBadge
-        );
-
         const pendenteBadge =
           listaPendentes.find(
             (item) =>
@@ -532,16 +544,59 @@ function BadgeDetailPage() {
           .replace(/[\u0300-\u036f]/g, "")
           .toUpperCase();
 
-        if (
+        const totalEvidenciasBadge = Number(
+          candidaturaStatusBadge?.total_evidencias ||
+            0
+        );
+
+        const faseGeralBadge = String(
+          candidaturaStatusBadge?.fase_geral ||
+            ""
+        )
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase();
+
+        const estadoPedidoBadge = String(
+          candidaturaStatusBadge?.estado_candidatura_pedido ||
+            ""
+        )
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase();
+
+        const candidaturaEfetuada =
           estadoCatalogo.includes(
             "CANDIDATURA_EFETUADA"
           ) ||
-          String(
-            candidaturaStatusBadge?.fase_geral ||
-              ""
-          )
-            .toUpperCase()
-            .includes("AVALIAC")
+          faseGeralBadge.includes(
+            "AVALIAC"
+          ) ||
+          faseGeralBadge.includes(
+            "SUBMETIDA"
+          ) ||
+          [
+            "PENDENTE",
+            "EM_VALIDACAO_TM",
+            "EM_VALIDACAO_SLL",
+            "EM_VALIDACAO",
+          ].includes(
+            estadoPedidoBadge
+          ) ||
+          totalEvidenciasBadge >= 3;
+
+        setTemCandidaturaAberta(
+          (existeCandidaturaAberta ||
+            existePendenteNoBadge) &&
+            !candidaturaEfetuada
+        );
+
+        setOcultarAcaoCandidatura(
+          candidaturaEfetuada
+        );
+
+        if (
+          candidaturaEfetuada
         ) {
           setEstadoCandidaturaBadge(
             "Candidatura efetuada"
@@ -1877,20 +1932,22 @@ const copiarAssinatura =
     </button>
   </>
             ) : (
-              <button
-                style={actionBtn}
-                onClick={confirmarInicioCandidatura}
-              >
-                <BiMedal
-                  size={18}
-                  style={{
-                    marginRight: 8,
-                  }}
-                />
-                {temCandidaturaAberta
-                  ? "Continuar candidatura"
-                  : "Submeter Evidências"}
-              </button>
+              !ocultarAcaoCandidatura && (
+                <button
+                  style={actionBtn}
+                  onClick={confirmarInicioCandidatura}
+                >
+                  <BiMedal
+                    size={18}
+                    style={{
+                      marginRight: 8,
+                    }}
+                  />
+                  {temCandidaturaAberta
+                    ? "Continuar candidatura"
+                    : "Submeter Evidências"}
+                </button>
+              )
             )}
             </div>
 
