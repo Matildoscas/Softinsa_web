@@ -143,17 +143,25 @@ function GaleriaBadgesPage() {
   }, {});
 // FUNÇÃO DE MAPEAMENTO: Converte o nível do badge para a nomenclatura correta
 const obterGrupoPorNivel = (badge) => {
-  const nivel = String(badge.codigo_nivel || nivelParaLetra(badge.id_nivel)).toUpperCase();
-  
-  if (nivel === "A" || nivel === "1") return "Junior";
-  if (nivel === "B" || nivel === "2") return "Intermediate ou Partner";
-  if (nivel === "C" || nivel === "3") return "Senior";
-  if (nivel === "D" || nivel === "4") return "Specialist";
-  if (nivel === "E" || nivel === "5") return "Leader"; 
-  
-  return "Junior"; // Fallback de segurança
-};
+  // Tenta ler o código_nivel ou o id_nivel
+  const nivelOpcao1 = String(badge.codigo_nivel || "").toUpperCase();
+  const nivelOpcao2 = String(badge.id_nivel || "");
 
+  if (nivelOpcao1 === "A" || nivelOpcao2 === "1") return "Junior";
+  if (nivelOpcao1 === "B" || nivelOpcao2 === "2") return "Intermediate ou Partner";
+  if (nivelOpcao1 === "C" || nivelOpcao2 === "3") return "Senior";
+  if (nivelOpcao1 === "D" || nivelOpcao2 === "4") return "Specialist";
+  if (nivelOpcao1 === "E" || nivelOpcao2 === "5") return "Leader"; 
+
+  // Se a tua API usar strings diretas como "Nível 1", "Nível 2" no código_nivel:
+  if (nivelOpcao1.includes("1")) return "Junior";
+  if (nivelOpcao1.includes("2")) return "Intermediate ou Partner";
+  if (nivelOpcao1.includes("3")) return "Senior";
+  if (nivelOpcao1.includes("4")) return "Specialist";
+  if (nivelOpcao1.includes("5")) return "Leader";
+
+  return "Junior"; 
+};
 // Agrupamento dos Badges pelos novos grupos de Senioridade
 const badgesAgrupados = badges.reduce((acc, badge) => {
   const grupo = obterGrupoPorNivel(badge);
