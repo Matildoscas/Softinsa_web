@@ -24,10 +24,30 @@ const buildUploadUrl = (path) => {
 api.interceptors.request.use(
   async (config) => {
     // 💡 Procura por todos os nomes possíveis que o teu Login possa ter usado
-    const token = 
+    let token = 
       localStorage.getItem('token') || 
       localStorage.getItem('authToken') || 
-      localStorage.getItem('jwt');
+      localStorage.getItem('jwt') ||
+      sessionStorage.getItem('token') ||
+      sessionStorage.getItem('authToken') ||
+      sessionStorage.getItem('jwt');
+
+    if (!token) {
+      try {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          const user = JSON.parse(userRaw);
+          token =
+            user?.token ||
+            user?.authToken ||
+            user?.jwt ||
+            user?.accessToken ||
+            null;
+        }
+      } catch {
+        token = null;
+      }
+    }
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

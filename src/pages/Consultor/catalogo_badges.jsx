@@ -67,6 +67,11 @@ function CatalogoBadgesPage() {
   ] = useState([]);
 
   const [
+    desafiosPorBadge,
+    setDesafiosPorBadge,
+  ] = useState({});
+
+  const [
     loading,
     setLoading,
   ] = useState(true);
@@ -144,6 +149,7 @@ function CatalogoBadgesPage() {
             todosResultado,
             conquistadosResultado,
             pendentesResultado,
+            lembretesResultado,
           ] = await Promise.allSettled([
             api.get(
               "/badges/todos"
@@ -155,6 +161,10 @@ function CatalogoBadgesPage() {
 
             api.get(
               `/certificados/pendentes/${id}`
+            ),
+
+            api.get(
+              `/lembretes/consultor/${id}`
             ),
           ]);
 
@@ -189,6 +199,16 @@ function CatalogoBadgesPage() {
                   data: [],
                 };
 
+          const lembretesResponse =
+            lembretesResultado.status ===
+            "fulfilled"
+              ? lembretesResultado.value
+              : {
+                  data: {
+                    todos: [],
+                  },
+                };
+
           const listaTodos =
             removerBadgesDuplicados(
               Array.isArray(
@@ -214,6 +234,62 @@ function CatalogoBadgesPage() {
               ? pendentesResponse.data
               : [];
 
+          const listaLembretes =
+            Array.isArray(
+              lembretesResponse.data
+                ?.todos
+            )
+              ? lembretesResponse.data
+                  .todos
+              : [];
+
+          const desafiosMap =
+            listaLembretes
+              .filter(
+                (item) =>
+                  String(
+                    item.tipo_lembrete ||
+                      ""
+                  ).toUpperCase() ===
+                    "DESAFIO_TM" &&
+                  Number(
+                    item.id_badge_modelo
+                  ) > 0 &&
+                  ![
+                    "CONCLUIDO",
+                    "CONCLUIDO_SEM_PREMIO",
+                    "RECUSADO",
+                    "REJEITADO_VALIDACAO",
+                    "CANCELADO",
+                  ].includes(
+                    String(
+                      item.estado_lembrete ||
+                        ""
+                    ).toUpperCase()
+                  )
+              )
+              .reduce(
+                (acc, item) => {
+                  const idBadge = Number(
+                    item.id_badge_modelo
+                  );
+
+                  acc[idBadge] = {
+                    id_lembrete:
+                      item.id_lembrete,
+                    titulo:
+                      item.titulo ||
+                      "Desafio ativo",
+                    estado:
+                      item.estado_lembrete ||
+                      "PENDENTE",
+                  };
+
+                  return acc;
+                },
+                {}
+              );
+
           setBadges(
             listaTodos
           );
@@ -224,6 +300,10 @@ function CatalogoBadgesPage() {
 
           setPendentes(
             listaPendentes
+          );
+
+          setDesafiosPorBadge(
+            desafiosMap
           );
         } catch (err) {
           console.error(
@@ -422,6 +502,15 @@ function CatalogoBadgesPage() {
       [
         conquistados,
       ]
+    );
+
+  const getDesafioDoBadge =
+    useCallback(
+      (badgeId) =>
+        desafiosPorBadge[
+          Number(badgeId)
+        ] || null,
+      [desafiosPorBadge]
     );
 
   /*
@@ -1035,6 +1124,12 @@ function CatalogoBadgesPage() {
                       pendente
                     }
 
+                    desafio={
+                      getDesafioDoBadge(
+                        badgeId
+                      )
+                    }
+
                     mensagemRealtime={
                       mensagensRealtime[
                         badgeId
@@ -1152,6 +1247,7 @@ function CatalogoBadgeRow({
   conquistado,
   conquistadoBadge,
   pendente,
+  desafio,
   mensagemRealtime,
   onClick,
 }) {
@@ -1188,6 +1284,20 @@ function CatalogoBadgeRow({
   const bonusAtivo =
     conquistado &&
     ganhouBonus;
+
+  const desafioAtivo =
+    Boolean(
+      desafio?.id_lembrete
+    ) ||
+    Boolean(
+      pendente
+        ?.tem_desafio_ativo
+    );
+
+  const desafioTitulo =
+    desafio?.titulo ||
+    pendente?.titulo_desafio ||
+    "Desafio aplicado";
 
   const mensagemSocket =
   String(
@@ -1375,6 +1485,37 @@ function CatalogoBadgeRow({
                 Desafio concluído
               </span>
             )}
+
+            {!bonusAtivo &&
+              desafioAtivo && (
+                <span
+                  style={{
+                    background:
+                      "#ecfeff",
+
+                    color:
+                      "#0f766e",
+
+                    border:
+                      "1px solid #99f6e4",
+
+                    borderRadius:
+                      999,
+
+                    padding:
+                      "3px 9px",
+
+                    fontSize:
+                      11,
+
+                    fontWeight:
+                      700,
+                  }}
+                  title={desafioTitulo}
+                >
+                  Desafio aplicado
+                </span>
+              )}
           </div>
 
           <div

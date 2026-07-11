@@ -114,6 +114,26 @@ function obterNivelBadge(badge) {
     .join(" ")
     .toUpperCase();
 
+  if (texto.includes("INICIANTE")) {
+    return "A";
+  }
+
+  if (texto.includes("INTERMED")) {
+    return "B";
+  }
+
+  if (texto.includes("AVANC")) {
+    return "C";
+  }
+
+  if (texto.includes("EXPERT")) {
+    return "D";
+  }
+
+  if (texto.includes("MASTER")) {
+    return "E";
+  }
+
   const match = texto.match(
     /(?:N[IÍ]VEL\s*)?([A-E])\b/
   );

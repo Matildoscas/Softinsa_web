@@ -224,6 +224,26 @@ function CertificadoPage() {
       .join(" ")
       .toUpperCase();
 
+    if (textoNivel.includes("INICIANTE")) {
+      return "Nível A";
+    }
+
+    if (textoNivel.includes("INTERMED")) {
+      return "Nível B";
+    }
+
+    if (textoNivel.includes("AVANC")) {
+      return "Nível C";
+    }
+
+    if (textoNivel.includes("EXPERT")) {
+      return "Nível D";
+    }
+
+    if (textoNivel.includes("MASTER")) {
+      return "Nível E";
+    }
+
     const nivelTexto = textoNivel.match(
       /(?:N[IÍ]VEL\s*)?([A-E])\b/
     );
