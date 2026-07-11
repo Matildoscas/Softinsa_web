@@ -362,9 +362,47 @@ function PaginaPrincipalAdmin() {
     "Líder de Conhecimento",
   ];
 
+  function normalizarTexto(texto) {
+    return String(texto || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function agruparLearningPathsPorNivel(dados) {
+    const mapa = {};
+
+    dados.forEach((item) => {
+      const nomeNivel = item.nome_nivel || "Sem nível";
+      const nomeLearningPath =
+        item.nome_learningpaths || "Sem Learning Path";
+
+      const chave = `${normalizarTexto(nomeNivel)}-${normalizarTexto(nomeLearningPath)}`;
+
+      if (!mapa[chave]) {
+        mapa[chave] = {
+          id_nivel: item.id_nivel,
+          nome_nivel: nomeNivel,
+          nome_learningpaths: nomeLearningPath,
+          total_badges: 0,
+        };
+      }
+
+      mapa[chave].total_badges += Number(item.total_badges || 0);
+    });
+
+    return Object.values(mapa);
+  }
+
+  const badgesPorNivelAgrupados =
+    agruparLearningPathsPorNivel(badgesPorNivelLearningPath);
+
   const badgesAgrupadosPorNivel = ORDEM_NIVEIS.map((nomeNivel) => {
-    const items = badgesPorNivelLearningPath.filter(
-      (item) => item.nome_nivel === nomeNivel
+    const items = badgesPorNivelAgrupados.filter(
+      (item) =>
+        normalizarTexto(item.nome_nivel) ===
+        normalizarTexto(nomeNivel)
     );
 
     return {
