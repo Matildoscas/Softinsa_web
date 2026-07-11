@@ -194,13 +194,43 @@ function CertificadoPage() {
   };
 
   const getNivel = () => {
-    const nivel = Number(badge?.id_nivel || 0);
+    const candidatos = [
+      badge?.id_nivel,
+      badge?.nivel,
+      badge?.nivel_badge,
+      badge?.nome_nivel,
+      badge?.descricao_nivel,
+    ];
+
+    const nivel =
+      candidatos
+        .map((valor) => Number(valor))
+        .find(
+          (valor) =>
+            Number.isInteger(valor) &&
+            valor >= 1 &&
+            valor <= 5
+        ) || 0;
 
     if (nivel === 1) return "Nível A";
     if (nivel === 2) return "Nível B";
     if (nivel === 3) return "Nível C";
     if (nivel === 4) return "Nível D";
     if (nivel === 5) return "Nível E";
+
+    const textoNivel = candidatos
+      .filter(Boolean)
+      .map((valor) => String(valor))
+      .join(" ")
+      .toUpperCase();
+
+    const nivelTexto = textoNivel.match(
+      /(?:N[IÍ]VEL\s*)?([A-E])\b/
+    );
+
+    if (nivelTexto) {
+      return `Nível ${nivelTexto[1]}`;
+    }
 
     return "Nível não definido";
   };

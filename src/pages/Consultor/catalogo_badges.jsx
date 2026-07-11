@@ -141,10 +141,10 @@ function CatalogoBadgesPage() {
 
         try {
           const [
-            todosResponse,
-            conquistadosResponse,
-            pendentesResponse,
-          ] = await Promise.all([
+            todosResultado,
+            conquistadosResultado,
+            pendentesResultado,
+          ] = await Promise.allSettled([
             api.get(
               "/badges/todos"
             ),
@@ -157,6 +157,37 @@ function CatalogoBadgesPage() {
               `/certificados/pendentes/${id}`
             ),
           ]);
+
+          if (
+            todosResultado.status !==
+            "fulfilled"
+          ) {
+            throw (
+              todosResultado.reason ||
+              new Error(
+                "Falha ao carregar catálogo de badges"
+              )
+            );
+          }
+
+          const todosResponse =
+            todosResultado.value;
+
+          const conquistadosResponse =
+            conquistadosResultado.status ===
+            "fulfilled"
+              ? conquistadosResultado.value
+              : {
+                  data: [],
+                };
+
+          const pendentesResponse =
+            pendentesResultado.status ===
+            "fulfilled"
+              ? pendentesResultado.value
+              : {
+                  data: [],
+                };
 
           const listaTodos =
             removerBadgesDuplicados(
