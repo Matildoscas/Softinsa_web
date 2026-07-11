@@ -131,6 +131,37 @@ function candidaturaEstaObtida(item) {
   );
 }
 
+function candidaturaEstaConcluida(item) {
+  return candidaturaEstaFinalizada(item);
+}
+
+function candidaturaEstaCancelada(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return estado.includes("CANCEL") || fase.includes("CANCEL");
+}
+
+function candidaturaEstaRejeitada(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return true;
+  }
+
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
+    fase.includes("REJEIT") ||
+    fase.includes("RECUS")
+  );
+}
+
+function candidaturaEstaAprovada(item) {
+  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
+}
+
 function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
 }
@@ -236,6 +267,7 @@ export default function StatusCandidaturasSll() {
   const [selecionada, setSelecionada] = useState(null);
   const [detalhe, setDetalhe] = useState(null);
   const [modoLista, setModoLista] = useState("EM_PROCESSO");
+  const [subModoConcluidos, setSubModoConcluidos] = useState("TODAS");
 
   const [pesquisa, setPesquisa] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -313,11 +345,25 @@ export default function StatusCandidaturasSll() {
 
   const listaPorModo = useMemo(() => {
     if (modoLista === "CONCLUIDOS") {
-      return lista.filter(candidaturaEstaObtida);
+      const concluidas = lista.filter(candidaturaEstaConcluida);
+
+      if (subModoConcluidos === "APROVADAS") {
+        return concluidas.filter(candidaturaEstaAprovada);
+      }
+
+      if (subModoConcluidos === "REJEITADAS") {
+        return concluidas.filter(candidaturaEstaRejeitada);
+      }
+
+      if (subModoConcluidos === "CANCELADAS") {
+        return concluidas.filter(candidaturaEstaCancelada);
+      }
+
+      return concluidas;
     }
 
     return lista.filter(candidaturaEstaEmProcesso);
-  }, [lista, modoLista]);
+  }, [lista, modoLista, subModoConcluidos]);
 
   useEffect(() => {
     if (listaPorModo.length === 0) {
@@ -372,7 +418,9 @@ export default function StatusCandidaturasSll() {
           <div style={tabsBox}>
             <button
               type="button"
-              onClick={() => setModoLista("EM_PROCESSO")}
+              onClick={() => {
+                setModoLista("EM_PROCESSO");
+              }}
               style={{
                 ...tabBtn,
                 ...(modoLista === "EM_PROCESSO" ? tabBtnAtivo : null),
@@ -383,15 +431,65 @@ export default function StatusCandidaturasSll() {
 
             <button
               type="button"
-              onClick={() => setModoLista("CONCLUIDOS")}
+              onClick={() => {
+                setModoLista("CONCLUIDOS");
+              }}
               style={{
                 ...tabBtn,
                 ...(modoLista === "CONCLUIDOS" ? tabBtnAtivo : null),
               }}
             >
-              Concluídos ({lista.filter(candidaturaEstaObtida).length})
+              Concluídos ({lista.filter(candidaturaEstaConcluida).length})
             </button>
           </div>
+
+          {modoLista === "CONCLUIDOS" && (
+            <div style={subTabsBox}>
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("TODAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "TODAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Todas ({lista.filter(candidaturaEstaConcluida).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("APROVADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "APROVADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Aprovadas ({lista.filter(candidaturaEstaAprovada).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("REJEITADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "REJEITADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Rejeitadas ({lista.filter(candidaturaEstaRejeitada).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("CANCELADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Canceladas ({lista.filter(candidaturaEstaCancelada).length})
+              </button>
+            </div>
+          )}
 
           <div style={pesquisaBox}>
             <BiSearch size={16} color="#64748b" />
@@ -613,6 +711,13 @@ const tabsBox = {
   marginBottom: 12,
 };
 
+const subTabsBox = {
+  display: "flex",
+  gap: 8,
+  marginBottom: 12,
+  flexWrap: "wrap",
+};
+
 const tabBtn = {
   border: "1px solid #d1d5db",
   background: "#ffffff",
@@ -628,6 +733,23 @@ const tabBtnAtivo = {
   border: "1px solid #3b82f6",
   background: "#eff6ff",
   color: "#1d4ed8",
+};
+
+const subTabBtn = {
+  border: "1px solid #d1d5db",
+  background: "#ffffff",
+  color: "#334155",
+  padding: "6px 10px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const subTabBtnAtivo = {
+  border: "1px solid #0ea5e9",
+  background: "#e0f2fe",
+  color: "#0369a1",
 };
 
 const pesquisaBox = {
