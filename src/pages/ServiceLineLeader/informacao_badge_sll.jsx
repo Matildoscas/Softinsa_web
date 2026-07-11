@@ -13,6 +13,7 @@ import {
 
 import {
   useNavigate,
+  useLocation,
   useParams,
 } from "react-router-dom";
 
@@ -200,6 +201,7 @@ function normalizarBadge(badge) {
 
 function InformacaoBadgeSll() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { id } = useParams();
 
@@ -214,7 +216,7 @@ function InformacaoBadgeSll() {
 
   useEffect(() => {
     carregarBadge();
-  }, [id]);
+  }, [id, location.search]);
 
   async function carregarBadge() {
     const utilizador =
@@ -238,8 +240,34 @@ function InformacaoBadgeSll() {
       setIsLoading(true);
       setErro("");
 
+      const params = new URLSearchParams(
+        location.search || ""
+      );
+
+      const scope = String(
+        params.get("scope") || ""
+      ).trim();
+
+      const idServiceLine = String(
+        params.get("id_serviceline") || ""
+      ).trim();
+
+      const query = new URLSearchParams();
+
+      if (scope) {
+        query.set("scope", scope);
+      }
+
+      if (idServiceLine) {
+        query.set("id_serviceline", idServiceLine);
+      }
+
+      const sufixo = query.toString()
+        ? `?${query.toString()}`
+        : "";
+
       const response = await api.get(
-        `/sll/${idUtilizador}/badges/${id}`
+        `/sll/${idUtilizador}/badges/${id}${sufixo}`
       );
 
       const badgeRecebido =
@@ -300,9 +328,17 @@ function InformacaoBadgeSll() {
         <main style={conteudo}>
           <button
             type="button"
-            onClick={() =>
-              navigate("/sll/badges")
-            }
+            onClick={() => {
+              const params = new URLSearchParams(
+                location.search || ""
+              );
+
+              const sufixo = params.toString()
+                ? `?${params.toString()}`
+                : "";
+
+              navigate(`/sll/badges${sufixo}`);
+            }}
             style={voltarButton}
           >
             <BiArrowBack size={18} />

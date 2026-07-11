@@ -135,6 +135,29 @@ function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
 }
 
+function candidaturaTemRejeicaoEmEvidencias(item) {
+  return (
+    Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
+    Number(item?.evidencias_rejeitadas_sll || 0) > 0
+  );
+}
+
+function estadoGeralVisivel(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.estado_geral || "-";
+}
+
+function faseGeralVisivel(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.fase_geral || "-";
+}
+
 function EstadoChip({ titulo, valor }) {
   const chip = chipEstado(valor);
 
@@ -289,7 +312,7 @@ export default function StatusCandidaturasSll() {
   }, [selecionada]);
 
   const listaPorModo = useMemo(() => {
-    if (modoLista === "OBTIDOS") {
+    if (modoLista === "CONCLUIDOS") {
       return lista.filter(candidaturaEstaObtida);
     }
 
@@ -360,13 +383,13 @@ export default function StatusCandidaturasSll() {
 
             <button
               type="button"
-              onClick={() => setModoLista("OBTIDOS")}
+              onClick={() => setModoLista("CONCLUIDOS")}
               style={{
                 ...tabBtn,
-                ...(modoLista === "OBTIDOS" ? tabBtnAtivo : null),
+                ...(modoLista === "CONCLUIDOS" ? tabBtnAtivo : null),
               }}
             >
-              Obtidos ({lista.filter(candidaturaEstaObtida).length})
+              Concluídos ({lista.filter(candidaturaEstaObtida).length})
             </button>
           </div>
 
@@ -390,15 +413,17 @@ export default function StatusCandidaturasSll() {
                 <div style={mensagemBox}>A carregar candidaturas...</div>
               ) : listaFiltrada.length === 0 ? (
                 <div style={mensagemBox}>
-                  {modoLista === "OBTIDOS"
-                    ? "Não existem badges obtidos para mostrar."
+                  {modoLista === "CONCLUIDOS"
+                    ? "Não existem candidaturas concluídas para mostrar."
                     : "Não existem candidaturas em processo para mostrar."}
                 </div>
               ) : (
                 <div style={listaCards}>
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
-                    const geral = chipEstado(item.estado_geral);
+                    const estadoVisivel = estadoGeralVisivel(item);
+                    const faseVisivel = faseGeralVisivel(item);
+                    const geral = chipEstado(estadoVisivel);
 
                     return (
                       <button
@@ -425,7 +450,7 @@ export default function StatusCandidaturasSll() {
                               border: `1px solid ${geral.border}`,
                             }}
                           >
-                            {item.estado_geral}
+                            {estadoVisivel}
                           </span>
                         </div>
 
@@ -440,7 +465,7 @@ export default function StatusCandidaturasSll() {
                         </div>
 
                         <div style={metaLinha}>
-                          Fase: <strong>{item.fase_geral}</strong>
+                          Fase: <strong>{faseVisivel}</strong>
                         </div>
 
                         <div style={metaLinha}>

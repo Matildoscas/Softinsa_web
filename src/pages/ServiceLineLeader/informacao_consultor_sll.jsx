@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import {
+  BiAward,
   BiArrowBack,
   BiBadge,
   BiBriefcase,
@@ -311,14 +312,57 @@ function normalizarConsultor(
       consultor.ultimo_login ||
       null,
 
-    progresso_nivel:
-      consultor.progresso_nivel ??
-      "Sem progresso registado",
-
     total_badges: Number(
       consultor.total_badges || 0
     ),
   };
+}
+
+function resolverNomeNivelBadge(badge) {
+  const codigo = String(
+    badge?.codigo_nivel || ""
+  )
+    .trim()
+    .toUpperCase();
+
+  if (["A", "B", "C", "D", "E"].includes(codigo)) {
+    return `Nível ${codigo}`;
+  }
+
+  const numeroNivel = Number(
+    badge?.id_nivel
+  );
+
+  if (Number.isInteger(numeroNivel) && numeroNivel >= 1 && numeroNivel <= 5) {
+    return `Nível ${String.fromCharCode(64 + numeroNivel)}`;
+  }
+
+  const textoNivel = String(
+    badge?.nome_nivel ||
+      badge?.nivel ||
+      ""
+  )
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+
+  if (textoNivel.includes("JUNIOR") || textoNivel.includes("INICIANTE")) return "Nível A";
+  if (textoNivel.includes("INTERMED")) return "Nível B";
+  if (textoNivel.includes("SENIOR") || textoNivel.includes("AVANC")) return "Nível C";
+  if (textoNivel.includes("ESPECIALISTA") || textoNivel.includes("EXPERT")) return "Nível D";
+  if (textoNivel.includes("LIDER DE CONHECIMENTO") || textoNivel.includes("MASTER")) return "Nível E";
+
+  const letraNivel = textoNivel.match(/(?:NIVEL\s*)?([A-E])\b/);
+  if (letraNivel) {
+    return `Nível ${letraNivel[1]}`;
+  }
+
+  const nomeNivelOriginal = String(
+    badge?.nome_nivel || ""
+  ).trim();
+
+  return nomeNivelOriginal || "Sem nível";
 }
 
 function normalizarBadge(badge, index) {
@@ -348,9 +392,7 @@ function normalizarBadge(badge, index) {
       "Sem descrição.",
 
     nome_nivel:
-      badge.nome_nivel ||
-      badge.nivel ||
-      "Sem nível",
+      resolverNomeNivelBadge(badge),
 
     nome_area:
       badge.nome_area || "",
@@ -559,17 +601,15 @@ function InformacaoConsultorSll() {
     }
   }
 
-  const percentagemProgresso =
+  const totalPontosBadges =
     useMemo(
       () =>
-        obterPercentagem(
-          consultor
-            ?.progresso_nivel
+        badges.reduce(
+          (soma, badge) =>
+            soma + Number(badge.pontos || 0),
+          0
         ),
-      [
-        consultor
-          ?.progresso_nivel,
-      ]
+      [badges]
     );
 
   async function gerarPdf() {
@@ -689,13 +729,6 @@ function InformacaoConsultorSll() {
             consultor.estado_conta,
           ],
           [
-            "Entrada na empresa",
-            formatarData(
-              consultor
-                .data_entrada_empresa
-            ),
-          ],
-          [
             "Entrada na área",
             formatarData(
               consultor
@@ -709,15 +742,12 @@ function InformacaoConsultorSll() {
             ),
           ],
           [
-            "Progresso",
-            String(
-              consultor
-                .progresso_nivel
-            ),
-          ],
-          [
             "Badges conquistados",
             consultor.total_badges,
+          ],
+          [
+            "Pontos conquistados",
+            totalPontosBadges,
           ],
         ],
 
@@ -887,13 +917,6 @@ function InformacaoConsultorSll() {
         consultor.estado_conta,
       ],
       [
-        "Entrada na empresa",
-        formatarData(
-          consultor
-            .data_entrada_empresa
-        ),
-      ],
-      [
         "Entrada na área",
         formatarData(
           consultor.data_entrada_area
@@ -906,12 +929,12 @@ function InformacaoConsultorSll() {
         ),
       ],
       [
-        "Progresso",
-        consultor.progresso_nivel,
-      ],
-      [
         "Total de badges",
         consultor.total_badges,
+      ],
+      [
+        "Pontos conquistados",
+        totalPontosBadges,
       ],
       [],
       [
@@ -1115,18 +1138,12 @@ function InformacaoConsultorSll() {
 
                   <EstatisticaCard
                     icon={
-                      <BiTimeFive
+                      <BiAward
                         size={25}
                       />
                     }
-                    valor={
-                      percentagemProgresso !==
-                      null
-                        ? `${percentagemProgresso}%`
-                        : consultor
-                            .progresso_nivel
-                    }
-                    label="Progresso atual"
+                    valor={totalPontosBadges}
+                    label="Pontos conquistados"
                   />
                 </div>
               </section>
@@ -1202,19 +1219,6 @@ function InformacaoConsultorSll() {
                         size={20}
                       />
                     }
-                    label="Entrada na empresa"
-                    value={formatarData(
-                      consultor
-                        .data_entrada_empresa
-                    )}
-                  />
-
-                  <DetalheItem
-                    icon={
-                      <BiCalendar
-                        size={20}
-                      />
-                    }
                     label="Entrada na área"
                     value={formatarData(
                       consultor
@@ -1235,33 +1239,6 @@ function InformacaoConsultorSll() {
                     )}
                   />
                 </div>
-
-                <div style={progressoArea}>
-                  <div style={progressoCabecalho}>
-                    <span>
-                      Progresso do nível
-                    </span>
-
-                    <strong>
-                      {
-                        consultor
-                          .progresso_nivel
-                      }
-                    </strong>
-                  </div>
-
-                  {percentagemProgresso !==
-                    null && (
-                    <div style={barraFundo}>
-                      <div
-                        style={{
-                          ...barraProgresso,
-                          width: `${percentagemProgresso}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
               </section>
 
               <section style={badgesCard}>
@@ -1280,9 +1257,16 @@ function InformacaoConsultorSll() {
                     </div>
                   </div>
 
-                  <div style={totalBadgesBox}>
-                    <BiBadge size={20} />
-                    {badges.length}
+                  <div style={totaisBadgesLinha}>
+                    <div style={totalBadgesBox}>
+                      <BiBadge size={20} />
+                      {badges.length}
+                    </div>
+
+                    <div style={totalPontosBox}>
+                      <BiAward size={20} />
+                      {totalPontosBadges} pts
+                    </div>
                   </div>
                 </div>
 
@@ -1746,6 +1730,12 @@ const secaoCabecalho = {
   marginBottom: 20,
 };
 
+const totaisBadgesLinha = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+};
+
 const totalBadgesBox = {
   display: "inline-flex",
   alignItems: "center",
@@ -1753,6 +1743,18 @@ const totalBadgesBox = {
   borderRadius: 999,
   background: "#eff6ff",
   color: "#2563eb",
+  padding: "7px 13px",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
+const totalPontosBox = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  borderRadius: 999,
+  background: "#fef3c7",
+  color: "#92400e",
   padding: "7px 13px",
   fontSize: 12,
   fontWeight: 700,

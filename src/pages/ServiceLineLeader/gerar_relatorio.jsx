@@ -223,14 +223,6 @@ function GerarRelatorioSll() {
       return;
     }
 
-    if (!areaUtilizador?.id_areas) {
-      setErro(
-        "O utilizador não tem área associada para gerar relatório."
-      );
-
-      return;
-    }
-
     if (
       new Date(dataInicio) >
       new Date(dataFim)

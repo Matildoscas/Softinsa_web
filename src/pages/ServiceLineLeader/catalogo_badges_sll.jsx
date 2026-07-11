@@ -906,11 +906,31 @@ function CatalogoBadgesSll() {
                     <BadgeCard
                       key={badge.id_badge_modelo}
                       badge={badge}
-                      onConsultar={() =>
+                      onConsultar={() => {
+                        const params =
+                          new URLSearchParams();
+
+                        if (serviceLineId === "ALL") {
+                          params.set("scope", "all");
+                        } else if (
+                          serviceLineId &&
+                          serviceLineId !== "MINE"
+                        ) {
+                          params.set(
+                            "id_serviceline",
+                            String(serviceLineId)
+                          );
+                        }
+
+                        const sufixo =
+                          params.toString()
+                            ? `?${params.toString()}`
+                            : "";
+
                         navigate(
-                          `/sll/badges/${badge.id_badge_modelo}`
-                        )
-                      }
+                          `/sll/badges/${badge.id_badge_modelo}${sufixo}`
+                        );
+                      }}
                     />
                   ))}
                 </div>

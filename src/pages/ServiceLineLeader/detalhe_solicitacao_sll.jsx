@@ -612,8 +612,8 @@ function obterEstadoCandidaturaVisual(estado) {
   }
 
   if (
-    valor.includes("FINAL") &&
-    valor.includes("APROV")
+    valor.includes("APROV") ||
+    valor.includes("VALID")
   ) {
     return {
       label: "Aprovada",
@@ -624,8 +624,6 @@ function obterEstadoCandidaturaVisual(estado) {
   }
 
   if (
-    valor.includes("APROV") ||
-    valor.includes("VALID") ||
     valor.includes("SLL")
   ) {
     return {

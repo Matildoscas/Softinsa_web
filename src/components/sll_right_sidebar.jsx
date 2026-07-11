@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   BiBell,
@@ -21,6 +22,8 @@ function obterUtilizadorGuardado() {
 }
 
 function SllRightSidebar() {
+  const navigate = useNavigate();
+
   const [notificacoes, setNotificacoes] =
     useState([]);
 
@@ -115,6 +118,24 @@ function SllRightSidebar() {
               }
               utilizador={utilizador}
               posicao={index + 1}
+              onClick={() => {
+                const idConsultor =
+                  utilizador?.id_utilizador;
+
+                if (!idConsultor) {
+                  return;
+                }
+
+                navigate(
+                  `/sll/consultores/${idConsultor}`,
+                  {
+                    state: {
+                      voltarPara: "/sll/ranking",
+                      textoVoltar: "Voltar ao ranking",
+                    },
+                  }
+                );
+              }}
             />
           ))
       ) : (
@@ -172,6 +193,7 @@ function NotificationCard({ notificacao }) {
 function TopUserCard({
   utilizador,
   posicao,
+  onClick,
 }) {
   const nome =
     utilizador.nome_completo ||
@@ -190,10 +212,23 @@ function TopUserCard({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
       style={{
         ...topUserCard,
         background: estilo.background,
         border: `1px solid ${estilo.border}`,
+        cursor: "pointer",
       }}
     >
       <div
