@@ -201,8 +201,11 @@ function CatalogoBadgesPage() {
           );
 
           if (!silencioso) {
-            setMensagemRealtime(
-              "Não foi possível carregar o catálogo de badges."
+            setMensagensRealtime(
+              {
+                _erro_catalogo:
+                  "Não foi possível carregar o catálogo de badges.",
+              }
             );
           }
         } finally {

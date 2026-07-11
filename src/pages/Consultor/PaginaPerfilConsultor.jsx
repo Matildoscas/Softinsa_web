@@ -410,7 +410,7 @@ function PaginaPerfil() {
             <Button
               variant="light"
               onClick={() =>
-                navigate("/progresso")
+                navigate("/status-candidaturas")
               }
               className="
                 d-flex
