@@ -136,7 +136,12 @@ function TopUserCard({ user, posicao }) {
     user.perfil ||
     "Consultor";
 
-  const pontos = Number(user.total_pontos || user.pontos || 0);
+  const pontos = Number(
+    user.pontos_atuais ||
+    user.total_pontos ||
+    user.pontos ||
+    0
+  );
 
   const rankingStyle = getRankingStyle(posicao);
 
