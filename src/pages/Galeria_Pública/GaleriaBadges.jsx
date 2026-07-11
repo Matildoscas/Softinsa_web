@@ -142,7 +142,6 @@ function GaleriaBadgesPage() {
     return acc;
   }, {});
 // FUNÇÃO DE MAPEAMENTO: Converte o nível do badge para a nomenclatura correta
-// FUNÇÃO DE MAPEAMENTO CORRIGIDA: Mapeia de 1 a 5 (ou A a E) para as tuas 5 palavras-chave
 const obterGrupoPorNivel = (badge) => {
   const nivel = String(badge.codigo_nivel || nivelParaLetra(badge.id_nivel)).toUpperCase();
   
@@ -154,23 +153,6 @@ const obterGrupoPorNivel = (badge) => {
   
   return "Junior"; // Fallback de segurança
 };
-
-// Agrupamento dos Badges pelos novos grupos de Senioridade
-const badgesAgrupados = badges.reduce((acc, badge) => {
-  const grupo = obterGrupoPorNivel(badge);
-  if (!acc[grupo]) acc[grupo] = [];
-  acc[grupo].push(badge);
-  return acc;
-}, {});
-
-// Filtra apenas as categorias que contêm badges para não quebrar o ecrã
-const gruposFiltrados = GRUPOS_ORDEM.filter(grupo => badgesAgrupados[grupo] && badgesAgrupados[grupo].length > 0);
-
-// Paginação adaptada
-const totalPaginas = Math.ceil(gruposFiltrados.length / gruposPorPagina);
-const inicio = (paginaAtual - 1) * gruposPorPagina;
-const fim = inicio + gruposPorPagina;
-const gruposPaginaAtual = gruposFiltrados.slice(inicio, fim);
 
 // Agrupamento dos Badges pelos novos grupos de Senioridade
 const badgesAgrupados = badges.reduce((acc, badge) => {
