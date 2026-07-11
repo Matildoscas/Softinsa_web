@@ -238,6 +238,34 @@ function BadgeDetailPage() {
       const badgeAgrupado =
         mapa.get(badgeId);
 
+      if (
+        !badgeAgrupado.id_nivel &&
+        linha.id_nivel
+      ) {
+        badgeAgrupado.id_nivel =
+          linha.id_nivel;
+      }
+
+      if (
+        !badgeAgrupado.id_areas &&
+        linha.id_areas
+      ) {
+        badgeAgrupado.id_areas =
+          linha.id_areas;
+      }
+
+      if (
+        !badgeAgrupado.nome_area &&
+        (linha.nome_area ||
+          linha.nome_areas ||
+          linha.area)
+      ) {
+        badgeAgrupado.nome_area =
+          linha.nome_area ||
+          linha.nome_areas ||
+          linha.area;
+      }
+
       const bonusLinha =
         obterBonusBadge(linha);
 
@@ -366,6 +394,12 @@ function BadgeDetailPage() {
         })),
 
       api
+        .get(`/certificados/pendentes/${userId}`)
+        .catch(() => ({
+          data: [],
+        })),
+
+      api
         .get(`/lembretes/consultor/${userId}`)
         .catch(() => ({
           data: {
@@ -379,6 +413,7 @@ function BadgeDetailPage() {
           consentimentoRes,
           utilizadorRes,
           statusRes,
+          pendentesRes,
           lembretesRes,
         ]) => {
           setDadosUtilizador(
@@ -421,8 +456,25 @@ function BadgeDetailPage() {
               !candidaturaFinalizada(item)
           );
 
+        const listaPendentes =
+          Array.isArray(
+            pendentesRes?.data
+          )
+            ? pendentesRes.data
+            : [];
+
+        const existePendenteNoBadge =
+          listaPendentes.some(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                  item.id_badge
+              ) === Number(id)
+          );
+
         setTemCandidaturaAberta(
-          existeCandidaturaAberta
+          existeCandidaturaAberta ||
+            existePendenteNoBadge
         );
 
         const listaLembretes =

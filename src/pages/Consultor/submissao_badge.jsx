@@ -66,6 +66,10 @@ function SubmeterEvidenciasPage() {
   const [mensagemInfo, setMensagemInfo] = useState("");
   const [mostrarModalEnvio, setMostrarModalEnvio] = useState(false);
   const [mensagemModalEnvio, setMensagemModalEnvio] = useState("");
+  const [mostrarModalErro, setMostrarModalErro] = useState(false);
+  const [mensagemModalErro, setMensagemModalErro] = useState("");
+  const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
 
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
@@ -136,6 +140,34 @@ function SubmeterEvidenciasPage() {
 
       const badgeAgrupado =
         mapa.get(badgeId);
+
+      if (
+        !badgeAgrupado.id_nivel &&
+        linha.id_nivel
+      ) {
+        badgeAgrupado.id_nivel =
+          linha.id_nivel;
+      }
+
+      if (
+        !badgeAgrupado.id_areas &&
+        linha.id_areas
+      ) {
+        badgeAgrupado.id_areas =
+          linha.id_areas;
+      }
+
+      if (
+        !badgeAgrupado.nome_area &&
+        (linha.nome_area ||
+          linha.nome_areas ||
+          linha.area)
+      ) {
+        badgeAgrupado.nome_area =
+          linha.nome_area ||
+          linha.nome_areas ||
+          linha.area;
+      }
 
       /*
       * Caso a primeira linha não tenha
@@ -214,6 +246,47 @@ function SubmeterEvidenciasPage() {
     });
 
     setEvidenciasGuardadas(guardadas);
+
+    if (requisitos.length > 0) {
+      setBadge((anterior) => {
+        if (!anterior) {
+          return anterior;
+        }
+
+        const requisitosNormalizados = requisitos.map((req, index) => ({
+          ...req,
+          id_requisito:
+            req.id_requisito ||
+            req.id_requisitos ||
+            req.id ||
+            index,
+          id_requisitos:
+            req.id_requisitos ||
+            req.id_requisito ||
+            req.id ||
+            index,
+          titulo:
+            req.titulo ||
+            req.nome_requisito ||
+            req.nome ||
+            `Requisito ${index + 1}`,
+          nome:
+            req.nome ||
+            req.nome_requisito ||
+            req.titulo ||
+            `Requisito ${index + 1}`,
+          descricao:
+            req.descricao ||
+            req.descricao_requisito ||
+            "",
+        }));
+
+        return {
+          ...anterior,
+          requisitos: requisitosNormalizados,
+        };
+      });
+    }
   }
 
   async function carregarPagina() {
@@ -260,7 +333,8 @@ function SubmeterEvidenciasPage() {
       const erro =
         err.response?.data?.error ||
         "Não foi possível abrir o fluxo de candidatura.";
-      alert(erro);
+      setMensagemModalErro(erro);
+      setMostrarModalErro(true);
       navigate(voltarPara, { replace: true });
     } finally {
       setLoading(false);
@@ -348,8 +422,9 @@ function SubmeterEvidenciasPage() {
             JSON.stringify({
               requisito_key: requisitoKey,
               id_requisito:
-                req.id_requisito ||
                 req.id_requisitos ||
+                req.id_requisito ||
+                req.id ||
                 null,
               titulo: req.titulo,
               nome: req.nome,
@@ -377,7 +452,8 @@ function SubmeterEvidenciasPage() {
         err.response?.data?.error ||
         "Não foi possível guardar o rascunho.";
       if (!silencioso) {
-        alert(erro);
+        setMensagemModalErro(erro);
+        setMostrarModalErro(true);
       }
       throw err;
     } finally {
@@ -413,10 +489,11 @@ function SubmeterEvidenciasPage() {
 
       setMostrarModalEnvio(true);
     } catch (err) {
-      alert(
+      setMensagemModalErro(
         err.response?.data?.error ||
           "Não foi possível enviar a candidatura."
       );
+      setMostrarModalErro(true);
     } finally {
       setAcaoLoading(false);
     }
@@ -427,16 +504,13 @@ function SubmeterEvidenciasPage() {
       return;
     }
 
-    const motivo = window.prompt(
-      "Indique o motivo do cancelamento da candidatura:"
-    );
+    const motivo = String(
+      motivoCancelamento || ""
+    ).trim();
 
-    if (motivo === null) {
-      return;
-    }
-
-    if (!String(motivo).trim()) {
-      alert("O motivo do cancelamento é obrigatório.");
+    if (!motivo) {
+      setMensagemModalErro("O motivo do cancelamento é obrigatório.");
+      setMostrarModalErro(true);
       return;
     }
 
@@ -447,17 +521,20 @@ function SubmeterEvidenciasPage() {
         `/candidaturas/${candidatura.id_candidatura_pedido}/cancelar`,
         {
           id_utilizador: userId,
-          motivo: String(motivo).trim(),
+          motivo,
         }
       );
 
-      alert("Candidatura cancelada com sucesso.");
+      setMostrarModalCancelar(false);
+      setMotivoCancelamento("");
+      setMensagemInfo("Candidatura cancelada com sucesso.");
       navigate(voltarPara, { replace: true });
     } catch (err) {
-      alert(
+      setMensagemModalErro(
         err.response?.data?.error ||
           "Não foi possível cancelar a candidatura."
       );
+      setMostrarModalErro(true);
     } finally {
       setAcaoLoading(false);
     }
@@ -732,7 +809,10 @@ function SubmeterEvidenciasPage() {
                     : "pointer",
               }}
               disabled={acaoLoading}
-              onClick={cancelarCandidatura}
+              onClick={() => {
+                setMotivoCancelamento("");
+                setMostrarModalCancelar(true);
+              }}
             >
               <HiOutlineTrash size={18} style={{ marginRight: 8 }} />
               Cancelar candidatura
@@ -794,6 +874,68 @@ function SubmeterEvidenciasPage() {
             }}
           >
             Fechar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={mostrarModalErro}
+        onHide={() => setMostrarModalErro(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Atenção</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          {mensagemModalErro}
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button onClick={() => setMostrarModalErro(false)}>
+            Fechar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={mostrarModalCancelar}
+        onHide={() => !acaoLoading && setMostrarModalCancelar(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Cancelar candidatura</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label>Indica o motivo do cancelamento</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={4}
+              value={motivoCancelamento}
+              onChange={(event) => setMotivoCancelamento(event.target.value)}
+              placeholder="Escreve o motivo..."
+              disabled={acaoLoading}
+            />
+          </Form.Group>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            disabled={acaoLoading}
+            onClick={() => setMostrarModalCancelar(false)}
+          >
+            Voltar
+          </Button>
+
+          <Button
+            variant="danger"
+            disabled={acaoLoading}
+            onClick={cancelarCandidatura}
+          >
+            {acaoLoading ? "A cancelar..." : "Confirmar cancelamento"}
           </Button>
         </Modal.Footer>
       </Modal>
