@@ -1207,6 +1207,7 @@ function CatalogoBadgeRow({
 
   const estadoPendente =
     String(
+      pendente?.estado_catalogo ||
       pendente?.estado_candidatura_pedido ||
         pendente?.estado_validacao ||
         ""
@@ -1219,18 +1220,26 @@ function CatalogoBadgeRow({
   const estadoPendenteLegivel =
     pendente
       ? estadoPendente.includes(
+          "CANDIDATURA_EFETUADA"
+        )
+        ? "Candidatura efetuada"
+        : estadoPendente.includes(
+            "CANDIDATURA_INICIADA"
+          )
+          ? "Candidatura iniciada"
+          : estadoPendente.includes(
           "RASCUNHO"
         )
-        ? "Candidatura iniciada"
-        : pendenteTemEvidencias ||
-            estadoPendente.includes(
-              "PENDENTE"
-            ) ||
-            estadoPendente.includes(
-              "VALIDAC"
-            )
-          ? "Candidatura efetuada"
-          : "Candidatura iniciada"
+          ? "Candidatura iniciada"
+          : pendenteTemEvidencias ||
+              estadoPendente.includes(
+                "PENDENTE"
+              ) ||
+              estadoPendente.includes(
+                "VALIDAC"
+              )
+            ? "Candidatura efetuada"
+            : "Candidatura iniciada"
       : "";
 
   const estadoNormal =

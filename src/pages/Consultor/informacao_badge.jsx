@@ -88,7 +88,7 @@ function obterNivelBadge(badge) {
     badge.id_nivel,
     badge.nivel,
     badge.nivel_badge,
-    badge.nome_nivel,
+      badge.nome_nivel,
     badge.descricao_nivel,
   ];
 
@@ -245,6 +245,13 @@ function BadgeDetailPage() {
         badgeAgrupado.id_nivel =
           linha.id_nivel;
       }
+        if (
+          !badgeAgrupado.nome_nivel &&
+          linha.nome_nivel
+        ) {
+          badgeAgrupado.nome_nivel =
+            linha.nome_nivel;
+        }
 
       if (
         !badgeAgrupado.id_areas &&

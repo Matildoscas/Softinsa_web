@@ -150,6 +150,14 @@ function SubmeterEvidenciasPage() {
       }
 
       if (
+        !badgeAgrupado.nome_nivel &&
+        linha.nome_nivel
+      ) {
+        badgeAgrupado.nome_nivel =
+          linha.nome_nivel;
+      }
+
+      if (
         !badgeAgrupado.id_areas &&
         linha.id_areas
       ) {
