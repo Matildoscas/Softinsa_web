@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Navbar, Nav, Dropdown, OverlayTrigger } from 'react-bootstrap';
+import { Navbar, Nav, Dropdown, OverlayTrigger, Modal, Button } from 'react-bootstrap';
 import { BiLogOut, BiUser, BiBell, BiUserCircle, BiCog, BiStar } from 'react-icons/bi'; // 🚀 Alterado BiSparkles para BiStar
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import NotificationPopover from './TM_Notificacions';
@@ -10,6 +10,7 @@ function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Carregar os dados do utilizador do localStorage
   useEffect(() => {
@@ -27,6 +28,19 @@ function Header() {
   const handleLogout = () => {
     localStorage.clear(); 
     navigate('/login');   
+  };
+
+  const abrirModalLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const fecharModalLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  const confirmarLogout = () => {
+    setShowLogoutModal(false);
+    handleLogout();
   };
 
   // Função para gerar uma saudação baseada nas horas
@@ -143,7 +157,7 @@ function Header() {
               
               <Dropdown.Divider />
               
-              <Dropdown.Item onClick={handleLogout} className="py-2 d-flex align-items-center gap-2 text-danger fw-semibold">
+              <Dropdown.Item onClick={abrirModalLogout} className="py-2 d-flex align-items-center gap-2 text-danger fw-semibold">
                 <BiLogOut size={18} /> Terminar Sessão
               </Dropdown.Item>
             </Dropdown.Menu>
@@ -151,6 +165,26 @@ function Header() {
 
         </Nav>
       </Navbar>
+
+      <Modal show={showLogoutModal} onHide={fecharModalLogout} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar logout</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          Tens a certeza que queres terminar a sessão?
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={fecharModalLogout}>
+            Cancelar
+          </Button>
+
+          <Button variant="danger" onClick={confirmarLogout}>
+            Terminar Sessão
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
