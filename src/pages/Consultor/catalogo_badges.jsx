@@ -47,6 +47,51 @@ import {
 import useCandidaturasRealtime from
   "../../hooks/useCandidaturasRealtime.js";
 
+function obterCodigoNivelBadge(badge) {
+  const numeroNivel = Number(
+    badge?.id_nivel
+  );
+
+  if (
+    Number.isInteger(
+      numeroNivel
+    ) &&
+    numeroNivel >= 1 &&
+    numeroNivel <= 5
+  ) {
+    return String(numeroNivel);
+  }
+
+  const textoNivel = String(
+    badge?.nome_nivel ||
+      badge?.nivel ||
+      badge?.nivel_badge ||
+      ""
+  )
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+
+  if (textoNivel.includes("INICIANTE") || /\bA\b/.test(textoNivel)) return "1";
+  if (textoNivel.includes("INTERMED") || /\bB\b/.test(textoNivel)) return "2";
+  if (textoNivel.includes("AVANC") || /\bC\b/.test(textoNivel)) return "3";
+  if (textoNivel.includes("EXPERT") || /\bD\b/.test(textoNivel)) return "4";
+  if (textoNivel.includes("MASTER") || /\bE\b/.test(textoNivel)) return "5";
+
+  return "";
+}
+
+function etiquetaNivel(codigoNivel) {
+  if (!codigoNivel) return "Sem nível";
+  if (codigoNivel === "1") return "Nível A";
+  if (codigoNivel === "2") return "Nível B";
+  if (codigoNivel === "3") return "Nível C";
+  if (codigoNivel === "4") return "Nível D";
+  if (codigoNivel === "5") return "Nível E";
+  return "Sem nível";
+}
+
 function CatalogoBadgesPage() {
   const navigate =
     useNavigate();
@@ -600,10 +645,10 @@ function CatalogoBadgesPage() {
 
               const correspondeNivel =
                 !nivelFiltro ||
-                Number(
-                  badge.id_nivel
+                obterCodigoNivelBadge(
+                  badge
                 ) ===
-                  Number(
+                  String(
                     nivelFiltro
                   );
 
@@ -1274,6 +1319,11 @@ function CatalogoBadgeRow({
     badge.area ||
     "";
 
+  const codigoNivel =
+    obterCodigoNivelBadge(
+      badge
+    );
+
   const {
     ganhouBonus,
     pontosExtra,
@@ -1485,6 +1535,35 @@ function CatalogoBadgeRow({
                 Desafio concluído
               </span>
             )}
+
+            <span
+              style={{
+                background:
+                  "#f1f5f9",
+
+                color:
+                  "#334155",
+
+                border:
+                  "1px solid #cbd5e1",
+
+                borderRadius:
+                  999,
+
+                padding:
+                  "3px 9px",
+
+                fontSize:
+                  11,
+
+                fontWeight:
+                  700,
+              }}
+            >
+              {etiquetaNivel(
+                codigoNivel
+              )}
+            </span>
 
             {!bonusAtivo &&
               desafioAtivo && (

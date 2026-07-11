@@ -48,9 +48,31 @@ api.interceptors.request.use(
         token = null;
       }
     }
+
+    token = String(token || "").trim();
+
+    if (
+      !token ||
+      token === "undefined" ||
+      token === "null"
+    ) {
+      token = "";
+    }
+
+    if (token.startsWith("Bearer ")) {
+      token = token.slice(7).trim();
+    }
+
+    if (
+      token.startsWith("\"") &&
+      token.endsWith("\"")
+    ) {
+      token = token.slice(1, -1).trim();
+    }
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      config.headers["x-access-token"] = token;
     }
     
     return config;

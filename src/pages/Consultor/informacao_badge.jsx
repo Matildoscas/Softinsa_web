@@ -154,6 +154,7 @@ function BadgeDetailPage() {
   const [conquistadoBadge, setConquistadoBadge] = useState(null);
   const [desafiosBadge, setDesafiosBadge] = useState([]);
   const [temCandidaturaAberta, setTemCandidaturaAberta] = useState(false);
+  const [estadoCandidaturaBadge, setEstadoCandidaturaBadge] = useState("");
   const [mostrarModalInicioCandidatura, setMostrarModalInicioCandidatura] = useState(false);
 
   const [
@@ -483,6 +484,16 @@ function BadgeDetailPage() {
               !candidaturaFinalizada(item)
           );
 
+        const candidaturaStatusBadge =
+          listaStatus.find(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                  item.id_badge
+              ) === Number(id) &&
+              !candidaturaFinalizada(item)
+          ) || null;
+
         const listaPendentes =
           Array.isArray(
             pendentesRes?.data
@@ -503,6 +514,50 @@ function BadgeDetailPage() {
           existeCandidaturaAberta ||
             existePendenteNoBadge
         );
+
+        const pendenteBadge =
+          listaPendentes.find(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                  item.id_badge
+              ) === Number(id)
+          ) || null;
+
+        const estadoCatalogo = String(
+          pendenteBadge?.estado_catalogo ||
+            ""
+        )
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase();
+
+        if (
+          estadoCatalogo.includes(
+            "CANDIDATURA_EFETUADA"
+          ) ||
+          String(
+            candidaturaStatusBadge?.fase_geral ||
+              ""
+          )
+            .toUpperCase()
+            .includes("AVALIAC")
+        ) {
+          setEstadoCandidaturaBadge(
+            "Candidatura efetuada"
+          );
+        } else if (
+          existeCandidaturaAberta ||
+          estadoCatalogo.includes(
+            "CANDIDATURA_INICIADA"
+          )
+        ) {
+          setEstadoCandidaturaBadge(
+            "Candidatura iniciada"
+          );
+        } else {
+          setEstadoCandidaturaBadge("");
+        }
 
         const listaLembretes =
           Array.isArray(
@@ -1573,6 +1628,12 @@ const copiarAssinatura =
 
           <NivelSelector nivelAtual={obterNivelBadge(badge)} />
 
+          {estadoCandidaturaBadge && (
+            <div style={candidaturaEstadoBox}>
+              {estadoCandidaturaBadge}
+            </div>
+          )}
+
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
               Requisitos do Nível
@@ -1826,7 +1887,9 @@ const copiarAssinatura =
                     marginRight: 8,
                   }}
                 />
-                Submeter Evidências
+                {temCandidaturaAberta
+                  ? "Continuar candidatura"
+                  : "Submeter Evidências"}
               </button>
             )}
             </div>
@@ -2144,6 +2207,18 @@ const desafioLinkButton = {
   fontWeight: 700,
   padding: 0,
   cursor: "pointer",
+};
+
+const candidaturaEstadoBox = {
+  marginTop: 10,
+  marginBottom: 10,
+  border: "1px solid #bae6fd",
+  background: "#f0f9ff",
+  borderRadius: 10,
+  padding: "8px 12px",
+  color: "#0369a1",
+  fontWeight: 700,
+  fontSize: 12,
 };
 
 const publicLinkBox = {

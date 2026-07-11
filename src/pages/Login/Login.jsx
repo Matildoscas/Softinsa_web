@@ -61,37 +61,7 @@ function LoginPage() {
         setError(
           "O servidor não devolveu os dados do utilizador.",
         );
-
-        const apiUser = data.user || {};
-        const utilizadorSeguro = {
-          id_utilizador: apiUser.id_utilizador || apiUser.ID_UTILIZADOR || data.id_utilizador || data.ID_UTILIZADOR,
-          nome_completo: apiUser.nome_completo || apiUser.NOME_COMPLETO || data.nome_completo || data.NOME_COMPLETO,
-          email: apiUser.email || apiUser.EMAIL || data.email || data.EMAIL,
-          email_softinsa: apiUser.email_softinsa || apiUser.EMAIL_SOFTINSA || data.email_softinsa || data.EMAIL_SOFTINSA,
-          estado_conta: apiUser.estado_conta || apiUser.ESTADO_CONTA || data.estado_conta || data.ESTADO_CONTA,
-          tipo_utilizador: apiUser.tipo_utilizador || data.tipo_utilizador || "utilizador",
-        };
-
-        localStorage.setItem("user", JSON.stringify(utilizadorSeguro));
-
-        const tipo = String(utilizadorSeguro.tipo_utilizador || "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "_")
-          .replace(/^_+|_+$/g, "");
-
-        if (tipo.includes("administrador") || tipo.includes("admin")) {
-          navigate("/admin");
-        } else if (tipo.includes("talent_manager") || tipo.includes("talentmanager")) {
-          navigate("/tm");
-        } else if (tipo.includes("consultor")) {
-          navigate("/pag_consultor");
-        } else {
-          navigate("/pag_consultor");
-        }
-      } else {
-        setError(data.message || data.error || "Erro ao iniciar sessão.");
+        return;
       }
 
       const utilizadorSeguro = {
@@ -133,7 +103,17 @@ function LoginPage() {
 
       localStorage.setItem(
         "token",
-        data.token,
+        String(data.token),
+      );
+
+      localStorage.setItem(
+        "authToken",
+        String(data.token),
+      );
+
+      localStorage.setItem(
+        "jwt",
+        String(data.token),
       );
 
       localStorage.setItem(
