@@ -31,6 +31,61 @@ function obterUtilizadorGuardado() {
   }
 }
 
+function extrairErroApi(err, contexto) {
+  const status = Number(err?.response?.status || 0);
+  const data = err?.response?.data || {};
+  const code = String(data?.code || "").trim().toUpperCase();
+  const message = String(data?.error || data?.message || "").trim();
+
+  console.error(`[CANDIDATURA][${contexto}]`, {
+    status,
+    code,
+    message,
+    method: err?.config?.method,
+    url: err?.config?.url,
+    response: data,
+  });
+
+  return { status, code, message };
+}
+
+function mensagemErroCandidatura(err, fallback) {
+  const { status, code, message } = extrairErroApi(err, "UI");
+  const texto = String(message || "").toLowerCase();
+
+  if (status === 401) {
+    return "Sessão expirada ou inválida. Inicia sessão novamente para continuar a candidatura.";
+  }
+
+  if (status === 409) {
+    if (code === "CANDIDATURA_EM_CURSO" || texto.includes("em curso")) {
+      return "Já tens uma candidatura em curso para este badge. Abre o progresso para continuares essa candidatura.";
+    }
+
+    if (code === "CANDIDATURA_NAO_EDITAVEL" || texto.includes("não pode ser alterada")) {
+      return "Esta candidatura já não está em rascunho, por isso não pode ser alterada.";
+    }
+
+    if (code === "CANDIDATURA_NAO_ENVIAVEL" || texto.includes("não pode ser enviada")) {
+      return "Esta candidatura já foi enviada ou fechada, por isso não pode ser enviada novamente.";
+    }
+  }
+
+  if (code === "EVIDENCIAS_INSUFICIENTES" || texto.includes("ficheiros") || texto.includes("requisitos")) {
+    return message || "Faltam evidências mínimas para enviar a candidatura.";
+  }
+
+  if (code === "BADGE_ATIVO_JA_OBTIDO" || texto.includes("badge ativo")) {
+    return message || "Já tens este badge ativo. Só podes voltar a submeter quando expirar.";
+  }
+
+  if (status >= 500) {
+    return "O servidor falhou ao processar a candidatura. Tenta novamente em instantes.";
+  }
+
+  return message || fallback;
+}
+
 function SubmeterEvidenciasPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -337,13 +392,12 @@ function SubmeterEvidenciasPage() {
           : "Rascunho carregado com sucesso."
       );
     } catch (err) {
-      console.error("Erro ao iniciar candidatura:", err);
-      const erro =
-        err.response?.data?.error ||
-        "Não foi possível abrir o fluxo de candidatura.";
+      const erro = mensagemErroCandidatura(
+        err,
+        "Não foi possível abrir o fluxo de candidatura."
+      );
       setMensagemModalErro(erro);
       setMostrarModalErro(true);
-      navigate(voltarPara, { replace: true });
     } finally {
       setLoading(false);
     }
@@ -456,9 +510,10 @@ function SubmeterEvidenciasPage() {
           : "Dados guardados na candidatura em rascunho."
       );
     } catch (err) {
-      const erro =
-        err.response?.data?.error ||
-        "Não foi possível guardar o rascunho.";
+      const erro = mensagemErroCandidatura(
+        err,
+        "Não foi possível guardar o rascunho."
+      );
       if (!silencioso) {
         setMensagemModalErro(erro);
         setMostrarModalErro(true);
@@ -498,8 +553,10 @@ function SubmeterEvidenciasPage() {
       setMostrarModalEnvio(true);
     } catch (err) {
       setMensagemModalErro(
-        err.response?.data?.error ||
+        mensagemErroCandidatura(
+          err,
           "Não foi possível enviar a candidatura."
+        )
       );
       setMostrarModalErro(true);
     } finally {
@@ -539,8 +596,10 @@ function SubmeterEvidenciasPage() {
       navigate(voltarPara, { replace: true });
     } catch (err) {
       setMensagemModalErro(
-        err.response?.data?.error ||
+        mensagemErroCandidatura(
+          err,
           "Não foi possível cancelar a candidatura."
+        )
       );
       setMostrarModalErro(true);
     } finally {
