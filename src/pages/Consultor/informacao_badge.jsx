@@ -608,6 +608,17 @@ function BadgeDetailPage() {
             "Candidatura efetuada"
           );
         } else if (
+          estadoCatalogo.includes(
+            "REJEIT"
+          ) ||
+          estadoCatalogo.includes(
+            "RECUS"
+          )
+        ) {
+          setEstadoCandidaturaBadge(
+            "Candidatura rejeitada"
+          );
+        } else if (
           existeCandidaturaAberta ||
           estadoCatalogo.includes(
             "CANDIDATURA_INICIADA"
