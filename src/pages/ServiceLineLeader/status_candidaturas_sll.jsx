@@ -100,7 +100,7 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
 }
 
 function candidaturaEstaFinalizada(item) {
-  if (candidaturaEstaDesistida(item)) {
+  if (candidaturaEstaCancelada(item)) {
     return true;
   }
 
@@ -126,20 +126,18 @@ function candidaturaEstaConcluida(item) {
   return candidaturaEstaFinalizada(item);
 }
 
-function candidaturaEstaDesistida(item) {
+function candidaturaEstaCancelada(item) {
   const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
   const fase = normalizarEstado(item?.fase_geral);
 
   return (
-    estado.includes("DESIST") ||
-    fase.includes("DESIST") ||
     estado.includes("CANCEL") ||
     fase.includes("CANCEL")
   );
 }
 
 function candidaturaEstaRejeitada(item) {
-  if (candidaturaEstaDesistida(item) || candidaturaEstaObtida(item)) {
+  if (candidaturaEstaCancelada(item) || candidaturaEstaObtida(item)) {
     return false;
   }
 
@@ -159,7 +157,7 @@ function candidaturaEstaRejeitada(item) {
 }
 
 function candidaturaEstaAprovada(item) {
-  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaDesistida(item);
+  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
 }
 
 function obterMotivoCancelamento(status) {
@@ -359,8 +357,8 @@ export default function StatusCandidaturasSll() {
         return concluidas.filter(candidaturaEstaAprovada);
       }
 
-      if (subModoConcluidos === "DESISTIDAS") {
-        return concluidas.filter(candidaturaEstaDesistida);
+      if (subModoConcluidos === "CANCELADAS") {
+        return concluidas.filter(candidaturaEstaCancelada);
       }
 
       return concluidas;
@@ -473,13 +471,13 @@ export default function StatusCandidaturasSll() {
 
               <button
                 type="button"
-                onClick={() => setSubModoConcluidos("DESISTIDAS")}
+                onClick={() => setSubModoConcluidos("CANCELADAS")}
                 style={{
                   ...subTabBtn,
-                  ...(subModoConcluidos === "DESISTIDAS" ? subTabBtnAtivo : null),
+                  ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
                 }}
               >
-                Desistidas ({lista.filter(candidaturaEstaDesistida).length})
+                Canceladas ({lista.filter(candidaturaEstaCancelada).length})
               </button>
             </div>
           )}
@@ -578,7 +576,7 @@ export default function StatusCandidaturasSll() {
                 <div style={mensagemBox}>Seleciona uma candidatura para ver o detalhe.</div>
               ) : (
                 <>
-                  {candidaturaEstaDesistida(detalhe?.status) && obterMotivoCancelamento(detalhe?.status) && (
+                  {candidaturaEstaCancelada(detalhe?.status) && obterMotivoCancelamento(detalhe?.status) && (
                     <div style={motivoCancelamentoBox}>
                       <div style={motivoCancelamentoTitulo}>Motivo de cancelamento</div>
                       <div style={motivoCancelamentoTexto}>{obterMotivoCancelamento(detalhe?.status)}</div>

@@ -99,9 +99,7 @@ function candidaturaEstaFinalizada(item) {
     const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
     const fase = normalizarEstado(item?.fase_geral);
 
-    const desistida =
-      estado.includes("DESIST") ||
-      fase.includes("DESIST") ||
+    const cancelada =
       estado.includes("CANCEL") ||
       fase.includes("CANCEL");
 
@@ -114,7 +112,7 @@ function candidaturaEstaFinalizada(item) {
         fase.includes("CONCLUID")
       );
 
-    return desistida || aprovadaConcluida;
+    return cancelada || aprovadaConcluida;
 }
 
 // Componente do Chip de Estado
