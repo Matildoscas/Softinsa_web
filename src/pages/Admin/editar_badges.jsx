@@ -127,7 +127,7 @@ function normalizarServiceLine(sl) {
   };
 }
 
-async function getAreas() {
+/*async function getAreas() {
   const endpoints = [
     "/areas/select",
     "/areas",
@@ -146,9 +146,9 @@ async function getAreas() {
   }
 
   return [];
-}
+}*/
 
-async function getServiceLines() {
+/*async function getServiceLines() {
   const endpoints = [
     "/servicelines/select",
     "/servicelines/admin/select",
@@ -170,14 +170,10 @@ async function getServiceLines() {
   }
 
   return [];
-}
+}*/
 
-async function getNiveis(areaId) {
-  if (!areaId) return [];
-
-  const res = await api.get(
-    `/badges/niveis?areaId=${areaId}`
-  );
+async function getNiveis() {
+  const res = await api.get("/badges/niveis");
 
   if (Array.isArray(res.data)) return res.data;
   if (Array.isArray(res.data?.niveis)) return res.data.niveis;
@@ -634,20 +630,19 @@ function EditarBadge() {
     tempoExpiracao: "",
     unidadeExpiracao: "MESES",
 
-    id_serviceline: "",
-    id_areas: "",
     id_nivel: "",
 
     tipo_badge: "Regular",
-    estado_badge_modelo: "Ativo",
+    estado_badge_modelo: "RASCUNHO",
 
     descricao: "",
+
     imagem: null,
     imagemPreview: null,
   });
 
-  const [serviceLines, setServiceLines] = useState([]);
-  const [areas, setAreas] = useState([]);
+  /*const [serviceLines, setServiceLines] = useState([]);
+  const [areas, setAreas] = useState([]);*/
   const [niveis, setNiveis] = useState([]);
   const [requisitos, setRequisitos] = useState([]);
   const [modalReq, setModalReq] = useState(null);
@@ -660,13 +655,13 @@ function EditarBadge() {
   const [sucesso, setSucesso] = useState("");
   const [erros, setErros] = useState({});
 
-  const areasFiltradas = form.id_serviceline
+  /*const areasFiltradas = form.id_serviceline
     ? areas.filter(
         (area) =>
           String(area.id_serviceline) ===
           String(form.id_serviceline)
       )
-    : areas;
+    : areas;*/
 
   useEffect(() => {
     carregarPagina();
@@ -677,6 +672,14 @@ function EditarBadge() {
       setLoading(true);
       setErro("");
       setSucesso("");
+
+      const niveisRaw = await getNiveis();
+
+      const niveisNormalizados = niveisRaw
+        .map(normalizarNivel)
+        .filter((nivel) => nivel.value);
+
+      setNiveis(niveisNormalizados);
 
       const [
         badgeRes,
@@ -778,13 +781,13 @@ function EditarBadge() {
           tempo.unidade ||
           "MESES",
 
-        id_serviceline:
+        /*id_serviceline:
           badge.id_serviceline ||
           "",
 
         id_areas:
           badge.id_areas ||
-          "",
+          "",*/
 
         id_nivel:
           badge.id_nivel ||
@@ -841,7 +844,7 @@ function EditarBadge() {
     }
   }
 
-  async function carregarNiveisPorArea(areaId) {
+  /*async function carregarNiveisPorArea(areaId) {
     if (!areaId) {
       setNiveis([]);
       return;
@@ -869,9 +872,9 @@ function EditarBadge() {
         "Não foi possível carregar os níveis da área selecionada."
       );
     }
-  }
+  }*/
 
-  function selecionarServiceLine(value) {
+  /*function selecionarServiceLine(value) {
     setForm((prev) => ({
       ...prev,
       id_serviceline: value,
@@ -890,9 +893,9 @@ function EditarBadge() {
 
     setErro("");
     setSucesso("");
-  }
+  }*/
 
-  function selecionarArea(value, areaSelecionada) {
+  /*function selecionarArea(value, areaSelecionada) {
     setForm((prev) => ({
       ...prev,
       id_areas: value,
@@ -912,7 +915,7 @@ function EditarBadge() {
     setSucesso("");
 
     carregarNiveisPorArea(value);
-  }
+  }*/
 
   function setCampo(campo, valor) {
     setForm((prev) => ({
@@ -1023,24 +1026,6 @@ function EditarBadge() {
       novosErros.nome = "O nome é obrigatório.";
     }
 
-    if (!form.pontos) {
-      novosErros.pontos = "Os pontos são obrigatórios.";
-    }
-
-    if (!form.id_serviceline) {
-      novosErros.id_serviceline =
-        "Seleciona uma Service Line.";
-    }
-
-    if (!form.id_areas) {
-      novosErros.id_areas =
-        "Seleciona uma área.";
-    }
-
-    if (Number(form.pontos) < 0) {
-      novosErros.pontos = "Os pontos não podem ser negativos.";
-    }
-
     if (!form.id_nivel) {
       novosErros.id_nivel = "Seleciona um nível.";
     }
@@ -1084,7 +1069,7 @@ function EditarBadge() {
       formData.append("tempo_expiracao_quantidade", form.tempoExpiracao || 0);
       formData.append("tempo_expiracao_unidade", form.unidadeExpiracao);
       formData.append("requisitos", JSON.stringify(requisitosLimpos));
-      formData.append(
+      /*formData.append(
         "id_serviceline",
         form.id_serviceline
       );
@@ -1092,7 +1077,7 @@ function EditarBadge() {
       formData.append(
         "id_areas",
         form.id_areas
-      );
+      );*/
 
       formData.append(
         "tipo_badge",
@@ -1397,14 +1382,13 @@ function EditarBadge() {
                 <label style={labelStyle}>Pontos</label>
 
                 <input
-                  type="number"
-                  min="0"
-                  value={form.pontos}
-                  onChange={(e) => setCampo("pontos", e.target.value)}
-                  placeholder="Ex: 120"
+                  value={form.pontos || 0}
+                  disabled
                   style={{
-                    ...inputStyleBase,
-                    borderColor: erros.pontos ? "#fca5a5" : "#d1d5db",
+                    ...inputStyle("pontos"),
+                    background: "#f3f4f6",
+                    color: "#64748b",
+                    cursor: "not-allowed",
                   }}
                 />
 
@@ -1412,7 +1396,7 @@ function EditarBadge() {
               </div>
             </div>
 
-            <div style={grid2}>
+            {/*<div style={grid2}>
               <div>
                 <label style={labelStyle}>Service Line</label>
 
@@ -1453,7 +1437,7 @@ function EditarBadge() {
                   </FieldError>
                 )}
               </div>
-            </div>
+            </div>*/}
 
             <div style={grid2}>
               <div>
@@ -1493,16 +1477,30 @@ function EditarBadge() {
                 <SelectDropdown
                   options={niveis}
                   value={form.id_nivel}
-                  onChange={(value) =>
-                    setCampo("id_nivel", value)
-                  }
+                  onChange={(value, option) => {
+                    const pontosAutomaticos =
+                      obterPontosPorNivel(option?.label);
+
+                    setForm((prev) => ({
+                      ...prev,
+                      id_nivel: value,
+                      pontos: pontosAutomaticos,
+                    }));
+
+                    setErros((prev) => ({
+                      ...prev,
+                      id_nivel: "",
+                      pontos: "",
+                    }));
+
+                    setErro("");
+                  }}
                   placeholder={
-                    !form.id_areas
-                      ? "Seleciona primeiro uma área"
+                    loadingNiveis
+                      ? "A carregar níveis..."
                       : "Selecione um nível"
                   }
                   erro={erros.id_nivel}
-                  disabled={!form.id_areas}
                 />
 
                 {erros.id_nivel && <FieldError>{erros.id_nivel}</FieldError>}

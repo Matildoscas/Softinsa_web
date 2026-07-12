@@ -75,6 +75,56 @@ function obterCodigoNivel(nomeNivel, index) {
   return mapa[nome] || ["A", "B", "C", "D", "E"][index] || "";
 }
 
+function abrirTrocarBadge(nivel) {
+  setNivelParaTrocarBadge(nivel);
+  setBadgeSelecionadoId("");
+  setModalBadgeAberta(true);
+}
+
+function fecharTrocarBadge() {
+  if (aTrocarBadge) return;
+
+  setModalBadgeAberta(false);
+  setNivelParaTrocarBadge(null);
+  setBadgeSelecionadoId("");
+}
+
+async function guardarTrocaBadge() {
+  if (!nivelParaTrocarBadge || !badgeSelecionadoId) {
+    setErroGeral("Seleciona um badge rascunho.");
+    return;
+  }
+
+  try {
+    setATrocarBadge(true);
+    setErroGeral("");
+    setSucesso("");
+
+    await api.put(
+      `/niveis/${nivelParaTrocarBadge.id_nivel}/badge`,
+      {
+        id_badge_modelo: Number(badgeSelecionadoId),
+      }
+    );
+
+    setSucesso("Badge do nível atualizado com sucesso.");
+
+    fecharTrocarBadge();
+    await carregarDados();
+  } catch (err) {
+    console.error("Erro ao trocar badge do nível:", err);
+    console.error("STATUS:", err.response?.status);
+    console.error("BODY:", err.response?.data);
+
+    setErroGeral(
+      err.response?.data?.error ||
+        "Não foi possível trocar o badge deste nível."
+    );
+  } finally {
+    setATrocarBadge(false);
+  }
+}
+
 function normalizarNivel(n, index = 0) {
   const nomeNivel =
     n.nome_nivel ||
@@ -270,10 +320,19 @@ function NivelCard({ nivel, areaId, onEditarRequisitos, onEditarNivel, onDesativ
 
       <button
         type="button"
-        onClick={() => onEditarRequisitos(nivel)}
+        onClick={() => onTrocarBadge(nivel)}
         style={editNivelButton}
       >
         <BiEdit size={15} />
+        Trocar badge
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onEditarRequisitos(nivel)}
+        style={nivelSmallButton}
+      >
+        <BiEdit size={14} />
         Editar requisitos
       </button>
 
@@ -326,6 +385,11 @@ function EditarArea() {
   const [modalNivelAberto, setModalNivelAberto] = useState(false);
   const [modoNivel, setModoNivel] = useState("criar");
   const [nivelSelecionado, setNivelSelecionado] = useState(null);
+  const [badgesDisponiveis, setBadgesDisponiveis] = useState([]);
+  const [modalBadgeAberta, setModalBadgeAberta] = useState(false);
+  const [nivelParaTrocarBadge, setNivelParaTrocarBadge] = useState(null);
+  const [badgeSelecionadoId, setBadgeSelecionadoId] = useState("");
+  const [aTrocarBadge, setATrocarBadge] = useState(false);
 
   const [formNivel, setFormNivel] = useState({
     nome_nivel: "",
@@ -354,6 +418,26 @@ function EditarArea() {
         api.get("/servicelines/select"),
         api.get(`/areas/${id}/niveis`),
       ]);
+
+      const [areaRes, serviceLinesRes, niveisRes, badgesRes] = await Promise.all([
+        api.get(`/areas/${id}`),
+        api.get("/servicelines/select"),
+        api.get(`/areas/${id}/niveis`),
+        api.get("/badges/modelos-disponiveis"),
+      ]);
+
+      const badgesData = badgesRes.data;
+
+      const listaBadges =
+        Array.isArray(badgesData)
+          ? badgesData
+          : Array.isArray(badgesData.badges)
+            ? badgesData.badges
+            : Array.isArray(badgesData.data)
+              ? badgesData.data
+              : [];
+
+      setBadgesDisponiveis(listaBadges.map(normalizarBadge));
 
       const areaData = areaRes.data?.area || areaRes.data;
 
@@ -896,8 +980,9 @@ function EditarArea() {
                       nivel={nivel}
                       areaId={id}
                       onEditarRequisitos={handleEditarRequisitos}
-                        onEditarNivel={abrirEditarNivel}
-                        onDesativarNivel={abrirModalDesativarNivel}
+                      onEditarNivel={abrirEditarNivel}
+                      onDesativarNivel={abrirModalDesativarNivel}
+                      onTrocarBadge={abrirTrocarBadge}
                     />
                   ))}
                 </div>
@@ -934,6 +1019,175 @@ function EditarArea() {
         />
       )}
 
+      {modalBadgeAberta && (
+        <TrocarBadgeModal
+          nivel={nivelParaTrocarBadge}
+          badgesDisponiveis={badgesDisponiveis}
+          badgeSelecionadoId={badgeSelecionadoId}
+          setBadgeSelecionadoId={setBadgeSelecionadoId}
+          loading={aTrocarBadge}
+          onClose={fecharTrocarBadge}
+          onGuardar={guardarTrocaBadge}
+        />
+      )}
+
+    </div>
+  );
+}
+
+function TrocarBadgeModal({
+  nivel,
+  badgesDisponiveis,
+  badgeSelecionadoId,
+  setBadgeSelecionadoId,
+  loading,
+  onClose,
+  onGuardar,
+}) {
+  if (!nivel) return null;
+
+  const codigoNivel = obterCodigoNivel(
+    nivel.nome_nivel,
+    0
+  );
+
+  const badgesDoNivel = badgesDisponiveis.filter((badge) => {
+    return String(badge.codigo_nivel || "")
+      .trim()
+      .toUpperCase() === String(codigoNivel || "")
+      .trim()
+      .toUpperCase();
+  });
+
+  const badgeSelecionado = badgesDoNivel.find(
+    (badge) =>
+      String(badge.id) === String(badgeSelecionadoId)
+  );
+
+  return (
+    <div style={modalOverlay}>
+      <div style={modalCardLarge}>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          style={modalCloseButton}
+        >
+          <BiX size={22} />
+        </button>
+
+        <h3 style={modalTitle}>
+          Trocar badge do nível {codigoNivel}
+        </h3>
+
+        <p style={modalSubText}>
+          Escolhe um badge rascunho do mesmo nível. O sistema cria uma cópia ativa para esta área.
+        </p>
+
+        <label style={labelStyle}>
+          Badge rascunho
+        </label>
+
+        <select
+          value={badgeSelecionadoId}
+          onChange={(e) =>
+            setBadgeSelecionadoId(e.target.value)
+          }
+          style={inputStyleNormal}
+        >
+          <option value="">
+            Selecionar badge
+          </option>
+
+          {badgesDoNivel.map((badge) => (
+            <option
+              key={badge.id}
+              value={badge.id}
+            >
+              {badge.nome} — {badge.pontos} pts
+            </option>
+          ))}
+        </select>
+
+        {badgesDoNivel.length === 0 && (
+          <div style={emptySmallBox}>
+            Não existem badges rascunho disponíveis para este nível.
+          </div>
+        )}
+
+        {badgeSelecionado && (
+          <div style={badgePreviewBox}>
+            <div style={badgePreviewTitle}>
+              {badgeSelecionado.nome}
+            </div>
+
+            <div style={badgePreviewDescription}>
+              {badgeSelecionado.descricao}
+            </div>
+
+            <div style={badgePreviewMeta}>
+              Pontos: <strong>{badgeSelecionado.pontos}</strong> ·
+              Requisitos:{" "}
+              <strong>
+                {badgeSelecionado.requisitos?.length || 0}
+              </strong>
+            </div>
+
+            {badgeSelecionado.requisitos?.length > 0 ? (
+              badgeSelecionado.requisitos.map((req, index) => (
+                <div
+                  key={req.id || index}
+                  style={reqPreviewBox}
+                >
+                  <div style={reqPreviewTitle}>
+                    {req.titulo || req.nome}
+                  </div>
+
+                  <div style={reqPreviewDescription}>
+                    {req.descricao}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={emptySmallBox}>
+                Este badge ainda não tem requisitos.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={modalActions}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            style={modalCancelButton}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            onClick={onGuardar}
+            disabled={loading || !badgeSelecionadoId}
+            style={{
+              ...modalConfirmButtonBlue,
+              opacity:
+                loading || !badgeSelecionadoId
+                  ? 0.6
+                  : 1,
+              cursor:
+                loading || !badgeSelecionadoId
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            {loading
+              ? "A guardar..."
+              : "Trocar badge"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
