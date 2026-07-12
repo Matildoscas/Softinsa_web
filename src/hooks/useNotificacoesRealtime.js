@@ -186,9 +186,45 @@ export default function
       receberEvento
     );
 
+    const onConnectError =
+      () => {
+        /*
+         * Fallback silencioso: se o socket
+         * falhar, o polling periódico mantém
+         * o contador sincronizado.
+         */
+      };
+
+    socket.on(
+      "connect_error",
+      onConnectError
+    );
+
     window.addEventListener(
       EVENTO_NOTIFICACOES_ATUALIZADAS,
       carregarContador
+    );
+
+    const intervaloPolling =
+      window.setInterval(
+        () => {
+          carregarContador();
+        },
+        30000
+      );
+
+    const onFocus = () => {
+      carregarContador();
+    };
+
+    window.addEventListener(
+      "focus",
+      onFocus
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      onFocus
     );
 
     if (
@@ -220,6 +256,26 @@ export default function
       socket.off(
         "notificacoes:todas-lidas",
         receberEvento
+      );
+
+      socket.off(
+        "connect_error"
+        ,
+        onConnectError
+      );
+
+      window.clearInterval(
+        intervaloPolling
+      );
+
+      window.removeEventListener(
+        "focus",
+        onFocus
+      );
+
+      document.removeEventListener(
+        "visibilitychange",
+        onFocus
       );
 
       window.removeEventListener(
