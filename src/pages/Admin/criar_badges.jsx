@@ -29,11 +29,6 @@ const TIPOS_BADGE = [
   { value: "Especial", label: "Especial" },
 ];
 
-const ESTADOS_BADGE = [
-  { value: "Ativo", label: "Ativo" },
-  { value: "Inativo", label: "Inativo" },
-];
-
 function criarRequisito(aberto = true) {
   return {
     tempId: Date.now() + Math.random(),
@@ -72,126 +67,8 @@ function normalizarNivel(nivel) {
   };
 }
 
-function normalizarArea(area) {
-  return {
-    value: Number(
-      area.id_areas ||
-      area.id_area ||
-      area.id ||
-      area.ID_AREAS
-    ),
-
-    label:
-      area.nome_area ||
-      area.nome ||
-      area.NOME_AREA ||
-      "Área",
-
-    id_serviceline: Number(
-      area.id_serviceline ||
-      area.ID_SERVICELINE ||
-      0
-    ),
-
-    nome_serviceline:
-      area.nome_serviceline ||
-      area.NOME_SERVICELINE ||
-      `Service Line ${
-        area.id_serviceline ||
-        area.ID_SERVICELINE ||
-        ""
-      }`,
-  };
-}
-
-function normalizarServiceLine(sl) {
-  return {
-    value: Number(
-      sl.id_serviceline ||
-      sl.id ||
-      sl.ID_SERVICELINE
-    ),
-
-    label:
-      sl.nome_serviceline ||
-      sl.nome ||
-      sl.NOME_SERVICELINE ||
-      "Service Line",
-  };
-}
-
-async function getAreas() {
-  const endpoints = [
-    "/areas/select",
-    "/areas",
-  ];
-
-  for (const endpoint of endpoints) {
-    try {
-      const res = await api.get(endpoint);
-
-      if (Array.isArray(res.data)) {
-        return res.data;
-      }
-
-      if (Array.isArray(res.data?.areas)) {
-        return res.data.areas;
-      }
-
-      if (Array.isArray(res.data?.data)) {
-        return res.data.data;
-      }
-    } catch {
-      // tenta o próximo endpoint
-    }
-  }
-
-  return [];
-}
-
-async function getServiceLines() {
-  const endpoints = [
-    "/servicelines/select",
-    "/servicelines/admin/select",
-    "/servicelines",
-    "/service-lines",
-  ];
-
-  for (const endpoint of endpoints) {
-    try {
-      const res = await api.get(endpoint);
-
-      if (Array.isArray(res.data)) {
-        return res.data;
-      }
-
-      if (Array.isArray(res.data?.servicelines)) {
-        return res.data.servicelines;
-      }
-
-      if (Array.isArray(res.data?.serviceLines)) {
-        return res.data.serviceLines;
-      }
-
-      if (Array.isArray(res.data?.data)) {
-        return res.data.data;
-      }
-    } catch {
-      // tenta o próximo endpoint
-    }
-  }
-
-  return [];
-}
-
-async function getNiveis(areaId) {
-  if (!areaId) {
-    return [];
-  }
-
-  const res = await api.get(
-    `/badges/niveis?areaId=${areaId}`
-  );
+async function getNiveis() {
+  const res = await api.get("/badges/niveis");
 
   if (Array.isArray(res.data)) {
     return res.data;
@@ -472,20 +349,14 @@ function CriarBadge() {
     tempoExpiracao: "",
     unidadeTempo: "MESES",
 
-    id_serviceline: "",
-    id_areas: "",
     id_nivel: "",
 
     tipo_badge: "Regular",
-    estado_badge_modelo: "Ativo",
 
     imagem: null,
     imagemPreview: null,
     descricao: "",
   });
-
-  const [serviceLines, setServiceLines] = useState([]);
-  const [areas, setAreas] = useState([]);
   const [niveis, setNiveis] = useState([]);
   const [requisitos, setRequisitos] = useState([criarRequisito(true)]);
   const [requisitoEmEdicao, setRequisitoEmEdicao] = useState(null);
@@ -495,16 +366,8 @@ function CriarBadge() {
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
 
-  const areasFiltradas = form.id_serviceline
-    ? areas.filter(
-        (area) =>
-          String(area.id_serviceline) ===
-          String(form.id_serviceline)
-      )
-    : areas;
-
   useEffect(() => {
-    carregarSelects();
+    carregarNiveis();
   }, []);
 
   async function carregarSelects() {
@@ -564,77 +427,28 @@ function CriarBadge() {
   }
   }
 
-  async function carregarNiveisPorArea(areaId) {
-    if (!areaId) {
-      setNiveis([]);
-      return;
-    }
-
+  async function carregarNiveis() {
     try {
       setLoadingNiveis(true);
 
-      const niveisRaw = await getNiveis(areaId);
+      const niveisRaw = await getNiveis();
 
       const niveisNormalizados = niveisRaw
         .map(normalizarNivel)
-        .filter((nivel) => nivel.value);
+        .filter((nivel) => nivel.value && nivel.label);
 
       setNiveis(niveisNormalizados);
     } catch (err) {
-      console.error(
-        "Erro ao carregar níveis da área:",
-        err
+      console.error("Erro ao carregar níveis:", err);
+
+      setErroGeral(
+        "Não foi possível carregar os níveis base."
       );
 
       setNiveis([]);
-
-      setErroGeral(
-        "Não foi possível carregar os níveis da área selecionada."
-      );
     } finally {
       setLoadingNiveis(false);
     }
-  }
-
-  function selecionarServiceLine(value) {
-    setForm((prev) => ({
-      ...prev,
-      id_serviceline: value,
-      id_areas: "",
-      id_nivel: "",
-    }));
-
-    setNiveis([]);
-
-    setErros((prev) => ({
-      ...prev,
-      id_serviceline: "",
-      id_areas: "",
-      id_nivel: "",
-    }));
-
-    setErroGeral("");
-  }
-
-  function selecionarArea(value, areaSelecionada) {
-    setForm((prev) => ({
-      ...prev,
-      id_areas: value,
-      id_serviceline:
-        areaSelecionada?.id_serviceline ||
-        prev.id_serviceline,
-      id_nivel: "",
-    }));
-
-    setErros((prev) => ({
-      ...prev,
-      id_areas: "",
-      id_nivel: "",
-    }));
-
-    setErroGeral("");
-
-    carregarNiveisPorArea(value);
   }
 
   function normalizarTexto(valor) {
@@ -835,7 +649,6 @@ function CriarBadge() {
       formData.append("pontos", Number(form.pontos));
       formData.append("id_nivel", form.id_nivel);
       //formData.append("tipo_badge", form.tipo_badge || "Regular");
-      formData.append("estado_badge_modelo", "ATIVO");
       formData.append("numero_requisitos", requisitosLimpos.length);
       formData.append("tempo_expiracao_quantidade", form.tempoExpiracao || 0);
       formData.append("tempo_expiracao_unidade", form.unidadeTempo);
@@ -965,48 +778,6 @@ function CriarBadge() {
 
             <div style={grid2}>
               <div>
-                <label style={labelStyle}>Service Line</label>
-
-                <SelectDropdown
-                  options={serviceLines}
-                  value={form.id_serviceline}
-                  onChange={(value) =>
-                    selecionarServiceLine(value)
-                  }
-                  placeholder="Selecione uma Service Line"
-                  erro={erros.id_serviceline}
-                />
-
-                {erros.id_serviceline && (
-                  <FieldError>
-                    {erros.id_serviceline}
-                  </FieldError>
-                )}
-              </div>
-
-              <div>
-                <label style={labelStyle}>Área</label>
-
-                <SelectDropdown
-                  options={areasFiltradas}
-                  value={form.id_areas}
-                  onChange={(value, option) =>
-                    selecionarArea(value, option)
-                  }
-                  placeholder="Selecione uma área"
-                  erro={erros.id_areas}
-                />
-
-                {erros.id_areas && (
-                  <FieldError>
-                    {erros.id_areas}
-                  </FieldError>
-                )}
-              </div>
-            </div>
-
-            <div style={grid2}>
-              <div>
                 <label style={labelStyle}>Tempo de expiração</label>
 
                 <div style={{ display: "flex", gap: 8 }}>
@@ -1029,7 +800,9 @@ function CriarBadge() {
                     <SelectDropdown
                       options={UNIDADES_TEMPO}
                       value={form.unidadeTempo}
-                      onChange={(value) => setCampo("unidadeTempo", value)}
+                      onChange={(value) =>
+                        setCampo("unidadeTempo", value)
+                      }
                       placeholder="Meses"
                     />
                   </div>
@@ -1042,20 +815,13 @@ function CriarBadge() {
                 <SelectDropdown
                   options={niveis}
                   value={form.id_nivel}
-                  onChange={(e) => {
-                    const idNivelEscolhido = e.target.value;
-
-                    const nivelEscolhido = niveis.find(
-                      (nivel) =>
-                        String(nivel.value) === String(idNivelEscolhido)
-                    );
-
+                  onChange={(value, option) => {
                     const pontosAutomaticos =
-                      obterPontosPorNivel(nivelEscolhido?.label);
+                      obterPontosPorNivel(option?.label);
 
                     setForm((prev) => ({
                       ...prev,
-                      id_nivel: idNivelEscolhido,
+                      id_nivel: value,
                       pontos: pontosAutomaticos,
                     }));
 
@@ -1064,18 +830,20 @@ function CriarBadge() {
                       id_nivel: "",
                       pontos: "",
                     }));
+
+                    setErroGeral("");
                   }}
                   placeholder={
-                    !form.id_areas
-                      ? "Seleciona primeiro uma área"
-                      : loadingNiveis
-                        ? "A carregar níveis..."
-                        : "Selecione um nível"
+                    loadingNiveis
+                      ? "A carregar níveis..."
+                      : "Selecione um nível"
                   }
                   erro={erros.id_nivel}
                 />
 
-                {erros.id_nivel && <FieldError>{erros.id_nivel}</FieldError>}
+                {erros.id_nivel && (
+                  <FieldError>{erros.id_nivel}</FieldError>
+                )}
               </div>
             </div>
 
@@ -1090,19 +858,6 @@ function CriarBadge() {
                     setCampo("tipo_badge", value)
                   }
                   placeholder="Selecione o tipo"
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Estado</label>
-
-                <SelectDropdown
-                  options={ESTADOS_BADGE}
-                  value={form.estado_badge_modelo}
-                  onChange={(value) =>
-                    setCampo("estado_badge_modelo", value)
-                  }
-                  placeholder="Selecione o estado"
                 />
               </div>
             </div>
