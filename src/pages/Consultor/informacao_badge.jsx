@@ -69,9 +69,11 @@ function candidaturaFinalizada(item) {
   return (
     estado.includes("REJEIT") ||
     estado.includes("RECUS") ||
+    estado.includes("DESIST") ||
     estado.includes("CANCEL") ||
     estado.includes("FINAL") ||
     fase.includes("HISTORICO") ||
+    fase.includes("DESIST") ||
     fase.includes("CANCEL") ||
     fase.includes("FINALIZ") ||
     fase.includes("REJEIT") ||
@@ -544,11 +546,6 @@ function BadgeDetailPage() {
           .replace(/[\u0300-\u036f]/g, "")
           .toUpperCase();
 
-        const totalEvidenciasBadge = Number(
-          candidaturaStatusBadge?.total_evidencias ||
-            0
-        );
-
         const faseGeralBadge = String(
           candidaturaStatusBadge?.fase_geral ||
             ""
@@ -582,8 +579,7 @@ function BadgeDetailPage() {
             "EM_VALIDACAO",
           ].includes(
             estadoPedidoBadge
-          ) ||
-          totalEvidenciasBadge >= 3;
+          );
 
         setTemCandidaturaAberta(
           (existeCandidaturaAberta ||
