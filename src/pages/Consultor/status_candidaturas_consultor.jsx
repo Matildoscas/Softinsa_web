@@ -131,8 +131,8 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
 }
 
 function candidaturaEstaFinalizada(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
+  const estado = normalizarEstado(estadoGeralVisivel(item) || item?.estado_final);
+  const fase = normalizarEstado(faseGeralVisivel(item));
 
   return (
     estado.includes("REJEIT") ||
@@ -148,8 +148,8 @@ function candidaturaEstaFinalizada(item) {
 }
 
 function candidaturaEstaObtida(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
+  const estado = normalizarEstado(estadoGeralVisivel(item) || item?.estado_final);
+  const fase = normalizarEstado(faseGeralVisivel(item));
 
   return estado.includes("APROV") && (estado.includes("FINAL") || fase.includes("HISTORICO") || fase.includes("FINALIZ") || fase.includes("CONCLUID"));
 }
@@ -158,13 +158,50 @@ function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
 }
 
-function estadoEhRejeitado(valor) {
-  const estado = normalizarEstado(valor);
+function candidaturaTemRejeicaoEmEvidencias(item) {
+  return (
+    Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
+    Number(item?.evidencias_rejeitadas_sll || 0) > 0
+  );
+}
+
+function candidaturaEstaCancelada(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return estado.includes("CANCEL") || fase.includes("CANCEL");
+}
+
+function candidaturaEstaRejeitada(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return true;
+  }
+
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
 
   return (
     estado.includes("REJEIT") ||
-    estado.includes("RECUS")
+    estado.includes("RECUS") ||
+    fase.includes("REJEIT") ||
+    fase.includes("RECUS")
   );
+}
+
+function estadoGeralVisivel(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.estado_geral || "-";
+}
+
+function faseGeralVisivel(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.fase_geral || "-";
 }
 
 function extrairMotivoRejeicao(detalhe) {
@@ -177,34 +214,6 @@ function extrairMotivoRejeicao(detalhe) {
     ).trim() ||
     "A candidatura foi rejeitada."
   );
-}
-
-function obterEvidenciasRejeitadas(requisitos) {
-  const lista = Array.isArray(requisitos)
-    ? requisitos
-    : [];
-
-  return lista.flatMap((requisito) => {
-    const evidencias = Array.isArray(requisito?.evidencias)
-      ? requisito.evidencias
-      : [];
-
-    return evidencias
-      .filter((evidencia) =>
-        estadoEhRejeitado(
-          evidencia?.estado_evidencia_tm ||
-            evidencia?.estado_evidencia_sll ||
-            evidencia?.estado_evidencia
-        )
-      )
-      .map((evidencia) => ({
-        ...evidencia,
-        nome_requisito:
-          requisito?.titulo ||
-          requisito?.nome_requisito ||
-          "Requisito",
-      }));
-  });
 }
 
 function EstadoChip({ titulo, valor }) {
@@ -285,6 +294,7 @@ export default function StatusCandidaturasConsultor() {
   const [pesquisa, setPesquisa] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetalhe, setIsLoadingDetalhe] = useState(false);
+  const [isAExecutarAcao, setIsAExecutarAcao] = useState(false);
   const [erro, setErro] = useState("");
 
   const utilizador = obterUtilizadorGuardado();
@@ -344,6 +354,37 @@ export default function StatusCandidaturasConsultor() {
     }
   }
 
+  async function desistirCandidaturaSelecionada() {
+    const candidatura = detalhe?.candidatura;
+
+    if (!idUtilizador || !candidatura?.id_candidatura_pedido) {
+      return;
+    }
+
+    const confirmou = window.confirm(
+      "Queres desistir desta candidatura rejeitada? Esta candidatura será removida do teu progresso."
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setIsAExecutarAcao(true);
+      setErro("");
+
+      await api.patch(`/candidaturas/${candidatura.id_candidatura_pedido}/desistir`, {
+        id_utilizador: idUtilizador,
+      });
+
+      await atualizarPagina();
+    } catch (err) {
+      setErro(err.response?.data?.error || "Não foi possível desistir da candidatura.");
+    } finally {
+      setIsAExecutarAcao(false);
+    }
+  }
+
   useEffect(() => {
     carregarLista();
   }, []);
@@ -390,18 +431,12 @@ export default function StatusCandidaturasConsultor() {
     );
   }, [listaPorModo, pesquisa]);
 
-  const candidaturaSelecionadaRejeitada = estadoEhRejeitado(
-    detalhe?.candidatura?.estado_geral ||
-      detalhe?.candidatura?.estado_final ||
-      detalhe?.candidatura?.estado_candidatura_pedido
-  );
+  const candidaturaSelecionadaRejeitada = candidaturaEstaRejeitada(detalhe?.candidatura);
+  const candidaturaSelecionadaCancelada = candidaturaEstaCancelada(detalhe?.candidatura);
+  const estadoVisivelDetalhe = estadoGeralVisivel(detalhe?.candidatura);
+  const faseVisivelDetalhe = faseGeralVisivel(detalhe?.candidatura);
 
   const motivoRejeicao = extrairMotivoRejeicao(detalhe);
-
-  const evidenciasRejeitadas = useMemo(
-    () => obterEvidenciasRejeitadas(detalhe?.requisitos),
-    [detalhe]
-  );
 
   return (
     <div style={pagina}>
@@ -477,7 +512,9 @@ export default function StatusCandidaturasConsultor() {
                 <div style={listaCards}>
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
-                    const geral = chipEstado(item.estado_geral);
+                    const estadoVisivel = estadoGeralVisivel(item);
+                    const faseVisivel = faseGeralVisivel(item);
+                    const geral = chipEstado(estadoVisivel);
 
                     return (
                       <button
@@ -504,7 +541,7 @@ export default function StatusCandidaturasConsultor() {
                               border: `1px solid ${geral.border}`,
                             }}
                           >
-                            {formatarEstadoHumano(item.estado_geral)}
+                            {formatarEstadoHumano(estadoVisivel)}
                           </span>
                         </div>
 
@@ -518,7 +555,7 @@ export default function StatusCandidaturasConsultor() {
                           <span>{item.email}</span>
                         </div>
 
-                        <div style={metaLinha}>Etapa: <strong>{formatarEstadoHumano(item.fase_geral)}</strong></div>
+                        <div style={metaLinha}>Etapa: <strong>{formatarEstadoHumano(faseVisivel)}</strong></div>
                         <div style={metaLinha}>
                           Evidências decididas: <strong>Talent Manager {item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>Service Line Leader {item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
                         </div>
@@ -541,7 +578,7 @@ export default function StatusCandidaturasConsultor() {
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Estado da candidatura</div>
                     <div style={estadoPrincipalWrapper}>
-                      <EstadoPrincipalChip titulo="Estado geral" valor={detalhe.candidatura?.estado_geral} />
+                      <EstadoPrincipalChip titulo="Estado geral" valor={estadoVisivelDetalhe} />
                     </div>
                     <div style={estadoGridFases}>
                       <EstadoChip titulo="Pedido" valor={detalhe.candidatura?.estado_candidatura_pedido} />
@@ -549,25 +586,34 @@ export default function StatusCandidaturasConsultor() {
                       <EstadoChip titulo="Avaliação do Service Line Leader" valor={detalhe.candidatura?.estado_candidaturasll} />
                     </div>
                     <div style={estadoRodapeGrid}>
-                      <EstadoChip titulo="Etapa" valor={detalhe.candidatura?.fase_geral} />
+                      <EstadoChip titulo="Etapa" valor={faseVisivelDetalhe} />
                       <EstadoChip titulo="Resultado concluído" valor={detalhe.candidatura?.estado_final} />
                     </div>
 
                     {candidaturaSelecionadaRejeitada && (
                       <div style={rejeicaoBox}>
                         <div style={rejeicaoTitulo}>Candidatura rejeitada</div>
-                        <div style={rejeicaoTexto}>{motivoRejeicao}</div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate(
-                              `/submeter-evidencias/${detalhe.candidatura?.id_badge_modelo}`
-                            )
-                          }
-                          style={reenvioButton}
-                        >
-                          Voltar a submeter evidências
-                        </button>
+                        <div style={rejeicaoTexto}>
+                          Esta candidatura foi rejeitada. Podes abrir o badge para voltar a submeter evidências ou desistir desta candidatura para a remover do progresso.
+                        </div>
+                        <div style={acoesRejeicaoLinha}>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/badge-detalhe/${detalhe.candidatura?.id_badge_modelo}`)}
+                            style={abrirBadgeButton}
+                            disabled={isAExecutarAcao}
+                          >
+                            Abrir badge
+                          </button>
+                          <button
+                            type="button"
+                            onClick={desistirCandidaturaSelecionada}
+                            style={desistirButton}
+                            disabled={isAExecutarAcao || candidaturaSelecionadaCancelada}
+                          >
+                            {candidaturaSelecionadaCancelada ? "Candidatura removida" : "Desistir candidatura"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -586,63 +632,24 @@ export default function StatusCandidaturasConsultor() {
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Requisitos e estado atual</div>
                     <div style={requisitosLista}>
-                      {(detalhe.requisitos || []).map((req) => {
-                        const evidenciasRejeitadasDoRequisito = (Array.isArray(req.evidencias) ? req.evidencias : []).filter((evidencia) =>
-                          estadoEhRejeitado(
-                            evidencia?.estado_evidencia_tm ||
-                              evidencia?.estado_evidencia_sll ||
-                              evidencia?.estado_evidencia
-                          )
-                        );
-
-                        const mostrarMotivoNesteRequisito =
-                          candidaturaSelecionadaRejeitada &&
-                          evidenciasRejeitadas.length === 1 &&
-                          evidenciasRejeitadasDoRequisito.length > 0;
-
-                        return (
-                          <div key={req.id_requisitos}>
-                            <div style={requisitoLinha}>
-                              <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
-                              <div style={requisitoEstadosLinha}>
-                                <EstadoRequisitoChip titulo="Talent Manager" valor={estadoEtapaRequisito(req, "estado_evidencia_tm")} />
-                                <EstadoRequisitoChip titulo="Service Line Leader" valor={estadoEtapaRequisito(req, "estado_evidencia_sll")} />
-                              </div>
-                            </div>
-
-                            {mostrarMotivoNesteRequisito && (
-                              <div style={motivoRejeicaoInline}>
-                                <div style={motivoRejeicaoEvidencia}>
-                                  {evidenciasRejeitadasDoRequisito[0]?.nome_ficheiro ||
-                                    evidenciasRejeitadasDoRequisito[0]?.descricao ||
-                                    "Evidência rejeitada"}
-                                </div>
-                                <div style={motivoRejeicaoLabel}>Motivo da rejeição</div>
-                                <div style={motivoRejeicaoTexto}>{motivoRejeicao}</div>
-                              </div>
-                            )}
+                      {(detalhe.requisitos || []).map((req) => (
+                        <div key={req.id_requisitos} style={requisitoLinha}>
+                          <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
+                          <div style={requisitoEstadosLinha}>
+                            <EstadoRequisitoChip titulo="Talent Manager" valor={estadoEtapaRequisito(req, "estado_evidencia_tm")} />
+                            <EstadoRequisitoChip titulo="Service Line Leader" valor={estadoEtapaRequisito(req, "estado_evidencia_sll")} />
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
-
-                    {candidaturaSelecionadaRejeitada && evidenciasRejeitadas.length > 1 && (
-                      <div style={motivoRejeicaoResumo}>
-                        <div style={motivoRejeicaoLabel}>Motivo da rejeição</div>
-                        <div style={motivoRejeicaoTexto}>{motivoRejeicao}</div>
-                        <div style={motivoRejeicaoSubtexto}>
-                          {evidenciasRejeitadas.length} evidências rejeitadas nesta candidatura.
-                        </div>
-                        <div style={motivoRejeicaoLista}>
-                          {evidenciasRejeitadas.map((evidencia) => (
-                            <div key={evidencia.id_evidencia || evidencia.nome_ficheiro || evidencia.descricao}>
-                              {evidencia.nome_ficheiro || evidencia.descricao || "Evidência rejeitada"}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
+
+                  {candidaturaSelecionadaRejeitada && (
+                    <div style={motivoRejeicaoResumo}>
+                      <div style={motivoRejeicaoLabel}>Motivo da rejeição</div>
+                      <div style={motivoRejeicaoTexto}>{motivoRejeicao}</div>
+                    </div>
+                  )}
                 </>
               )}
             </section>
@@ -998,10 +1005,17 @@ const rejeicaoTexto = {
   lineHeight: 1.45,
 };
 
-const reenvioButton = {
+const acoesRejeicaoLinha = {
+  marginTop: 10,
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap",
+};
+
+const abrirBadgeButton = {
   marginTop: 10,
   border: "none",
-  background: "#be123c",
+  background: "#1d4ed8",
   color: "white",
   borderRadius: 9,
   padding: "9px 12px",
@@ -1010,19 +1024,16 @@ const reenvioButton = {
   cursor: "pointer",
 };
 
-const motivoRejeicaoInline = {
-  marginTop: 8,
-  borderLeft: "3px solid #f43f5e",
+const desistirButton = {
+  marginTop: 10,
+  border: "1px solid #f43f5e",
   background: "#fff1f2",
-  borderRadius: 8,
-  padding: "8px 10px",
-};
-
-const motivoRejeicaoEvidencia = {
-  fontSize: 12,
+  color: "#be123c",
+  borderRadius: 9,
+  padding: "9px 12px",
+  fontSize: 13,
   fontWeight: 700,
-  color: "#9f1239",
-  marginBottom: 6,
+  cursor: "pointer",
 };
 
 const motivoRejeicaoResumo = {
