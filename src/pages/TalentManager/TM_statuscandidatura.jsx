@@ -115,6 +115,20 @@ function candidaturaEstaFinalizada(item) {
     return cancelada || aprovadaConcluida;
 }
 
+function candidaturaEstaRejeitada(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final || item?.estado_candidatura_pedido);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
+    fase.includes("REJEIT") ||
+    fase.includes("RECUS") ||
+    Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
+    Number(item?.evidencias_rejeitadas_sll || 0) > 0
+  );
+}
+
 // Componente do Chip de Estado
 function EstadoChip({ titulo, valor }) {
   const chip = chipEstado(valor);
@@ -252,10 +266,12 @@ function StatusCandidaturasTM() {
   }, [selecionada]);
 
   const listaPorModo = useMemo(() => {
+    const listaVisivel = lista.filter((item) => !candidaturaEstaRejeitada(item));
+
     if (modoLista === "FINALIZADAS") {
-      return lista.filter(candidaturaEstaFinalizada);
+      return listaVisivel.filter(candidaturaEstaFinalizada);
     }
-    return lista.filter((item) => !candidaturaEstaFinalizada(item));
+    return listaVisivel.filter((item) => !candidaturaEstaFinalizada(item));
   }, [lista, modoLista]);
 
   useEffect(() => {
@@ -347,14 +363,14 @@ function StatusCandidaturasTM() {
               onClick={() => setModoLista("EM_PROCESSO")}
               style={{ ...tabBtn, ...(modoLista === "EM_PROCESSO" ? tabBtnAtivo : null) }}
             >
-              Em Processo ({lista.filter((item) => !candidaturaEstaFinalizada(item)).length})
+              Em Processo ({lista.filter((item) => !candidaturaEstaRejeitada(item)).filter((item) => !candidaturaEstaFinalizada(item)).length})
             </button>
             <button
               type="button"
               onClick={() => setModoLista("FINALIZADAS")}
               style={{ ...tabBtn, ...(modoLista === "FINALIZADAS" ? tabBtnAtivo : null) }}
             >
-              Finalizadas ({lista.filter(candidaturaEstaFinalizada).length})
+              Finalizadas ({lista.filter((item) => !candidaturaEstaRejeitada(item)).filter(candidaturaEstaFinalizada).length})
             </button>
           </div>
 
