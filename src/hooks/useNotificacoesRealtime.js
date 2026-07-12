@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -18,6 +19,21 @@ import {
   notificacaoNaoLida,
 } from "../utils/notificacoesUtils.js";
 
+function existeTokenSessao() {
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("jwt") ||
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("jwt") ||
+    "";
+
+  return Boolean(
+    String(token).trim()
+  );
+}
+
 export default function
   useNotificacoesRealtime(
     idUtilizador
@@ -26,6 +42,9 @@ export default function
     totalNaoLidas,
     setTotalNaoLidas,
   ] = useState(0);
+
+  const bloqueadoPor401Ref =
+    useRef(false);
 
   const carregarContador =
     useCallback(
@@ -48,6 +67,16 @@ export default function
           return;
         }
 
+        if (!existeTokenSessao()) {
+          setTotalNaoLidas(0);
+          return;
+        }
+
+        if (bloqueadoPor401Ref.current) {
+          setTotalNaoLidas(0);
+          return;
+        }
+
         try {
           const response =
             await api.get(
@@ -67,6 +96,21 @@ export default function
             ).length
           );
         } catch (err) {
+          const status = Number(
+            err?.response?.status || 0
+          );
+
+          if (status === 401) {
+            bloqueadoPor401Ref.current = true;
+            setTotalNaoLidas(0);
+
+            console.warn(
+              "[NOTIFICAÇÕES] Sessão inválida para carregar contador. Pedidos seguintes serão ignorados até novo login."
+            );
+
+            return;
+          }
+
           console.error(
             "[NOTIFICAÇÕES] Erro ao atualizar contador:",
             err

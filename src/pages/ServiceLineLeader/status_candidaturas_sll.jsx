@@ -131,8 +131,70 @@ function candidaturaEstaObtida(item) {
   );
 }
 
+function candidaturaEstaConcluida(item) {
+  return candidaturaEstaFinalizada(item);
+}
+
+function candidaturaEstaCancelada(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return estado.includes("CANCEL") || fase.includes("CANCEL");
+}
+
+function candidaturaEstaRejeitada(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return true;
+  }
+
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
+    fase.includes("REJEIT") ||
+    fase.includes("RECUS")
+  );
+}
+
+function candidaturaEstaAprovada(item) {
+  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
+}
+
+function obterMotivoCancelamento(status) {
+  return String(
+    status?.motivo_cancelamento ||
+      status?.motivo_estado_final ||
+      ""
+  ).trim();
+}
+
 function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
+}
+
+function candidaturaTemRejeicaoEmEvidencias(item) {
+  return (
+    Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
+    Number(item?.evidencias_rejeitadas_sll || 0) > 0
+  );
+}
+
+function estadoGeralVisivel(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.estado_geral || "-";
+}
+
+function faseGeralVisivel(item) {
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.fase_geral || "-";
 }
 
 function EstadoChip({ titulo, valor }) {
@@ -213,6 +275,7 @@ export default function StatusCandidaturasSll() {
   const [selecionada, setSelecionada] = useState(null);
   const [detalhe, setDetalhe] = useState(null);
   const [modoLista, setModoLista] = useState("EM_PROCESSO");
+  const [subModoConcluidos, setSubModoConcluidos] = useState("TODAS");
 
   const [pesquisa, setPesquisa] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -289,12 +352,26 @@ export default function StatusCandidaturasSll() {
   }, [selecionada]);
 
   const listaPorModo = useMemo(() => {
-    if (modoLista === "OBTIDOS") {
-      return lista.filter(candidaturaEstaObtida);
+    if (modoLista === "CONCLUIDOS") {
+      const concluidas = lista.filter(candidaturaEstaConcluida);
+
+      if (subModoConcluidos === "APROVADAS") {
+        return concluidas.filter(candidaturaEstaAprovada);
+      }
+
+      if (subModoConcluidos === "REJEITADAS") {
+        return concluidas.filter(candidaturaEstaRejeitada);
+      }
+
+      if (subModoConcluidos === "CANCELADAS") {
+        return concluidas.filter(candidaturaEstaCancelada);
+      }
+
+      return concluidas;
     }
 
     return lista.filter(candidaturaEstaEmProcesso);
-  }, [lista, modoLista]);
+  }, [lista, modoLista, subModoConcluidos]);
 
   useEffect(() => {
     if (listaPorModo.length === 0) {
@@ -349,7 +426,9 @@ export default function StatusCandidaturasSll() {
           <div style={tabsBox}>
             <button
               type="button"
-              onClick={() => setModoLista("EM_PROCESSO")}
+              onClick={() => {
+                setModoLista("EM_PROCESSO");
+              }}
               style={{
                 ...tabBtn,
                 ...(modoLista === "EM_PROCESSO" ? tabBtnAtivo : null),
@@ -360,15 +439,65 @@ export default function StatusCandidaturasSll() {
 
             <button
               type="button"
-              onClick={() => setModoLista("OBTIDOS")}
+              onClick={() => {
+                setModoLista("CONCLUIDOS");
+              }}
               style={{
                 ...tabBtn,
-                ...(modoLista === "OBTIDOS" ? tabBtnAtivo : null),
+                ...(modoLista === "CONCLUIDOS" ? tabBtnAtivo : null),
               }}
             >
-              Obtidos ({lista.filter(candidaturaEstaObtida).length})
+              Concluídos ({lista.filter(candidaturaEstaConcluida).length})
             </button>
           </div>
+
+          {modoLista === "CONCLUIDOS" && (
+            <div style={subTabsBox}>
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("TODAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "TODAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Todas ({lista.filter(candidaturaEstaConcluida).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("APROVADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "APROVADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Aprovadas ({lista.filter(candidaturaEstaAprovada).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("REJEITADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "REJEITADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Rejeitadas ({lista.filter(candidaturaEstaRejeitada).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("CANCELADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Canceladas ({lista.filter(candidaturaEstaCancelada).length})
+              </button>
+            </div>
+          )}
 
           <div style={pesquisaBox}>
             <BiSearch size={16} color="#64748b" />
@@ -390,15 +519,17 @@ export default function StatusCandidaturasSll() {
                 <div style={mensagemBox}>A carregar candidaturas...</div>
               ) : listaFiltrada.length === 0 ? (
                 <div style={mensagemBox}>
-                  {modoLista === "OBTIDOS"
-                    ? "Não existem badges obtidos para mostrar."
+                  {modoLista === "CONCLUIDOS"
+                    ? "Não existem candidaturas concluídas para mostrar."
                     : "Não existem candidaturas em processo para mostrar."}
                 </div>
               ) : (
                 <div style={listaCards}>
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
-                    const geral = chipEstado(item.estado_geral);
+                    const estadoVisivel = estadoGeralVisivel(item);
+                    const faseVisivel = faseGeralVisivel(item);
+                    const geral = chipEstado(estadoVisivel);
 
                     return (
                       <button
@@ -425,7 +556,7 @@ export default function StatusCandidaturasSll() {
                               border: `1px solid ${geral.border}`,
                             }}
                           >
-                            {item.estado_geral}
+                            {estadoVisivel}
                           </span>
                         </div>
 
@@ -440,7 +571,7 @@ export default function StatusCandidaturasSll() {
                         </div>
 
                         <div style={metaLinha}>
-                          Fase: <strong>{item.fase_geral}</strong>
+                          Fase: <strong>{faseVisivel}</strong>
                         </div>
 
                         <div style={metaLinha}>
@@ -462,6 +593,13 @@ export default function StatusCandidaturasSll() {
                 <div style={mensagemBox}>Seleciona uma candidatura para ver o detalhe.</div>
               ) : (
                 <>
+                  {candidaturaEstaCancelada(detalhe?.status) && obterMotivoCancelamento(detalhe?.status) && (
+                    <div style={motivoCancelamentoBox}>
+                      <div style={motivoCancelamentoTitulo}>Motivo de cancelamento</div>
+                      <div style={motivoCancelamentoTexto}>{obterMotivoCancelamento(detalhe?.status)}</div>
+                    </div>
+                  )}
+
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Estados Explícitos por Fase</div>
                     <div style={estadoPrincipalWrapper}>
@@ -588,6 +726,13 @@ const tabsBox = {
   marginBottom: 12,
 };
 
+const subTabsBox = {
+  display: "flex",
+  gap: 8,
+  marginBottom: 12,
+  flexWrap: "wrap",
+};
+
 const tabBtn = {
   border: "1px solid #d1d5db",
   background: "#ffffff",
@@ -603,6 +748,23 @@ const tabBtnAtivo = {
   border: "1px solid #3b82f6",
   background: "#eff6ff",
   color: "#1d4ed8",
+};
+
+const subTabBtn = {
+  border: "1px solid #d1d5db",
+  background: "#ffffff",
+  color: "#334155",
+  padding: "6px 10px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const subTabBtnAtivo = {
+  border: "1px solid #0ea5e9",
+  background: "#e0f2fe",
+  color: "#0369a1",
 };
 
 const pesquisaBox = {
@@ -633,6 +795,29 @@ const erroBox = {
   padding: "10px 12px",
   fontSize: 13,
   marginBottom: 14,
+};
+
+const motivoCancelamentoBox = {
+  border: "1px solid #fbcfe8",
+  background: "#fff1f2",
+  color: "#831843",
+  borderRadius: 10,
+  padding: "10px 12px",
+  marginBottom: 10,
+};
+
+const motivoCancelamentoTitulo = {
+  fontSize: 12,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  letterSpacing: 0.2,
+  marginBottom: 4,
+};
+
+const motivoCancelamentoTexto = {
+  fontSize: 13,
+  lineHeight: 1.45,
+  whiteSpace: "pre-wrap",
 };
 
 const gridPrincipal = {

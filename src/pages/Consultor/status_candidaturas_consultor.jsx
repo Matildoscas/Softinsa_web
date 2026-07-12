@@ -22,7 +22,11 @@ function obterUtilizadorGuardado() {
 }
 
 function normalizarEstado(valor) {
-  return String(valor || "").trim().toUpperCase();
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
 }
 
 function formatarEstadoHumano(valor) {

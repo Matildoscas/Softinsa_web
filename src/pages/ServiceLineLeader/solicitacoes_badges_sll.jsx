@@ -133,6 +133,19 @@ function normalizarSolicitacao(
   };
 }
 
+function estadoCancelado(estado) {
+  const valor = String(
+    estado || ""
+  )
+    .trim()
+    .toUpperCase();
+
+  return (
+    valor === "CANCELADA" ||
+    valor === "CANCELADO"
+  );
+}
+
 function formatarData(data) {
   if (!data) {
     return "Data não disponível";
@@ -292,6 +305,13 @@ function SolicitacoesBadgesSll() {
       let resultado = [
         ...solicitacoes,
       ];
+
+      resultado = resultado.filter(
+        (solicitacao) =>
+          !estadoCancelado(
+            solicitacao.estado
+          )
+      );
 
       const pesquisa =
         pesquisaConsultor

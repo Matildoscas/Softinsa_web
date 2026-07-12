@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Navbar, Nav, Dropdown, OverlayTrigger } from 'react-bootstrap';
-import { BiLogOut, BiUser, BiBell, BiUserCircle, BiCog, BiStar } from 'react-icons/bi'; 
+import { Navbar, Nav, Dropdown, OverlayTrigger, Modal, Button } from 'react-bootstrap';
+import { BiLogOut, BiUser, BiBell, BiUserCircle, BiCog, BiStar } from 'react-icons/bi'; // 🚀 Alterado BiSparkles para BiStar
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import NotificationPopover from './TM_Notificacions'; // Mantido o import da V1
 import logoImg from '../assets/logo.png';
@@ -34,6 +34,7 @@ function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Carregar os dados do utilizador do localStorage (Mantido da V1)
   useEffect(() => {
@@ -63,7 +64,20 @@ function Header() {
     navigate('/login', { replace: true });   
   };
 
-  // Função para gerar uma saudação baseada nas horas (Mantido da V1)
+  const abrirModalLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const fecharModalLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  const confirmarLogout = () => {
+    setShowLogoutModal(false);
+    handleLogout();
+  };
+
+  // Função para gerar uma saudação baseada nas horas
   const obterSaudacao = () => {
     const hora = new Date().getHours();
     if (hora >= 5 && hora < 12) return "Bom dia";
@@ -193,7 +207,7 @@ function Header() {
               
               <Dropdown.Divider />
               
-              <Dropdown.Item onClick={handleLogout} className="py-2 d-flex align-items-center gap-2 text-danger fw-semibold">
+              <Dropdown.Item onClick={abrirModalLogout} className="py-2 d-flex align-items-center gap-2 text-danger fw-semibold">
                 <BiLogOut size={18} /> Terminar Sessão
               </Dropdown.Item>
             </Dropdown.Menu>
@@ -201,6 +215,26 @@ function Header() {
 
         </Nav>
       </Navbar>
+
+      <Modal show={showLogoutModal} onHide={fecharModalLogout} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar logout</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          Tens a certeza que queres terminar a sessão?
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={fecharModalLogout}>
+            Cancelar
+          </Button>
+
+          <Button variant="danger" onClick={confirmarLogout}>
+            Terminar Sessão
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

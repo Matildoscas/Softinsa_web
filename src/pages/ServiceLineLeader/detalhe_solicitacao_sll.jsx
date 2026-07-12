@@ -35,7 +35,9 @@ import {
   useParams,
 } from "react-router-dom";
 
-import api from "../../services/api.js";
+import api, {
+  buildUploadUrl,
+} from "../../services/api.js";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 import {
   getDebugModeEnabled,
@@ -96,11 +98,13 @@ function formatarData(data) {
 }
 
 function normalizarLinks(links) {
-  if (!Array.isArray(links)) {
+  const lista = normalizarArrayFlex(links);
+
+  if (!Array.isArray(lista)) {
     return [];
   }
 
-  return links
+  return lista
     .map((link) => {
       if (typeof link === "string") {
         return {
@@ -124,12 +128,55 @@ function normalizarLinks(links) {
     .filter((link) => link.url);
 }
 
+function normalizarArrayFlex(valor) {
+  if (Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (
+    valor &&
+    typeof valor === "object"
+  ) {
+    return Object.values(valor);
+  }
+
+  if (typeof valor === "string") {
+    const texto = valor.trim();
+
+    if (!texto) {
+      return [];
+    }
+
+    try {
+      const convertido =
+        JSON.parse(texto);
+
+      if (Array.isArray(convertido)) {
+        return convertido;
+      }
+
+      if (
+        convertido &&
+        typeof convertido === "object"
+      ) {
+        return Object.values(convertido);
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 function normalizarDocumentos(documentos) {
-  if (!Array.isArray(documentos)) {
+  const lista = normalizarArrayFlex(documentos);
+
+  if (!Array.isArray(lista)) {
     return [];
   }
 
-  return documentos
+  return lista
     .map((documento, index) => ({
       id:
         documento.id_documento ||
@@ -262,16 +309,22 @@ function normalizarRequisito(
   index
 ) {
   const evidenciasOriginais =
-    Array.isArray(
+    normalizarArrayFlex(
       requisito.evidencias
-    )
-      ? requisito.evidencias
-      : [];
+    );
 
   const evidencias =
     evidenciasOriginais.map(
       (item) => ({
         ...item,
+        url:
+          item?.url ||
+          buildUploadUrl(
+            item?.caminho_ficheiro ||
+              item?.path ||
+              item?.ficheiro_url ||
+              ""
+          ),
         estado_evidencia:
           resolverEstadoEvidenciaUi(
             item
@@ -296,6 +349,62 @@ function normalizarRequisito(
           .filter(Boolean)
       ),
     ];
+
+  const documentosNormalizados =
+    normalizarDocumentos([
+      ...normalizarArrayFlex(
+        evidencia?.documentos
+      ),
+      ...normalizarArrayFlex(
+        requisito.documentos
+      ),
+      ...normalizarArrayFlex(
+        requisito.ficheiros
+      ),
+    ]).map((doc) => ({
+      ...doc,
+      url:
+        doc?.url ||
+        buildUploadUrl(
+          doc?.caminho_ficheiro ||
+            doc?.path ||
+            doc?.ficheiro_url ||
+            ""
+        ),
+    }));
+
+  const evidenciasDerivadas =
+    evidencias.length > 0
+      ? evidencias
+      : documentosNormalizados.map(
+          (doc) => ({
+            id_evidencia:
+              doc.id || null,
+            nome_ficheiro:
+              doc.nome || "Documento",
+            url: doc.url,
+            caminho_ficheiro:
+              doc.caminho_ficheiro ||
+              doc.path ||
+              null,
+            formato_ficheiro:
+              doc.formato || "",
+            estado_evidencia:
+              resolverEstadoEvidenciaUi(
+                doc
+              ),
+            estado_evidencia_tm:
+              doc.estado_evidencia_tm ||
+              null,
+            estado_evidencia_sll:
+              doc.estado_evidencia_sll ||
+              null,
+            descricao:
+              requisito.descricao_evidencia ||
+              evidencia?.descricao ||
+              "",
+          })
+        );
 
   return {
     id:
@@ -322,7 +431,7 @@ function normalizarRequisito(
     estado:
       resolverEstadoRequisitoUi(
         requisito,
-        evidencias
+        evidenciasDerivadas
       ) || "AGUARDAR_TM",
 
     descricao_evidencia:
@@ -338,14 +447,11 @@ function normalizarRequisito(
       requisito.links
     ),
 
-    documentos: normalizarDocumentos(
-      evidencia?.documentos ||
-      requisito.documentos ||
-      requisito.ficheiros ||
-      []
-    ),
+    documentos:
+      documentosNormalizados,
 
-    evidencias,
+    evidencias:
+      evidenciasDerivadas,
   };
 }
 
@@ -612,8 +718,8 @@ function obterEstadoCandidaturaVisual(estado) {
   }
 
   if (
-    valor.includes("FINAL") &&
-    valor.includes("APROV")
+    valor.includes("APROV") ||
+    valor.includes("VALID")
   ) {
     return {
       label: "Aprovada",
@@ -624,8 +730,6 @@ function obterEstadoCandidaturaVisual(estado) {
   }
 
   if (
-    valor.includes("APROV") ||
-    valor.includes("VALID") ||
     valor.includes("SLL")
   ) {
     return {
@@ -867,7 +971,6 @@ function DetalheSolicitacaoSll() {
     const responseDetalhe =
       await api.get(
         `/sll/${idUtilizadorSll}/solicitacoes/${
-          idCandidaturaSllQuery ||
           idCandidatura
         }`
       );
@@ -933,6 +1036,23 @@ function DetalheSolicitacaoSll() {
       dadosNormalizados
         .candidatura
         .id_candidatura_sll
+    );
+
+    console.log(
+      "[SLL][DETALHE][RESUMO_EVIDENCIAS]",
+      (dadosNormalizados.requisitos || []).map(
+        (req) => ({
+          id: req.id,
+          requisito: req.titulo,
+          evidencias: Array.isArray(req.evidencias)
+            ? req.evidencias.length
+            : 0,
+          documentos: Array.isArray(req.documentos)
+            ? req.documentos.length
+            : 0,
+          estado: req.estado,
+        })
+      )
     );
 
     setDecisoesPendentes({});
@@ -1096,6 +1216,10 @@ async function rejeitarCandidatura() {
 
       return dados.requisitos.filter(
         (requisito) =>
+          (Array.isArray(
+            requisito.evidencias
+          ) &&
+            requisito.evidencias.length > 0) ||
           requisito.descricao_evidencia ||
           requisito.documentos.length > 0
       ).length;

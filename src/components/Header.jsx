@@ -1,8 +1,10 @@
 import {
   Dropdown,
+  Modal,
   Nav,
   Navbar,
   OverlayTrigger,
+  Button,
 } from "react-bootstrap";
 
 import {
@@ -13,6 +15,10 @@ import {
   BiUser,
   BiUserCircle,
 } from "react-icons/bi";
+
+import {
+  useState,
+} from "react";
 
 import {
   Link,
@@ -124,6 +130,11 @@ function Header() {
   const navigate =
     useNavigate();
 
+  const [
+    showLogoutModal,
+    setShowLogoutModal,
+  ] = useState(false);
+
   const user =
     obterUtilizadorGuardado();
 
@@ -156,6 +167,19 @@ function Header() {
         replace: true,
       },
     );
+  };
+
+  const abrirModalLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const fecharModalLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  const confirmarLogout = async () => {
+    setShowLogoutModal(false);
+    await handleLogout();
   };
 
   return (
@@ -294,7 +318,7 @@ function Header() {
             <Dropdown.Divider />
 
             <Dropdown.Item
-              onClick={handleLogout}
+              onClick={abrirModalLogout}
               className="py-2 d-flex align-items-center gap-2 text-danger"
             >
               <BiLogOut size={18} />
@@ -303,6 +327,38 @@ function Header() {
           </Dropdown.Menu>
         </Dropdown>
       </Nav>
+
+      <Modal
+        show={showLogoutModal}
+        onHide={fecharModalLogout}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Confirmar logout
+          </Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          Tens a certeza que queres terminar a sessão?
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={fecharModalLogout}
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            variant="danger"
+            onClick={confirmarLogout}
+          >
+            Terminar Sessão
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Navbar>
   );
 }

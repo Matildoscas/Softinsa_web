@@ -24,19 +24,83 @@ const buildUploadUrl = (path) => {
 api.interceptors.request.use(
   async (config) => {
     // 💡 Procura por todos os nomes possíveis que o teu Login possa ter usado
-    const token = 
+    let token = 
       localStorage.getItem('token') || 
       localStorage.getItem('authToken') || 
-      localStorage.getItem('jwt');
+      localStorage.getItem('jwt') ||
+      sessionStorage.getItem('token') ||
+      sessionStorage.getItem('authToken') ||
+      sessionStorage.getItem('jwt');
+
+    if (!token) {
+      try {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          const user = JSON.parse(userRaw);
+          token =
+            user?.token ||
+            user?.authToken ||
+            user?.jwt ||
+            user?.accessToken ||
+            null;
+        }
+      } catch {
+        token = null;
+      }
+    }
+
+    token = String(token || "").trim();
+
+    if (
+      !token ||
+      token === "undefined" ||
+      token === "null"
+    ) {
+      token = "";
+    }
+
+    if (token.startsWith("Bearer ")) {
+      token = token.slice(7).trim();
+    }
+
+    if (
+      token.startsWith("\"") &&
+      token.endsWith("\"")
+    ) {
+      token = token.slice(1, -1).trim();
+    }
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      config.headers["x-access-token"] = token;
     }
     
     return config;
   },
   (error) => Promise.reject(error)
 );
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = Number(error?.response?.status || 0);
+    const data = error?.response?.data;
+    const method = String(error?.config?.method || "GET").toUpperCase();
+    const url = error?.config?.url || "";
+
+    if (status === 401 || status >= 500) {
+      console.error("[API][ERRO]", {
+        status,
+        method,
+        url,
+        body: data,
+      });
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export { buildUploadUrl };
 export default api;
 

@@ -47,6 +47,57 @@ import {
 import useCandidaturasRealtime from
   "../../hooks/useCandidaturasRealtime.js";
 
+function obterCodigoNivelBadge(badge) {
+  const numeroNivel = Number(
+    badge?.id_nivel
+  );
+
+  if (
+    Number.isInteger(
+      numeroNivel
+    ) &&
+    numeroNivel >= 1 &&
+    numeroNivel <= 5
+  ) {
+    return String(numeroNivel);
+  }
+
+  const textoNivel = String(
+    badge?.nome_nivel ||
+      badge?.nivel ||
+      badge?.nivel_badge ||
+      ""
+  )
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+
+  if (
+    textoNivel.includes("INICIANTE") ||
+    textoNivel.includes("JUNIOR") ||
+    /\bA\b/.test(textoNivel)
+  ) {
+    return "1";
+  }
+  if (textoNivel.includes("INTERMED") || /\bB\b/.test(textoNivel)) return "2";
+  if (textoNivel.includes("AVANC") || textoNivel.includes("SENIOR") || /\bC\b/.test(textoNivel)) return "3";
+  if (textoNivel.includes("EXPERT") || textoNivel.includes("ESPECIALISTA") || /\bD\b/.test(textoNivel)) return "4";
+  if (textoNivel.includes("MASTER") || textoNivel.includes("LIDER DE CONHECIMENTO") || /\bE\b/.test(textoNivel)) return "5";
+
+  return "";
+}
+
+function etiquetaNivel(codigoNivel) {
+  if (!codigoNivel) return "Sem nível";
+  if (codigoNivel === "1") return "Nível A";
+  if (codigoNivel === "2") return "Nível B";
+  if (codigoNivel === "3") return "Nível C";
+  if (codigoNivel === "4") return "Nível D";
+  if (codigoNivel === "5") return "Nível E";
+  return "Sem nível";
+}
+
 function CatalogoBadgesPage() {
   const navigate =
     useNavigate();
@@ -65,6 +116,11 @@ function CatalogoBadgesPage() {
     pendentes,
     setPendentes,
   ] = useState([]);
+
+  const [
+    desafiosPorBadge,
+    setDesafiosPorBadge,
+  ] = useState({});
 
   const [
     loading,
@@ -141,10 +197,11 @@ function CatalogoBadgesPage() {
 
         try {
           const [
-            todosResponse,
-            conquistadosResponse,
-            pendentesResponse,
-          ] = await Promise.all([
+            todosResultado,
+            conquistadosResultado,
+            pendentesResultado,
+            lembretesResultado,
+          ] = await Promise.allSettled([
             api.get(
               "/badges/todos"
             ),
@@ -156,7 +213,52 @@ function CatalogoBadgesPage() {
             api.get(
               `/certificados/pendentes/${id}`
             ),
+
+            api.get(
+              `/lembretes/consultor/${id}`
+            ),
           ]);
+
+          if (
+            todosResultado.status !==
+            "fulfilled"
+          ) {
+            throw (
+              todosResultado.reason ||
+              new Error(
+                "Falha ao carregar catálogo de badges"
+              )
+            );
+          }
+
+          const todosResponse =
+            todosResultado.value;
+
+          const conquistadosResponse =
+            conquistadosResultado.status ===
+            "fulfilled"
+              ? conquistadosResultado.value
+              : {
+                  data: [],
+                };
+
+          const pendentesResponse =
+            pendentesResultado.status ===
+            "fulfilled"
+              ? pendentesResultado.value
+              : {
+                  data: [],
+                };
+
+          const lembretesResponse =
+            lembretesResultado.status ===
+            "fulfilled"
+              ? lembretesResultado.value
+              : {
+                  data: {
+                    todos: [],
+                  },
+                };
 
           const listaTodos =
             removerBadgesDuplicados(
@@ -183,6 +285,62 @@ function CatalogoBadgesPage() {
               ? pendentesResponse.data
               : [];
 
+          const listaLembretes =
+            Array.isArray(
+              lembretesResponse.data
+                ?.todos
+            )
+              ? lembretesResponse.data
+                  .todos
+              : [];
+
+          const desafiosMap =
+            listaLembretes
+              .filter(
+                (item) =>
+                  String(
+                    item.tipo_lembrete ||
+                      ""
+                  ).toUpperCase() ===
+                    "DESAFIO_TM" &&
+                  Number(
+                    item.id_badge_modelo
+                  ) > 0 &&
+                  ![
+                    "CONCLUIDO",
+                    "CONCLUIDO_SEM_PREMIO",
+                    "RECUSADO",
+                    "REJEITADO_VALIDACAO",
+                    "CANCELADO",
+                  ].includes(
+                    String(
+                      item.estado_lembrete ||
+                        ""
+                    ).toUpperCase()
+                  )
+              )
+              .reduce(
+                (acc, item) => {
+                  const idBadge = Number(
+                    item.id_badge_modelo
+                  );
+
+                  acc[idBadge] = {
+                    id_lembrete:
+                      item.id_lembrete,
+                    titulo:
+                      item.titulo ||
+                      "Desafio ativo",
+                    estado:
+                      item.estado_lembrete ||
+                      "PENDENTE",
+                  };
+
+                  return acc;
+                },
+                {}
+              );
+
           setBadges(
             listaTodos
           );
@@ -194,6 +352,10 @@ function CatalogoBadgesPage() {
           setPendentes(
             listaPendentes
           );
+
+          setDesafiosPorBadge(
+            desafiosMap
+          );
         } catch (err) {
           console.error(
             "[CATÁLOGO] Erro ao carregar:",
@@ -201,8 +363,11 @@ function CatalogoBadgesPage() {
           );
 
           if (!silencioso) {
-            setMensagemRealtime(
-              "Não foi possível carregar o catálogo de badges."
+            setMensagensRealtime(
+              {
+                _erro_catalogo:
+                  "Não foi possível carregar o catálogo de badges.",
+              }
             );
           }
         } finally {
@@ -390,6 +555,15 @@ function CatalogoBadgesPage() {
       ]
     );
 
+  const getDesafioDoBadge =
+    useCallback(
+      (badgeId) =>
+        desafiosPorBadge[
+          Number(badgeId)
+        ] || null,
+      [desafiosPorBadge]
+    );
+
   /*
        * Lista das áreas disponíveis.
    */
@@ -477,10 +651,10 @@ function CatalogoBadgesPage() {
 
               const correspondeNivel =
                 !nivelFiltro ||
-                Number(
-                  badge.id_nivel
+                obterCodigoNivelBadge(
+                  badge
                 ) ===
-                  Number(
+                  String(
                     nivelFiltro
                   );
 
@@ -1001,6 +1175,12 @@ function CatalogoBadgesPage() {
                       pendente
                     }
 
+                    desafio={
+                      getDesafioDoBadge(
+                        badgeId
+                      )
+                    }
+
                     mensagemRealtime={
                       mensagensRealtime[
                         badgeId
@@ -1118,6 +1298,7 @@ function CatalogoBadgeRow({
   conquistado,
   conquistadoBadge,
   pendente,
+  desafio,
   mensagemRealtime,
   onClick,
 }) {
@@ -1144,6 +1325,11 @@ function CatalogoBadgeRow({
     badge.area ||
     "";
 
+  const codigoNivel =
+    obterCodigoNivelBadge(
+      badge
+    );
+
   const {
     ganhouBonus,
     pontosExtra,
@@ -1154,6 +1340,20 @@ function CatalogoBadgeRow({
   const bonusAtivo =
     conquistado &&
     ganhouBonus;
+
+  const desafioAtivo =
+    Boolean(
+      desafio?.id_lembrete
+    ) ||
+    Boolean(
+      pendente
+        ?.tem_desafio_ativo
+    );
+
+  const desafioTitulo =
+    desafio?.titulo ||
+    pendente?.titulo_desafio ||
+    "Desafio aplicado";
 
   const mensagemSocket =
   String(
@@ -1171,11 +1371,41 @@ function CatalogoBadgeRow({
       pendente?.data_submissao
     );
 
+  const estadoPendente =
+    String(
+      pendente?.estado_catalogo ||
+      pendente?.estado_candidatura_pedido ||
+        pendente?.estado_validacao ||
+        ""
+    )
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toUpperCase();
+
   const estadoPendenteLegivel =
     pendente
-      ? pendenteTemEvidencias
+      ? estadoPendente.includes(
+          "CANDIDATURA_EFETUADA"
+        )
         ? "Candidatura efetuada"
-        : "Candidatura iniciada"
+        : estadoPendente.includes(
+            "CANDIDATURA_INICIADA"
+          )
+          ? "Candidatura iniciada"
+          : estadoPendente.includes(
+          "RASCUNHO"
+        )
+          ? "Candidatura iniciada"
+          : pendenteTemEvidencias ||
+              estadoPendente.includes(
+                "PENDENTE"
+              ) ||
+              estadoPendente.includes(
+                "VALIDAC"
+              )
+            ? "Candidatura efetuada"
+            : "Candidatura iniciada"
       : "";
 
   const estadoNormal =
@@ -1311,6 +1541,66 @@ function CatalogoBadgeRow({
                 Desafio concluído
               </span>
             )}
+
+            <span
+              style={{
+                background:
+                  "#f1f5f9",
+
+                color:
+                  "#334155",
+
+                border:
+                  "1px solid #cbd5e1",
+
+                borderRadius:
+                  999,
+
+                padding:
+                  "3px 9px",
+
+                fontSize:
+                  11,
+
+                fontWeight:
+                  700,
+              }}
+            >
+              {etiquetaNivel(
+                codigoNivel
+              )}
+            </span>
+
+            {!bonusAtivo &&
+              desafioAtivo && (
+                <span
+                  style={{
+                    background:
+                      "#ecfeff",
+
+                    color:
+                      "#0f766e",
+
+                    border:
+                      "1px solid #99f6e4",
+
+                    borderRadius:
+                      999,
+
+                    padding:
+                      "3px 9px",
+
+                    fontSize:
+                      11,
+
+                    fontWeight:
+                      700,
+                  }}
+                  title={desafioTitulo}
+                >
+                  Desafio aplicado
+                </span>
+              )}
           </div>
 
           <div

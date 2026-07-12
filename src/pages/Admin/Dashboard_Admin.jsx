@@ -164,6 +164,8 @@ function PaginaPrincipalAdmin() {
 
   const [barChartData, setBarChartData] = useState([]);
   const [areasDetalhe, setAreasDetalhe] = useState([]);
+  const [badgesPorLearningPath, setBadgesPorLearningPath] = useState([]);
+  const [badgesPorNivelLearningPath, setBadgesPorNivelLearningPath] = useState([]);
 
   // ─── RESUMO PRINCIPAL ─────────────────────────────────────
 
@@ -211,6 +213,42 @@ function PaginaPrincipalAdmin() {
         console.error("Erro ao carregar resumo admin:", err);
         console.error("STATUS:", err.response?.status);
         console.error("BODY:", err.response?.data);
+      });
+  }, []);
+
+  useEffect(() => {
+    api
+      .get("/dashboard/admin/badges-por-learningpath")
+      .then((res) => {
+        setBadgesPorLearningPath(
+          Array.isArray(res.data) ? res.data : []
+        );
+      })
+      .catch((err) => {
+        console.error(
+          "Erro ao carregar badges por Learning Path:",
+          err
+        );
+
+        setBadgesPorLearningPath([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    api
+      .get("/dashboard/admin/badges-por-nivel-learningpath")
+      .then((res) => {
+        setBadgesPorNivelLearningPath(
+          Array.isArray(res.data) ? res.data : []
+        );
+      })
+      .catch((err) => {
+        console.error(
+          "Erro ao carregar badges por nível da Learning Path:",
+          err
+        );
+
+        setBadgesPorNivelLearningPath([]);
       });
   }, []);
 
@@ -285,20 +323,15 @@ function PaginaPrincipalAdmin() {
   }, []);
 
   const chartKeys =
-    activeTab === "Total Consultores"
-      ? {
-          esteAno: "consultores_este_ano",
-          anoPassado: "consultores_ano_passado",
-        }
-      : activeTab === "Total Learning Paths"
-        ? {
-            esteAno: "learningpaths_este_ano",
-            anoPassado: "learningpaths_ano_passado",
-          }
-        : {
-            esteAno: "badges_este_ano",
-            anoPassado: "badges_ano_passado",
-          };
+  activeTab === "Total Consultores"
+    ? {
+        esteAno: "consultores_este_ano",
+        anoPassado: "consultores_ano_passado",
+      }
+    : {
+        esteAno: "badges_este_ano",
+        anoPassado: "badges_ano_passado",
+      };
 
   function abreviarArea(area) {
     if (!area) return "Sem área";
@@ -320,6 +353,63 @@ function PaginaPrincipalAdmin() {
 
     return area;
   }
+
+  const ORDEM_NIVEIS = [
+    "Júnior",
+    "Intermédio",
+    "Sénior",
+    "Especialista",
+    "Líder de Conhecimento",
+  ];
+
+  function normalizarTexto(texto) {
+    return String(texto || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function agruparLearningPathsPorNivel(dados) {
+    const mapa = {};
+
+    dados.forEach((item) => {
+      const nomeNivel = item.nome_nivel || "Sem nível";
+      const nomeLearningPath =
+        item.nome_learningpaths || "Sem Learning Path";
+
+      const chave = `${normalizarTexto(nomeNivel)}-${normalizarTexto(nomeLearningPath)}`;
+
+      if (!mapa[chave]) {
+        mapa[chave] = {
+          id_nivel: item.id_nivel,
+          nome_nivel: nomeNivel,
+          nome_learningpaths: nomeLearningPath,
+          total_badges: 0,
+        };
+      }
+
+      mapa[chave].total_badges += Number(item.total_badges || 0);
+    });
+
+    return Object.values(mapa);
+  }
+
+  const badgesPorNivelAgrupados =
+    agruparLearningPathsPorNivel(badgesPorNivelLearningPath);
+
+  const badgesAgrupadosPorNivel = ORDEM_NIVEIS.map((nomeNivel) => {
+    const items = badgesPorNivelAgrupados.filter(
+      (item) =>
+        normalizarTexto(item.nome_nivel) ===
+        normalizarTexto(nomeNivel)
+    );
+
+    return {
+      nome_nivel: nomeNivel,
+      items,
+    };
+  });
 
   return (
     <div
@@ -487,7 +577,6 @@ function PaginaPrincipalAdmin() {
                 <ChartTabs
                   tabs={[
                     "Total Consultores",
-                    "Total Learning Paths",
                     "Badges atribuídos",
                   ]}
                   active={activeTab}
@@ -826,6 +915,185 @@ function PaginaPrincipalAdmin() {
                     Sem dados por área.
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 16,
+              marginTop: 24,
+            }}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: 12,
+                border: "1px solid #e5e7eb",
+                padding: 20,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#111827",
+                  marginBottom: 14,
+                }}
+              >
+                Badges por Learning Path
+              </div>
+
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart
+                  data={badgesPorLearningPath}
+                  barSize={34}
+                >
+                  <XAxis
+                    dataKey="nome_learningpaths"
+                    tick={{
+                      fontSize: 10,
+                      fill: "#9ca3af",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    height={60}
+                  />
+
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{
+                      fontSize: 11,
+                      fill: "#9ca3af",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+
+                  <Tooltip
+                    formatter={(value) => [
+                      `${value} badges`,
+                      "Total",
+                    ]}
+                  />
+
+                  <Bar
+                    dataKey="total_badges"
+                    radius={[4, 4, 0, 0]}
+                  >
+                    {badgesPorLearningPath.map((item, index) => (
+                      <Cell
+                        key={item.id_learningpaths || index}
+                        fill={getAreaColor(index)}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div
+              style={{
+                background: "white",
+                borderRadius: 12,
+                border: "1px solid #e5e7eb",
+                padding: 20,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#111827",
+                  marginBottom: 14,
+                }}
+              >
+                Badges por Nível das Learning Paths
+              </div>
+
+              <div
+                style={{
+                  maxHeight: 280,
+                  overflowY: "auto",
+                  paddingRight: 4,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                }}
+              >
+                {badgesAgrupadosPorNivel.map((grupo, index) => (
+                  <div
+                    key={grupo.nome_nivel}
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 12,
+                      padding: 12,
+                      background: "#f9fafb",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 800,
+                        color: "#111827",
+                        marginBottom: 10,
+                      }}
+                    >
+                      {grupo.nome_nivel}
+                    </div>
+
+                    {grupo.items.length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {grupo.items.map((item, idx) => (
+                          <div
+                            key={`${grupo.nome_nivel}-${item.id_learningpaths}-${idx}`}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              background: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: 10,
+                              padding: "8px 12px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: "#374151",
+                              }}
+                            >
+                              {item.nome_learningpaths}
+                            </div>
+
+                            <div
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: "#2563eb",
+                              }}
+                            >
+                              {item.total_badges}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#9ca3af",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Sem badges neste nível.
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   BiBell,
@@ -20,7 +21,24 @@ function obterUtilizadorGuardado() {
   }
 }
 
+function existeTokenSessao() {
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("jwt") ||
+    sessionStorage.getItem("token") ||
+    sessionStorage.getItem("authToken") ||
+    sessionStorage.getItem("jwt") ||
+    "";
+
+  return Boolean(
+    String(token).trim()
+  );
+}
+
 function SllRightSidebar() {
+  const navigate = useNavigate();
+
   const [notificacoes, setNotificacoes] =
     useState([]);
 
@@ -41,6 +59,17 @@ function SllRightSidebar() {
       return;
     }
 
+    if (!existeTokenSessao()) {
+      setNotificacoes([]);
+      setTopUtilizadores([]);
+
+      console.warn(
+        "[SLL] Sessão sem token; a sidebar não vai pedir notificações/top até novo login."
+      );
+
+      return;
+    }
+
     Promise.allSettled([
       api.get(`/notificacoes/${userId}`),
 
@@ -55,10 +84,21 @@ function SllRightSidebar() {
             : []
         );
       } else {
+        const status = Number(
+          notificacoesRes.reason?.response?.status ||
+            0
+        );
+
+        if (status === 401) {
+          console.warn(
+            "[SLL][NOTIFICACOES] Pedido sem sessão válida; a sidebar continua sem bloquear a página."
+          );
+        } else {
         console.error(
           "Erro ao carregar notificações SLL:",
           notificacoesRes.reason
         );
+        }
 
         setNotificacoes([]);
       }
@@ -115,6 +155,24 @@ function SllRightSidebar() {
               }
               utilizador={utilizador}
               posicao={index + 1}
+              onClick={() => {
+                const idConsultor =
+                  utilizador?.id_utilizador;
+
+                if (!idConsultor) {
+                  return;
+                }
+
+                navigate(
+                  `/sll/consultores/${idConsultor}`,
+                  {
+                    state: {
+                      voltarPara: "/sll/ranking",
+                      textoVoltar: "Voltar ao ranking",
+                    },
+                  }
+                );
+              }}
             />
           ))
       ) : (
@@ -172,6 +230,7 @@ function NotificationCard({ notificacao }) {
 function TopUserCard({
   utilizador,
   posicao,
+  onClick,
 }) {
   const nome =
     utilizador.nome_completo ||
@@ -190,10 +249,23 @@ function TopUserCard({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
       style={{
         ...topUserCard,
         background: estilo.background,
         border: `1px solid ${estilo.border}`,
+        cursor: "pointer",
       }}
     >
       <div

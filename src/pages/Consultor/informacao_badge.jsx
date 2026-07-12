@@ -88,7 +88,7 @@ function obterNivelBadge(badge) {
     badge.id_nivel,
     badge.nivel,
     badge.nivel_badge,
-    badge.nome_nivel,
+      badge.nome_nivel,
     badge.descricao_nivel,
   ];
 
@@ -114,8 +114,44 @@ function obterNivelBadge(badge) {
     .join(" ")
     .toUpperCase();
 
-  const match = texto.match(
-    /(?:N[IÍ]VEL\s*)?([A-E])\b/
+  const textoNormalizado = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (
+    textoNormalizado.includes("INICIANTE") ||
+    textoNormalizado.includes("JUNIOR")
+  ) {
+    return "A";
+  }
+
+  if (textoNormalizado.includes("INTERMED")) {
+    return "B";
+  }
+
+  if (
+    textoNormalizado.includes("AVANC") ||
+    textoNormalizado.includes("SENIOR")
+  ) {
+    return "C";
+  }
+
+  if (
+    textoNormalizado.includes("EXPERT") ||
+    textoNormalizado.includes("ESPECIALISTA")
+  ) {
+    return "D";
+  }
+
+  if (
+    textoNormalizado.includes("MASTER") ||
+    textoNormalizado.includes("LIDER DE CONHECIMENTO")
+  ) {
+    return "E";
+  }
+
+  const match = textoNormalizado.match(
+    /(?:NIVEL\s*)?([A-E])\b/
   );
 
   return match
@@ -134,6 +170,8 @@ function BadgeDetailPage() {
   const [conquistadoBadge, setConquistadoBadge] = useState(null);
   const [desafiosBadge, setDesafiosBadge] = useState([]);
   const [temCandidaturaAberta, setTemCandidaturaAberta] = useState(false);
+  const [estadoCandidaturaBadge, setEstadoCandidaturaBadge] = useState("");
+  const [ocultarAcaoCandidatura, setOcultarAcaoCandidatura] = useState(false);
   const [mostrarModalInicioCandidatura, setMostrarModalInicioCandidatura] = useState(false);
 
   const [
@@ -237,6 +275,41 @@ function BadgeDetailPage() {
 
       const badgeAgrupado =
         mapa.get(badgeId);
+
+      if (
+        !badgeAgrupado.id_nivel &&
+        linha.id_nivel
+      ) {
+        badgeAgrupado.id_nivel =
+          linha.id_nivel;
+      }
+        if (
+          !badgeAgrupado.nome_nivel &&
+          linha.nome_nivel
+        ) {
+          badgeAgrupado.nome_nivel =
+            linha.nome_nivel;
+        }
+
+      if (
+        !badgeAgrupado.id_areas &&
+        linha.id_areas
+      ) {
+        badgeAgrupado.id_areas =
+          linha.id_areas;
+      }
+
+      if (
+        !badgeAgrupado.nome_area &&
+        (linha.nome_area ||
+          linha.nome_areas ||
+          linha.area)
+      ) {
+        badgeAgrupado.nome_area =
+          linha.nome_area ||
+          linha.nome_areas ||
+          linha.area;
+      }
 
       const bonusLinha =
         obterBonusBadge(linha);
@@ -366,6 +439,12 @@ function BadgeDetailPage() {
         })),
 
       api
+        .get(`/certificados/pendentes/${userId}`)
+        .catch(() => ({
+          data: [],
+        })),
+
+      api
         .get(`/lembretes/consultor/${userId}`)
         .catch(() => ({
           data: {
@@ -379,6 +458,7 @@ function BadgeDetailPage() {
           consentimentoRes,
           utilizadorRes,
           statusRes,
+          pendentesRes,
           lembretesRes,
         ]) => {
           setDadosUtilizador(
@@ -421,9 +501,118 @@ function BadgeDetailPage() {
               !candidaturaFinalizada(item)
           );
 
-        setTemCandidaturaAberta(
-          existeCandidaturaAberta
+        const candidaturaStatusBadge =
+          listaStatus.find(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                  item.id_badge
+              ) === Number(id) &&
+              !candidaturaFinalizada(item)
+          ) || null;
+
+        const listaPendentes =
+          Array.isArray(
+            pendentesRes?.data
+          )
+            ? pendentesRes.data
+            : [];
+
+        const existePendenteNoBadge =
+          listaPendentes.some(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                  item.id_badge
+              ) === Number(id)
+          );
+
+        const pendenteBadge =
+          listaPendentes.find(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                  item.id_badge
+              ) === Number(id)
+          ) || null;
+
+        const estadoCatalogo = String(
+          pendenteBadge?.estado_catalogo ||
+            ""
+        )
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase();
+
+        const totalEvidenciasBadge = Number(
+          candidaturaStatusBadge?.total_evidencias ||
+            0
         );
+
+        const faseGeralBadge = String(
+          candidaturaStatusBadge?.fase_geral ||
+            ""
+        )
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase();
+
+        const estadoPedidoBadge = String(
+          candidaturaStatusBadge?.estado_candidatura_pedido ||
+            ""
+        )
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase();
+
+        const candidaturaEfetuada =
+          estadoCatalogo.includes(
+            "CANDIDATURA_EFETUADA"
+          ) ||
+          faseGeralBadge.includes(
+            "AVALIAC"
+          ) ||
+          faseGeralBadge.includes(
+            "SUBMETIDA"
+          ) ||
+          [
+            "PENDENTE",
+            "EM_VALIDACAO_TM",
+            "EM_VALIDACAO_SLL",
+            "EM_VALIDACAO",
+          ].includes(
+            estadoPedidoBadge
+          ) ||
+          totalEvidenciasBadge >= 3;
+
+        setTemCandidaturaAberta(
+          (existeCandidaturaAberta ||
+            existePendenteNoBadge) &&
+            !candidaturaEfetuada
+        );
+
+        setOcultarAcaoCandidatura(
+          candidaturaEfetuada
+        );
+
+        if (
+          candidaturaEfetuada
+        ) {
+          setEstadoCandidaturaBadge(
+            "Candidatura efetuada"
+          );
+        } else if (
+          existeCandidaturaAberta ||
+          estadoCatalogo.includes(
+            "CANDIDATURA_INICIADA"
+          )
+        ) {
+          setEstadoCandidaturaBadge(
+            "Candidatura iniciada"
+          );
+        } else {
+          setEstadoCandidaturaBadge("");
+        }
 
         const listaLembretes =
           Array.isArray(
@@ -1494,6 +1683,12 @@ const copiarAssinatura =
 
           <NivelSelector nivelAtual={obterNivelBadge(badge)} />
 
+          {estadoCandidaturaBadge && (
+            <div style={candidaturaEstadoBox}>
+              {estadoCandidaturaBadge}
+            </div>
+          )}
+
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: "#111827", marginBottom: 10 }}>
               Requisitos do Nível
@@ -1737,18 +1932,22 @@ const copiarAssinatura =
     </button>
   </>
             ) : (
-              <button
-                style={actionBtn}
-                onClick={confirmarInicioCandidatura}
-              >
-                <BiMedal
-                  size={18}
-                  style={{
-                    marginRight: 8,
-                  }}
-                />
-                Submeter Evidências
-              </button>
+              !ocultarAcaoCandidatura && (
+                <button
+                  style={actionBtn}
+                  onClick={confirmarInicioCandidatura}
+                >
+                  <BiMedal
+                    size={18}
+                    style={{
+                      marginRight: 8,
+                    }}
+                  />
+                  {temCandidaturaAberta
+                    ? "Continuar candidatura"
+                    : "Submeter Evidências"}
+                </button>
+              )
             )}
             </div>
 
@@ -2065,6 +2264,18 @@ const desafioLinkButton = {
   fontWeight: 700,
   padding: 0,
   cursor: "pointer",
+};
+
+const candidaturaEstadoBox = {
+  marginTop: 10,
+  marginBottom: 10,
+  border: "1px solid #bae6fd",
+  background: "#f0f9ff",
+  borderRadius: 10,
+  padding: "8px 12px",
+  color: "#0369a1",
+  fontWeight: 700,
+  fontSize: 12,
 };
 
 const publicLinkBox = {

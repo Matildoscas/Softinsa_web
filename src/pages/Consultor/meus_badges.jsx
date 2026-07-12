@@ -506,11 +506,33 @@ function CatalogoBadgeRow({
       pendente?.data_submissao
     );
 
+  const estadoPendente =
+    String(
+      pendente?.estado_catalogo ||
+        pendente?.estado_candidatura_pedido ||
+        pendente?.estado_validacao ||
+        ""
+    )
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toUpperCase();
+
   const estadoPendenteLegivel =
     pendente
-      ? pendenteTemEvidencias
+      ? estadoPendente.includes(
+          "CANDIDATURA_EFETUADA"
+        )
         ? "Candidatura efetuada"
-        : "Candidatura iniciada"
+        : estadoPendente.includes(
+            "CANDIDATURA_INICIADA"
+          )
+          ? "Candidatura iniciada"
+          : pendenteTemEvidencias ||
+              estadoPendente.includes("PENDENTE") ||
+              estadoPendente.includes("VALIDAC")
+            ? "Candidatura efetuada"
+            : "Candidatura iniciada"
       : "";
 
   const estadoBase =

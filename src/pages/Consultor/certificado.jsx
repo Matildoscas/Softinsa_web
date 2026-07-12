@@ -194,13 +194,79 @@ function CertificadoPage() {
   };
 
   const getNivel = () => {
-    const nivel = Number(badge?.id_nivel || 0);
+    const candidatos = [
+      badge?.id_nivel,
+      badge?.nivel,
+      badge?.nivel_badge,
+      badge?.nome_nivel,
+      badge?.descricao_nivel,
+    ];
+
+    const nivel =
+      candidatos
+        .map((valor) => Number(valor))
+        .find(
+          (valor) =>
+            Number.isInteger(valor) &&
+            valor >= 1 &&
+            valor <= 5
+        ) || 0;
 
     if (nivel === 1) return "Nível A";
     if (nivel === 2) return "Nível B";
     if (nivel === 3) return "Nível C";
     if (nivel === 4) return "Nível D";
     if (nivel === 5) return "Nível E";
+
+    const textoNivel = candidatos
+      .filter(Boolean)
+      .map((valor) => String(valor))
+      .join(" ")
+      .toUpperCase();
+
+    const textoNivelNormalizado = textoNivel
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    if (
+      textoNivelNormalizado.includes("INICIANTE") ||
+      textoNivelNormalizado.includes("JUNIOR")
+    ) {
+      return "Nível A";
+    }
+
+    if (textoNivelNormalizado.includes("INTERMED")) {
+      return "Nível B";
+    }
+
+    if (
+      textoNivelNormalizado.includes("AVANC") ||
+      textoNivelNormalizado.includes("SENIOR")
+    ) {
+      return "Nível C";
+    }
+
+    if (
+      textoNivelNormalizado.includes("EXPERT") ||
+      textoNivelNormalizado.includes("ESPECIALISTA")
+    ) {
+      return "Nível D";
+    }
+
+    if (
+      textoNivelNormalizado.includes("MASTER") ||
+      textoNivelNormalizado.includes("LIDER DE CONHECIMENTO")
+    ) {
+      return "Nível E";
+    }
+
+    const nivelTexto = textoNivelNormalizado.match(
+      /(?:NIVEL\s*)?([A-E])\b/
+    );
+
+    if (nivelTexto) {
+      return `Nível ${nivelTexto[1]}`;
+    }
 
     return "Nível não definido";
   };

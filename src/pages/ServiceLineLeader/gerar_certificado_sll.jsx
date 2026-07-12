@@ -10,7 +10,6 @@ import {
   BiCertification,
   BiSave,
   BiUser,
-  BiSend,
   BiFile,
   BiSpreadsheet,
 } from "react-icons/bi";
@@ -183,11 +182,6 @@ const [
 ] = useState(false);
 
 const [
-  isSendingTm,
-  setIsSendingTm,
-] = useState(false);
-
-  const [
     consultores,
     setConsultores,
   ] = useState([]);
@@ -1159,35 +1153,6 @@ function gerarExcel() {
   URL.revokeObjectURL(url);
 }
 
-async function enviarParaTm() {
-  if (!certificadoPreview) {
-    setErro(
-      "Prepara primeiro o certificado."
-    );
-
-    return;
-  }
-
-  try {
-    setIsSendingTm(true);
-    setErro("");
-
-    /*
-     * A chamada real será colocada aqui quando
-     * criarmos o fluxo do Talent Manager.
-     *
-     * Não devemos alterar a BD sem saber onde
-     * guardar o certificado enviado.
-     */
-
-    setMensagem(
-      "Certificado preparado para envio ao Talent Manager."
-    );
-  } finally {
-    setIsSendingTm(false);
-  }
-}
-
   return (
     <div style={pagina}>
       <Header />
@@ -1452,10 +1417,8 @@ async function enviarParaTm() {
                 certificado={
                 certificadoPreview
                 }
-                onEnviarTm={enviarParaTm}
                 onPdf={gerarPdf}
                 onExcel={gerarExcel}
-                isSendingTm={isSendingTm}
                 onAlterar={() =>
                 setCertificadoPreview(null)
                 }
@@ -1471,10 +1434,8 @@ async function enviarParaTm() {
 
 function CertificadoPreview({
   certificado,
-  onEnviarTm,
   onPdf,
   onExcel,
-  isSendingTm,
   onAlterar,
 }) {
   const codigo =
@@ -1576,19 +1537,6 @@ function CertificadoPreview({
         </div>
 
         <div style={acoesCertificado}>
-          <button
-            type="button"
-            onClick={onEnviarTm}
-            disabled={isSendingTm}
-            style={enviarTmButton}
-          >
-            <BiSend size={17} />
-
-            {isSendingTm
-              ? "A enviar..."
-              : "Enviar para TM"}
-          </button>
-
           <button
             type="button"
             onClick={onPdf}
@@ -1809,22 +1757,6 @@ const acoesCertificado = {
   justifyContent: "center",
   gap: 12,
   flexWrap: "wrap",
-};
-
-const enviarTmButton = {
-  minHeight: 42,
-  border: "none",
-  borderRadius: 9,
-  background: "#2563eb",
-  color: "white",
-  padding: "9px 18px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 7,
-  fontSize: 13,
-  fontWeight: 700,
-  cursor: "pointer",
 };
 
 const pdfPreviewButton = {

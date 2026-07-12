@@ -31,6 +31,73 @@ function obterUtilizadorGuardado() {
   }
 }
 
+function extrairErroApi(err, contexto) {
+  const status = Number(err?.response?.status || 0);
+  const data = err?.response?.data || {};
+  const code = String(data?.code || "").trim().toUpperCase();
+  const message = String(data?.error || data?.message || "").trim();
+
+  console.error(`[CANDIDATURA][${contexto}]`, {
+    status,
+    code,
+    message,
+    method: err?.config?.method,
+    url: err?.config?.url,
+    response: data,
+  });
+
+  return { status, code, message };
+}
+
+function mensagemErroCandidatura(err, fallback) {
+  const { status, code, message } = extrairErroApi(err, "UI");
+  const texto = String(message || "").toLowerCase();
+
+  if (status === 401) {
+    return "Sessão expirada ou inválida. Inicia sessão novamente para continuar a candidatura.";
+  }
+
+  if (status === 409) {
+    if (code === "CANDIDATURA_EM_CURSO" || texto.includes("em curso")) {
+      return "Já tens uma candidatura em curso para este badge. Abre o progresso para continuares essa candidatura.";
+    }
+
+    if (code === "CANDIDATURA_NAO_EDITAVEL" || texto.includes("não pode ser alterada")) {
+      return "Esta candidatura já não está em rascunho, por isso não pode ser alterada.";
+    }
+
+    if (code === "CANDIDATURA_NAO_ENVIAVEL" || texto.includes("não pode ser enviada")) {
+      return "Esta candidatura já foi enviada ou fechada, por isso não pode ser enviada novamente.";
+    }
+  }
+
+  if (code === "EVIDENCIAS_INSUFICIENTES" || texto.includes("ficheiros") || texto.includes("requisitos")) {
+    return message || "Faltam evidências mínimas para enviar a candidatura.";
+  }
+
+  if (code === "BADGE_ATIVO_JA_OBTIDO" || texto.includes("badge ativo")) {
+    return message || "Já tens este badge ativo. Só podes voltar a submeter quando expirar.";
+  }
+
+  if (code === "REQUISITO_INVALIDO") {
+    return message || "Não foi possível associar o ficheiro a um requisito válido. Reabre a candidatura e tenta novamente.";
+  }
+
+  if (code === "DADOS_INCOMPLETOS") {
+    return message || "Falta informação obrigatória para guardar o rascunho.";
+  }
+
+  if (code === "CONFLITO_DADOS") {
+    return message || "Foi detetado um conflito ao guardar a candidatura. Atualiza a página e tenta novamente.";
+  }
+
+  if (status >= 500) {
+    return "O servidor falhou ao processar a candidatura. Tenta novamente em instantes.";
+  }
+
+  return message || fallback;
+}
+
 function SubmeterEvidenciasPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,6 +133,10 @@ function SubmeterEvidenciasPage() {
   const [mensagemInfo, setMensagemInfo] = useState("");
   const [mostrarModalEnvio, setMostrarModalEnvio] = useState(false);
   const [mensagemModalEnvio, setMensagemModalEnvio] = useState("");
+  const [mostrarModalErro, setMostrarModalErro] = useState(false);
+  const [mensagemModalErro, setMensagemModalErro] = useState("");
+  const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
 
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
@@ -136,6 +207,42 @@ function SubmeterEvidenciasPage() {
 
       const badgeAgrupado =
         mapa.get(badgeId);
+
+      if (
+        !badgeAgrupado.id_nivel &&
+        linha.id_nivel
+      ) {
+        badgeAgrupado.id_nivel =
+          linha.id_nivel;
+      }
+
+      if (
+        !badgeAgrupado.nome_nivel &&
+        linha.nome_nivel
+      ) {
+        badgeAgrupado.nome_nivel =
+          linha.nome_nivel;
+      }
+
+      if (
+        !badgeAgrupado.id_areas &&
+        linha.id_areas
+      ) {
+        badgeAgrupado.id_areas =
+          linha.id_areas;
+      }
+
+      if (
+        !badgeAgrupado.nome_area &&
+        (linha.nome_area ||
+          linha.nome_areas ||
+          linha.area)
+      ) {
+        badgeAgrupado.nome_area =
+          linha.nome_area ||
+          linha.nome_areas ||
+          linha.area;
+      }
 
       /*
       * Caso a primeira linha não tenha
@@ -214,6 +321,47 @@ function SubmeterEvidenciasPage() {
     });
 
     setEvidenciasGuardadas(guardadas);
+
+    if (requisitos.length > 0) {
+      setBadge((anterior) => {
+        if (!anterior) {
+          return anterior;
+        }
+
+        const requisitosNormalizados = requisitos.map((req, index) => ({
+          ...req,
+          id_requisito:
+            req.id_requisito ||
+            req.id_requisitos ||
+            req.id ||
+            index,
+          id_requisitos:
+            req.id_requisitos ||
+            req.id_requisito ||
+            req.id ||
+            index,
+          titulo:
+            req.titulo ||
+            req.nome_requisito ||
+            req.nome ||
+            `Requisito ${index + 1}`,
+          nome:
+            req.nome ||
+            req.nome_requisito ||
+            req.titulo ||
+            `Requisito ${index + 1}`,
+          descricao:
+            req.descricao ||
+            req.descricao_requisito ||
+            "",
+        }));
+
+        return {
+          ...anterior,
+          requisitos: requisitosNormalizados,
+        };
+      });
+    }
   }
 
   async function carregarPagina() {
@@ -256,12 +404,12 @@ function SubmeterEvidenciasPage() {
           : "Rascunho carregado com sucesso."
       );
     } catch (err) {
-      console.error("Erro ao iniciar candidatura:", err);
-      const erro =
-        err.response?.data?.error ||
-        "Não foi possível abrir o fluxo de candidatura.";
-      alert(erro);
-      navigate(voltarPara, { replace: true });
+      const erro = mensagemErroCandidatura(
+        err,
+        "Não foi possível abrir o fluxo de candidatura."
+      );
+      setMensagemModalErro(erro);
+      setMostrarModalErro(true);
     } finally {
       setLoading(false);
     }
@@ -348,8 +496,9 @@ function SubmeterEvidenciasPage() {
             JSON.stringify({
               requisito_key: requisitoKey,
               id_requisito:
-                req.id_requisito ||
                 req.id_requisitos ||
+                req.id_requisito ||
+                req.id ||
                 null,
               titulo: req.titulo,
               nome: req.nome,
@@ -373,11 +522,13 @@ function SubmeterEvidenciasPage() {
           : "Dados guardados na candidatura em rascunho."
       );
     } catch (err) {
-      const erro =
-        err.response?.data?.error ||
-        "Não foi possível guardar o rascunho.";
+      const erro = mensagemErroCandidatura(
+        err,
+        "Não foi possível guardar o rascunho."
+      );
       if (!silencioso) {
-        alert(erro);
+        setMensagemModalErro(erro);
+        setMostrarModalErro(true);
       }
       throw err;
     } finally {
@@ -413,10 +564,13 @@ function SubmeterEvidenciasPage() {
 
       setMostrarModalEnvio(true);
     } catch (err) {
-      alert(
-        err.response?.data?.error ||
+      setMensagemModalErro(
+        mensagemErroCandidatura(
+          err,
           "Não foi possível enviar a candidatura."
+        )
       );
+      setMostrarModalErro(true);
     } finally {
       setAcaoLoading(false);
     }
@@ -427,16 +581,13 @@ function SubmeterEvidenciasPage() {
       return;
     }
 
-    const motivo = window.prompt(
-      "Indique o motivo do cancelamento da candidatura:"
-    );
+    const motivo = String(
+      motivoCancelamento || ""
+    ).trim();
 
-    if (motivo === null) {
-      return;
-    }
-
-    if (!String(motivo).trim()) {
-      alert("O motivo do cancelamento é obrigatório.");
+    if (!motivo) {
+      setMensagemModalErro("O motivo do cancelamento é obrigatório.");
+      setMostrarModalErro(true);
       return;
     }
 
@@ -447,17 +598,22 @@ function SubmeterEvidenciasPage() {
         `/candidaturas/${candidatura.id_candidatura_pedido}/cancelar`,
         {
           id_utilizador: userId,
-          motivo: String(motivo).trim(),
+          motivo,
         }
       );
 
-      alert("Candidatura cancelada com sucesso.");
+      setMostrarModalCancelar(false);
+      setMotivoCancelamento("");
+      setMensagemInfo("Candidatura cancelada com sucesso.");
       navigate(voltarPara, { replace: true });
     } catch (err) {
-      alert(
-        err.response?.data?.error ||
+      setMensagemModalErro(
+        mensagemErroCandidatura(
+          err,
           "Não foi possível cancelar a candidatura."
+        )
       );
+      setMostrarModalErro(true);
     } finally {
       setAcaoLoading(false);
     }
@@ -732,7 +888,10 @@ function SubmeterEvidenciasPage() {
                     : "pointer",
               }}
               disabled={acaoLoading}
-              onClick={cancelarCandidatura}
+              onClick={() => {
+                setMotivoCancelamento("");
+                setMostrarModalCancelar(true);
+              }}
             >
               <HiOutlineTrash size={18} style={{ marginRight: 8 }} />
               Cancelar candidatura
@@ -794,6 +953,68 @@ function SubmeterEvidenciasPage() {
             }}
           >
             Fechar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={mostrarModalErro}
+        onHide={() => setMostrarModalErro(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Atenção</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          {mensagemModalErro}
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button onClick={() => setMostrarModalErro(false)}>
+            Fechar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal
+        show={mostrarModalCancelar}
+        onHide={() => !acaoLoading && setMostrarModalCancelar(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Cancelar candidatura</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label>Indica o motivo do cancelamento</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={4}
+              value={motivoCancelamento}
+              onChange={(event) => setMotivoCancelamento(event.target.value)}
+              placeholder="Escreve o motivo..."
+              disabled={acaoLoading}
+            />
+          </Form.Group>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            disabled={acaoLoading}
+            onClick={() => setMostrarModalCancelar(false)}
+          >
+            Voltar
+          </Button>
+
+          <Button
+            variant="danger"
+            disabled={acaoLoading}
+            onClick={cancelarCandidatura}
+          >
+            {acaoLoading ? "A cancelar..." : "Confirmar cancelamento"}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -1004,7 +1225,43 @@ function obterNivelBadge(badge) {
     .join(" ")
     .toUpperCase();
 
-  const match = texto.match(/(?:N[IÍ]VEL\s*)?([A-E])\b/);
+  const textoNormalizado = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (
+    textoNormalizado.includes("INICIANTE") ||
+    textoNormalizado.includes("JUNIOR")
+  ) {
+    return "A";
+  }
+
+  if (textoNormalizado.includes("INTERMED")) {
+    return "B";
+  }
+
+  if (
+    textoNormalizado.includes("AVANC") ||
+    textoNormalizado.includes("SENIOR")
+  ) {
+    return "C";
+  }
+
+  if (
+    textoNormalizado.includes("EXPERT") ||
+    textoNormalizado.includes("ESPECIALISTA")
+  ) {
+    return "D";
+  }
+
+  if (
+    textoNormalizado.includes("MASTER") ||
+    textoNormalizado.includes("LIDER DE CONHECIMENTO")
+  ) {
+    return "E";
+  }
+
+  const match = textoNormalizado.match(/(?:NIVEL\s*)?([A-E])\b/);
   return match ? match[1] : "";
 }
 

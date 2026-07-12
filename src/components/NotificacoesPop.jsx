@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -49,6 +50,9 @@ const NotificationPopover =
         loading,
         setLoading,
       ] = useState(true);
+
+      const bloqueadoPor401Ref =
+        useRef(false);
 
       useEffect(() => {
         carregarNotificacoes();
@@ -101,6 +105,11 @@ const NotificationPopover =
             return;
           }
 
+          if (bloqueadoPor401Ref.current) {
+            setNotifications([]);
+            return;
+          }
+
           const response =
             await api.get(
               `/notificacoes/${userId}`
@@ -126,6 +135,21 @@ const NotificationPopover =
             naoLidas
           );
         } catch (err) {
+          const status = Number(
+            err?.response?.status || 0
+          );
+
+          if (status === 401) {
+            bloqueadoPor401Ref.current = true;
+            setNotifications([]);
+
+            console.warn(
+              "[NOTIFICAÇÕES][POPOVER] Sessão inválida; pedidos seguintes ficam suspensos até novo login."
+            );
+
+            return;
+          }
+
           console.error(
             "Erro ao carregar notificações do popover:",
             err
