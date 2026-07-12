@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { 
+  BiArrowBack,
   BiBadge, 
   BiEnvelope, 
   BiRefresh, 
   BiSearch, 
   BiUserCircle, 
-  BiFilterAlt, 
   BiSort, 
-  BiInfoCircle // <-- Corrigido: Ícone adicionado aqui
+  BiInfoCircle 
 } from "react-icons/bi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
@@ -28,6 +28,42 @@ function obterUtilizadorGuardado() {
 
 function normalizarEstado(valor) {
   return String(valor || "").trim().toUpperCase();
+}
+
+function estadoEtapaRequisito(requisito, chaveEstado) {
+  const evidencias = Array.isArray(requisito?.evidencias)
+    ? requisito.evidencias
+    : [];
+
+  if (evidencias.length === 0) {
+    return "SEM_EVIDENCIA";
+  }
+
+  const estados = evidencias.map((evidencia) =>
+    normalizarEstado(evidencia?.[chaveEstado] || "PENDENTE")
+  );
+
+  if (
+    estados.some(
+      (estado) =>
+        estado.includes("REJEIT") ||
+        estado.includes("RECUS")
+    )
+  ) {
+    return "REJEITADO";
+  }
+
+  if (
+    estados.every(
+      (estado) =>
+        estado.includes("APROV") ||
+        estado.includes("VALID")
+    )
+  ) {
+    return "APROVADO";
+  }
+
+  return "PENDENTE";
 }
 
 function formatarDataHora(data) {
@@ -50,7 +86,7 @@ function chipEstado(estado) {
   if (valor.includes("APROV")) {
     return { label: estado || "APROVADO", bg: "#dcfce7", color: "#166534", border: "#bbf7d0" };
   }
-  if (valor.includes("REJEIT") || valor.includes("RECUS")) {
+  if (valor.includes("REJEIT") || valor.includes("RECUS") || valor.includes("CANCEL")) {
     return { label: estado || "REJEITADO", bg: "#fee2e2", color: "#991b1b", border: "#fecaca" };
   }
   if (valor.includes("AGUARDA") || valor.includes("PEND")) {
@@ -60,18 +96,21 @@ function chipEstado(estado) {
 }
 
 function candidaturaEstaFinalizada(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
-  
-  return (
-    fase.includes("FECHADA") ||
-    fase.includes("HISTORICO") ||
-    fase.includes("FINALIZ") ||
-    fase.includes("CONCLUID") ||
-    estado.includes("FINAL") ||
-    estado.includes("REJEIT") ||
-    estado.includes("RECUS")
-  );
+
+    const estado = normalizarEstado(item.estado_geral);
+    const fase = normalizarEstado(item.fase_geral);
+
+    return (
+        fase === "FINALIZADA"
+        ||
+        estado.includes("APROV")
+        ||
+        estado.includes("REJEIT")
+        ||
+        estado.includes("RECUS")
+        ||
+        estado.includes("CANCEL")
+    );
 }
 
 // Componente do Chip de Estado
@@ -104,9 +143,30 @@ function LinhaTimeline({ label, data }) {
   );
 }
 
+function EstadoRequisitoChip({ titulo, valor }) {
+  const chip = chipEstado(valor);
+
+  return (
+    <div style={estadoRequisitoBloco}>
+      <div style={estadoRequisitoTitulo}>{titulo}</div>
+      <span
+        style={{
+          ...estadoChip,
+          background: chip.bg,
+          color: chip.color,
+          border: `1px solid ${chip.border}`,
+        }}
+      >
+        {chip.label}
+      </span>
+    </div>
+  );
+}
+
 // Componente Principal
 function StatusCandidaturasTM() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [talentManager, setTalentManager] = useState(null);
   const [lista, setLista] = useState([]);
@@ -114,7 +174,6 @@ function StatusCandidaturasTM() {
   const [detalhe, setDetalhe] = useState(null);
   
   const [modoLista, setModoLista] = useState("EM_PROCESSO");
-  const [scope, setScope] = useState("ALL"); 
   const [ordenarPor, setOrdenarPor] = useState("data_desc"); 
 
   const [pesquisa, setPesquisa] = useState("");
@@ -136,8 +195,9 @@ function StatusCandidaturasTM() {
       setIsLoading(true);
       setErro("");
 
-      const response = await api.get(`/tm/${idUtilizador}/status-candidaturas`, { 
-        params: { scope } 
+      // Enviamos fixo 'GLOBAL' para a API retornar sempre todas as candidaturas existentes
+      const response = await api.get(`/candidaturas/tm/${idUtilizador}/status-candidaturas`, { 
+        params: { scope: "GLOBAL" } 
       });
 
       setTalentManager(response.data.talentManager || null);
@@ -169,9 +229,19 @@ function StatusCandidaturasTM() {
     }
   }
 
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
+
   useEffect(() => {
     carregarLista();
-  }, [scope]);
+  }, []);
 
   useEffect(() => {
     if (selecionada) {
@@ -202,14 +272,13 @@ function StatusCandidaturasTM() {
     let resultado = listaPorModo;
 
     if (termo) {
-      resultado = resultado.filter((item) =>
-        String(item.nome_completo || "").toLowerCase().includes(termo) ||
-        String(item.email || "").toLowerCase().includes(termo) ||
-        String(item.nome_badge || "").toLowerCase().includes(termo) ||
-        String(item.estado_geral || "").toLowerCase().includes(termo) ||
-        String(item.fase_geral || "").toLowerCase().includes(termo)
-      );
-    }
+    resultado = resultado.filter((item) =>
+    String(item.nome_completo || item.nome_consultor || "").toLowerCase().includes(termo) ||
+    String(item.email || item.email_consultor || "").toLowerCase().includes(termo) ||
+    String(item.nome_badge || "").toLowerCase().includes(termo) ||
+    String(item.estado_geral || item.estado_candidatura_pedido || "").toLowerCase().includes(termo)
+  );
+}
 
     return [...resultado].sort((a, b) => {
       if (ordenarPor === "nome_az") {
@@ -238,7 +307,10 @@ function StatusCandidaturasTM() {
 
         <main style={conteudo}>
           <div style={topoBarra}>
-            <button type="button" onClick={() => navigate("/tm")} style={voltarBtn}>Voltar</button>
+            <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+              <BiArrowBack size={18} />
+              {textoVoltar}
+            </button>
             <button type="button" onClick={carregarLista} style={refreshBtn}>
               <BiRefresh size={16} /> Atualizar
             </button>
@@ -246,24 +318,11 @@ function StatusCandidaturasTM() {
 
           <h1 style={titulo}>Status de Candidaturas</h1>
           <div style={subtitulo}>
-            Gestor: <strong>{talentManager?.nome_completo || "Talent Manager"}</strong> 
-            {talentManager?.especializacao_tm && ` (${talentManager.especializacao_tm})`}
+            Talent Manager: <strong>{talentManager?.nome_completo || "Talent Manager"}</strong> 
           </div>
 
+          {/* Mantida apenas a ordenação, removido o select de Escopo */}
           <div style={filtroEscopoBarra}>
-            <div style={filtroGrupo}>
-              <BiFilterAlt size={16} color="#475569" />
-              <span style={filtroTextoLabel}>Filtro de Escopo:</span>
-              <select 
-                value={scope} 
-                onChange={(e) => setScope(e.target.value)} 
-                style={selectEstilo}
-              >
-                <option value="ALL">A minha Service Line Completa</option>
-                <option value="AREA">Apenas a minha Área</option>
-              </select>
-            </div>
-
             <div style={filtroGrupo}>
               <BiSort size={16} color="#475569" />
               <span style={filtroTextoLabel}>Ordenar por:</span>
@@ -279,6 +338,7 @@ function StatusCandidaturasTM() {
             </div>
           </div>
 
+          {/* Abas Recuperadas com Sucesso */}
           <div style={tabsBox}>
             <button
               type="button"
@@ -336,7 +396,7 @@ function StatusCandidaturasTM() {
                         <div style={linhaTopoCard}>
                           <div style={nomeLinha}>
                             <BiUserCircle size={20} color="#64748b" />
-                            <span>{item.nome_completo}</span>
+                            <span>{item.nome_completo || item.nome_consultor}</span>
                           </div>
                           <span style={{ ...estadoChip, background: geral.bg, color: geral.color, border: `1px solid ${geral.border}` }}>
                             {item.estado_geral}
@@ -349,7 +409,7 @@ function StatusCandidaturasTM() {
                         </div>
                         <div style={emailLinha}>
                           <BiEnvelope size={14} color="#6b7280" />
-                          <span>{item.email}</span>
+                          <span>{item.email || item.email_consultor}</span>
                         </div>
                         <div style={metaLinha}>
                           Fase: <strong>{item.fase_geral}</strong>
@@ -372,13 +432,17 @@ function StatusCandidaturasTM() {
                 <>
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Estados Explícitos por Fase</div>
-                    <div style={estadoGrid}>
-                      <EstadoChip titulo="Pedido" valor={detalhe.status?.estado_candidatura_pedido} />
-                      <EstadoChip titulo="TM" valor={detalhe.status?.estado_candidaturatm} />
-                      <EstadoChip titulo="SLL" valor={detalhe.status?.estado_candidaturasll} />
-                      <EstadoChip titulo="Histórico" valor={detalhe.status?.estado_final} />
-                      <EstadoChip titulo="Estado Geral" valor={detalhe.status?.estado_geral} />
-                      <EstadoChip titulo="Fase Geral" valor={detalhe.status?.fase_geral} />
+                    <div style={estadoPrincipalWrapper}>
+                      <EstadoPrincipalChip titulo="Estado Geral" valor={detalhe.status?.estado_geral} />
+                    </div>
+                    <div style={estadoGridFases}>
+                      <EstadoChip titulo="Estado do Pedido" valor={detalhe.status?.estado_candidatura_pedido} />
+                      <EstadoChip titulo="Estado TM" valor={detalhe.status?.estado_candidaturatm} />
+                      <EstadoChip titulo="Estado SLL" valor={detalhe.status?.estado_candidaturasll} />
+                    </div>
+                    <div style={estadoRodapeGrid}>
+                      <EstadoChip titulo="Etapa do Processo" valor={detalhe.status?.fase_geral} />
+                      <EstadoChip titulo="Resultado Histórico" valor={detalhe.status?.estado_final} />
                     </div>
                   </div>
 
@@ -399,23 +463,22 @@ function StatusCandidaturasTM() {
                       {(detalhe.requisitos || []).map((req) => (
                         <div key={req.id_requisitos} style={requisitoLinha}>
                           <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
-                          <span
-                            style={{
-                              ...estadoChip,
-                              ...(() => {
-                                const c = chipEstado(req.estado_evidencia);
-                                return { background: c.bg, color: c.color, border: `1px solid ${c.border}` };
-                              })(),
-                            }}
-                          >
-                            {req.estado_evidencia}
-                          </span>
+                          <div style={requisitoEstadosLinha}>
+                            <EstadoRequisitoChip
+                              titulo="TM"
+                              valor={estadoEtapaRequisito(req, "estado_evidencia_tm")}
+                            />
+
+                            <EstadoRequisitoChip
+                              titulo="SLL"
+                              valor={estadoEtapaRequisito(req, "estado_evidencia_sll")}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Corrigido: Botão movido para a raiz do painel, garantindo alinhamento perfeito ao fundo */}
                   <button
                     type="button"
                     onClick={() => navigate(`/tm/detalhes-historico/${selecionada}`)}
@@ -435,15 +498,45 @@ function StatusCandidaturasTM() {
   );
 }
 
+function EstadoPrincipalChip({ titulo, valor }) {
+  const chip = chipEstado(valor);
+
+  return (
+    <div
+      style={{
+        ...estadoBloco,
+        padding: 16,
+        minHeight: 86,
+        background: chip.bg,
+        border: `1px solid ${chip.border}`,
+      }}
+    >
+      <div style={estadoTitulo}>{titulo}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: chip.color }}>
+        {chip.label}
+      </div>
+    </div>
+  );
+}
+
 // Estilos
 const pagina = { minHeight: "100vh", background: "#f3f4f6", display: "flex", flexDirection: "column" };
 const corpo = { display: "flex", flex: 1, overflow: "hidden" };
 const conteudo = { flex: 1, minWidth: 0, overflowY: "auto", padding: "22px 30px 40px" };
 const topoBarra = { display: "flex", justifyContent: "space-between", alignItems: "center" };
-const voltarBtn = { border: "none", background: "transparent", color: "#2563eb", cursor: "pointer", padding: 0, fontSize: 14 };
 const refreshBtn = { border: "1px solid #cbd5e1", background: "white", color: "#1f2937", padding: "8px 12px", borderRadius: 9, cursor: "pointer", display: "inline-flex", gap: 7, alignItems: "center", fontSize: 13 };
 const titulo = { margin: "10px 0 4px", fontSize: 22, fontWeight: 800, color: "#111827" };
 const subtitulo = { color: "#64748b", marginBottom: 14 };
+
+const estadoPrincipalWrapper = {
+  marginBottom: 10,
+};
+const requisitoEstadosLinha = {
+  display: "flex",
+  gap: 10,
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
+};
 
 const filtroEscopoBarra = { display: "flex", gap: 24, background: "white", border: "1px solid #dbe3ef", borderRadius: 10, padding: "10px 14px", marginBottom: 12, alignItems: "center", flexWrap: "wrap" };
 const filtroGrupo = { display: "flex", alignItems: "center", gap: 8 };
@@ -459,7 +552,6 @@ const erroBox = { border: "1px solid #fecaca", background: "#fef2f2", color: "#b
 const gridPrincipal = { display: "grid", gridTemplateColumns: "minmax(360px, 0.9fr) minmax(460px, 1.1fr)", gap: 14 };
 const listaPanel = { background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 };
 
-// Adicionado display: flex para empurrar o botão dinamicamente
 const detalhePanel = { 
   background: "white", 
   border: "1px solid #e5e7eb", 
@@ -467,6 +559,17 @@ const detalhePanel = {
   padding: 12,
   display: "flex",
   flexDirection: "column"
+};
+const estadoGridFases = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(120px, 1fr))",
+  gap: 8,
+  marginBottom: 8,
+};
+const estadoRodapeGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(140px, 1fr))",
+  gap: 8,
 };
 
 const panelTitulo = { fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 10 };
@@ -481,7 +584,6 @@ const metaLinha = { marginTop: 6, fontSize: 12, color: "#334155" };
 const estadoChip = { display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, fontSize: 11, fontWeight: 700, padding: "4px 10px", whiteSpace: "nowrap" };
 const secaoDetalhe = { border: "1px solid #e5e7eb", borderRadius: 10, padding: 10, marginBottom: 10 };
 const secaoTitulo = { fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 8 };
-const estadoGrid = { display: "grid", gridTemplateColumns: "repeat(3, minmax(120px, 1fr))", gap: 8 };
 const estadoBloco = { border: "1px solid #e5e7eb", borderRadius: 9, padding: 8, background: "#f8fafc" };
 const estadoTitulo = { fontSize: 11, color: "#64748b", marginBottom: 6, fontWeight: 700, textTransform: "uppercase" };
 const timelineLinha = { display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderBottom: "1px dashed #e2e8f0" };
@@ -509,6 +611,30 @@ const verDetalhesBtn = {
   padding: "10px",
   boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
   transition: "background 0.2s ease",
+};
+
+const voltarButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: 0,
+  fontSize: 14,
+  cursor: "pointer",
+};
+const estadoRequisitoBloco = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  gap: 4,
+};
+const estadoRequisitoTitulo = {
+  fontSize: 10,
+  fontWeight: 700,
+  color: "#64748b",
+  textTransform: "uppercase",
 };
 
 export default StatusCandidaturasTM;

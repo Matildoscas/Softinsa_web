@@ -3,8 +3,8 @@ import { Card, Button, Form, InputGroup, Row, Col, Spinner, Badge } from "react-
 import { BiArrowBack, BiSearch, BiFilter, BiSort, BiUser, BiBook, BiShow } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
@@ -19,6 +19,16 @@ function HistoricoCandidaturasTM() {
     const [filterStatus, setFilterStatus] = useState("");
     const [searchConsultor, setSearchConsultor] = useState("");
     const [sortBy, setSortBy] = useState("Mais Recentes");
+
+    const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
     useEffect(() => {
         const fetchHistorico = async () => {
@@ -81,9 +91,10 @@ function HistoricoCandidaturasTM() {
                 <TmLeftSidebar />
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
-                    <Button variant="link" className="text-decoration-none text-secondary p-0 mb-3 d-flex align-items-center gap-2" onClick={() => navigate(-1)}>
-                        <BiArrowBack size={20} /> Voltar
-                    </Button>
+                    <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+            <BiArrowBack size={18} />
+              {textoVoltar}
+          </button>
 
                     <div className="mb-4">
                         <h4 className="fw-bold mb-0">Histórico de Candidaturas</h4>
@@ -203,5 +214,17 @@ function HistoricoCandidaturasTM() {
         </div>
     );
 }
+
+const voltarButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: 0,
+  fontSize: 14,
+  cursor: "pointer",
+};
 
 export default HistoricoCandidaturasTM;

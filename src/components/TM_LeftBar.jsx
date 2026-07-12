@@ -4,26 +4,32 @@ import { buildUploadUrl } from "../services/api.js";
 import {
   BiGrid,
   BiBadge,
-  BiHistory,
   BiUser,
   BiUserCircle,
   BiChevronRight,
-  BiCertification,
-  BiFileBlank,
-  BiAlarmExclamation,
-  BiBarChartAlt2,
-  BiGroup
+  BiCertification
 } from "react-icons/bi";
 
 function LeftSidebarTM() {
   const location = useLocation();
   const [user, setUser] = useState(null);
 
-  // Estados para controlar quais grupos de menus estão abertos/colapsados
+  // Estados de controlo dos menus (Versão 2)
   const [badgesAberto, setBadgesAberto] = useState(true);
-  const [consultoresAberto, setConsultoresAberto] = useState(false);
+  const [certificadosAberto, setCertificadosAberto] = useState(true);
+  const [consultoresAberto, setConsultoresAberto] = useState(
+    location.pathname.startsWith("/tm/consultores")
+  );
 
-  // 1. Carregar dados do utilizador do localStorage (Vindo do Componente 2)
+  const handleBadgesToggle = () => {
+  // 1. Alterna o estado para abrir/fechar o submenu
+  setBadgesAberto((prev) => !prev);
+  
+  // 2. Força a navegação para a página principal dos badges
+  navigate('/tm/badges');
+};
+
+  // 1. Carregar dados dinâmicos do utilizador (Versão 1)
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -35,17 +41,24 @@ function LeftSidebarTM() {
     }
   }, []);
 
-  // 2. Auto-expandir os grupos de menu baseando-se na rota atual (Vindo do Componente 1)
+  // 2. Auto-expandir os grupos com base na rota atual (Versão 2)
   useEffect(() => {
-    const path = location.pathname;
-    if (path.startsWith("/tm/Solicitacoes") || 
-        path.startsWith("/tm/status-candidaturas") || 
-        path.startsWith("/tm/ExpiracaoBadges") || 
-        path.startsWith("/tm/Relatorios") || 
-        path.startsWith("/tm/CatalogoBadges")) {
+    const path = location.pathname.toLowerCase();
+    
+    if (
+      path.startsWith("/tm/solicitacoes") ||
+      path.startsWith("/tm/status-candidaturas") ||
+      path.startsWith("/tm/expiracao") ||
+      path.startsWith("/tm/relatorios")
+    ) {
       setBadgesAberto(true);
     }
-    if (path.startsWith("/tm/Consultores")) {
+
+    if (path.startsWith("/tm/certificados") || path.startsWith("/tm/historico")) {
+      setCertificadosAberto(true);
+    }
+
+    if (path.startsWith("/tm/consultores") || path.startsWith("/tm/desafios")) {
       setConsultoresAberto(true);
     }
   }, [location.pathname]);
@@ -54,7 +67,7 @@ function LeftSidebarTM() {
     <aside style={sidebarStyle}>
       {/* Bloco Superior: Perfil + Navegação */}
       <div>
-        {/* Bloco de Perfil Dinâmico */}
+        {/* Bloco de Perfil Dinâmico (Versão 1) */}
         <div style={profileBoxStyle}>
           <div style={avatarWrapperStyle}>
             {user?.foto_perfil ? (
@@ -78,40 +91,52 @@ function LeftSidebarTM() {
         {/* Separador de Secção */}
         <div style={sectionTitleStyle}>Pages</div>
 
-        {/* Links de Navegação */}
+        {/* Links de Navegação (Menu da Versão 2) */}
         <nav>
-          {/* Link Simples: Página Inicial */}
-          <MainLink to="/tm" icon={<BiGrid size={18} />} label="Página Inicial" end />
+          <MainLink
+            to="/tm"
+            icon={<BiGrid size={16} />}
+            label="Página Inicial"
+            end
+          />
 
-          {/* Grupo de Menus: Badges */}
           <MenuGroup
             label="Badges"
-            icon={<BiBadge size={18} />}
+            icon={<BiBadge size={16} />}
             to="/tm/badges"
             aberto={badgesAberto}
             onToggle={() => setBadgesAberto((prev) => !prev)}
           >
-            <SubLink to="/tm/Solicitacoes" label="Solicitação de Badges" icon={<BiFileBlank size={16} />} />
-            <SubLink to="/tm/status-candidaturas" label="Status das Candidaturas" icon={<BiHistory size={16} />} />
-            <SubLink to="/tm/expiracao" label="Badges em Expiração" icon={<BiAlarmExclamation size={16} />} />
-            <SubLink to="/tm/Relatorios" label="Relatórios" icon={<BiBarChartAlt2 size={16} />} />
-            {/* Mantido caso uses o ecrã de certificados do Componente 1 */}
-            <SubLink to="/tm/certificados" label="Certificados" icon={<BiCertification size={16} />} />
+            <SubLink to="/tm/badges" label="Catalogo de badges" />
+            <SubLink to="/tm/solicitacoes" label="Solicitações de badges" />
+            <SubLink to="/tm/status-candidaturas" label="Status de candidaturas" />
+            <SubLink to="/tm/expiracao" label="Badges em expiração" />
+            <SubLink to="/tm/relatorios" label="Relatórios" />
           </MenuGroup>
 
-          {/* Grupo de Menus: Consultores */}
+          <MenuGroup
+            label="Certificados"
+            icon={<BiCertification size={16} />}
+            aberto={certificadosAberto}
+            onToggle={() => setCertificadosAberto((prev) => !prev)}
+          >
+            <SubLink to="/tm/certificados" label="Gerar certificado" />
+            <SubLink to="/tm/historico" label="Histórico de candidaturas" />
+          </MenuGroup>
+
           <MenuGroup
             label="Consultores"
-            icon={<BiUser size={18} />}
+            icon={<BiUser size={16} />}
             aberto={consultoresAberto}
             onToggle={() => setConsultoresAberto((prev) => !prev)}
           >
-            <SubLink to="/tm/Consultores" label="Lista de Consultores" icon={<BiGroup size={16} />} />
+            <SubLink to="/tm/consultores" label="Lista de consultores" />
+            <SubLink to="/tm/desafios/novo" label="Desafios e lembretes" />
           </MenuGroup>
         </nav>
       </div>
 
-      {/* Bloco Inferior: Logotipo Softinsa */}
+      {/* Bloco Inferior: Logotipo Softinsa (Versão 1) */}
       <div style={logoContainerStyle}>
         <div style={logoBoxStyle}>
           <span style={logoTextStyle}>
@@ -124,7 +149,7 @@ function LeftSidebarTM() {
 }
 
 /* =========================================================
-   SUB-COMPONENTES AUXILIARES (Otimizados com NavLink nativo)
+    SUB-COMPONENTES AUXILIARES
 ========================================================= */
 
 function MainLink({ to, icon, label, end = false }) {
@@ -133,85 +158,70 @@ function MainLink({ to, icon, label, end = false }) {
       to={to}
       end={end}
       style={({ isActive }) => ({
-        ...itemBaseStyle,
-        backgroundColor: isActive ? "#e9ecef" : "transparent",
+        ...mainLinkStyle,
         border: isActive ? "1px solid #dee2e6" : "1px solid transparent",
-        color: isActive ? "#0d6efd" : "#495057",
+        borderRadius: isActive ? "9px" : "0px",
+        background: isActive ? "#e9ecef" : "transparent",
         fontWeight: isActive ? "600" : "400",
+        color: isActive ? "#0d6efd" : "#111827",
       })}
     >
-      <BiChevronRight size={16} style={{ opacity: 0 }} />
       {icon}
       <span>{label}</span>
     </NavLink>
   );
 }
 
-function MenuGroup({ label, icon, to, aberto, onToggle, children }) {
+function MenuGroup({ label, icon, aberto, onToggle, children }) {
   return (
-    <div style={{ marginBottom: "4px" }}>
-      <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
-        {/* Botão de seta customizado para expandir/colapsar */}
-        <button type="button" onClick={onToggle} style={toggleButtonStyle} aria-label={aberto ? `Fechar ${label}` : `Abrir ${label}`}>
+    <div style={grupoStyle}>
+      <div style={groupHeaderStyle}>
+        <button
+          type="button"
+          onClick={onToggle}
+          style={toggleButtonStyle}
+          aria-label={aberto ? `Fechar ${label}` : `Abrir ${label}`}
+        >
           <BiChevronRight
-            size={16}
+            size={14}
             style={{
               color: "#9ca3af",
               transform: aberto ? "rotate(90deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
+              transition: "transform 0.15s ease",
             }}
           />
         </button>
 
-        {to ? (
-          <NavLink
-            to={to}
-            style={({ isActive }) => ({
-              ...itemBaseStyle,
-              paddingLeft: "40px", // Abre espaço para a seta absoluta à esquerda
-              backgroundColor: isActive ? "#e9ecef" : "transparent",
-              border: isActive ? "1px solid #dee2e6" : "1px solid transparent",
-              color: isActive ? "#0d6efd" : "#495057",
-              fontWeight: isActive ? "600" : "400",
-            })}
-          >
-            {icon}
-            <span style={{ flex: 1 }}>{label}</span>
-          </NavLink>
-        ) : (
-          <div style={{ ...itemBaseStyle, paddingLeft: "40px", cursor: "pointer" }} onClick={onToggle}>
-            {icon}
-            <span style={{ flex: 1 }}>{label}</span>
-          </div>
-        )}
+        <div style={groupLabelStyle}>
+          {icon}
+          <span>{label}</span>
+        </div>
       </div>
 
-      {/* Submenus filhos com transição visual */}
-      {aberto && <div style={{ display: "flex", flexDirection: "column" }}>{children}</div>}
+      {aberto && <div style={submenuStyle}>{children}</div>}
     </div>
   );
 }
 
-function SubLink({ to, label, icon }) {
+function SubLink({ to, label }) {
   return (
     <NavLink
       to={to}
       style={({ isActive }) => ({
-        ...subItemBaseStyle,
-        backgroundColor: isActive ? "rgba(13, 110, 253, 0.08)" : "transparent",
-        border: isActive ? "1px solid rgba(13, 110, 253, 0.15)" : "1px solid transparent",
-        color: isActive ? "#0d6efd" : "#6c757d",
+        ...subLinkStyle,
+        color: isActive ? "#2563eb" : "#495057",
         fontWeight: isActive ? "600" : "400",
+        background: isActive ? "#eff6ff" : "transparent",
+        borderRadius: isActive ? "8px" : "0px",
       })}
     >
-      {icon}
-      <span>{label}</span>
+      {label}
     </NavLink>
   );
 }
 
 /* =========================================================
-   ESTILOS CONFIGURADOS (Combinação Visual Refinada)
+    ESTILOS UNIFICADOS
 ========================================================= */
 
 const sidebarStyle = {
@@ -267,52 +277,40 @@ const profileRoleStyle = {
 };
 
 const sectionTitleStyle = {
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: "600",
   color: "#adb5bd",
   textTransform: "uppercase",
   letterSpacing: "0.5px",
   marginBottom: "12px",
-  paddingLeft: "8px",
+  paddingLeft: "14px",
 };
 
-// Estilos Base Reutilizáveis
-const itemBaseStyle = {
+const mainLinkStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "12px",
-  padding: "10px 14px",
-  borderRadius: "12px",
-  cursor: "pointer",
-  fontSize: "14px",
-  textDecoration: "none",
-  transition: "all 0.2s ease",
-  marginBottom: "4px",
-  width: "100%",
-  boxSizing: "border-box",
-};
-
-const subItemBaseStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
+  gap: "8px",
+  margin: "0 4px 8px",
   padding: "8px 12px",
-  marginLeft: "28px", 
-  borderRadius: "10px",
-  cursor: "pointer",
   fontSize: "13px",
+  color: "#111827",
   textDecoration: "none",
   transition: "all 0.2s ease",
-  marginBottom: "4px",
-  boxSizing: "border-box",
+};
+
+const grupoStyle = {
+  marginBottom: "8px",
+};
+
+const groupHeaderStyle = {
+  display: "flex",
+  alignItems: "center",
+  padding: "0 4px",
 };
 
 const toggleButtonStyle = {
-  position: "absolute",
-  left: "10px",
-  zIndex: 2,
-  width: "24px",
-  height: "24px",
+  width: "26px",
+  height: "34px",
   border: "none",
   background: "transparent",
   cursor: "pointer",
@@ -322,7 +320,27 @@ const toggleButtonStyle = {
   padding: 0,
 };
 
-// Estilos do Rodapé
+const groupLabelStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  color: "#111827",
+  fontSize: "13px",
+};
+
+const submenuStyle = {
+  padding: "2px 0 4px",
+};
+
+const subLinkStyle = {
+  display: "block",
+  padding: "8px 16px 8px 38px",
+  margin: "2px 4px",
+  fontSize: "13px",
+  textDecoration: "none",
+  transition: "all 0.15s ease",
+};
+
 const logoContainerStyle = {
   display: "flex",
   justifyContent: "center",

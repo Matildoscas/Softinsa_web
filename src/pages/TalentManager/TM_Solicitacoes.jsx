@@ -2,11 +2,23 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Spinner, Form } from "react-bootstrap";
 import { HiOutlineArrowLeft } from "react-icons/hi";
-import { BiSearch, BiUserCircle, BiTimeFive, BiHistory } from "react-icons/bi";
+import { 
+  BiArrowBack,
+  BiTimeFive,
+  BiHistory,
+  BiBadge, 
+  BiEnvelope, 
+  BiRefresh, 
+  BiSearch, 
+  BiUserCircle, 
+  BiFilterAlt, 
+  BiSort, 
+  BiInfoCircle 
+} from "react-icons/bi";
 
 // Componentes estruturais do teu ecossistema
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
@@ -21,6 +33,16 @@ function SolicitacaoBadges() {
   const [filtroEstado, setFiltroEstado] = useState("Todos"); // "Todos", "Por avaliar", "Em avaliação"
   const [filtroAmbito, setFiltroAmbito] = useState("MinhaArea"); // 🎯 NOVO FILTRO: "MinhaArea" ou "Todos"
   const [pesquisa, setPesquisa] = useState("");
+
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
   // Procurar candidaturas pendentes e em progresso diretamente do Backend
   useEffect(() => {
@@ -74,14 +96,10 @@ function SolicitacaoBadges() {
           <main style={centerContent}>
             
             {/* Botão Voltar */}
-            <Button
-              variant="link"
-              className="d-flex align-items-center text-decoration-none p-0 mb-3"
-              style={{ color: "#4A5568", fontSize: "14px" }}
-              onClick={() => navigate(-1)}
-            >
-              <HiOutlineArrowLeft className="me-1" /> Voltar
-            </Button>
+            <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+            <BiArrowBack size={18} />
+              {textoVoltar}
+          </button>
 
             <div style={{ marginBottom: "24px" }}>
               <h4 style={{ fontWeight: "700", margin: 0, color: "#111827" }}>
@@ -333,5 +351,16 @@ const btnContinuar = { padding: "8px 22px", borderRadius: "8px", border: "1px so
 
 const bottomLinks = { marginTop: "32px", display: "flex", gap: "24px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" };
 const linkItem = { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#4b5563", cursor: "pointer" };
+const voltarButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: 0,
+  fontSize: 14,
+  cursor: "pointer",
+};
 
 export default SolicitacaoBadges;

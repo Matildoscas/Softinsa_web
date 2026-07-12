@@ -146,6 +146,7 @@ function App() {
         <Route path="/admin/pedidos-badges" element={<GestaoPedidosBadges />}/>
         <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
 
+        // Rotas Service Line Leader
         <Route path="/sll" element={<DashboardSll />} />
         <Route path="/sll/badges" element={<CatalogoBadgesSll />} />
         <Route path="/sll/badges/:id" element={<InformacaoBadgeSll />}/>
@@ -173,7 +174,6 @@ function App() {
         <Route path="/tm/definicoes" element={<TM_Definicoes />} />
         <Route path="/tm/consultores" element={<TM_Consultor />} />
         <Route path="/tm/status-candidaturas" element={<TM_statuscandidatura />} />
-
         <Route path="/tm/badges" element={<TM_catalogo_badges />} />
         <Route path="/tm/badges/:idBadge" element={<TM_informacao_badge />} />
         <Route path="/tm/solicitacoesCaga" element={<TM_Solicitacoes />} />

@@ -22,8 +22,8 @@ import autoTable from "jspdf-autotable";
 import api from "../../services/api.js";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 /* =========================================================
@@ -96,9 +96,16 @@ function InformacaoConsultorTm() {
 
   const [erro, setErro] = useState("");
 
-  const voltarPara = location.state?.voltarPara || "/tm/consultores";
 
-  const textoVoltar = location.state?.textoVoltar || "Voltar à lista de consultores";
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
   useEffect(() => {
     carregarPerfil();
@@ -325,9 +332,9 @@ function InformacaoConsultorTm() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button type="button" onClick={() => navigate(voltarPara)} style={voltarButton}>
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
             <BiArrowBack size={18} />
-            {textoVoltar}
+              {textoVoltar}
           </button>
 
           <div style={separador} />
@@ -363,7 +370,7 @@ function InformacaoConsultorTm() {
 
                     <InfoItem
                       icon={<BiCalendar size={18} />}
-                      label="Data de contratação"
+                      label="Data de entrada"
                       value={formatarData(consultor.data_entrada_empresa)}
                     />
 
@@ -478,27 +485,26 @@ function InformacaoConsultorTm() {
                     </div>
 
                     <button
-                      type="button"
-                      onClick={() => {
-                        if (!idCandidaturaDetalhe) {
-                          setErro("Não foi possível identificar a candidatura.");
+  type="button"
+  onClick={() => {
+    // Agora validamos diretamente com o ID que veio do banco de dados
+    if (!candidaturaAtual?.id_candidatura) {
+      setErro("Não foi possível identificar a candidatura.");
+      return;
+    }
 
-                          return;
-                        }
-
-                        navigate(`/tm/solicitacoes/${idCandidaturaDetalhe}`, {
-                          state: {
-                            voltarPara: location.pathname,
-
-                            textoVoltar: "Voltar ao perfil do consultor",
-                          },
-                        });
-                      }}
-                      style={detalhesButton}
-                    >
-                      <BiSearch size={17} />
-                      Ver Detalhes
-                    </button>
+    navigate(`/tm/solicitacoes/${candidaturaAtual.id_candidatura}`, {
+      state: {
+        voltarPara: location.pathname,
+        textoVoltar: "Voltar ao perfil do consultor",
+      },
+    });
+  }}
+  style={detalhesButton}
+>
+  <BiSearch size={17} />
+  Ver Detalhes
+</button>
                   </div>
                 ) : (
                   <div style={semDados}>Este consultor não tem nenhuma candidatura em curso.</div>
@@ -683,6 +689,7 @@ const infoItem = {
   display: "flex",
   alignItems: "flex-start",
   gap: 9,
+  minWidth: 0, // <- 1. Adiciona isto para permitir que o flex item encolha com segurança
 };
 
 const infoIcon = {
@@ -700,6 +707,7 @@ const infoValue = {
   color: "#334155",
   fontSize: 12,
   fontWeight: 500,
+  wordBreak: "break-all", // <- 2. Força a quebra do e-mail em qualquer letra se não couber
 };
 
 const acoesPerfil = {
