@@ -53,6 +53,8 @@ function formatarEstadoHumano(valor) {
     REJEITADO_TM: "Candidatura rejeitada",
     REJEITADO_SLL: "Candidatura rejeitada",
     RECUSADO: "Recusado",
+    DESISTIDA: "Desistida",
+    DESISTIDO: "Desistida",
     CANCELADO: "Cancelado",
     FINALIZADO: "Concluído",
     CONCLUIDO: "Concluído",
@@ -131,7 +133,7 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
 }
 
 function candidaturaEstaFinalizada(item) {
-  if (candidaturaEstaCancelada(item)) {
+  if (candidaturaEstaDesistida(item)) {
     return true;
   }
 
@@ -156,15 +158,20 @@ function candidaturaTemRejeicaoEmEvidencias(item) {
   );
 }
 
-function candidaturaEstaCancelada(item) {
+function candidaturaEstaDesistida(item) {
   const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
   const fase = normalizarEstado(item?.fase_geral);
 
-  return estado.includes("CANCEL") || fase.includes("CANCEL");
+  return (
+    estado.includes("DESIST") ||
+    fase.includes("DESIST") ||
+    estado.includes("CANCEL") ||
+    fase.includes("CANCEL")
+  );
 }
 
 function candidaturaEstaRejeitada(item) {
-  if (candidaturaEstaCancelada(item) || candidaturaEstaObtida(item)) {
+  if (candidaturaEstaDesistida(item) || candidaturaEstaObtida(item)) {
     return false;
   }
 
@@ -427,11 +434,11 @@ export default function StatusCandidaturasConsultor() {
   }, [listaPorModo, pesquisa]);
 
   const candidaturaSelecionadaRejeitada = candidaturaEstaRejeitada(detalhe?.candidatura);
-  const candidaturaSelecionadaCancelada = candidaturaEstaCancelada(detalhe?.candidatura);
+  const candidaturaSelecionadaDesistida = candidaturaEstaDesistida(detalhe?.candidatura);
   const mostrarAcoesRejeicao =
     modoLista === "EM_PROCESSO" &&
     candidaturaSelecionadaRejeitada &&
-    !candidaturaSelecionadaCancelada &&
+    !candidaturaSelecionadaDesistida &&
     !candidaturaEstaFinalizada(detalhe?.candidatura);
   const estadoVisivelDetalhe = estadoGeralVisivel(detalhe?.candidatura);
   const faseVisivelDetalhe = faseGeralVisivel(detalhe?.candidatura);

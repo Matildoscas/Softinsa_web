@@ -100,20 +100,11 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
 }
 
 function candidaturaEstaFinalizada(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
+  if (candidaturaEstaDesistida(item)) {
+    return true;
+  }
 
-  return (
-    estado.includes("REJEIT") ||
-    estado.includes("RECUS") ||
-    estado.includes("CANCEL") ||
-    estado.includes("FINAL") ||
-    fase.includes("HISTORICO") ||
-    fase.includes("CANCEL") ||
-    fase.includes("FINALIZ") ||
-    fase.includes("REJEIT") ||
-    fase.includes("CONCLUID")
-  );
+  return candidaturaEstaObtida(item);
 }
 
 function candidaturaEstaObtida(item) {
@@ -135,14 +126,23 @@ function candidaturaEstaConcluida(item) {
   return candidaturaEstaFinalizada(item);
 }
 
-function candidaturaEstaCancelada(item) {
+function candidaturaEstaDesistida(item) {
   const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
   const fase = normalizarEstado(item?.fase_geral);
 
-  return estado.includes("CANCEL") || fase.includes("CANCEL");
+  return (
+    estado.includes("DESIST") ||
+    fase.includes("DESIST") ||
+    estado.includes("CANCEL") ||
+    fase.includes("CANCEL")
+  );
 }
 
 function candidaturaEstaRejeitada(item) {
+  if (candidaturaEstaDesistida(item) || candidaturaEstaObtida(item)) {
+    return false;
+  }
+
   if (candidaturaTemRejeicaoEmEvidencias(item)) {
     return true;
   }
@@ -159,7 +159,7 @@ function candidaturaEstaRejeitada(item) {
 }
 
 function candidaturaEstaAprovada(item) {
-  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
+  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaDesistida(item);
 }
 
 function obterMotivoCancelamento(status) {
@@ -182,15 +182,15 @@ function candidaturaTemRejeicaoEmEvidencias(item) {
 }
 
 function estadoGeralVisivel(item) {
-  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+  if (candidaturaEstaRejeitada(item)) {
     return "REJEITADA";
   }
 
-  return item?.estado_geral || "-";
+  return item?.estado_geral || item?.estado_final || "-";
 }
 
 function faseGeralVisivel(item) {
-  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+  if (candidaturaEstaRejeitada(item)) {
     return "REJEITADA";
   }
 
@@ -359,12 +359,8 @@ export default function StatusCandidaturasSll() {
         return concluidas.filter(candidaturaEstaAprovada);
       }
 
-      if (subModoConcluidos === "REJEITADAS") {
-        return concluidas.filter(candidaturaEstaRejeitada);
-      }
-
-      if (subModoConcluidos === "CANCELADAS") {
-        return concluidas.filter(candidaturaEstaCancelada);
+      if (subModoConcluidos === "DESISTIDAS") {
+        return concluidas.filter(candidaturaEstaDesistida);
       }
 
       return concluidas;
@@ -477,24 +473,13 @@ export default function StatusCandidaturasSll() {
 
               <button
                 type="button"
-                onClick={() => setSubModoConcluidos("REJEITADAS")}
+                onClick={() => setSubModoConcluidos("DESISTIDAS")}
                 style={{
                   ...subTabBtn,
-                  ...(subModoConcluidos === "REJEITADAS" ? subTabBtnAtivo : null),
+                  ...(subModoConcluidos === "DESISTIDAS" ? subTabBtnAtivo : null),
                 }}
               >
-                Rejeitadas ({lista.filter(candidaturaEstaRejeitada).length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSubModoConcluidos("CANCELADAS")}
-                style={{
-                  ...subTabBtn,
-                  ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
-                }}
-              >
-                Canceladas ({lista.filter(candidaturaEstaCancelada).length})
+                Desistidas ({lista.filter(candidaturaEstaDesistida).length})
               </button>
             </div>
           )}
@@ -593,7 +578,7 @@ export default function StatusCandidaturasSll() {
                 <div style={mensagemBox}>Seleciona uma candidatura para ver o detalhe.</div>
               ) : (
                 <>
-                  {candidaturaEstaCancelada(detalhe?.status) && obterMotivoCancelamento(detalhe?.status) && (
+                  {candidaturaEstaDesistida(detalhe?.status) && obterMotivoCancelamento(detalhe?.status) && (
                     <div style={motivoCancelamentoBox}>
                       <div style={motivoCancelamentoTitulo}>Motivo de cancelamento</div>
                       <div style={motivoCancelamentoTexto}>{obterMotivoCancelamento(detalhe?.status)}</div>

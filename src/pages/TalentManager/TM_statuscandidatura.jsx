@@ -96,21 +96,25 @@ function chipEstado(estado) {
 }
 
 function candidaturaEstaFinalizada(item) {
+    const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+    const fase = normalizarEstado(item?.fase_geral);
 
-    const estado = normalizarEstado(item.estado_geral);
-    const fase = normalizarEstado(item.fase_geral);
+    const desistida =
+      estado.includes("DESIST") ||
+      fase.includes("DESIST") ||
+      estado.includes("CANCEL") ||
+      fase.includes("CANCEL");
 
-    return (
-        fase === "FINALIZADA"
-        ||
-        estado.includes("APROV")
-        ||
-        estado.includes("REJEIT")
-        ||
-        estado.includes("RECUS")
-        ||
-        estado.includes("CANCEL")
-    );
+    const aprovadaConcluida =
+      estado.includes("APROV") &&
+      (
+        estado.includes("FINAL") ||
+        fase.includes("FECH") ||
+        fase.includes("HISTOR") ||
+        fase.includes("CONCLUID")
+      );
+
+    return desistida || aprovadaConcluida;
 }
 
 // Componente do Chip de Estado
