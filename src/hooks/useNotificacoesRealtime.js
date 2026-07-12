@@ -46,6 +46,9 @@ export default function
   const bloqueadoPor401Ref =
     useRef(false);
 
+  const desbloquearEmRef =
+    useRef(0);
+
   const carregarContador =
     useCallback(
       async () => {
@@ -72,9 +75,19 @@ export default function
           return;
         }
 
-        if (bloqueadoPor401Ref.current) {
+        if (
+          bloqueadoPor401Ref.current &&
+          Date.now() < desbloquearEmRef.current
+        ) {
           setTotalNaoLidas(0);
           return;
+        }
+
+        if (
+          bloqueadoPor401Ref.current &&
+          Date.now() >= desbloquearEmRef.current
+        ) {
+          bloqueadoPor401Ref.current = false;
         }
 
         try {
@@ -102,6 +115,7 @@ export default function
 
           if (status === 401) {
             bloqueadoPor401Ref.current = true;
+            desbloquearEmRef.current = Date.now() + 30000;
             setTotalNaoLidas(0);
 
             console.warn(
@@ -133,6 +147,11 @@ export default function
       id <= 0
     ) {
       return undefined;
+    }
+
+    if (existeTokenSessao()) {
+      bloqueadoPor401Ref.current = false;
+      desbloquearEmRef.current = 0;
     }
 
     const entrarNaSala =
