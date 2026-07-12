@@ -637,6 +637,26 @@ function CriarBadge() {
     carregarNiveisPorArea(value);
   }
 
+  function normalizarTexto(valor) {
+    return String(valor || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toUpperCase();
+  }
+
+  function obterPontosPorNivel(nomeNivel) {
+    const nome = normalizarTexto(nomeNivel);
+
+    if (["A", "JUNIOR"].includes(nome)) return 50;
+    if (["B", "INTERMEDIO"].includes(nome)) return 100;
+    if (["C", "SENIOR"].includes(nome)) return 150;
+    if (["D", "ESPECIALISTA"].includes(nome)) return 200;
+    if (["E", "LIDER DE CONHECIMENTO"].includes(nome)) return 300;
+
+    return 0;
+  }
+
   function setCampo(campo, valor) {
     setForm((prev) => ({
       ...prev,
@@ -749,16 +769,6 @@ function CriarBadge() {
       novosErros.pontos = "Os pontos são obrigatórios.";
     }
 
-    if (!form.id_serviceline) {
-      novosErros.id_serviceline =
-        "Seleciona uma Service Line.";
-    }
-
-    if (!form.id_areas) {
-      novosErros.id_areas =
-        "Seleciona uma área.";
-    }
-
     if (Number(form.pontos) < 0) {
       novosErros.pontos = "Os pontos não podem ser negativos.";
     }
@@ -830,7 +840,7 @@ function CriarBadge() {
       formData.append("tempo_expiracao_quantidade", form.tempoExpiracao || 0);
       formData.append("tempo_expiracao_unidade", form.unidadeTempo);
       formData.append("requisitos", JSON.stringify(requisitosLimpos));
-      formData.append(
+      /*formData.append(
         "id_serviceline",
         form.id_serviceline
       );
@@ -838,17 +848,14 @@ function CriarBadge() {
       formData.append(
         "id_areas",
         form.id_areas
-      );
+      );*/
 
       formData.append(
         "tipo_badge",
         form.tipo_badge
       );
 
-      formData.append(
-        "estado_badge_modelo",
-        form.estado_badge_modelo
-      );
+      formData.append("estado_badge_modelo", "RASCUNHO");
 
       if (idUtilizador) {
         formData.append("id_utilizador", idUtilizador);
@@ -938,13 +945,19 @@ function CriarBadge() {
                 <label style={labelStyle}>Pontos</label>
 
                 <input
-                  type="number"
-                  min="0"
-                  value={form.pontos}
-                  onChange={(e) => setCampo("pontos", e.target.value)}
-                  placeholder="0"
-                  style={inputStyle("pontos")}
+                  value={form.pontos || 0}
+                  disabled
+                  style={{
+                    ...inputStyle("pontos"),
+                    background: "#f3f4f6",
+                    color: "#64748b",
+                    cursor: "not-allowed",
+                  }}
                 />
+
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+                  Os pontos são atribuídos automaticamente conforme o nível escolhido.
+                </div>
 
                 {erros.pontos && <FieldError>{erros.pontos}</FieldError>}
               </div>
@@ -1034,9 +1047,29 @@ function CriarBadge() {
                 <SelectDropdown
                   options={niveis}
                   value={form.id_nivel}
-                  onChange={(value) =>
-                    setCampo("id_nivel", value)
-                  }
+                  onChange={(e) => {
+                    const idNivelEscolhido = e.target.value;
+
+                    const nivelEscolhido = niveis.find(
+                      (nivel) =>
+                        String(nivel.value) === String(idNivelEscolhido)
+                    );
+
+                    const pontosAutomaticos =
+                      obterPontosPorNivel(nivelEscolhido?.label);
+
+                    setForm((prev) => ({
+                      ...prev,
+                      id_nivel: idNivelEscolhido,
+                      pontos: pontosAutomaticos,
+                    }));
+
+                    setErros((prev) => ({
+                      ...prev,
+                      id_nivel: "",
+                      pontos: "",
+                    }));
+                  }}
                   placeholder={
                     !form.id_areas
                       ? "Seleciona primeiro uma área"
