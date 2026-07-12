@@ -160,7 +160,7 @@ function DetalhesHistoricoTM() {
         ["Email", detalhes.consultor_email || ""],
         ["Badge", detalhes.badge_nome || ""],
         ["Categoria/Área", detalhes.badge_categoria || ""],
-        ["Estado final", estadoFinal.texto],
+        ["Estado atual", estadoFinal.texto],
         ["Data de submissão", detalhes.data_submissao_formatada || ""],
         ["Data de Conclusão", detalhes.data_conclusao_formatada || "N/A"],
         ["Avaliador", detalhes.avaliador_nome || "N/A"],
@@ -178,11 +178,12 @@ function DetalhesHistoricoTM() {
 
       autoTable(pdf, {
         startY: inicio + 5,
-        head: [["Requisito", "Estado", "Evidência Documental"]],
+        head: [["Requisito", "Estado TM", "Estado SLL", "Info Evidência"]],
         body: requisitos.map((req, index) => [
           `${index + 1} - ${req.titulo || req.nome_requisito}`,
-          obterEstadoVisual(determinarEstadoItem(req)).texto,
-          req.nome_ficheiro || "Sem documento",
+          obterEstadoVisual(req.estado_tm).texto,
+          obterEstadoVisual(req.estado_sll).texto,
+          req.descricao_evidencia || "Sem documento",
         ]),
         styles: { fontSize: 8 },
         headStyles: { fillColor: [37, 99, 235] },
@@ -322,7 +323,7 @@ function DetalhesHistoricoTM() {
                   nome={detalhes.avaliador_nome}
                   email={detalhes.avaliador_email}
                   data={detalhes.data_conclusao_formatada}
-                  estado={detalhes.estado_candidatura}
+                  estado={detalhes.estado_candidatura_tm}
                   comentario={detalhes.comentarios_tm}
                 />
               </div>
@@ -395,9 +396,9 @@ function AvaliadorCard({ titulo, nome, email, data, estado, comentario }) {
 }
 
 function RequisitoHistoricoCard({ requisito, numero, aberto, onToggle }) {
-  // CORRIGIDO: Consome dinamicamente a prioridade dos estados das evidências
-  const estadoDefinitivo = determinarEstadoItem(requisito);
-  const estado = obterEstadoVisual(estadoDefinitivo);
+  
+  const estadotm = obterEstadoVisual(requisito.estado_tm);
+  const estadosll = obterEstadoVisual(requisito.estado_sll);
 
   return (
     <article style={requisitoCard}>
@@ -405,8 +406,11 @@ function RequisitoHistoricoCard({ requisito, numero, aberto, onToggle }) {
         <div style={requisitoTituloArea}>
           <strong>Requisito {numero}</strong>
           <span>- {requisito.titulo || requisito.nome_requisito}</span>
-          <span style={{ ...requisitoEstado, background: estado.background, color: estado.color }}>
-            {estado.texto}
+          <span style={{ ...requisitoEstado, background: estadotm.background, color: estadotm.color }}>
+            TM: {estadotm.texto}
+          </span>
+          <span style={{ ...requisitoEstado, background: estadosll.background, color: estadosll.color }}>
+            SLL: {estadosll.texto}
           </span>
         </div>
         {aberto ? <BiChevronUp size={21} /> : <BiChevronDown size={21} />}
