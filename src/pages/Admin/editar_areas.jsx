@@ -413,12 +413,6 @@ function EditarArea() {
       setIsLoading(true);
       setErroGeral("");
 
-      const [areaRes, serviceLinesRes, niveisRes] = await Promise.all([
-        api.get(`/areas/${id}`),
-        api.get("/servicelines/select"),
-        api.get(`/areas/${id}/niveis`),
-      ]);
-
       const [areaRes, serviceLinesRes, niveisRes, badgesRes] = await Promise.all([
         api.get(`/areas/${id}`),
         api.get("/servicelines/select"),

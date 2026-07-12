@@ -257,7 +257,7 @@ function CertificadoPage() {
       textoNivelNormalizado.includes("MASTER") ||
       textoNivelNormalizado.includes("LIDER DE CONHECIMENTO")
     ) {
-      return "Nível E";
+      return "Nível E";o
     }
 
     const nivelTexto = textoNivelNormalizado.match(

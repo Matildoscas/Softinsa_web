@@ -675,7 +675,7 @@ function EditarBadge() {
 
       const niveisRaw = await getNiveis();
 
-      const niveisNormalizados = niveisRaw
+      let niveisNormalizados = niveisRaw
         .map(normalizarNivel)
         .filter((nivel) => nivel.value);
 
@@ -741,8 +741,6 @@ function EditarBadge() {
         badge.id_areas ||
         badge.id_area ||
         "";
-
-      let niveisNormalizados = [];
 
       if (idArea) {
         const niveisRaw =
