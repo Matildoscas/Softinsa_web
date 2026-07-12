@@ -110,10 +110,9 @@ function obterRotasUtilizador(user) {
   if (isAdmin) {
     return {
       inicio: "/admin",
-      perfil: "/admin",
-      definicoes: "/admin",
-      notificacoes:
-        "/admin/notificacoes",
+      perfil: "/admin/perfil",
+      definicoes: "/admin/definicoes",
+      notificacoes: "/admin/notificacoes",
     };
   }
 
