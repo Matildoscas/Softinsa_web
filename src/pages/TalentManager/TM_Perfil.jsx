@@ -183,9 +183,6 @@ function BadgeSection({ title, sub, children }) {
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>{title}</div>
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: '2px' }}>{sub}</div>
                 </div>
-                <div style={{ fontSize: 12, color: '#0d6efd', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontWeight: '600' }}>
-                    <BiMenu size={14} /> Histórico Completo
-                </div>
             </div>
             {children}
         </div>
