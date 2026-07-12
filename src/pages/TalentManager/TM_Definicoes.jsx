@@ -10,11 +10,12 @@ import {
   HiOutlineTrash,
   HiOutlineCamera,
 } from "react-icons/hi";
-import { BiChevronRight, BiBriefcase, BiEnvelope } from "react-icons/bi";
+import { BiArrowBack,BiChevronRight, BiBriefcase, BiEnvelope } from "react-icons/bi";
+
 
 // Componentes Estruturais da Versão 1
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api, { buildUploadUrl } from "../../services/api.js";
 
@@ -69,6 +70,16 @@ function TM_DefinicoesPage() {
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [previewFoto, setPreviewFoto] = useState(null);
+
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
   useEffect(() => {
   carregarUtilizador();
@@ -516,13 +527,9 @@ function TM_DefinicoesPage() {
         <TmLeftSidebar />
 
         <main style={mainStyle}>
-          <button
-            type="button"
-            style={backBtn}
-            onClick={() => navigate("/tm")}
-          >
-            <HiOutlineArrowLeft style={{ marginRight: 6 }} />
-            Voltar ao dashboard
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+            <BiArrowBack size={18} />
+              {textoVoltar}
           </button>
 
           <div style={separador} />
@@ -807,6 +814,18 @@ const subtituloPagina = {
   fontSize: 12,
   color: "#64748b",
   marginTop: 4,
+};
+
+const voltarButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: 0,
+  fontSize: 14,
+  cursor: "pointer",
 };
 
 export default TM_DefinicoesPage;

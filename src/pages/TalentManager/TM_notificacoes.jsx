@@ -12,8 +12,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 import api from "../../services/api.js";
@@ -126,6 +126,16 @@ function NotificacoesTm() {
   const [erro, setErro] =
     useState("");
 
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
+
   useEffect(() => {
     carregarNotificacoes();
   }, []);
@@ -196,15 +206,9 @@ function NotificacoesTm() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button
-            type="button"
-            onClick={() =>
-              navigate("/tm")
-            }
-            style={voltarButton}
-          >
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
             <BiArrowBack size={18} />
-            Voltar
+              {textoVoltar}
           </button>
 
           <div style={separador} />

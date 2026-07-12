@@ -25,8 +25,8 @@ import {
 import api from "../../services/api.js";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 /* =========================================================
@@ -748,6 +748,16 @@ function CatalogoBadgesTm() {
     }
   }
 
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
+
   /* =======================================================
      RENDERIZAÇÃO
   ======================================================= */
@@ -760,18 +770,9 @@ function CatalogoBadgesTm() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button
-            type="button"
-            onClick={() =>
-              navigate("/tm")
-            }
-            style={voltarButton}
-          >
-            <BiArrowBack
-              size={17}
-            />
-
-            Voltar
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+            <BiArrowBack size={18} />
+              {textoVoltar}
           </button>
 
           <div

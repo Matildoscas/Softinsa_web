@@ -1,45 +1,40 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Form } from "react-bootstrap"; // Dropdown da Versão 1
+import { Form } from "react-bootstrap"; 
 import { 
   BiUserCircle, BiBadge, BiBriefcase, BiBookOpen, 
-  BiTimeFive, BiUser, BiMedal, BiEnvelope, BiAward 
+  BiTimeFive, BiUser, BiMedal, BiEnvelope, BiAward, BiTrendingUp 
 } from "react-icons/bi";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Cell 
-} from "recharts"; // Gráficos profissionais da Versão 2
+} from "recharts"; 
 
-// 4. Componentes Globais da Versão 1
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+// Componentes Globais
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
-// Simulação de chamadas de API externa (ajusta o import se necessário)
+// Chamadas de API externa
 import api from "../../services/api"; 
 
 function obterUtilizadorGuardado() {
   const storedUser = localStorage.getItem("user");
-
-  if (!storedUser) {
-    return null;
-  }
-
+  if (!storedUser) return null;
   try {
     return JSON.parse(storedUser);
   } catch (err) {
     console.error("Erro ao ler utilizador:", err);
-
     return null;
   }
 }
 
 const obterSaudacao = () => {
-    const hora = new Date().getHours();
-    if (hora >= 5 && hora < 12) return "Bom dia";
-    if (hora >= 12 && hora < 20) return "Boa tarde";
-    return "Boa noite";
-  };
+  const hora = new Date().getHours();
+  if (hora >= 5 && hora < 12) return "Bom dia";
+  if (hora >= 12 && hora < 20) return "Boa tarde";
+  return "Boa noite";
+};
 
 function DashboardTMUnificado() {
   const navigate = useNavigate();
@@ -47,28 +42,51 @@ function DashboardTMUnificado() {
 
   // Estados de Controle e Erro
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   const [erro, setErro] = useState("");
   
-  // 2. Estado de Visão (Área vs Service Line) trazido da Versão 1
+  // Filtro de Visão (Área vs Service Line) para o Gráfico
   const [visao, setVisao] = useState("area"); 
 
-  // Estados dos Dados (Estrutura da Versão 2)
+  // Novos Estados para os Filtros Dinâmicos do Ranking
+  const [areaSelecionada, setAreaSelecionada] = useState("");
+  const [slSelecionada, setSlSelecionada] = useState("");
+
+  // Estados dos Dados
   const [resumo, setResumo] = useState({});
   const [consultores, setConsultores] = useState([]);
   const [consultoresPorArea, setConsultoresPorArea] = useState([]);
 
-  // Configuração dinâmica baseada na especialização (Versão 2)
+  // Extração inteligente de Áreas e Service Lines únicas (baseado nos dados vindos do gráfico)
+  const opcoesFiltros = useMemo(() => {
+    const areasMap = new Map();
+    const slMap = new Map();
+
+    consultoresPorArea.forEach(item => {
+      if (item.id_areas && item.nome_area) {
+        areasMap.set(item.id_areas, item.nome_area);
+      }
+      if (item.id_serviceline && item.nome_serviceline) {
+        slMap.set(item.id_serviceline, item.nome_serviceline);
+      }
+    });
+
+    return {
+      areas: Array.from(areasMap.entries()).map(([id, nome]) => ({ id, nome })),
+      serviceLines: Array.from(slMap.entries()).map(([id, nome]) => ({ id, nome }))
+    };
+  }, [consultoresPorArea]);
+
+  // Configuração dinâmica baseada no tipo de dados recebido do backend
   const obterConfiguracaoDashboard = (tipo, dados) => {
     const totalConsultores = dados.total_consultores || 0;
-    const totalOnline = dados.total_consultores_online || 0;
     const totalSllAtivos = dados.total_sll_ativos || 0;
-    const totalSllOnline = dados.total_sll_online || 0;
 
     const bases = {
-      descricaoConsultores: `${totalOnline} online de ${totalConsultores}`,
+      descricaoConsultores: `${totalConsultores} Consultores Ativos`,
       descricaoBadges: `${dados.badges_atribuidos_mes || 0} atribuídos este mês`,
-      descricaoSll: `${totalSllOnline} online de ${totalSllAtivos}`,
-      tituloLista: "Consultores em Destaque",
+      descricaoSll: `${totalSllAtivos} Service Lines Ativas`,
+      tituloLista: "Ranking de Consultores",
       descricaoLista: `A acompanhar ${dados.total_consultores_acompanhados || 0} consultores`,
       graficoTitulo: "Distribuição de Consultores por Área / Service Line",
     };
@@ -79,7 +97,7 @@ function DashboardTMUnificado() {
           ...bases,
           cards: [
             { tipo: "CANDIDATURAS", valor: dados.candidaturas_ativas, label: "Candidaturas Ativas" },
-            { tipo: "NOVOS", valor: dados.novos_consultores_mes, label: "Novos este mês" },
+            { tipo: "NOVOS", valor: dados.novos_consultores_mes, label: "Novos Consultores este mês" },
           ],
         };
       case "DESENVOLVIMENTO":
@@ -103,7 +121,10 @@ function DashboardTMUnificado() {
           ...bases,
           cards: [
             { tipo: "CONSULTORES", valor: totalConsultores, label: "Total Consultores" },
-            { tipo: "BADGES", valor: dados.total_badges, label: "Total Badges Atribuintes" },
+            { tipo: "BADGES", valor: dados.total_badges, label: "Total Badges Atribuídos" },
+            { tipo: "METRICA_DATAS", valor: dados.badges_por_datas || 0, label: "Badges por Datas" },
+            { tipo: "METRICA_PATHS", valor: dados.badges_por_learning_paths || 0, label: "Badges por Learning Paths" },
+            { tipo: "METRICA_NIVEIS", valor: dados.badges_por_niveis || 0, label: "Badges por Níveis LP" },
           ],
         };
     }
@@ -111,7 +132,7 @@ function DashboardTMUnificado() {
 
   const configuracao = obterConfiguracaoDashboard(resumo.tipo_especializacao, resumo);
 
-  // 1. Consumo de API resiliente com Promise.allSettled (Versão 2)
+  // Carregamento Inicial do Dashboard (Resumo e Dados Gráfico)
   async function carregarDashboard() {
     const user = obterUtilizadorGuardado();
     const userId = user?.id_utilizador || user?.ID_UTILIZADOR || user?.id;
@@ -128,22 +149,18 @@ function DashboardTMUnificado() {
 
       const resultados = await Promise.allSettled([
         api.get(`/dashboard/tm/${userId}/resumo`),
-        api.get(`/dashboard/tm/${userId}/consultores-destaque`),
         api.get(`/dashboard/tm/${userId}/consultores-por-area`),
       ]);
 
-      // Processamento do Resumo (Obrigatório)
+      // Processamento do Resumo
       const resumoResultado = resultados[0];
-      if (resumoResultado.status === "rejected") {
-        throw resumoResultado.reason;
-      }
+      if (resumoResultado.status === "rejected") throw resumoResultado.reason;
+      
       const dadosResumo = resumoResultado.value.data || {};
       setResumo({
         nome_completo: dadosResumo.nome_completo || user?.nome_completo || user?.nome || "Talent Manager",
-        especializacao_tm: dadosResumo.especializacao_tm || "Especialização não definida",
         tipo_especializacao: dadosResumo.tipo_especializacao || "",
         total_consultores_acompanhados: Number(dadosResumo.total_consultores_acompanhados || 0),
-        total_consultores_online: Number(dadosResumo.total_consultores_online || 0),
         total_consultores: Number(dadosResumo.total_consultores || 0),
         total_badges: Number(dadosResumo.total_badges || 0),
         consultores_com_badges: Number(dadosResumo.consultores_com_badges || 0),
@@ -154,20 +171,13 @@ function DashboardTMUnificado() {
         candidaturas_por_ver: Number(dadosResumo.candidaturas_por_ver || 0),
         renovacoes_ativas: Number(dadosResumo.renovacoes_ativas || 0),
         total_sll_ativos: Number(dadosResumo.total_sll_ativos || 0),
-        total_sll_online: Number(dadosResumo.total_sll_online || 0),
+        badges_por_datas: Number(dadosResumo.badges_por_datas || 0),
+        badges_por_learning_paths: Number(dadosResumo.badges_por_learning_paths || 0),
+        badges_por_niveis: Number(dadosResumo.badges_por_niveis || 0),
       });
 
-      // Processamento dos Consultores em Destaque
-      const consultoresResultado = resultados[1];
-      if (consultoresResultado.status === "fulfilled") {
-        setConsultores(Array.isArray(consultoresResultado.value.data) ? consultoresResultado.value.data : []);
-      } else {
-        console.error("Erro ao carregar consultores:", consultoresResultado.reason);
-        setConsultores([]);
-      }
-
       // Processamento do Gráfico
-      const graficoResultado = resultados[2];
+      const graficoResultado = resultados[1];
       if (graficoResultado.status === "fulfilled") {
         setConsultoresPorArea(Array.isArray(graficoResultado.value.data) ? graficoResultado.value.data : []);
       } else {
@@ -183,9 +193,40 @@ function DashboardTMUnificado() {
     }
   }
 
+  // Carregamento Isolado do Ranking Dependente dos Filtros Dropdown
+  async function carregarRankingConsultores() {
+    const user = obterUtilizadorGuardado();
+    const userId = user?.id_utilizador || user?.ID_UTILIZADOR || user?.id;
+    if (!userId) return;
+
+    try {
+      setIsLoadingRanking(true);
+      // Passagem dos parâmetros selecionados para a rota de destaque do back
+      const resposta = await api.get(`/dashboard/tm/${userId}/consultores-destaque`, {
+        params: {
+          idArea: areaSelecionada || undefined,
+          idServiceline: slSelecionada || undefined
+        }
+      });
+      setConsultores(Array.isArray(resposta.data) ? resposta.data : []);
+    } catch (err) {
+      console.error("Erro ao carregar ranking filtrado:", err);
+      setConsultores([]);
+    } finally {
+      setIsLoadingRanking(false);
+    }
+  }
+
   useEffect(() => {
     carregarDashboard();
   }, []);
+
+  // Monitoriza alterações nos filtros para disparar novas requisições do Ranking
+  useEffect(() => {
+    if (!isLoading) {
+      carregarRankingConsultores();
+    }
+  }, [areaSelecionada, slSelecionada, isLoading]);
 
   function abrirPerfil(consultor) {
     const idConsultor = consultor.id_utilizador || consultor.ID_UTILIZADOR || consultor.id;
@@ -196,12 +237,10 @@ function DashboardTMUnificado() {
     });
   }
 
-  // Lógica de mapeamento da chave do gráfico baseada no Dropdown da Versão 1
   const obterChaveEixoX = () => (visao === "area" ? "nome_area_curto" : "nome_serviceline");
 
   return (
     <div style={page}>
-      {/* 4. Layout Estrutural da Versão 1 */}
       <Header />
 
       <div style={body}>
@@ -217,11 +256,11 @@ function DashboardTMUnificado() {
               {/* Cartão de Boas-Vindas */}
               <section style={welcomeCard}>
                 <div>
-                  <h2 style={welcomeTitle}>{obterSaudacao()} {resumo.nome_completo}!</h2>
+                  <h2 style={welcomeTitle}>{obterSaudacao()}, {resumo.nome_completo}!</h2>
                   <div style={welcomeStats}>
-                    <WelcomeItem icon={<BiUserCircle size={20} />} label="Consultores" value={configuracao.descricaoConsultores} />
+                    <WelcomeItem icon={<BiUser size={20} />} label="Consultores" value={configuracao.descricaoConsultores} />
                     <WelcomeItem icon={<BiBadge size={20} />} label="Badges" value={configuracao.descricaoBadges} />
-                    <WelcomeItem icon={<BiBriefcase size={20} />} label="Service Line Leaders" value={configuracao.descricaoSll} />
+                    <WelcomeItem icon={<BiBriefcase size={20} />} label="Service Lines" value={configuracao.descricaoSll} />
                   </div>
                 </div>
                 <div style={welcomeAvatar}>
@@ -229,64 +268,76 @@ function DashboardTMUnificado() {
                 </div>
               </section>
 
-              {/* Grid Principal (Consultores + Mini Cards Laterais) */}
+              {/* Grid de Métricas Expandido e Dinâmico */}
               <div style={statsRow}>
                 {configuracao.cards.map((card) => (
                   <StatCard
                     key={card.tipo}
                     icon={
-                      card.tipo === "EXPIRADOS" ||
-                      card.tipo === "CANDIDATURAS" ||
-                      card.tipo === "RENOVACOES"
+                      card.tipo === "EXPIRADOS" || card.tipo === "CANDIDATURAS" || card.tipo === "RENOVACOES" || card.tipo === "METRICA_DATAS"
                         ? <BiTimeFive size={42} />
-                        : card.tipo === "CONSULTORES" ||
-                          card.tipo === "NOVOS"
+                        : card.tipo === "CONSULTORES" || card.tipo === "NOVOS"
                         ? <BiUser size={42} />
+                        : card.tipo === "METRICA_PATHS"
+                        ? <BiBookOpen size={42} />
+                        : card.tipo === "METRICA_NIVEIS"
+                        ? <BiTrendingUp size={42} />
                         : <BiMedal size={42} />
                     }
                     value={card.valor}
                     label={card.label}
-                    secondary={
-                      card.tipo === "CANDIDATURAS"
-                        ? "Pendentes de avaliação"
-                        : null
-                    }
+                    secondary={card.tipo === "CANDIDATURAS" ? "Pendentes de avaliação" : null}
                     secondaryColor="#dc2626"
                   />
                 ))}
               </div>
 
-              {/* Consultores em destaque esticados */}
+              {/* Secção: Ranking de Consultores com Dropdowns de Filtro */}
               <section style={consultoresSection}>
                 <div style={peopleHeader}>
                   <div>
-                    <h3 style={areaTitle}>
-                      Especialização:{" "}
-                      <span style={areaName}>
-                        {resumo.especializacao_tm}
-                      </span>
-                    </h3>
-
-                    <div style={areaTotal}>
-                      {configuracao.descricaoLista}
-                    </div>
-
-                    <div style={topText}>
-                      {configuracao.tituloLista}
-                    </div>
+                    <h3 style={areaTitle}>{configuracao.tituloLista}</h3>
+                    <div style={areaTotal}>{configuracao.descricaoLista}</div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => navigate("/tm/consultores")}
-                    style={viewAllButton}
-                  >
-                    <BiBookOpen size={15} />
-                    Ver Todos
-                  </button>
+                  {/* Wrapper para agrupar os dois dropdowns lado a lado */}
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <Form.Select 
+                      value={areaSelecionada} 
+                      onChange={(e) => setAreaSelecionada(e.target.value)}
+                      style={{ width: "160px", fontSize: "12px" }}
+                    >
+                      <option value="">Todas as Áreas</option>
+                      {opcoesFiltros.areas.map(area => (
+                        <option key={area.id} value={area.id}>{area.name || area.nome}</option>
+                      ))}
+                    </Form.Select>
+
+                    <Form.Select 
+                      value={slSelecionada} 
+                      onChange={(e) => setSlSelecionada(e.target.value)}
+                      style={{ width: "160px", fontSize: "12px" }}
+                    >
+                      <option value="">Todas as SL</option>
+                      {opcoesFiltros.serviceLines.map(sl => (
+                        <option key={sl.id} value={sl.id}>{sl.name || sl.nome}</option>
+                      ))}
+                    </Form.Select>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate("/tm/consultores")}
+                      style={viewAllButton}
+                    >
+                      <BiBookOpen size={15} />
+                      Ver Todos
+                    </button>
+                  </div>
                 </div>
 
-                {consultores.length > 0 ? (
+                {isLoadingRanking ? (
+                  <div style={{ ...emptyBox, padding: "40px" }}>A atualizar ranking...</div>
+                ) : consultores.length > 0 ? (
                   consultores.slice(0, 3).map((consultor, index) => (
                     <ConsultorCard
                       key={consultor.id_utilizador || index}
@@ -296,17 +347,16 @@ function DashboardTMUnificado() {
                   ))
                 ) : (
                   <div style={emptyBox}>
-                    Ainda não existem consultores em destaque.
+                    Não foram encontrados consultores com os filtros selecionados.
                   </div>
                 )}
               </section>
 
-              {/* 3. Seção do Gráfico (Versão 2 Recharts) + 2. Filtro Dropdown (Versão 1) */}
+              {/* Secção do Gráfico */}
               <section style={chartCard}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                   <h3 style={{ ...chartTitle, margin: 0 }}>{configuracao.graficoTitulo}</h3>
                   
-                  {/* Seletor da Versão 1 integrado à lógica da Versão 2 */}
                   <Form.Select 
                     value={visao} 
                     onChange={(e) => setVisao(e.target.value)} 
@@ -368,7 +418,7 @@ function DashboardTMUnificado() {
 }
 
 /* =========================================================
-   SUB-COMPONENTES AUXILIARES
+    SUB-COMPONENTES AUXILIARES
 ========================================================= */
 
 function WelcomeItem({ icon, label, value }) {
@@ -411,6 +461,7 @@ function ConsultorCard({ consultor, onVerPerfil }) {
   );
 }
 
+// Restante dos estilos e sub-componentes inalterados para manter performance e design original
 function StatCard({ icon, value, label, secondary, secondaryColor }) {
   return (
     <div style={statCard}>
@@ -443,118 +494,35 @@ const CORES_GRAFICO = ["#9bb8e8", "#64d8cc", "#111111", "#f59e0b", "#8b5cf6"];
 const page = { background: "#f3f4f6", minHeight: "100vh", display: "flex", flexDirection: "column" };
 const body = { display: "flex", flex: 1, overflow: "hidden" };
 const main = { flex: 1, minWidth: 0, padding: "22px 30px 50px", overflowY: "auto" };
-const welcomeCard = {
-  background: "#1269ed",
-  color: "white",
-  borderRadius: 13,
-  padding: "22px 36px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  boxShadow: "0 8px 18px rgba(37, 99, 235, 0.22)",
-  marginBottom: 18,
-};
+const welcomeCard = { background: "#1269ed", color: "white", borderRadius: 13, padding: "22px 36px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 8px 18px rgba(37, 99, 235, 0.22)", marginBottom: 18 };
 const welcomeTitle = { fontSize: 18, fontWeight: 500, margin: "0 0 18px" };
-const welcomeStats = {
-  display: "flex",
-  gap: 34,
-  flexWrap: "wrap",
-  alignItems: "center",
-};
+const welcomeStats = { display: "flex", gap: 34, flexWrap: "wrap", alignItems: "center" };
 const welcomeItem = { display: "flex", alignItems: "center", gap: 8 };
 const welcomeItemIcon = { width: 34, height: 34, borderRadius: 7, background: "rgba(255,255,255,0.17)", display: "flex", alignItems: "center", justifyContent: "center" };
 const welcomeItemLabel = { fontSize: 10, color: "rgba(255,255,255,0.78)" };
 const welcomeItemValue = { fontSize: 12, fontWeight: 500 };
 const welcomeAvatar = { width: 68, height: 68, borderRadius: "50%", background: "rgba(255,255,255,0.17)", display: "flex", alignItems: "center", justifyContent: "center" };
-const statsRow = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: 18,
-  marginBottom: 22,
-};
-
-const consultoresSection = {
-  width: "100%",
-  minWidth: 0,
-  marginBottom: 18,
-};
-const peopleHeader = { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 };
+const statsRow = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 18, marginBottom: 22 };
+const consultoresSection = { width: "100%", minWidth: 0, marginBottom: 18 };
+const peopleHeader = { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: "10px" };
 const areaTitle = { fontSize: 17, fontWeight: 800, color: "#111827", margin: 0 };
-const areaName = { fontWeight: 400 };
-const areaTotal = { fontSize: 12, color: "#111827" };
-const topText = { fontSize: 15, color: "#111827", marginTop: 12 };
+const areaTotal = { fontSize: 12, color: "#111827", marginTop: 4 };
 const viewAllButton = { display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #d1d5db", borderRadius: 8, background: "white", color: "#111827", padding: "7px 13px", fontSize: 12, cursor: "pointer" };
-const consultorCard = {
-  width: "100%",
-  background: "white",
-  border: "1px solid #bfdbfe",
-  borderRadius: 12,
-  marginBottom: 14,
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-const consultorMain = {
-  display: "flex",
-  alignItems: "center",
-  gap: 14,
-  padding: "16px 18px",
-};
+const consultorCard = { width: "100%", background: "white", border: "1px solid #bfdbfe", borderRadius: 12, marginBottom: 14, overflow: "hidden", boxSizing: "border-box" };
+const consultorMain = { display: "flex", alignItems: "center", gap: 14, padding: "16px 18px" };
 const consultorAvatar = { width: 48, height: 48, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
 const consultorInfo = { flex: 1, minWidth: 0 };
 const consultorTopLine = { display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" };
 const consultorName = { fontSize: 14, color: "#111827", fontWeight: 500 };
 const consultorEmail = { display: "inline-flex", alignItems: "center", gap: 5, color: "#64748b", fontSize: 11 };
-const consultorFooter = {
-  borderTop: "1px solid #e5e7eb",
-  padding: "9px 14px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  background: "#f8fafc",
-};
+const consultorFooter = { borderTop: "1px solid #e5e7eb", padding: "9px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" };
 const badgeCount = { display: "inline-flex", alignItems: "center", gap: 5, color: "#475569", fontSize: 11 };
 const profileLink = { border: "none", background: "none", padding: 0, color: "#2563eb", textDecoration: "underline", fontSize: 11, cursor: "pointer" };
-const statCard = {
-  minHeight: 104,
-  background: "white",
-  border: "1px solid #bfdbfe",
-  borderRadius: 14,
-  display: "flex",
-  alignItems: "center",
-  gap: 18,
-  padding: "18px 22px",
-  boxShadow: "0 2px 5px rgba(15,23,42,0.06)",
-};
-
-const statIcon = {
-  width: 58,
-  height: 58,
-  borderRadius: "50%",
-  background: "#f8fafc",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#111827",
-  flexShrink: 0,
-};
-
-const statValue = {
-  fontSize: 18,
-  fontWeight: 800,
-  color: "#111827",
-};
-
-const statLabel = {
-  marginTop: 3,
-  fontSize: 13,
-  color: "#111827",
-  lineHeight: 1.3,
-};
-
-const statSecondary = {
-  marginTop: 4,
-  fontSize: 12,
-};
+const statCard = { minHeight: 104, background: "white", border: "1px solid #bfdbfe", borderRadius: 14, display: "flex", alignItems: "center", gap: 18, padding: "18px 22px", boxShadow: "0 2px 5px rgba(15,23,42,0.06)" };
+const statIcon = { width: 58, height: 58, borderRadius: "50%", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", color: "#111827", flexShrink: 0 };
+const statValue = { fontSize: 18, fontWeight: 800, color: "#111827" };
+const statLabel = { marginTop: 3, fontSize: 13, color: "#111827", lineHeight: 1.3 };
+const statSecondary = { marginTop: 4, fontSize: 12 };
 const statContent = { flex: 1, minWidth: 0 };
 const chartCard = { background: "white", borderRadius: 14, padding: "20px", marginTop: 18, minHeight: 290 };
 const chartTitle = { margin: "0 0 16px", fontSize: 13, fontWeight: 700, color: "#111827" };
@@ -572,10 +540,6 @@ const loadingBox = { background: "white", border: "1px solid #e5e7eb", borderRad
 const errorBox = { background: "#fee2e2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 12px", color: "#991b1b", fontSize: 13, marginBottom: 16 };
 const emptyBox = { background: "white", border: "1px solid #e5e7eb", borderRadius: 10, padding: 26, textAlign: "center", color: "#9ca3af", fontSize: 12 };
 const emptyChart = { height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 12 };
-const consultorArea = {
-  color: "#111827",
-  fontSize: 10,
-  marginTop: 3,
-};
+const consultorArea = { color: "#111827", fontSize: 10, marginTop: 3 };
 
 export default DashboardTMUnificado;

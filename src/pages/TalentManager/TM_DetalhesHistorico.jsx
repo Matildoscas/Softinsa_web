@@ -20,8 +20,8 @@ import {
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
 
@@ -235,6 +235,16 @@ function DetalhesHistoricoTM() {
     URL.revokeObjectURL(url);
   }
 
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
+
   return (
     <div style={pagina}>
       <Header />
@@ -243,8 +253,9 @@ function DetalhesHistoricoTM() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button type="button" onClick={() => navigate(-1)} style={voltarButton}>
-            <BiArrowBack size={18} /> Voltar
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+            <BiArrowBack size={18} />
+              {textoVoltar}
           </button>
 
           <div style={separador} />

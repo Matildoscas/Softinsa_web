@@ -21,8 +21,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
 
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 /* =========================================================
@@ -171,6 +171,16 @@ function CriarDesafioTm() {
   const [erro, setErro] = useState("");
 
   const [mensagem, setMensagem] = useState("");
+
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
   useEffect(() => {
     if (!idTm) {
@@ -346,13 +356,9 @@ function CriarDesafioTm() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button
-            type="button"
-            onClick={() => navigate(voltarPara)}
-            style={voltarButton}
-          >
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
             <BiArrowBack size={18} />
-            Voltar à lista de consultores
+              {textoVoltar}
           </button>
 
           <div style={separador} />

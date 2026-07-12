@@ -15,8 +15,8 @@ import {
 } from "react-icons/bi";
 
 // Componentes estruturais do ecossistema
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -97,6 +97,16 @@ function ListaConsultoresTm() {
   const [filtroArea, setFiltroArea] = useState("TODAS");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [ordenacao, setOrdenacao] = useState("NOME_ASC");
+
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
   useEffect(() => {
     carregarConsultores();
@@ -269,8 +279,9 @@ function ListaConsultoresTm() {
 
         <main style={styles.conteudo}>
           {/* Topo / Voltar */}
-          <button type="button" onClick={() => navigate("/tm")} style={styles.voltarButton}>
-            <BiArrowBack size={18} /> Voltar
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+            <BiArrowBack size={18} />
+              {textoVoltar}
           </button>
 
           <div style={styles.separador} />
@@ -761,6 +772,18 @@ const styles = {
     color: "#64748b",
     fontSize: 14,
   },
+};
+
+const voltarButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: 0,
+  fontSize: 14,
+  cursor: "pointer",
 };
 
 export default ListaConsultoresTm;

@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Spinner } from 'react-bootstrap';
+import { Card, Button, Spinner, Modal, Form } from 'react-bootstrap'; // 🎯 ADICIONADO: Modal e Form aqui
+import { 
+  BiArrowBack,
+  BiBadge, 
+  BiEnvelope, 
+  BiRefresh, 
+  BiSearch, 
+  BiUserCircle, 
+  BiFilterAlt, 
+  BiSort, 
+  BiInfoCircle 
+} from "react-icons/bi";
 
-//import Header from "../../components/TM_Header.jsx";
-//import RightSidebar from "../../components/TM_RightBar.jsx";
-//import LeftBarTM from "../../components/LeftBarTM.jsx";
-import Header from "../../components/Header.jsx";
-import TmLeftSidebar from "../../components/tm_left_sidebar.jsx";
-import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
+import Header from "../../components/TM_Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
+import TmRightSidebar from "../../components/TM_RightBar.jsx";
 import api from "../../services/api.js";
 
 function AvaliacaoSolicitacaoTM() {
@@ -22,9 +30,24 @@ function AvaliacaoSolicitacaoTM() {
   const [idExpandido, setIdExpandido] = useState(null);
   const [atualizarDados, setAtualizarDados] = useState(0);
 
-  // NOVOS ESTADOS: Controlar loadings das ações assíncronas
-  const [avaliandoId, setAvaliandoId] = useState(null); // Guarda o ID da evidência em processamento
-  const [finalizando, setFinalizando] = useState(false); // Controla o loading do botão final do Badge
+  // Controlar loadings das ações assíncronas
+  const [avaliandoId, setAvaliandoId] = useState(null); 
+  const [finalizando, setFinalizando] = useState(false); 
+
+  // 🎯 NOVOS ESTADOS: Para controlar o Pop-up (Modal) de Rejeição
+  const [showModal, setShowModal] = useState(false);
+  const [textoComentario, setTextoComentario] = useState("");
+  const [modalConfig, setModalConfig] = useState({ tipo: "", idEvidencia: null, idCandidaturaPedido: null });
+
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
   useEffect(() => {
     async function carregarDados() {
@@ -66,8 +89,9 @@ function AvaliacaoSolicitacaoTM() {
           titulo: linha.nome_requisito,
           descricao: linha.descricao_requisito,
           evidenciaTexto: linha.descricao_evidencia,
+          documento: WebGLVertexArrayObject.nome_ficheiro, // Mantido como original
           documento: linha.nome_ficheiro,
-          caminhoFicheiro: linha.caminho_ficheiro, // Guardamos o caminho para poder visualizar
+          caminhoFicheiro: linha.caminho_ficheiro, 
           estado: linha.id_evidencia ? (linha.estado_evidencia_tm || 'PENDENTE') : 'SEM_EVIDENCIA'
         }));
 
@@ -92,19 +116,14 @@ function AvaliacaoSolicitacaoTM() {
     setIdExpandido(prevId => prevId === idReq ? null : idReq);
   };
 
-  // NOVA FUNÇÃO: Abrir o ficheiro armazenado no backend numa nova aba
   const handleVisualizarFicheiro = (caminhoFicheiro) => {
-  if (!caminhoFicheiro) return;
-
-  const urlBase = api.defaults.baseURL 
-    ? api.defaults.baseURL.split('/api')[0] 
-    : 'http://localhost:3000'; // Garante que esta porta coincide com o teu backend (ex: 5000)
-
-  // caminhoFicheiro já vem da BD como "/uploads/evidencias/178350708..."
-  const urlFicheiro = `${urlBase}${caminhoFicheiro}`;
-  
-  window.open(urlFicheiro, '_blank');
-};
+    if (!caminhoFicheiro) return;
+    const urlBase = api.defaults.baseURL 
+      ? api.defaults.baseURL.split('/api')[0] 
+      : 'http://localhost:3000'; 
+    const urlFicheiro = `${urlBase}${caminhoFicheiro}`;
+    window.open(urlFicheiro, '_blank');
+  };
 
   // ACEITAR EVIDÊNCIA 
   const handleAceitarEvidencia = async (idEvidencia, idCandidaturaPedido) => {
@@ -112,69 +131,92 @@ function AvaliacaoSolicitacaoTM() {
     
     try {
       setAvaliandoId(idEvidencia); 
-      
       await api.post("/candidaturas/tm/avaliar-evidencia", {
-        id_v_evidencia: idEvidencia, // Podes manter por segurança
+        id_v_evidencia: idEvidencia, 
         id_evidencia: idEvidencia,
         id_candidatura_pedido: idCandidaturaPedido || Number(id), 
         estado: "APROVADO" 
       });
-      
       setAtualizarDados(prev => prev + 1); 
     } catch (err) {
       console.error("Erro ao aceitar evidência:", err);
-      alert("Erro ao aceitar a evidência. Verifica a consola.");
+      alert("Erro ao aceitar a evidência.");
     } finally {
       setAvaliandoId(null); 
     }
   };
 
-  // REJEITAR EVIDÊNCIA 
-  const handleRejeitarEvidencia = async (idEvidencia, idCandidaturaPedido) => {
+  // 🎯 REJEITAR EVIDÊNCIA: Agora apenas abre o Pop-up
+  const handleRejeitarEvidencia = (idEvidencia, idCandidaturaPedido) => {
     if (!idEvidencia || idEvidencia === 'SEM_EVIDENCIA') return;
 
-    const motivo = prompt("Por favor, introduza o motivo da recuperação/rejeição desta evidência:");
-    if (motivo === null) return; 
-    if (!motivo.trim()) {
-      alert("É obrigatório deixar um comentário para rejeitar a evidência.");
+    setModalConfig({
+      tipo: "EVIDENCIA",
+      idEvidencia,
+      idCandidaturaPedido
+    });
+    setTextoComentario("");
+    setShowModal(true);
+  };
+
+  // 🎯 REJEITAR CANDIDATURA GLOBAL: Agora apenas abre o Pop-up
+  const handleRejeitarCandidaturaGlobal = () => {
+    if (!peloMenosUmRejeitado) return;
+
+    setModalConfig({
+      tipo: "GLOBAL",
+      idEvidencia: null,
+      idCandidaturaPedido: Number(id)
+    });
+    setTextoComentario("");
+    setShowModal(true);
+  };
+
+  // 🎯 SUBMISSÃO DO POP-UP: Centraliza a lógica de envio
+  const lidarComConfirmarRejeicao = async () => {
+    if (!textoComentario.trim()) {
+      alert("É obrigatório deixar uma justificação/comentário para a rejeição.");
       return;
     }
 
+    setShowModal(false); // Fecha o modal
+
     try {
-      setAvaliandoId(idEvidencia); 
-      await api.post("/candidaturas/tm/avaliar-evidencia", {
-        id_evidencia: idEvidencia,
-        id_candidatura_pedido: idCandidaturaPedido,
-        estado: "REJEITADA", // 🎯 CORREÇÃO: Usar 'estado' e o valor "REJEITADA" porque o teu backend faz um .toUpperCase() e valida se é igual a 'REJEITADA' para rodar a transação global
-        comentarios: motivo
-      });
-      
-      setAtualizarDados(prev => prev + 1); 
+      if (modalConfig.tipo === "EVIDENCIA") {
+        // Fluxo de rejeição de 1 evidência (vai para comentarios_tm)
+        setAvaliandoId(modalConfig.idEvidencia); 
+        await api.post("/candidaturas/tm/avaliar-evidencia", {
+          id_evidencia: modalConfig.idEvidencia,
+          id_candidatura_pedido: modalConfig.idCandidaturaPedido,
+          estado: "REJEITADA", 
+          comentarios: textoComentario
+        });
+        setAtualizarDados(prev => prev + 1); 
+
+      } else if (modalConfig.tipo === "GLOBAL") {
+        // Fluxo de rejeição global (cria Notificação + vinculo Recebido no backend)
+        setFinalizando(true);
+        await api.post("/candidaturas/tm/finalizar-avaliacao", {
+          id_candidatura_pedido: Number(id),
+          estado: "REJEITADO", 
+          comentarios: textoComentario
+        });
+        navigate('/tm/Solicitacoes');
+      }
     } catch (err) {
-      console.error(err);
-      alert("Erro ao rejeitar a evidência.");
+      console.error("Erro ao submeter rejeição:", err);
+      alert(`Erro no Servidor: ${err.response?.data?.error || err.message}`);
     } finally {
       setAvaliandoId(null); 
+      setFinalizando(false);
     }
   };
 
   const normalizarEstadoAvaliacao = (estado) => {
-    const valor = String(estado || "")
-      .trim()
-      .toUpperCase();
-
-    if (["APROVADA", "APROVADO", "APROVADO_TM", "VALIDADA", "VALIDADO"].includes(valor)) {
-      return "APROVADA";
-    }
-
-    if (["REJEITADA", "REJEITADO", "RECUSADA", "RECUSADO"].includes(valor)) {
-      return "REJEITADA";
-    }
-
-    if (valor === "PENDENTE") {
-      return "PENDENTE";
-    }
-
+    const valor = String(estado || "").trim().toUpperCase();
+    if (["APROVADA", "APROVADO", "APROVADO_TM", "VALIDADA", "VALIDADO"].includes(valor)) return "APROVADA";
+    if (["REJEITADA", "REJEITADO", "RECUSADA", "RECUSADO"].includes(valor)) return "REJEITADA";
+    if (valor === "PENDENTE") return "PENDENTE";
     return "SEM_EVIDENCIA";
   };
 
@@ -189,46 +231,34 @@ function AvaliacaoSolicitacaoTM() {
     return normalizarEstadoAvaliacao(r.estado) === "APROVADA";
   });
 
+  const peloMenosUmRejeitado = requisitos.length > 0 && requisitos.some((r) => {
+    return normalizarEstadoAvaliacao(r.estado) === "REJEITADA";
+  });
+
   const percentagemProgresso = totalRequisitos > 0 ? (avaliadosCount / totalRequisitos) * 100 : 0;
 
   const obterEstiloEstado = (estado) => {
     const st = normalizarEstadoAvaliacao(estado);
-
-    if (st === "PENDENTE") {
-      return { bg: "#fff3cd", text: "#664d03", label: "PENDENTE" };
-    }
-
-    if (st === "APROVADA") {
-      return { bg: "#d1e7dd", text: "#0f5132", label: "APROVADO POR TM" };
-    }
-
-    if (st === "REJEITADA") {
-      return { bg: "#f8d7da", text: "#842029", label: "REJEITADO" };
-    }
-
+    if (st === "PENDENTE") return { bg: "#fff3cd", text: "#664d03", label: "PENDENTE" };
+    if (st === "APROVADA") return { bg: "#d1e7dd", text: "#0f5132", label: "APROVADO POR TM" };
+    if (st === "REJEITADA") return { bg: "#f8d7da", text: "#842029", label: "REJEITADO" };
     return { bg: "#e9ecef", text: "#495057", label: "SEM EVIDÊNCIA" };
   };
 
-  // SUBMISSÃO FINAL 
+  // SUBMISSÃO FINAL DE SUCESSO
   const finalizarValidacaoBadge = async () => {
     if (!todosAprovados) return;
-    
     try {
       setFinalizando(true); 
-      
       await api.post("/candidaturas/tm/finalizar-avaliacao", {
         id_candidatura_pedido: Number(id), 
         estado: "APROVADO", 
         comentarios: "Todos os requisitos foram validados e aprovados com sucesso."
       });
-
       navigate('/tm/Solicitacoes'); 
     } catch (err) {
       console.error("Erro ao finalizar badge:", err);
-
-      const mensagemErroBackend = err.response?.data?.error || err.message;
-      alert(`Erro no Servidor: ${mensagemErroBackend}`);
-      
+      alert(`Erro no Servidor: ${err.response?.data?.error || err.message}`);
     } finally {
       setFinalizando(false); 
     }
@@ -262,16 +292,14 @@ function AvaliacaoSolicitacaoTM() {
         <TmLeftSidebar />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
-          <button 
-            onClick={() => navigate(-1)}
-            style={{ background: 'none', border: 'none', color: '#6c757d', fontSize: '14px', marginBottom: '20px', cursor: 'pointer', fontWeight: '500' }}
-          >
-            ← Voltar para as solicitações
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+            <BiArrowBack size={18} />
+              {textoVoltar}
           </button>
 
           <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* ================= CARD: PERFIL DO CONSULTOR ================= */}
+            {/* CARD: PERFIL DO CONSULTOR */}
             <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e9ecef' }}>
               <h5 style={{ color: '#495057', fontWeight: '600', marginBottom: '20px' }}>Perfil do Consultor</h5>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center' }}>
@@ -308,7 +336,7 @@ function AvaliacaoSolicitacaoTM() {
               </div>
             </div>
 
-            {/* ================= CARD: INFORMAÇÃO DO BADGE ================= */}
+            {/* CARD: INFORMAÇÃO DO BADGE */}
             <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e9ecef', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{ width: '55px', height: '55px', backgroundColor: '#e7f1ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>📘</div>
@@ -329,7 +357,7 @@ function AvaliacaoSolicitacaoTM() {
               </div>
             </div>
 
-            {/* ================= LISTA DE REQUISITOS ================= */}
+            {/* LISTA DE REQUISITOS */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {requisitos.map((req) => {
                 const configEstado = obterEstiloEstado(req.estado);
@@ -380,7 +408,6 @@ function AvaliacaoSolicitacaoTM() {
                                       <div style={{ fontWeight: '600', color: '#495057', fontSize: '12px' }}>{req.documento}</div>
                                     </div>
                                   </div>
-                                  {/* CORREÇÃO: Função de visualizar adicionada ao clique */}
                                   <button 
                                     onClick={() => handleVisualizarFicheiro(req.caminhoFicheiro)}
                                     style={{ background: 'none', border: 'none', color: '#0d6efd', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
@@ -433,36 +460,57 @@ function AvaliacaoSolicitacaoTM() {
               })}
             </div>
 
-            {/* ================= CARD INFERIOR: PROGRESSO E SUBMISSÃO ================= */}
+            {/* CARD INFERIOR: PROGRESSO E SUBMISSÃO DINÂMICA */}
             <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e9ecef', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <h6 style={{ fontWeight: '700', color: '#212529', margin: '0 0 4px 0' }}>Progresso de Avaliação</h6>
-                <small style={{ color: '#adb5bd', fontWeight: '600' }}>{avaliadosCount} / {totalRequisitos} Requisitos Avaliados</small>
+                <small style={{ color: '#adb5bd', fontWeight: '600' }}>{avaliadosCount} / {totalRequisitos} Requisitos Evaluados</small>
               </div>
 
               <div style={{ width: '100%', backgroundColor: '#e9ecef', borderRadius: '10px', height: '10px', maxWidth: '400px', margin: '0 auto', overflow: 'hidden' }}>
-                <div style={{ backgroundColor: '#0d6efd', height: '100%', width: `${percentagemProgresso}%`, transition: 'width 0.3s ease' }}></div>
+                <div style={{ backgroundColor: peloMenosUmRejeitado ? '#dc3545' : '#0d6efd', height: '100%', width: `${percentagemProgresso}%`, transition: 'width 0.3s ease' }}></div>
               </div>
 
               <div style={{ paddingTop: '10px' }}>
-                <button
-                  onClick={finalizarValidacaoBadge}
-                  disabled={!todosAprovados || finalizando}
-                  style={{
-                    width: '100%', maxWidth: '400px', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', transition: '0.2s',
-                    backgroundColor: todosAprovados && !finalizando ? '#198754' : '#e9ecef',
-                    color: todosAprovados && !finalizando ? '#ffffff' : '#adb5bd',
-                    cursor: todosAprovados && !finalizando ? 'pointer' : 'not-allowed',
-                    display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
-                  }}
-                >
-                  {finalizando ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      A Atribuir Badge...
-                    </>
-                  ) : '✓ Validar e Atribuir Badge'}
-                </button>
+                {peloMenosUmRejeitado ? (
+                  <button
+                    onClick={handleRejeitarCandidaturaGlobal}
+                    disabled={finalizando}
+                    style={{
+                      width: '100%', maxWidth: '400px', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', transition: '0.2s',
+                      backgroundColor: !finalizando ? '#dc3545' : '#e9ecef',
+                      color: !finalizando ? '#ffffff' : '#adb5bd',
+                      cursor: !finalizando ? 'pointer' : 'not-allowed',
+                      display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    {finalizando ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        A Rejeitar Candidatura...
+                      </>
+                    ) : '✕ Rejeitar Candidatura'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={finalizarValidacaoBadge}
+                    disabled={!todosAprovados || finalizando}
+                    style={{
+                      width: '100%', maxWidth: '400px', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: '700', transition: '0.2s',
+                      backgroundColor: todosAprovados && !finalizando ? '#198754' : '#e9ecef',
+                      color: todosAprovados && !finalizando ? '#ffffff' : '#adb5bd',
+                      cursor: todosAprovados && !finalizando ? 'pointer' : 'not-allowed',
+                      display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    {finalizando ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        A Atribuir Badge...
+                      </>
+                    ) : '✓ Validar e Atribuir Badge'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -470,8 +518,56 @@ function AvaliacaoSolicitacaoTM() {
         </div>
         <TmRightSidebar />
       </div>
+
+      {/* ================= 🎯 POP-UP MODAL DO BOOTSTRAP ADICIONADO ================= */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered backdrop="static">
+        <Modal.Header closeButton style={{ backgroundColor: '#f8f9fa' }}>
+          <Modal.Title style={{ fontSize: '16px', fontWeight: '700', color: '#212529' }}>
+            {modalConfig.tipo === "EVIDENCIA" ? "✕ Rejeitar Evidência" : "✕ Rejeitar Candidatura Global"}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group>
+            <Form.Label style={{ fontSize: '13px', fontWeight: '600', color: '#495057' }}>
+              {modalConfig.tipo === "EVIDENCIA" 
+                ? "Por favor, introduza o motivo detalhado da rejeição desta evidência (ficará guardado no histórico do requisito):" 
+                : "Insira a justificação global de encerramento. Esta mensagem será enviada como notificação direta para o Consultor:"
+              }
+            </Form.Label>
+            <Form.Control 
+              as="textarea" 
+              rows={4} 
+              value={textoComentario}
+              onChange={(e) => setTextoComentario(e.target.value)}
+              placeholder="Escreve aqui a tua justificação..."
+              style={{ fontSize: '13px', borderRadius: '8px' }}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer style={{ backgroundColor: '#f8f9fa' }}>
+          <Button variant="secondary" onClick={() => setShowModal(false)} style={{ fontSize: '12px', fontWeight: '600', borderRadius: '6px' }}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={lidarComConfirmarRejeicao} style={{ fontSize: '12px', fontWeight: '600', borderRadius: '6px' }}>
+            Confirmar Rejeição
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
     </div>
   );
 }
+
+const voltarButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: 0,
+  fontSize: 14,
+  cursor: "pointer",
+};
 
 export default AvaliacaoSolicitacaoTM;
