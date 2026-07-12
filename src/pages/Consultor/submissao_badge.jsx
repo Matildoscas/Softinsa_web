@@ -137,6 +137,7 @@ function SubmeterEvidenciasPage() {
   const [mensagemModalErro, setMensagemModalErro] = useState("");
   const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
+  const [contextoReabertura, setContextoReabertura] = useState(null);
 
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
@@ -397,12 +398,41 @@ function SubmeterEvidenciasPage() {
         }
       );
 
+      const reabertura =
+        rascunhoResponse.data?.reabertura || null;
+
+      setContextoReabertura(reabertura);
+
       hidratarRascunho(rascunhoResponse.data);
-      setMensagemInfo(
-        rascunhoResponse.data?.criada
-          ? "Candidatura iniciada em modo rascunho. Pode guardar progresso antes de enviar."
-          : "Rascunho carregado com sucesso."
-      );
+
+      if (reabertura) {
+        const totalReaproveitado = Number(
+          reabertura.total_evidencias_reaproveitadas || 0
+        );
+
+        const comentario = String(
+          reabertura.comentario_rejeicao || ""
+        ).trim();
+
+        setMensagemInfo(
+          [
+            totalReaproveitado > 0
+              ? `Reabertura concluída: ${totalReaproveitado} ${totalReaproveitado === 1 ? "evidência aceite foi" : "evidências aceites foram"} reaproveitada${totalReaproveitado === 1 ? "" : "s"}.`
+              : "Reabertura concluída: não foram encontradas evidências aceites para reaproveitar.",
+            comentario
+              ? `Comentário da rejeição: ${comentario}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join("\n")
+        );
+      } else {
+        setMensagemInfo(
+          rascunhoResponse.data?.criada
+            ? "Candidatura iniciada em modo rascunho. Pode guardar progresso antes de enviar."
+            : "Rascunho carregado com sucesso."
+        );
+      }
     } catch (err) {
       const erro = mensagemErroCandidatura(
         err,
@@ -418,6 +448,31 @@ function SubmeterEvidenciasPage() {
   useEffect(() => {
     carregarPagina();
   }, [id]);
+
+  useEffect(() => {
+    if (!contextoReabertura) {
+      return;
+    }
+
+    const comentario = String(
+      contextoReabertura.comentario_rejeicao || ""
+    ).trim();
+
+    if (!comentario) {
+      return;
+    }
+
+    setMensagemInfo((prev) => {
+      if (String(prev || "").includes("Comentário da rejeição:")) {
+        return prev;
+      }
+
+      const base = String(prev || "").trim();
+      return [base, `Comentário da rejeição: ${comentario}`]
+        .filter(Boolean)
+        .join("\n");
+    });
+  }, [contextoReabertura]);
 
   const adicionarFicheiros = (requisitoKey, files) => {
     const novos = Array.from(files || []);
@@ -1282,6 +1337,7 @@ const infoBox = {
   padding: 14,
   marginBottom: 16,
   fontSize: 13,
+  whiteSpace: "pre-line",
 };
 
 const heroCard = {
