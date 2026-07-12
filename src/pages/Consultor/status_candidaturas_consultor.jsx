@@ -131,20 +131,11 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
 }
 
 function candidaturaEstaFinalizada(item) {
-  const estado = normalizarEstado(estadoGeralVisivel(item) || item?.estado_final);
-  const fase = normalizarEstado(faseGeralVisivel(item));
+  if (candidaturaEstaCancelada(item)) {
+    return true;
+  }
 
-  return (
-    estado.includes("REJEIT") ||
-    estado.includes("RECUS") ||
-    estado.includes("CANCEL") ||
-    estado.includes("FINAL") ||
-    fase.includes("HISTORICO") ||
-    fase.includes("CANCEL") ||
-    fase.includes("FINALIZ") ||
-    fase.includes("REJEIT") ||
-    fase.includes("CONCLUID")
-  );
+  return candidaturaEstaObtida(item);
 }
 
 function candidaturaEstaObtida(item) {
@@ -173,6 +164,10 @@ function candidaturaEstaCancelada(item) {
 }
 
 function candidaturaEstaRejeitada(item) {
+  if (candidaturaEstaCancelada(item) || candidaturaEstaObtida(item)) {
+    return false;
+  }
+
   if (candidaturaTemRejeicaoEmEvidencias(item)) {
     return true;
   }
@@ -189,7 +184,7 @@ function candidaturaEstaRejeitada(item) {
 }
 
 function estadoGeralVisivel(item) {
-  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+  if (candidaturaEstaRejeitada(item)) {
     return "REJEITADA";
   }
 
@@ -197,7 +192,7 @@ function estadoGeralVisivel(item) {
 }
 
 function faseGeralVisivel(item) {
-  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+  if (candidaturaEstaRejeitada(item)) {
     return "REJEITADA";
   }
 
@@ -433,6 +428,8 @@ export default function StatusCandidaturasConsultor() {
 
   const candidaturaSelecionadaRejeitada = candidaturaEstaRejeitada(detalhe?.candidatura);
   const candidaturaSelecionadaCancelada = candidaturaEstaCancelada(detalhe?.candidatura);
+  const mostrarAcoesRejeicao =
+    modoLista === "EM_PROCESSO" && candidaturaSelecionadaRejeitada && !candidaturaSelecionadaCancelada;
   const estadoVisivelDetalhe = estadoGeralVisivel(detalhe?.candidatura);
   const faseVisivelDetalhe = faseGeralVisivel(detalhe?.candidatura);
 
@@ -590,7 +587,7 @@ export default function StatusCandidaturasConsultor() {
                       <EstadoChip titulo="Resultado concluído" valor={detalhe.candidatura?.estado_final} />
                     </div>
 
-                    {candidaturaSelecionadaRejeitada && (
+                    {mostrarAcoesRejeicao && (
                       <div style={rejeicaoBox}>
                         <div style={rejeicaoTitulo}>Candidatura rejeitada</div>
                         <div style={rejeicaoTexto}>
@@ -609,9 +606,9 @@ export default function StatusCandidaturasConsultor() {
                             type="button"
                             onClick={desistirCandidaturaSelecionada}
                             style={desistirButton}
-                            disabled={isAExecutarAcao || candidaturaSelecionadaCancelada}
+                            disabled={isAExecutarAcao}
                           >
-                            {candidaturaSelecionadaCancelada ? "Candidatura removida" : "Desistir candidatura"}
+                            Desistir candidatura
                           </button>
                         </div>
                       </div>
