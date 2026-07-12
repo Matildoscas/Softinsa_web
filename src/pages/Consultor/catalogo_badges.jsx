@@ -1386,6 +1386,12 @@ function CatalogoBadgeRow({
   const estadoPendenteLegivel =
     pendente
       ? estadoPendente.includes(
+          "REJEIT"
+        ) || estadoPendente.includes(
+          "RECUS"
+        )
+          ? "Candidatura rejeitada"
+          : estadoPendente.includes(
           "CANDIDATURA_EFETUADA"
         )
         ? "Candidatura efetuada"

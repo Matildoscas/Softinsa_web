@@ -50,6 +50,8 @@ function formatarEstadoHumano(valor) {
     APROVADA: "Aprovada",
     APROVADO_FINAL: "Aprovado em definitivo",
     REJEITADO: "Rejeitado",
+    REJEITADO_TM: "Candidatura rejeitada",
+    REJEITADO_SLL: "Candidatura rejeitada",
     RECUSADO: "Recusado",
     CANCELADO: "Cancelado",
     FINALIZADO: "Concluído",
@@ -154,6 +156,55 @@ function candidaturaEstaObtida(item) {
 
 function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
+}
+
+function estadoEhRejeitado(valor) {
+  const estado = normalizarEstado(valor);
+
+  return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS")
+  );
+}
+
+function extrairMotivoRejeicao(detalhe) {
+  return (
+    String(
+      detalhe?.candidatura?.comentarios_tm ||
+        detalhe?.candidatura?.motivo_estado_final ||
+        detalhe?.candidatura?.comentarios_sll ||
+        ""
+    ).trim() ||
+    "A candidatura foi rejeitada."
+  );
+}
+
+function obterEvidenciasRejeitadas(requisitos) {
+  const lista = Array.isArray(requisitos)
+    ? requisitos
+    : [];
+
+  return lista.flatMap((requisito) => {
+    const evidencias = Array.isArray(requisito?.evidencias)
+      ? requisito.evidencias
+      : [];
+
+    return evidencias
+      .filter((evidencia) =>
+        estadoEhRejeitado(
+          evidencia?.estado_evidencia_tm ||
+            evidencia?.estado_evidencia_sll ||
+            evidencia?.estado_evidencia
+        )
+      )
+      .map((evidencia) => ({
+        ...evidencia,
+        nome_requisito:
+          requisito?.titulo ||
+          requisito?.nome_requisito ||
+          "Requisito",
+      }));
+  });
 }
 
 function EstadoChip({ titulo, valor }) {
@@ -339,6 +390,19 @@ export default function StatusCandidaturasConsultor() {
     );
   }, [listaPorModo, pesquisa]);
 
+  const candidaturaSelecionadaRejeitada = estadoEhRejeitado(
+    detalhe?.candidatura?.estado_geral ||
+      detalhe?.candidatura?.estado_final ||
+      detalhe?.candidatura?.estado_candidatura_pedido
+  );
+
+  const motivoRejeicao = extrairMotivoRejeicao(detalhe);
+
+  const evidenciasRejeitadas = useMemo(
+    () => obterEvidenciasRejeitadas(detalhe?.requisitos),
+    [detalhe]
+  );
+
   return (
     <div style={pagina}>
       <Header />
@@ -488,6 +552,24 @@ export default function StatusCandidaturasConsultor() {
                       <EstadoChip titulo="Etapa" valor={detalhe.candidatura?.fase_geral} />
                       <EstadoChip titulo="Resultado concluído" valor={detalhe.candidatura?.estado_final} />
                     </div>
+
+                    {candidaturaSelecionadaRejeitada && (
+                      <div style={rejeicaoBox}>
+                        <div style={rejeicaoTitulo}>Candidatura rejeitada</div>
+                        <div style={rejeicaoTexto}>{motivoRejeicao}</div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/submeter-evidencias/${detalhe.candidatura?.id_badge_modelo}`
+                            )
+                          }
+                          style={reenvioButton}
+                        >
+                          Voltar a submeter evidências
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div style={secaoDetalhe}>
@@ -504,16 +586,62 @@ export default function StatusCandidaturasConsultor() {
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Requisitos e estado atual</div>
                     <div style={requisitosLista}>
-                      {(detalhe.requisitos || []).map((req) => (
-                        <div key={req.id_requisitos} style={requisitoLinha}>
-                          <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
-                          <div style={requisitoEstadosLinha}>
-                            <EstadoRequisitoChip titulo="Talent Manager" valor={estadoEtapaRequisito(req, "estado_evidencia_tm")} />
-                            <EstadoRequisitoChip titulo="Service Line Leader" valor={estadoEtapaRequisito(req, "estado_evidencia_sll")} />
+                      {(detalhe.requisitos || []).map((req) => {
+                        const evidenciasRejeitadasDoRequisito = (Array.isArray(req.evidencias) ? req.evidencias : []).filter((evidencia) =>
+                          estadoEhRejeitado(
+                            evidencia?.estado_evidencia_tm ||
+                              evidencia?.estado_evidencia_sll ||
+                              evidencia?.estado_evidencia
+                          )
+                        );
+
+                        const mostrarMotivoNesteRequisito =
+                          candidaturaSelecionadaRejeitada &&
+                          evidenciasRejeitadas.length === 1 &&
+                          evidenciasRejeitadasDoRequisito.length > 0;
+
+                        return (
+                          <div key={req.id_requisitos}>
+                            <div style={requisitoLinha}>
+                              <div style={requisitoNome}>{req.titulo || req.nome_requisito}</div>
+                              <div style={requisitoEstadosLinha}>
+                                <EstadoRequisitoChip titulo="Talent Manager" valor={estadoEtapaRequisito(req, "estado_evidencia_tm")} />
+                                <EstadoRequisitoChip titulo="Service Line Leader" valor={estadoEtapaRequisito(req, "estado_evidencia_sll")} />
+                              </div>
+                            </div>
+
+                            {mostrarMotivoNesteRequisito && (
+                              <div style={motivoRejeicaoInline}>
+                                <div style={motivoRejeicaoEvidencia}>
+                                  {evidenciasRejeitadasDoRequisito[0]?.nome_ficheiro ||
+                                    evidenciasRejeitadasDoRequisito[0]?.descricao ||
+                                    "Evidência rejeitada"}
+                                </div>
+                                <div style={motivoRejeicaoLabel}>Motivo da rejeição</div>
+                                <div style={motivoRejeicaoTexto}>{motivoRejeicao}</div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
+
+                    {candidaturaSelecionadaRejeitada && evidenciasRejeitadas.length > 1 && (
+                      <div style={motivoRejeicaoResumo}>
+                        <div style={motivoRejeicaoLabel}>Motivo da rejeição</div>
+                        <div style={motivoRejeicaoTexto}>{motivoRejeicao}</div>
+                        <div style={motivoRejeicaoSubtexto}>
+                          {evidenciasRejeitadas.length} evidências rejeitadas nesta candidatura.
+                        </div>
+                        <div style={motivoRejeicaoLista}>
+                          {evidenciasRejeitadas.map((evidencia) => (
+                            <div key={evidencia.id_evidencia || evidencia.nome_ficheiro || evidencia.descricao}>
+                              {evidencia.nome_ficheiro || evidencia.descricao || "Evidência rejeitada"}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -847,4 +975,82 @@ const requisitoNome = {
   fontSize: 12,
   color: "#1f2937",
   fontWeight: 600,
+};
+
+const rejeicaoBox = {
+  marginTop: 10,
+  border: "1px solid #fecaca",
+  background: "#fff1f2",
+  borderRadius: 10,
+  padding: 12,
+};
+
+const rejeicaoTitulo = {
+  fontSize: 13,
+  fontWeight: 800,
+  color: "#9f1239",
+  marginBottom: 6,
+};
+
+const rejeicaoTexto = {
+  fontSize: 13,
+  color: "#7f1d1d",
+  lineHeight: 1.45,
+};
+
+const reenvioButton = {
+  marginTop: 10,
+  border: "none",
+  background: "#be123c",
+  color: "white",
+  borderRadius: 9,
+  padding: "9px 12px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const motivoRejeicaoInline = {
+  marginTop: 8,
+  borderLeft: "3px solid #f43f5e",
+  background: "#fff1f2",
+  borderRadius: 8,
+  padding: "8px 10px",
+};
+
+const motivoRejeicaoEvidencia = {
+  fontSize: 12,
+  fontWeight: 700,
+  color: "#9f1239",
+  marginBottom: 6,
+};
+
+const motivoRejeicaoResumo = {
+  marginTop: 10,
+  border: "1px solid #fecaca",
+  background: "#fff7f7",
+  borderRadius: 10,
+  padding: 12,
+};
+
+const motivoRejeicaoLabel = {
+  fontSize: 11,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  color: "#be123c",
+  marginBottom: 4,
+};
+
+const motivoRejeicaoSubtexto = {
+  marginTop: 6,
+  fontSize: 12,
+  color: "#991b1b",
+};
+
+const motivoRejeicaoLista = {
+  marginTop: 8,
+  fontSize: 12,
+  color: "#7f1d1d",
+  display: "grid",
+  gap: 4,
 };

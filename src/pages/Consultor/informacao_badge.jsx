@@ -588,7 +588,13 @@ function BadgeDetailPage() {
         setTemCandidaturaAberta(
           (existeCandidaturaAberta ||
             existePendenteNoBadge) &&
-            !candidaturaEfetuada
+            !candidaturaEfetuada &&
+            !estadoCatalogo.includes(
+              "REJEIT"
+            ) &&
+            !estadoCatalogo.includes(
+              "RECUS"
+            )
         );
 
         setOcultarAcaoCandidatura(
@@ -1001,30 +1007,36 @@ const revogarPublicacao =
           const idBadgeCert =
             item.id_badge_modelo ||
             item.id_badge ||
-            item.badge_id;
-
-          return (
-            Number(idBadgeCert) ===
-            Number(badge?.id || id)
-          );
-        });
-
-      const idHistorico =
-        certificado
-          ?.id_candidatura_historico ||
-        certificado
-          ?.id_historico ||
-        certificado
-          ?.idHistorico;
-
-      if (!idHistorico) {
-        return "";
-      }
-
-      return `${window.location.origin}/verificar/CERT-${idHistorico}-${userId}`;
-    } catch (err) {
-      console.error(
-        "Erro ao obter certificado para LinkedIn:",
+        const estadoPendenteLegivel =
+          pendente
+            ? estadoPendente.includes(
+                "REJEIT"
+              ) || estadoPendente.includes(
+                "RECUS"
+              )
+              ? "Candidatura rejeitada"
+              : estadoPendente.includes(
+                  "CANDIDATURA_EFETUADA"
+                )
+                ? "Candidatura efetuada"
+                : estadoPendente.includes(
+                    "CANDIDATURA_INICIADA"
+                  )
+                  ? "Candidatura iniciada"
+                  : estadoPendente.includes(
+                    "RASCUNHO"
+                  )
+                    ? "Candidatura iniciada"
+                    : pendenteTemEvidencias ||
+                        estadoPendente.includes(
+                          "PENDENTE"
+                        ) ||
+                        estadoPendente.includes(
+                          "VALIDAC"
+                        )
+                      ? "Candidatura efetuada"
+                      : "Candidatura iniciada"
+            : "";
         err
       );
 
@@ -1945,7 +1957,9 @@ const copiarAssinatura =
                   />
                   {temCandidaturaAberta
                     ? "Continuar candidatura"
-                    : "Submeter Evidências"}
+                    : estadoCandidaturaBadge === "Candidatura rejeitada"
+                      ? "Voltar a submeter evidências"
+                      : "Submeter Evidências"}
                 </button>
               )
             )}
@@ -2062,12 +2076,17 @@ const copiarAssinatura =
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Iniciar candidatura</Modal.Title>
+            <Modal.Title>
+              {estadoCandidaturaBadge === "Candidatura rejeitada"
+                ? "Reabrir candidatura"
+                : "Iniciar candidatura"}
+            </Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
-          Ao continuar, vais iniciar uma candidatura para este badge.
-          Podes guardar progresso e submeter evidências quando estiveres pronto.
+            {estadoCandidaturaBadge === "Candidatura rejeitada"
+              ? "Esta candidatura foi rejeitada. Ao continuar, vais abrir um novo envio para este badge e podes voltar a submeter as evidências."
+              : "Ao continuar, vais iniciar uma candidatura para este badge. Podes guardar progresso e submeter evidências quando estiveres pronto."}
         </Modal.Body>
 
         <Modal.Footer>
@@ -2079,7 +2098,9 @@ const copiarAssinatura =
           </Button>
 
           <Button onClick={avancarInicioCandidatura}>
-            Iniciar candidatura
+            {estadoCandidaturaBadge === "Candidatura rejeitada"
+              ? "Reabrir candidatura"
+              : "Iniciar candidatura"}
           </Button>
         </Modal.Footer>
       </Modal>
