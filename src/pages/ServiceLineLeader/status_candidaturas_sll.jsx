@@ -172,6 +172,10 @@ function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
 }
 
+function candidaturaMostravelNoStatus(item) {
+  return !candidaturaEstaRejeitada(item);
+}
+
 function candidaturaTemRejeicaoEmEvidencias(item) {
   return (
     Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
@@ -350,8 +354,10 @@ export default function StatusCandidaturasSll() {
   }, [selecionada]);
 
   const listaPorModo = useMemo(() => {
+    const listaVisivel = lista.filter(candidaturaMostravelNoStatus);
+
     if (modoLista === "CONCLUIDOS") {
-      const concluidas = lista.filter(candidaturaEstaConcluida);
+      const concluidas = listaVisivel.filter(candidaturaEstaConcluida);
 
       if (subModoConcluidos === "APROVADAS") {
         return concluidas.filter(candidaturaEstaAprovada);
@@ -364,7 +370,7 @@ export default function StatusCandidaturasSll() {
       return concluidas;
     }
 
-    return lista.filter(candidaturaEstaEmProcesso);
+    return listaVisivel.filter(candidaturaEstaEmProcesso);
   }, [lista, modoLista, subModoConcluidos]);
 
   useEffect(() => {
@@ -428,7 +434,7 @@ export default function StatusCandidaturasSll() {
                 ...(modoLista === "EM_PROCESSO" ? tabBtnAtivo : null),
               }}
             >
-              Em Processo ({lista.filter(candidaturaEstaEmProcesso).length})
+              Em Processo ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaEmProcesso).length})
             </button>
 
             <button
@@ -441,7 +447,7 @@ export default function StatusCandidaturasSll() {
                 ...(modoLista === "CONCLUIDOS" ? tabBtnAtivo : null),
               }}
             >
-              Concluídos ({lista.filter(candidaturaEstaConcluida).length})
+              Concluídos ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaConcluida).length})
             </button>
           </div>
 
@@ -455,7 +461,7 @@ export default function StatusCandidaturasSll() {
                   ...(subModoConcluidos === "TODAS" ? subTabBtnAtivo : null),
                 }}
               >
-                Todas ({lista.filter(candidaturaEstaConcluida).length})
+                Todas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaConcluida).length})
               </button>
 
               <button
@@ -466,7 +472,7 @@ export default function StatusCandidaturasSll() {
                   ...(subModoConcluidos === "APROVADAS" ? subTabBtnAtivo : null),
                 }}
               >
-                Aprovadas ({lista.filter(candidaturaEstaAprovada).length})
+                Aprovadas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaAprovada).length})
               </button>
 
               <button
@@ -477,7 +483,7 @@ export default function StatusCandidaturasSll() {
                   ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
                 }}
               >
-                Canceladas ({lista.filter(candidaturaEstaCancelada).length})
+                Canceladas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaCancelada).length})
               </button>
             </div>
           )}
