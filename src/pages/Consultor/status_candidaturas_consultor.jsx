@@ -139,8 +139,8 @@ function candidaturaEstaFinalizada(item) {
 }
 
 function candidaturaEstaObtida(item) {
-  const estado = normalizarEstado(estadoGeralVisivel(item) || item?.estado_final);
-  const fase = normalizarEstado(faseGeralVisivel(item));
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
 
   return estado.includes("APROV") && (estado.includes("FINAL") || fase.includes("HISTORICO") || fase.includes("FINALIZ") || fase.includes("CONCLUID"));
 }
@@ -188,7 +188,7 @@ function estadoGeralVisivel(item) {
     return "REJEITADA";
   }
 
-  return item?.estado_geral || "-";
+  return item?.estado_geral || item?.estado_final || "-";
 }
 
 function faseGeralVisivel(item) {
@@ -429,7 +429,10 @@ export default function StatusCandidaturasConsultor() {
   const candidaturaSelecionadaRejeitada = candidaturaEstaRejeitada(detalhe?.candidatura);
   const candidaturaSelecionadaCancelada = candidaturaEstaCancelada(detalhe?.candidatura);
   const mostrarAcoesRejeicao =
-    modoLista === "EM_PROCESSO" && candidaturaSelecionadaRejeitada && !candidaturaSelecionadaCancelada;
+    modoLista === "EM_PROCESSO" &&
+    candidaturaSelecionadaRejeitada &&
+    !candidaturaSelecionadaCancelada &&
+    !candidaturaEstaFinalizada(detalhe?.candidatura);
   const estadoVisivelDetalhe = estadoGeralVisivel(detalhe?.candidatura);
   const faseVisivelDetalhe = faseGeralVisivel(detalhe?.candidatura);
 
