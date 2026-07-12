@@ -975,7 +975,6 @@ function CriarBadge() {
                   }
                   placeholder="Selecione uma Service Line"
                   erro={erros.id_serviceline}
-                  disabled={loadingNiveis}
                 />
 
                 {erros.id_serviceline && (
@@ -996,10 +995,6 @@ function CriarBadge() {
                   }
                   placeholder="Selecione uma área"
                   erro={erros.id_areas}
-                  disabled={
-                    loadingNiveis ||
-                    !form.id_serviceline
-                  }
                 />
 
                 {erros.id_areas && (
@@ -1078,10 +1073,6 @@ function CriarBadge() {
                         : "Selecione um nível"
                   }
                   erro={erros.id_nivel}
-                  disabled={
-                    loadingNiveis ||
-                    !form.id_areas
-                  }
                 />
 
                 {erros.id_nivel && <FieldError>{erros.id_nivel}</FieldError>}
