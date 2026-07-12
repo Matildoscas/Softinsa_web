@@ -5,7 +5,6 @@ import { BiTrophy, BiStar, BiUser, BiChevronUp, BiChevronDown } from "react-icon
 import logoImg from "../../assets/logo.png";
 import api from "../../services/api.js";
 
-const GRUPOS_ORDEM = ["Junior", "Intermediate ou Partner", "Senior", "Specialist", "Leader"];
 const niveis = ["A", "B", "C", "D", "E"];
 
 function GaleriaBadgesPage() {
@@ -19,107 +18,340 @@ function GaleriaBadgesPage() {
   const areasPorPagina = 3;
 
   const normalizarArray = (valor) => {
-    if (Array.isArray(valor)) return valor;
-    if (typeof valor === "string") {
-      try {
-        const convertido = JSON.parse(valor);
-        return Array.isArray(convertido) ? convertido : [];
-      } catch {
-        return [];
-      }
+  if (Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (typeof valor === "string") {
+    try {
+      const convertido =
+        JSON.parse(valor);
+
+      return Array.isArray(convertido)
+        ? convertido
+        : [];
+    } catch {
+      return [];
     }
-    return [];
-  };
+  }
+
+  return [];
+};
 
   const normalizarBadgesComRequisitos = (lista) => {
     const mapa = new Map();
 
     lista.forEach((linha) => {
-      const badgeId = Number(linha.id || linha.id_badge_modelo);
-      if (!badgeId) return;
+      const badgeId = Number(
+        linha.id ||
+        linha.id_badge_modelo
+      );
 
-      const consultoresPublicos = normalizarArray(linha.consultores_publicos);
+      if (!badgeId) {
+        return;
+      }
+
+      const consultoresPublicos =
+        normalizarArray(
+          linha.consultores_publicos
+        );
 
       if (!mapa.has(badgeId)) {
         mapa.set(badgeId, {
           id: badgeId,
-          id_badge_modelo: badgeId,
-          nome: linha.nome || linha.nome_badge || "Badge",
-          nome_badge: linha.nome_badge || linha.nome || "Badge",
-          descricao: linha.descricao || linha.descricao_badge_modelo || "",
-          descricao_badge_modelo: linha.descricao_badge_modelo || linha.descricao || "",
-          pontos: Number(linha.pontos || 0),
-          id_nivel: linha.id_nivel,
-          codigo_nivel: linha.codigo_nivel || linha.nome_nivel,
-          id_areas: linha.id_areas,
-          nome_area: linha.nome_area || linha.nome_areas || linha.area || "Área não definida",
-          imagem: linha.imagem_url || linha.imagem || linha.url_imagem || null,
-          imagem_url: linha.imagem_url || linha.imagem || linha.url_imagem || null,
-          total_consultores_publicos: Number(linha.total_consultores_publicos || consultoresPublicos.length || 0),
-          consultores_publicos: consultoresPublicos,
+
+          id_badge_modelo:
+            badgeId,
+
+          nome:
+            linha.nome ||
+            linha.nome_badge ||
+            "Badge",
+
+          nome_badge:
+            linha.nome_badge ||
+            linha.nome ||
+            "Badge",
+
+          descricao:
+            linha.descricao ||
+            linha.descricao_badge_modelo ||
+            "",
+
+          descricao_badge_modelo:
+            linha.descricao_badge_modelo ||
+            linha.descricao ||
+            "",
+
+          pontos:
+            Number(
+              linha.pontos || 0
+            ),
+
+          id_nivel:
+            linha.id_nivel,
+
+          id_areas:
+            linha.id_areas,
+
+          nome_area:
+            linha.nome_area ||
+            linha.nome_areas ||
+            linha.area ||
+            "Área não definida",
+
+          imagem:
+            linha.imagem_url ||
+            linha.imagem ||
+            linha.url_imagem ||
+            null,
+
+          imagem_url:
+            linha.imagem_url ||
+            linha.imagem ||
+            linha.url_imagem ||
+            null,
+
+          total_consultores_publicos:
+            Number(
+              linha.total_consultores_publicos ||
+              consultoresPublicos.length ||
+              0
+            ),
+
+          consultores_publicos:
+            consultoresPublicos,
+
           requisitos: [],
         });
       }
 
-      const badgeAtual = mapa.get(badgeId);
-      const totalLinha = Number(linha.total_consultores_publicos || consultoresPublicos.length || 0);
+      const badgeAtual =
+        mapa.get(badgeId);
 
-      if (totalLinha > Number(badgeAtual.total_consultores_publicos || 0)) {
-        badgeAtual.total_consultores_publicos = totalLinha;
+      const totalLinha =
+        Number(
+          linha.total_consultores_publicos ||
+          consultoresPublicos.length ||
+          0
+        );
+
+      if (
+        totalLinha >
+        Number(
+          badgeAtual.total_consultores_publicos ||
+          0
+        )
+      ) {
+        badgeAtual.total_consultores_publicos =
+          totalLinha;
       }
 
-      if (consultoresPublicos.length > 0) {
-        const idsExistentes = new Set(badgeAtual.consultores_publicos.map((c) => String(c.id_utilizador)));
-        consultoresPublicos.forEach((consultor) => {
-          const idConsultor = String(consultor.id_utilizador);
-          if (!idsExistentes.has(idConsultor)) {
-            badgeAtual.consultores_publicos.push(consultor);
-            idsExistentes.add(idConsultor);
+      if (
+        consultoresPublicos.length >
+        0
+      ) {
+        const idsExistentes =
+          new Set(
+            badgeAtual
+              .consultores_publicos
+              .map((consultor) =>
+                String(
+                  consultor.id_utilizador
+                )
+              )
+          );
+
+        consultoresPublicos.forEach(
+          (consultor) => {
+            const idConsultor =
+              String(
+                consultor.id_utilizador
+              );
+
+            if (
+              !idsExistentes.has(
+                idConsultor
+              )
+            ) {
+              badgeAtual
+                .consultores_publicos
+                .push(consultor);
+
+              idsExistentes.add(
+                idConsultor
+              );
+            }
           }
-        });
+        );
       }
 
-      if (Array.isArray(linha.requisitos)) {
-        linha.requisitos.forEach((req) => {
-          const reqId = req.id_requisito || req.id_requisitos || req.titulo || req.nome;
-          const jaExiste = badgeAtual.requisitos.some((r) => String(r.id_requisito || r.id || r.titulo) === String(reqId));
+      /*
+      * Caso 1:
+      * A API já vem com requisitos agrupados.
+      */
+      if (
+        Array.isArray(
+          linha.requisitos
+        )
+      ) {
+        linha.requisitos.forEach(
+          (req) => {
+            const reqId =
+              req.id_requisito ||
+              req.id_requisitos ||
+              req.titulo ||
+              req.nome;
 
-          if (!jaExiste) {
-            const links = normalizarArray(req.links || req.link || req.link_requisito || []);
-            badgeAtual.requisitos.push({
-              id_requisito: req.id_requisito || req.id_requisitos || null,
-              id_requisitos: req.id_requisitos || req.id_requisito || null,
-              id: req.id_requisito || req.id_requisitos || req.titulo || req.nome || "Requisito",
-              titulo: req.nome || req.nome_requisito || req.titulo || "Requisito",
-              descricao: req.descricao || req.descricao_requisito || "",
-              links,
-              link: req.link_requisito || req.link || links[0] || "",
-            });
+            const jaExiste =
+              badgeAtual
+                .requisitos
+                .some(
+                  (r) =>
+                    String(
+                      r.id_requisito ||
+                      r.id ||
+                      r.titulo
+                    ) ===
+                    String(reqId)
+                );
+
+            if (!jaExiste) {
+              const links =
+                normalizarArray(
+                  req.links ||
+                  req.link ||
+                  req.link_requisito ||
+                  []
+                );
+
+              badgeAtual
+                .requisitos
+                .push({
+                  id_requisito:
+                    req.id_requisito ||
+                    req.id_requisitos ||
+                    null,
+
+                  id_requisitos:
+                    req.id_requisitos ||
+                    req.id_requisito ||
+                    null,
+
+                  id:
+                    req.id_requisito ||
+                    req.id_requisitos ||
+                    req.titulo ||
+                    req.nome ||
+                    "Requisito",
+
+                  titulo:
+                    req.nome ||
+                    req.nome_requisito ||
+                    req.titulo ||
+                    "Requisito",
+
+                  descricao:
+                    req.descricao ||
+                    req.descricao_requisito ||
+                    "",
+
+                  links,
+
+                  link:
+                    req.link_requisito ||
+                    req.link ||
+                    links[0] ||
+                    "",
+                });
+            }
           }
-        });
+        );
+
         return;
       }
 
-      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
-        const reqId = linha.id_requisito || linha.id_requisitos || linha.titulo || linha.nome_requisito;
-        const jaExiste = badgeAtual.requisitos.some((r) => String(r.id_requisito || r.id || r.titulo) === String(reqId));
+      /*
+      * Caso 2:
+      * A API vem linha a linha.
+      */
+      if (
+        linha.titulo ||
+        linha.nome_requisito ||
+        linha.descricao_requisito
+      ) {
+        const reqId =
+          linha.id_requisito ||
+          linha.id_requisitos ||
+          linha.titulo ||
+          linha.nome_requisito;
+
+        const jaExiste =
+          badgeAtual
+            .requisitos
+            .some(
+              (r) =>
+                String(
+                  r.id_requisito ||
+                  r.id ||
+                  r.titulo
+                ) ===
+                String(reqId)
+            );
 
         if (!jaExiste) {
-          const links = normalizarArray(linha.links || linha.link_requisito || linha.link || []);
-          badgeAtual.requisitos.push({
-            id_requisito: linha.id_requisito || linha.id_requisitos || null,
-            id_requisitos: linha.id_requisitos || linha.id_requisito || null,
-            id: linha.id_requisito || linha.id_requisitos || linha.titulo || linha.nome_requisito || "Requisito",
-            titulo: linha.nome_requisito || linha.titulo || "Requisito",
-            descricao: linha.descricao_requisito || "",
-            links,
-            link: linha.link_requisito || linha.link || links[0] || "",
-          });
+          const links =
+            normalizarArray(
+              linha.links ||
+              linha.link_requisito ||
+              linha.link ||
+              []
+            );
+
+          badgeAtual
+            .requisitos
+            .push({
+              id_requisito:
+                linha.id_requisito ||
+                linha.id_requisitos ||
+                null,
+
+              id_requisitos:
+                linha.id_requisitos ||
+                linha.id_requisito ||
+                null,
+
+              id:
+                linha.id_requisito ||
+                linha.id_requisitos ||
+                linha.titulo ||
+                linha.nome_requisito ||
+                "Requisito",
+
+              titulo:
+                linha.nome_requisito ||
+                linha.titulo ||
+                "Requisito",
+
+              descricao:
+                linha.descricao_requisito ||
+                "",
+
+              links,
+
+              link:
+                linha.link_requisito ||
+                linha.link ||
+                links[0] ||
+                "",
+            });
         }
       }
     });
 
-    return Array.from(mapa.values());
+    return Array.from(
+      mapa.values()
+    );
   };
 
   useEffect(() => {
@@ -127,64 +359,78 @@ function GaleriaBadgesPage() {
       .get("/badges/galeria/publica")
       .then((res) => {
         const dados = Array.isArray(res.data) ? res.data : [];
-        setBadges(normalizarBadgesComRequisitos(dados));
+        const badgesNormalizados = normalizarBadgesComRequisitos(dados);
+
+        console.log("BADGES GALERIA:", badgesNormalizados);
+        console.log("TOTAL BADGES:", badgesNormalizados.length);
+        console.log(
+          "REQUISITOS:",
+          badgesNormalizados.map((b) => ({
+            id: b.id,
+            nome: b.nome,
+            requisitos: b.requisitos.length,
+          }))
+        );
+
+        setBadges(badgesNormalizados);
       })
       .catch((err) => {
-        console.error("Erro ao carregar galeria.");
+        console.error("Erro ao carregar galeria:", err);
+        console.error("STATUS:", err.response?.status);
+        console.error("BODY:", err.response?.data);
       })
       .finally(() => setLoading(false));
   }, []);
-
+// 1. Agrupa os badges por área
   const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
     const area = badge.nome_area || "Área não definida";
-    if (!acc[area]) acc[area] = [];
+
+    if (!acc[area]) {
+      acc[area] = [];
+    }
+
     acc[area].push(badge);
     return acc;
   }, {});
-// FUNÇÃO DE MAPEAMENTO: Converte o nível do badge para a nomenclatura correta
-const obterGrupoPorNivel = (badge) => {
-  // Tenta ler o código_nivel ou o id_nivel
-  const nivelOpcao1 = String(badge.codigo_nivel || "").toUpperCase();
-  const nivelOpcao2 = String(badge.id_nivel || "");
 
-  if (nivelOpcao1 === "A" || nivelOpcao2 === "1") return "Junior";
-  if (nivelOpcao1 === "B" || nivelOpcao2 === "2") return "Intermediate ou Partner";
-  if (nivelOpcao1 === "C" || nivelOpcao2 === "3") return "Senior";
-  if (nivelOpcao1 === "D" || nivelOpcao2 === "4") return "Specialist";
-  if (nivelOpcao1 === "E" || nivelOpcao2 === "5") return "Leader"; 
+  // 2. ORDENAÇÃO INFALÍVEL: Organiza por palavra-chave do nível (Junior -> Intermediate/Practitioner -> Senior -> Specialist -> Leader)
+  Object.keys(badgesAgrupadosPorArea).forEach((area) => {
+    badgesAgrupadosPorArea[area].sort((a, b) => {
+      const obterPeso = (badge) => {
+        const nome = (badge.nome || badge.nome_badge || "").toLowerCase();
+        
+        if (nome.includes("junior")) return 1;
+        if (nome.includes("intermediate") || nome.includes("practitioner")) return 2;
+        if (nome.includes("senior")) return 3;
+        if (nome.includes("specialist")) return 4;
+        if (nome.includes("leader")) return 5;
 
-  // Se a tua API usar strings diretas como "Nível 1", "Nível 2" no código_nivel:
-  if (nivelOpcao1.includes("1")) return "Junior";
-  if (nivelOpcao1.includes("2")) return "Intermediate ou Partner";
-  if (nivelOpcao1.includes("3")) return "Senior";
-  if (nivelOpcao1.includes("4")) return "Specialist";
-  if (nivelOpcao1.includes("5")) return "Leader";
+        // Fallback: Se o nome não tiver a palavra, tenta usar o id_nivel numérico da BD
+        const idNivel = Number(badge.id_nivel);
+        if (idNivel >= 1 && idNivel <= 5) return idNivel;
 
-  return "Junior"; 
-};
-// Agrupamento dos Badges pelos novos grupos de Senioridade
-const badgesAgrupados = badges.reduce((acc, badge) => {
-  const grupo = obterGrupoPorNivel(badge);
-  if (!acc[grupo]) acc[grupo] = [];
-  acc[grupo].push(badge);
-  return acc;
-}, {});
+        return 99; // Coloca no fim caso não identifique nenhum nível
+      };
 
-// Filtra apenas as categorias que realmente têm badges para não mostrar secções vazias
-const gruposFiltrados = GRUPOS_ORDEM.filter(grupo => badgesAgrupados[grupo] && badgesAgrupados[grupo].length > 0);
+      return obterPeso(a) - obterPeso(b);
+    });
+  });
 
-// Paginação adaptada para a nova lista de grupos
-const totalPaginasGrupos = Math.ceil(gruposFiltrados.length / gruposPorPagina);
-const inicioGrupos = (paginaAtual - 1) * gruposPorPagina;
-const fimGrupos = inicioGrupos + gruposPorPagina;
-const gruposPaginaAtual = gruposFiltrados.slice(inicioGrupos, fimGrupos);
-  const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) => a.localeCompare(b, "pt-PT"));
+  // 3. Ordena as áreas por ordem alfabética
+  const areasOrdenadas = Object.keys(badgesAgrupadosPorArea).sort((a, b) =>
+    a.localeCompare(b, "pt-PT")
+  );
+
   const totalPaginas = Math.ceil(areasOrdenadas.length / areasPorPagina);
+
   const inicio = (paginaAtual - 1) * areasPorPagina;
   const fim = inicio + areasPorPagina;
   const areasPaginaAtual = areasOrdenadas.slice(inicio, fim);
 
-  const totalPontos = badges.reduce((total, badge) => total + Number(badge.pontos || 0), 0);
+  const totalPontos = badges.reduce(
+    (total, badge) => total + Number(badge.pontos || 0),
+    0
+  );
 
   if (loading) {
     return (
@@ -205,16 +451,22 @@ const gruposPaginaAtual = gruposFiltrados.slice(inicioGrupos, fimGrupos);
         <section style={heroCard}>
           <div>
             <div style={heroTitle}>Galeria de Badges</div>
+
             <div style={heroStats}>
               <div style={heroStatItem}>
-                <div style={heroStatIcon}><BiTrophy size={20} /></div>
+                <div style={heroStatIcon}>
+                  <BiTrophy size={20} />
+                </div>
                 <div>
                   <div style={heroStatLabel}>Badges</div>
                   <div style={heroStatValue}>{badges.length}</div>
                 </div>
               </div>
+
               <div style={heroStatItem}>
-                <div style={heroStatIcon}><BiStar size={20} /></div>
+                <div style={heroStatIcon}>
+                  <BiStar size={20} />
+                </div>
                 <div>
                   <div style={heroStatLabel}>Total de pontos</div>
                   <div style={heroStatValue}>{totalPontos} pontos</div>
@@ -222,39 +474,37 @@ const gruposPaginaAtual = gruposFiltrados.slice(inicioGrupos, fimGrupos);
               </div>
             </div>
           </div>
-          <div style={heroUserCircle}><BiUser size={52} /></div>
+
+          <div style={heroUserCircle}>
+            <BiUser size={52} />
+          </div>
         </section>
 
         <div style={contentWrapper}>
-  {gruposPaginaAtual.map((grupo) => {
-    // 1. Pegamos nos badges deste grupo
-    const badgesDoGrupo = badgesAgrupados[grupo] || [];
+          {areasPaginaAtual.map((area) => (
+            <section key={area} style={areaSection}>
+              <h3 style={areaTitle}>{area}</h3>
 
-    // 2. Ordenamos os badges dentro do grupo pelo id_nivel (do menor para o maior)
-    const badgesOrdenados = [...badgesDoGrupo].sort((a, b) => Number(a.id_nivel) - Number(b.id_nivel));
-
-    return (
-      <section key={grupo} style={areaSection}>
-        {/* Agora o título da secção será "Junior", "Intermediate ou Partner", etc. */}
-        <h3 style={areaTitle}>{grupo}</h3>
-        <div style={badgeGrid}>
-          {badgesOrdenados.map((badge) => (
-            <BadgeGalleryCard
-              key={badge.id}
-              badge={badge}
-              onClick={() => setBadgeSelecionado(badge)}
-            />
+              <div style={badgeGrid}>
+                {badgesAgrupadosPorArea[area].map((badge) => (
+                  <BadgeGalleryCard
+                    key={badge.id}
+                    badge={badge}
+                    onClick={() => setBadgeSelecionado(badge)}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
-      </section>
-    );
-  })}
-</div>
+
         <PaginacaoGaleria
           paginaAtual={paginaAtual}
           totalPaginas={totalPaginas}
           onAnterior={() => setPaginaAtual((p) => Math.max(1, p - 1))}
-          onProxima={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+          onProxima={() =>
+            setPaginaAtual((p) => Math.min(totalPaginas, p + 1))
+          }
         />
       </main>
 
@@ -272,112 +522,248 @@ function PublicHeader({ onLogin, onRegister }) {
     <header style={header}>
       <div style={headerInner}>
         <img src={logoImg} alt="Softinsa" style={logoImgStyle} />
+
         <div style={headerActions}>
-          <Button variant="outline-primary" size="sm" onClick={onLogin} style={loginButton}>Login</Button>
-          <Button variant="primary" size="sm" onClick={onRegister} style={registerButton}>Registar</Button>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={onLogin}
+            style={loginButton}
+          >
+            Login
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onRegister}
+            style={registerButton}
+          >
+            Registar
+          </Button>
         </div>
       </div>
     </header>
   );
 }
 
-function BadgeGalleryCard({ badge, onClick }) {
-  const nome = badge.nome || badge.nome_badge || "Badge";
-  const descricao = badge.descricao || badge.descricao_badge_modelo || "";
-  const imagem = badge.imagem_url || badge.imagem || badge.url_imagem || null;
-  const totalConsultores = Number(badge.total_consultores_publicos || 0);
-  const temConsultores = totalConsultores > 0;
+function BadgeGalleryCard({
+  badge,
+  onClick,
+}) {
+  const nome =
+    badge.nome ||
+    badge.nome_badge ||
+    "Badge";
 
-  const letraNivel = badge.codigo_nivel || nivelParaLetra(badge.id_nivel);
+  const descricao =
+    badge.descricao ||
+    badge.descricao_badge_modelo ||
+    "";
 
-  const textoConsultores = temConsultores
-    ? `${totalConsultores} consultor${totalConsultores === 1 ? "" : "es"} público${totalConsultores === 1 ? "" : "s"}`
-    : "Ainda sem consultores públicos";
+  const imagem =
+    badge.imagem_url ||
+    badge.imagem ||
+    badge.url_imagem ||
+    null;
+
+  const totalConsultores =
+    Number(
+      badge.total_consultores_publicos ||
+      0
+    );
+
+  const temConsultores =
+    totalConsultores > 0;
+
+  const textoConsultores =
+    temConsultores
+      ? `${totalConsultores} consultor${
+          totalConsultores === 1
+            ? ""
+            : "es"
+        } público${
+          totalConsultores === 1
+            ? ""
+            : "s"
+        }`
+      : "Ainda sem consultores públicos";
 
   return (
     <div
       style={badgeCard}
       onClick={onClick}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-3px)";
-        e.currentTarget.style.boxShadow = "0 12px 24px rgba(37, 99, 235, 0.16)";
+      onMouseEnter={(event) => {
+        event.currentTarget.style.transform =
+          "translateY(-3px)";
+
+        event.currentTarget.style.boxShadow =
+          "0 12px 24px rgba(37, 99, 235, 0.16)";
       }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 6px 15px rgba(15, 23, 42, 0.08)";
+      onMouseLeave={(event) => {
+        event.currentTarget.style.transform =
+          "translateY(0)";
+
+        event.currentTarget.style.boxShadow =
+          "0 6px 15px rgba(15, 23, 42, 0.08)";
       }}
     >
       <div style={badgeCardTop}>
         <div style={badgeImageCircle}>
-          {imagem ? <img src={imagem} alt={nome} style={badgeImage} /> : <span style={badgeEmoji}>🏅</span>}
-        </div>
-        <div style={badgeMainInfo}>
-          <div style={badgeName}>{nome}</div>
-          {letraNivel && (
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#4470AF", marginTop: 2 }}>
-              Nível {letraNivel}
-            </div>
+          {imagem ? (
+            <img
+              src={imagem}
+              alt={nome}
+              style={badgeImage}
+            />
+          ) : (
+            <span style={badgeEmoji}>
+              🏅
+            </span>
           )}
-          <div style={badgeDescription}>{descricao || "Ver detalhes deste badge"}</div>
+        </div>
+
+        <div style={badgeMainInfo}>
+          <div style={badgeName}>
+            {nome}
+          </div>
+
+          <div style={badgeDescription}>
+            {descricao ||
+              "Ver detalhes deste badge"}
+          </div>
         </div>
       </div>
-      <div style={{ ...badgePublicFooter, ...(temConsultores ? badgePublicFooterActive : badgePublicFooterEmpty) }}>
+
+      <div
+        style={{
+          ...badgePublicFooter,
+
+          ...(temConsultores
+            ? badgePublicFooterActive
+            : badgePublicFooterEmpty),
+        }}
+      >
         <BiUser size={14} />
-        <span>{textoConsultores}</span>
+
+        <span>
+          {textoConsultores}
+        </span>
       </div>
     </div>
   );
 }
 
 function BadgePublicModal({ badge, show, onClose }) {
-  const navigate = useNavigate();
   if (!badge) return null;
 
-  const nome = badge.nome || badge.nome_badge || "Badge";
-  const imagem = badge.imagem_url || badge.imagem || badge.url_imagem || null;
+  const nome =
+    badge.nome ||
+    badge.nome_badge ||
+    "Badge";
 
-  const handleLoginRedirect = () => {
-    // Passa o ID do badge atual para que após o login o utilizador possa voltar para aqui
-    navigate("/login", { state: { from: window.location.pathname, openBadgeId: badge.id } });
-  };
+  const imagem =
+    badge.imagem_url ||
+    badge.imagem ||
+    badge.url_imagem ||
+    null;
 
   return (
-    <Modal show={show} onHide={onClose} centered size="lg" backdrop="static">
+    <Modal
+      show={show}
+      onHide={onClose}
+      centered
+      size="lg"
+      backdrop="static"
+    >
       <Modal.Header closeButton style={{ borderBottom: "1px solid #e5e7eb" }}>
-        <Modal.Title style={{ fontSize: 18, fontWeight: 700 }}>Informação do Badge</Modal.Title>
+        <Modal.Title style={{ fontSize: 18, fontWeight: 700 }}>
+          Informação do Badge
+        </Modal.Title>
       </Modal.Header>
+
       <Modal.Body style={{ background: "#f7f7f7", padding: 24 }}>
         <div style={heroBadgeCard}>
           <div style={heroIconWrap}>
-            {imagem ? <img src={imagem} alt={nome} style={heroBadgeImage} /> : <span style={badgeEmoji}>🏅</span>}
+            {imagem ? (
+              <img
+                src={imagem}
+                alt={nome}
+                style={heroBadgeImage}
+              />
+            ) : (
+              <span style={badgeEmoji}>
+                🏅
+              </span>
+            )}
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 10 }}>{nome}</div>
-          {badge.nome_area && <div style={{ fontSize: 13, color: "#4470AF", marginTop: 4 }}>{badge.nome_area}</div>}
-          <div style={pointsPill}>{badge.pontos || 0} pontos</div>
+
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 10 }}>
+            {nome}
+          </div>
+
+          {badge.nome_area && (
+            <div style={{ fontSize: 13, color: "#4470AF", marginTop: 4 }}>
+              {badge.nome_area}
+            </div>
+          )}
+
+          <div style={pointsPill}>
+            {badge.pontos || 0} pontos
+          </div>
         </div>
 
         <div style={sectionCard}>
           <div style={sectionTitle}>Descrição</div>
-          <p style={descriptionText}>{badge.descricao || "Sem descrição disponível."}</p>
+          <p style={descriptionText}>
+            {badge.descricao || "Sem descrição disponível."}
+          </p>
         </div>
 
-        <NivelSelector nivelAtual={badge.codigo_nivel || nivelParaLetra(badge.id_nivel)} />
+        <NivelSelector nivelAtual={nivelParaLetra(badge.id_nivel)} />
 
         <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: 10 }}>Requisitos do Nível</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: 10 }}>
+            Requisitos do Nível
+          </div>
+
           {badge.requisitos?.length > 0 ? (
-            badge.requisitos.map((req, i) => <RequisitoRow key={`${req.id}-${i}`} req={req} defaultOpen={i === 0} />)
+            badge.requisitos.map((req, i) => (
+              <RequisitoRow
+                key={`${req.id}-${i}`}
+                req={req}
+                defaultOpen={i === 0}
+              />
+            ))
           ) : (
             <div style={sectionCard}>
-              <span style={{ fontSize: 13, color: "#6b7280" }}>Sem requisitos registados para este badge.</span>
+              <span style={{ fontSize: 13, color: "#6b7280" }}>
+                Sem requisitos registados para este badge.
+              </span>
             </div>
           )}
         </div>
-        <ConsultoresPublicosSection badge={badge} consultores={badge.consultores_publicos || []} total={badge.total_consultores_publicos || 0} />
+        <ConsultoresPublicosSection
+          badge={badge}
+          consultores={
+            badge.consultores_publicos ||
+            []
+          }
+          total={
+            badge.total_consultores_publicos ||
+            0
+          }
+        />
       </Modal.Body>
+
       <Modal.Footer style={{ borderTop: "1px solid #e5e7eb" }}>
-        <Button variant="outline-secondary" onClick={onClose}>Fechar</Button>
-        <Button variant="primary" onClick={handleLoginRedirect}>Iniciar sessão para submeter evidências</Button>
+        <Button variant="outline-secondary" onClick={onClose}>
+          Fechar
+        </Button>
+
+        <Button variant="primary" onClick={() => window.location.href = "/login"}>
+          Iniciar sessão para submeter evidências
+        </Button>
       </Modal.Footer>
     </Modal>
   );
@@ -387,6 +773,7 @@ function NivelSelector({ nivelAtual }) {
   return (
     <div style={sectionCard}>
       <div style={sectionTitle}>Nível</div>
+
       <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
         {niveis.map((n) => (
           <div
@@ -394,10 +781,16 @@ function NivelSelector({ nivelAtual }) {
             style={{
               ...nivelCircle,
               background: n === nivelAtual ? "#F5C518" : "#f0f0f0",
-              border: n === nivelAtual ? "2px solid #e0a800" : "1.5px solid #d1d5db",
+              border:
+                n === nivelAtual
+                  ? "2px solid #e0a800"
+                  : "1.5px solid #d1d5db",
               color: n === nivelAtual ? "#7a5800" : "#374151",
               fontWeight: n === nivelAtual ? 700 : 500,
-              boxShadow: n === nivelAtual ? "0 2px 8px rgba(245,197,24,0.35)" : "none",
+              boxShadow:
+                n === nivelAtual
+                  ? "0 2px 8px rgba(245,197,24,0.35)"
+                  : "none",
             }}
           >
             {n}
@@ -408,30 +801,103 @@ function NivelSelector({ nivelAtual }) {
   );
 }
 
-function RequisitoRow({ req, defaultOpen }) {
-  const [open, setOpen] = useState(defaultOpen || false);
-  const idRequisito = req.id_requisito || req.id_requisitos || req.id || "";
-  const links = Array.isArray(req.links) ? req.links : req.link ? [req.link] : [];
+function RequisitoRow({
+  req,
+  defaultOpen,
+}) {
+  const [open, setOpen] =
+    useState(defaultOpen || false);
+
+  const idRequisito =
+    req.id_requisito ||
+    req.id_requisitos ||
+    req.id ||
+    "";
+
+  const links =
+    Array.isArray(req.links)
+      ? req.links
+      : req.link
+        ? [req.link]
+        : [];
 
   return (
     <div style={requisitoCard}>
-      <div style={requisitoHeader} onClick={() => setOpen((v) => !v)}>
+      <div
+        style={requisitoHeader}
+        onClick={() =>
+          setOpen((v) => !v)
+        }
+      >
         <div>
-          <span style={{ fontWeight: 700, color: "#111827" }}>Requisito {idRequisito}</span>
+          <span
+            style={{
+              fontWeight: 700,
+              color: "#111827",
+            }}
+          >
+            Requisito{" "}
+            {idRequisito}
+          </span>
+
           {" - "}
-          <span style={{ color: "#4470AF", fontWeight: 600 }}>{req.titulo}</span>
+
+          <span
+            style={{
+              color: "#4470AF",
+              fontWeight: 600,
+            }}
+          >
+            {req.titulo}
+          </span>
         </div>
-        {open ? <BiChevronUp size={22} color="#6b7280" /> : <BiChevronDown size={22} color="#6b7280" />}
+
+        {open ? (
+          <BiChevronUp
+            size={22}
+            color="#6b7280"
+          />
+        ) : (
+          <BiChevronDown
+            size={22}
+            color="#6b7280"
+          />
+        )}
       </div>
+
       {open && (
         <div style={requisitoBody}>
-          <div style={{ marginBottom: links.length > 0 ? 10 : 0 }}>{req.descricao || "Sem descrição."}</div>
+          <div
+            style={{
+              marginBottom:
+                links.length > 0
+                  ? 10
+                  : 0,
+            }}
+          >
+            {req.descricao ||
+              "Sem descrição."}
+          </div>
+
           {links.length > 0 && (
             <div style={linksBox}>
-              <div style={linksTitle}>Links do curso</div>
-              {links.map((link, index) => (
-                <a key={`${link}-${index}`} href={link} target="_blank" rel="noreferrer" style={cursoLink}>{link}</a>
-              ))}
+              <div style={linksTitle}>
+                Links do curso
+              </div>
+
+              {links.map(
+                (link, index) => (
+                  <a
+                    key={`${link}-${index}`}
+                    href={link}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={cursoLink}
+                  >
+                    {link}
+                  </a>
+                )
+              )}
             </div>
           )}
         </div>
@@ -440,24 +906,43 @@ function RequisitoRow({ req, defaultOpen }) {
   );
 }
 
-function PaginacaoGaleria({ paginaAtual, totalPaginas, onAnterior, onProxima }) {
+function PaginacaoGaleria({
+  paginaAtual,
+  totalPaginas,
+  onAnterior,
+  onProxima,
+}) {
   if (totalPaginas <= 1) return null;
+
   const disabledAnterior = paginaAtual === 1;
   const disabledProxima = paginaAtual === totalPaginas;
 
   return (
     <div style={paginationWrapper}>
       <button
-        style={{ ...paginationButton, opacity: disabledAnterior ? 0.45 : 1, cursor: disabledAnterior ? "not-allowed" : "pointer" }}
+        style={{
+          ...paginationButton,
+          opacity: disabledAnterior ? 0.45 : 1,
+          cursor: disabledAnterior ? "not-allowed" : "pointer",
+        }}
         disabled={disabledAnterior}
         onClick={onAnterior}
       >
         {"<"}
       </button>
+
       <div style={paginationCurrent}>{paginaAtual}</div>
-      <div style={paginationText}>{paginaAtual}/{totalPaginas}</div>
+
+      <div style={paginationText}>
+        {paginaAtual}/{totalPaginas}
+      </div>
+
       <button
-        style={{ ...paginationButton, opacity: disabledProxima ? 0.45 : 1, cursor: disabledProxima ? "not-allowed" : "pointer" }}
+        style={{
+          ...paginationButton,
+          opacity: disabledProxima ? 0.45 : 1,
+          cursor: disabledProxima ? "not-allowed" : "pointer",
+        }}
         disabled={disabledProxima}
         onClick={onProxima}
       >
@@ -469,80 +954,169 @@ function PaginacaoGaleria({ paginaAtual, totalPaginas, onAnterior, onProxima }) 
 
 function nivelParaLetra(idNivel) {
   const nivel = Number(idNivel);
+
   if (nivel === 1) return "A";
   if (nivel === 2) return "B";
   if (nivel === 3) return "C";
   if (nivel === 4) return "D";
   if (nivel === 5) return "E";
+
   return "";
 }
 
-function ConsultoresPublicosSection({ badge, consultores, total }) {
-  const navigate = useNavigate();
-  const lista = Array.isArray(consultores) ? consultores : [];
-  const idBadge = badge?.id || badge?.id_badge_modelo;
+function ConsultoresPublicosSection({
+  badge,
+  consultores,
+  total,
+}) {
+  const navigate =
+    useNavigate();
+
+  const lista =
+    Array.isArray(consultores)
+      ? consultores
+      : [];
+
+  const idBadge =
+    badge?.id ||
+    badge?.id_badge_modelo;
 
   return (
     <div style={sectionCard}>
-      <div style={sectionTitle}>Consultores que conquistaram</div>
-      <div style={{ fontSize: 13, color: "#475569", marginTop: 8, marginBottom: 12 }}>
+      <div style={sectionTitle}>
+        Consultores que conquistaram
+      </div>
+
+      <div
+        style={{
+          fontSize: 13,
+          color: "#475569",
+          marginTop: 8,
+          marginBottom: 12,
+        }}
+      >
         {Number(total || 0) === 0
           ? "Ainda não existem consultores com publicação autorizada para este badge."
-          : `${total} consultor${Number(total) === 1 ? "" : "es"} autorizaram a publicação.`}
+          : `${total} consultor${
+              Number(total) === 1
+                ? ""
+                : "es"
+            } autorizaram a publicação deste badge.`}
       </div>
 
       {lista.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {lista.map((consultor, index) => {
-            const idUtilizador = consultor.id_utilizador || consultor.id || consultor.ID_UTILIZADOR;
-            return (
-              <div key={idUtilizador || index} style={consultorPublicoRow}>
-                <div style={consultorAvatar}><BiUser size={20} /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{consultor.nome_completo || "Consultor"}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>{consultor.nome_area || "Sem área associada"}</div>
-                  {consultor.data_atribuicao && (
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
-                      Conquistado a {new Date(consultor.data_atribuicao).toLocaleDateString("pt-PT")}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          {lista.map(
+            (consultor, index) => {
+              const idUtilizador =
+                consultor.id_utilizador ||
+                consultor.id ||
+                consultor.ID_UTILIZADOR;
+
+              return (
+                <div
+                  key={
+                    idUtilizador ||
+                    index
+                  }
+                  style={consultorPublicoRow}
+                >
+                  <div style={consultorAvatar}>
+                    <BiUser size={20} />
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "#111827",
+                      }}
+                    >
+                      {consultor.nome_completo ||
+                        "Consultor"}
                     </div>
-                  )}
-                </div>
-                <div style={consultorActions}>
-                  {idUtilizador && idBadge && (
-                    <button
-                      type="button"
-                      style={verBadgeButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/badges/${idUtilizador}/${idBadge}`);
+
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#64748b",
                       }}
                     >
-                      Ver badge público
-                    </button>
-                  )}
-                  {consultor.linkedin_url && (
-                    <button
-                      type="button"
-                      style={linkedinButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(consultor.linkedin_url, "_blank", "noopener,noreferrer");
-                      }}
-                    >
-                      LinkedIn
-                    </button>
-                  )}
+                      {consultor.nome_area ||
+                        "Sem área associada"}
+                    </div>
+
+                    {consultor.data_atribuicao && (
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "#94a3b8",
+                          marginTop: 2,
+                        }}
+                      >
+                        Conquistado a{" "}
+                        {new Date(
+                          consultor.data_atribuicao
+                        ).toLocaleDateString(
+                          "pt-PT"
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={consultorActions}>
+                    {idUtilizador &&
+                      idBadge && (
+                        <button
+                          type="button"
+                          style={verBadgeButton}
+                          onClick={(event) => {
+                            event.stopPropagation();
+
+                            navigate(
+                              `/badges/${idUtilizador}/${idBadge}`
+                            );
+                          }}
+                        >
+                          Ver badge público
+                        </button>
+                      )}
+
+                    {consultor.linkedin_url && (
+                      <button
+                        type="button"
+                        style={linkedinButton}
+                        onClick={(event) => {
+                          event.stopPropagation();
+
+                          window.open(
+                            consultor.linkedin_url,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        }}
+                      >
+                        LinkedIn
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            }
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// Estilos mantidos originais do teu ficheiro
 const consultorActions = {
   display: "flex",
   alignItems: "center",
