@@ -1052,6 +1052,12 @@ const motivoRejeicaoLabel = {
   marginBottom: 4,
 };
 
+const motivoRejeicaoTexto = {
+  fontSize: 13,
+  color: "#7f1d1d",
+  lineHeight: 1.45,
+};
+
 const motivoRejeicaoSubtexto = {
   marginTop: 6,
   fontSize: 12,
