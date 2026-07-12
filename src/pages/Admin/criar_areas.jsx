@@ -39,7 +39,32 @@ function normalizarServiceLine(sl) {
   };
 }
 
+function garantirArray(valor) {
+  if (Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (typeof valor === "string") {
+    try {
+      const parsed = JSON.parse(valor);
+
+      return Array.isArray(parsed)
+        ? parsed
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 function normalizarBadge(b) {
+  const requisitosRaw = garantirArray(
+    b.requisitos ||
+      b.REQUISITOS
+  );
+
   return {
     id:
       b.id_badge_modelo ||
@@ -68,6 +93,7 @@ function normalizarBadge(b) {
     numero_requisitos: Number(
       b.numero_requisitos ||
         b.NUMERO_REQUISITOS ||
+        requisitosRaw.length ||
         0
     ),
 
@@ -86,39 +112,58 @@ function normalizarBadge(b) {
       b.CODIGO_NIVEL ||
       "",
 
-    requisitos: Array.isArray(b.requisitos)
-      ? b.requisitos.map((r) => ({
-          id:
-            r.id_requisitos ||
-            r.ID_REQUISITOS ||
-            r.id ||
-            "",
+    requisitos: requisitosRaw.map((r) => {
+      const linksRaw = garantirArray(
+        r.links ||
+          r.LINKS
+      );
 
-          nome:
-            r.nome_requisito ||
-            r.NOME_REQUISITO ||
-            "Requisito",
+      return {
+        id:
+          r.id_requisitos ||
+          r.id_requisito ||
+          r.ID_REQUISITOS ||
+          r.ID_REQUISITO ||
+          r.id ||
+          "",
 
-          titulo:
-            r.titulo ||
-            r.TITULO ||
-            "",
+        nome:
+          r.nome_requisito ||
+          r.NOME_REQUISITO ||
+          "Requisito",
 
-          descricao:
-            r.descricao_requisito ||
-            r.DESCRICAO_REQUISITO ||
-            "",
+        titulo:
+          r.titulo ||
+          r.TITULO ||
+          r.nome_requisito ||
+          "",
 
-          tipo:
-            r.tipo_requisito ||
-            r.TIPO_REQUISITO ||
-            "",
+        descricao:
+          r.descricao_requisito ||
+          r.DESCRICAO_REQUISITO ||
+          r.descricao ||
+          "",
 
-          links: Array.isArray(r.links)
-            ? r.links
-            : [],
-        }))
-      : [],
+        tipo:
+          r.tipo_requisito ||
+          r.TIPO_REQUISITO ||
+          "FORMAÇÃO",
+
+        links: linksRaw
+          .map((link) => {
+            if (typeof link === "string") {
+              return link;
+            }
+
+            return (
+              link.url ||
+              link.URL ||
+              ""
+            );
+          })
+          .filter(Boolean),
+      };
+    }),
   };
 }
 
