@@ -77,7 +77,7 @@ function TM_DefinicoesPage() {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/tm/consultores");
+      navigate("/tm");
     }
   };
 

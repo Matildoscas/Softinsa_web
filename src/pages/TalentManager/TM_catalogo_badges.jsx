@@ -16,10 +16,11 @@ import {
 } from "react-icons/bi";
 
 import { jsPDF } from "jspdf";
-import { autoTable } from "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 import {
   useNavigate,
+  useLocation, // Adicionado para corrigir o erro do location
 } from "react-router-dom";
 
 import api from "../../services/api.js";
@@ -34,23 +35,16 @@ import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 ========================================================= */
 
 function obterUtilizadorGuardado() {
-  const utilizadorGuardado =
-    localStorage.getItem("user");
+  const utilizadorGuardado = localStorage.getItem("user");
 
   if (!utilizadorGuardado) {
     return null;
   }
 
   try {
-    return JSON.parse(
-      utilizadorGuardado
-    );
+    return JSON.parse(utilizadorGuardado);
   } catch (err) {
-    console.error(
-      "Erro ao ler utilizador guardado:",
-      err
-    );
-
+    console.error("Erro ao ler utilizador guardado:", err);
     return null;
   }
 }
@@ -79,11 +73,7 @@ function normalizarBadge(badge) {
       badge.descricao ||
       "Sem descrição.",
 
-    pontos: Number(
-      badge.pontos ||
-        badge.PONTOS ||
-        0
-    ),
+    pontos: Number(badge.pontos || badge.PONTOS || 0),
 
     numero_requisitos: Number(
       badge.numero_requisitos ||
@@ -92,30 +82,17 @@ function normalizarBadge(badge) {
         0
     ),
 
-    tipo_badge:
-      badge.tipo_badge ||
-      badge.TIPO_BADGE ||
-      "NORMAL",
+    tipo_badge: badge.tipo_badge || badge.TIPO_BADGE || "NORMAL",
 
     estado_badge_modelo:
-      badge.estado_badge_modelo ||
-      badge.ESTADO_BADGE_MODELO ||
-      "ATIVO",
+      badge.estado_badge_modelo || badge.ESTADO_BADGE_MODELO || "ATIVO",
 
-    id_serviceline:
-      badge.id_serviceline ||
-      badge.ID_SERVICELINE ||
-      "",
+    id_serviceline: badge.id_serviceline || badge.ID_SERVICELINE || "",
 
     nome_serviceline:
-      badge.nome_serviceline ||
-      badge.NOME_SERVICELINE ||
-      "Sem Service Line",
+      badge.nome_serviceline || badge.NOME_SERVICELINE || "Sem Service Line",
 
-    id_areas:
-      badge.id_areas ||
-      badge.ID_AREAS ||
-      "",
+    id_areas: badge.id_areas || badge.ID_AREAS || "",
 
     nome_areas:
       badge.nome_areas ||
@@ -123,26 +100,13 @@ function normalizarBadge(badge) {
       badge.NOME_AREA ||
       "Sem área associada",
 
-    id_nivel:
-      badge.id_nivel ||
-      badge.ID_NIVEL ||
-      "",
+    id_nivel: badge.id_nivel || badge.ID_NIVEL || "",
 
-    nome_nivel:
-      badge.nome_nivel ||
-      badge.NOME_NIVEL ||
-      "Sem nível",
+    nome_nivel: badge.nome_nivel || badge.NOME_NIVEL || "Sem nível",
 
-    imagem:
-      badge.imagem ||
-      badge.imagem_url ||
-      badge.IMAGEM ||
-      null,
+    imagem: badge.imagem || badge.imagem_url || badge.IMAGEM || null,
 
-    tempo_expiracao:
-      badge.tempo_expiracao ||
-      badge.TEMPO_EXPIRACAO ||
-      null,
+    tempo_expiracao: badge.tempo_expiracao || badge.TEMPO_EXPIRACAO || null,
 
     debug: badge.debug || null,
   };
@@ -153,60 +117,36 @@ function normalizarBadge(badge) {
 ========================================================= */
 
 function CatalogoBadgesTm() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
+  const location = useLocation(); // Inicializado o hook para obter o state da rota
 
-  const [badges, setBadges] =
-    useState([]);
+  const [badges, setBadges] = useState([]);
+  const [pesquisa, setPesquisa] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState("TODOS");
+  const [filtroServiceLine, setFiltroServiceLine] = useState("TODAS");
+  const [ordenacao, setOrdenacao] = useState("NOME_ASC");
+  const [isLoading, setIsLoading] = useState(true);
+  const [erro, setErro] = useState("");
+  const [paginaAtual, setPaginaAtual] = useState(1);
 
-  const [pesquisa, setPesquisa] =
-    useState("");
-
-  const [
-    filtroTipo,
-    setFiltroTipo,
-  ] = useState("TODOS");
-
-  const [
-    filtroServiceLine,
-    setFiltroServiceLine,
-  ] = useState("TODAS");
-
-  const [
-    ordenacao,
-    setOrdenacao,
-  ] = useState("NOME_ASC");
-
-  const [
-    isLoading,
-    setIsLoading,
-  ] = useState(true);
-
-  const [erro, setErro] =
-    useState("");
+  const BADGES_POR_PAGINA = 5;
 
   useEffect(() => {
     carregarBadges();
   }, []);
 
   /* =======================================================
-     CARREGAR BADGES
+      CARREGAR BADGES
   ======================================================= */
 
   async function carregarBadges() {
-    const utilizador =
-      obterUtilizadorGuardado();
+    const utilizador = obterUtilizadorGuardado();
 
     const idUtilizador =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+      utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
 
     if (!idUtilizador) {
-      setErro(
-        "Não foi possível identificar o Talent Manager."
-      );
-
+      setErro("Não foi possível identificar o Talent Manager.");
       setIsLoading(false);
       return;
     }
@@ -215,51 +155,23 @@ function CatalogoBadgesTm() {
       setIsLoading(true);
       setErro("");
 
-      const response =
-        await api.get(
-          `/tm/${idUtilizador}/badges`
-        );
+      const response = await api.get(`/tm/${idUtilizador}/badges`);
 
-      console.log(
-        "CATÁLOGO TM:",
-        response.data
-      );
+      console.log("CATÁLOGO TM:", response.data);
 
-      const dados =
-        response.data;
+      const dados = response.data;
 
-      const listaOriginal =
-        Array.isArray(dados)
-          ? dados
-          : Array.isArray(
-                dados?.badges
-              )
-            ? dados.badges
-            : [];
+      const listaOriginal = Array.isArray(dados)
+        ? dados
+        : Array.isArray(dados?.badges)
+        ? dados.badges
+        : [];
 
-      const listaNormalizada =
-        listaOriginal.map(
-          normalizarBadge
-        );
+      const listaNormalizada = listaOriginal.map(normalizarBadge);
 
-      setBadges(
-        listaNormalizada
-      );
+      setBadges(listaNormalizada);
     } catch (err) {
-      console.error(
-        "Erro ao carregar catálogo TM:",
-        err
-      );
-
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
-
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
+      console.error("Erro ao carregar catálogo TM:", err);
 
       setBadges([]);
 
@@ -273,231 +185,120 @@ function CatalogoBadgesTm() {
   }
 
   /* =======================================================
-     SERVICE LINES DISPONÍVEIS
+      SERVICE LINES DISPONÍVEIS
   ======================================================= */
 
-  const serviceLines =
-    useMemo(() => {
-      const nomes =
-        badges
-          .map(
-            (badge) =>
-              badge.nome_serviceline
-          )
-          .filter(
-            (nome) =>
-              nome &&
-              nome !==
-                "Sem Service Line"
-          );
+  const serviceLines = useMemo(() => {
+    const nomes = badges
+      .map((badge) => badge.nome_serviceline)
+      .filter((nome) => nome && nome !== "Sem Service Line");
 
-      return [
-        ...new Set(nomes),
-      ].sort((a, b) =>
-        a.localeCompare(
-          b,
-          "pt"
-        )
-      );
-    }, [badges]);
+    return [...new Set(nomes)].sort((a, b) => a.localeCompare(b, "pt"));
+  }, [badges]);
 
   /* =======================================================
-     FILTROS E ORDENAÇÃO
+      FILTROS E ORDENAÇÃO
   ======================================================= */
 
-  const badgesFiltrados =
-    useMemo(() => {
-      let resultado = [
-        ...badges,
-      ];
+  const badgesFiltrados = useMemo(() => {
+    let resultado = [...badges];
 
-      const textoPesquisa =
-        pesquisa
-          .trim()
-          .toLowerCase();
+    const textoPesquisa = pesquisa.trim().toLowerCase();
 
-      if (textoPesquisa) {
-        resultado =
-          resultado.filter(
-            (badge) =>
-              badge.nome_badge
-                .toLowerCase()
-                .includes(
-                  textoPesquisa
-                ) ||
-              badge
-                .descricao_badge_modelo
-                .toLowerCase()
-                .includes(
-                  textoPesquisa
-                ) ||
-              badge.nome_areas
-                .toLowerCase()
-                .includes(
-                  textoPesquisa
-                ) ||
-              badge.nome_nivel
-                .toLowerCase()
-                .includes(
-                  textoPesquisa
-                ) ||
-              badge.nome_serviceline
-                .toLowerCase()
-                .includes(
-                  textoPesquisa
-                )
-          );
-      }
-
-      if (
-        filtroTipo ===
-        "NORMAL"
-      ) {
-        resultado =
-          resultado.filter(
-            (badge) =>
-              String(
-                badge.tipo_badge
-              ).toUpperCase() !==
-              "ESPECIAL"
-          );
-      }
-
-      if (
-        filtroTipo ===
-        "ESPECIAL"
-      ) {
-        resultado =
-          resultado.filter(
-            (badge) =>
-              String(
-                badge.tipo_badge
-              ).toUpperCase() ===
-              "ESPECIAL"
-          );
-      }
-
-      if (
-        filtroServiceLine !==
-        "TODAS"
-      ) {
-        resultado =
-          resultado.filter(
-            (badge) =>
-              badge.nome_serviceline ===
-              filtroServiceLine
-          );
-      }
-
-      resultado.sort(
-        (a, b) => {
-          if (
-            ordenacao ===
-            "NOME_DESC"
-          ) {
-            return b.nome_badge.localeCompare(
-              a.nome_badge,
-              "pt"
-            );
-          }
-
-          if (
-            ordenacao ===
-            "PONTOS_DESC"
-          ) {
-            return (
-              b.pontos -
-              a.pontos
-            );
-          }
-
-          if (
-            ordenacao ===
-            "PONTOS_ASC"
-          ) {
-            return (
-              a.pontos -
-              b.pontos
-            );
-          }
-
-          if (
-            ordenacao ===
-            "SERVICELINE_ASC"
-          ) {
-            return a.nome_serviceline.localeCompare(
-              b.nome_serviceline,
-              "pt"
-            );
-          }
-
-          return a.nome_badge.localeCompare(
-            b.nome_badge,
-            "pt"
-          );
-        }
+    if (textoPesquisa) {
+      resultado = resultado.filter(
+        (badge) =>
+          badge.nome_badge.toLowerCase().includes(textoPesquisa) ||
+          badge.descricao_badge_modelo.toLowerCase().includes(textoPesquisa) ||
+          badge.nome_areas.toLowerCase().includes(textoPesquisa) ||
+          badge.nome_nivel.toLowerCase().includes(textoPesquisa) ||
+          badge.nome_serviceline.toLowerCase().includes(textoPesquisa)
       );
+    }
 
-      return resultado;
-    }, [
-      badges,
-      pesquisa,
-      filtroTipo,
-      filtroServiceLine,
-      ordenacao,
-    ]);
+    if (filtroTipo === "NORMAL") {
+      resultado = resultado.filter(
+        (badge) => String(badge.tipo_badge).toUpperCase() !== "ESPECIAL"
+      );
+    }
+
+    if (filtroTipo === "ESPECIAL") {
+      resultado = resultado.filter(
+        (badge) => String(badge.tipo_badge).toUpperCase() === "ESPECIAL"
+      );
+    }
+
+    if (filtroServiceLine !== "TODAS") {
+      resultado = resultado.filter(
+        (badge) => badge.nome_serviceline === filtroServiceLine
+      );
+    }
+
+    resultado.sort((a, b) => {
+      if (ordenacao === "NOME_DESC") {
+        return b.nome_badge.localeCompare(a.nome_badge, "pt");
+      }
+
+      if (ordenacao === "PONTOS_DESC") {
+        return b.pontos - a.pontos;
+      }
+
+      if (ordenacao === "PONTOS_ASC") {
+        return a.pontos - b.pontos;
+      }
+
+      if (ordenacao === "SERVICELINE_ASC") {
+        return a.nome_serviceline.localeCompare(b.nome_serviceline, "pt");
+      }
+
+      return a.nome_badge.localeCompare(b.nome_badge, "pt");
+    });
+
+    return resultado;
+  }, [badges, pesquisa, filtroTipo, filtroServiceLine, ordenacao]);
+
+  // Resetar para a primeira página caso os filtros mudem e a página atual fique "vazia"
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [pesquisa, filtroTipo, filtroServiceLine]);
 
   /* =======================================================
-     EXPORTAR PDF
+      CÁLCULO DA PAGINAÇÃO (Movido para baixo dos filtros)
+  ======================================================= */
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(badgesFiltrados.length / BADGES_POR_PAGINA)
+  );
+
+  // Recorta a lista para mostrar apenas os badges da página atual
+  const badgesPaginados = useMemo(() => {
+    const inicio = (paginaAtual - 1) * BADGES_POR_PAGINA;
+    return badgesFiltrados.slice(inicio, inicio + BADGES_POR_PAGINA);
+  }, [badgesFiltrados, paginaAtual]);
+
+  /* =======================================================
+      EXPORTAR PDF
   ======================================================= */
 
   function gerarPdf() {
     try {
-      const pdf =
-        new jsPDF({
-          orientation:
-            "landscape",
-
-          unit: "mm",
-
-          format: "a4",
-        });
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
 
       pdf.setFontSize(18);
-
-      pdf.setFont(
-        "helvetica",
-        "bold"
-      );
-
-      pdf.text(
-        "Catálogo Completo de Badges",
-        14,
-        16
-      );
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Catálogo Completo de Badges", 14, 16);
 
       pdf.setFontSize(10);
-
-      pdf.setFont(
-        "helvetica",
-        "normal"
-      );
-
-      pdf.text(
-        "Todas as Service Lines",
-        14,
-        23
-      );
-
-      pdf.text(
-        `Total de badges: ${badgesFiltrados.length}`,
-        14,
-        29
-      );
+      pdf.setFont("helvetica", "normal");
+      pdf.text("Todas as Service Lines", 14, 23);
+      pdf.text(`Total de badges: ${badgesFiltrados.length}`, 14, 29);
 
       autoTable(pdf, {
         startY: 36,
-
         head: [
           [
             "Badge",
@@ -509,134 +310,60 @@ function CatalogoBadgesTm() {
             "Tipo",
           ],
         ],
-
-        body:
-          badgesFiltrados.map(
-            (badge) => [
-              badge.nome_badge,
-
-              badge.nome_serviceline,
-
-              badge.nome_areas,
-
-              badge.nome_nivel,
-
-              badge.pontos,
-
-              badge.numero_requisitos,
-
-              badge.tipo_badge,
-            ]
-          ),
-
+        body: badgesFiltrados.map((badge) => [
+          badge.nome_badge,
+          badge.nome_serviceline,
+          badge.nome_areas,
+          badge.nome_nivel,
+          badge.pontos,
+          badge.numero_requisitos,
+          badge.tipo_badge,
+        ]),
         styles: {
           fontSize: 8,
           cellPadding: 3,
           overflow: "linebreak",
           valign: "middle",
         },
-
         headStyles: {
-          fillColor: [
-            37,
-            99,
-            235,
-          ],
-
-          textColor: [
-            255,
-            255,
-            255,
-          ],
-
+          fillColor: [37, 99, 235],
+          textColor: [255, 255, 255],
           fontStyle: "bold",
         },
-
         alternateRowStyles: {
-          fillColor: [
-            248,
-            250,
-            252,
-          ],
+          fillColor: [248, 250, 252],
         },
-
         columnStyles: {
-          0: {
-            cellWidth: 46,
-          },
-
-          1: {
-            cellWidth: 40,
-          },
-
-          2: {
-            cellWidth: 50,
-          },
-
-          3: {
-            cellWidth: 30,
-          },
-
-          4: {
-            cellWidth: 20,
-            halign: "center",
-          },
-
-          5: {
-            cellWidth: 24,
-            halign: "center",
-          },
-
-          6: {
-            cellWidth: 28,
-            halign: "center",
-          },
+          0: { cellWidth: 46 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 50 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 20, halign: "center" },
+          5: { cellWidth: 24, halign: "center" },
+          6: { cellWidth: 28, halign: "center" },
         },
-
-        margin: {
-          left: 14,
-          right: 14,
-        },
-
+        margin: { left: 14, right: 14 },
         didDrawPage: () => {
-          const numeroPagina =
-            pdf.getNumberOfPages();
-
+          const numeroPagina = pdf.getNumberOfPages();
           pdf.setFontSize(8);
-
-          pdf.setTextColor(
-            100
-          );
-
+          pdf.setTextColor(100);
           pdf.text(
             `Página ${numeroPagina}`,
-
-            pdf.internal.pageSize.getWidth() -
-              28,
-
-            pdf.internal.pageSize.getHeight() -
-              8
+            pdf.internal.pageSize.getWidth() - 28,
+            pdf.internal.pageSize.getHeight() - 8
           );
         },
       });
 
-      pdf.save(
-        "catalogo_completo_badges.pdf"
-      );
+      pdf.save("catalogo_completo_badges.pdf");
     } catch (err) {
-      console.error(
-        "Erro ao gerar PDF:",
-        err
-      );
-
-      setErro(
-        "Não foi possível gerar o PDF."
-      );
+      console.error("Erro ao gerar PDF:", err);
+      setErro("Não foi possível gerar o PDF.");
     }
   }
 
   /* =======================================================
-     EXPORTAR EXCEL/CSV
+      EXPORTAR EXCEL/CSV
   ======================================================= */
 
   function exportarExcel() {
@@ -653,98 +380,44 @@ function CatalogoBadgesTm() {
         "Tempo de expiração",
       ];
 
-      const linhas =
-        badgesFiltrados.map(
-          (badge) => [
-            badge.id_badge_modelo,
+      const linhas = badgesFiltrados.map((badge) => [
+        badge.id_badge_modelo,
+        badge.nome_badge,
+        badge.nome_serviceline,
+        badge.nome_areas,
+        badge.nome_nivel,
+        badge.pontos,
+        badge.numero_requisitos,
+        badge.tipo_badge,
+        badge.tempo_expiracao || "",
+      ]);
 
-            badge.nome_badge,
-
-            badge.nome_serviceline,
-
-            badge.nome_areas,
-
-            badge.nome_nivel,
-
-            badge.pontos,
-
-            badge.numero_requisitos,
-
-            badge.tipo_badge,
-
-            badge.tempo_expiracao ||
-              "",
-          ]
-        );
-
-      const csv = [
-        cabecalho,
-        ...linhas,
-      ]
+      const csv = [cabecalho, ...linhas]
         .map((linha) =>
           linha
             .map((valor) => {
-              const texto =
-                String(
-                  valor ?? ""
-                ).replace(
-                  /"/g,
-                  '""'
-                );
-
+              const texto = String(valor ?? "").replace(/"/g, '""');
               return `"${texto}"`;
             })
             .join(";")
         )
         .join("\n");
 
-      const blob =
-        new Blob(
-          [
-            "\uFEFF" +
-              csv,
-          ],
-          {
-            type:
-              "text/csv;charset=utf-8;",
-          }
-        );
+      const blob = new Blob(["\uFEFF" + csv], {
+        type: "text/csv;charset=utf-8;",
+      });
 
-      const url =
-        URL.createObjectURL(
-          blob
-        );
-
-      const link =
-        document.createElement(
-          "a"
-        );
-
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
       link.href = url;
-
-      link.download =
-        "catalogo_completo_badges.csv";
-
-      document.body.appendChild(
-        link
-      );
-
+      link.download = "catalogo_completo_badges.csv";
+      document.body.appendChild(link);
       link.click();
-
       link.remove();
-
-      URL.revokeObjectURL(
-        url
-      );
+      URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(
-        "Erro ao exportar Excel:",
-        err
-      );
-
-      setErro(
-        "Não foi possível exportar o ficheiro."
-      );
+      console.error("Erro ao exportar Excel:", err);
+      setErro("Não foi possível exportar o ficheiro.");
     }
   }
 
@@ -754,12 +427,12 @@ function CatalogoBadgesTm() {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/tm/consultores");
+      navigate("/tm");
     }
   };
 
   /* =======================================================
-     RENDERIZAÇÃO
+      RENDERIZAÇÃO
   ======================================================= */
 
   return (
@@ -772,106 +445,48 @@ function CatalogoBadgesTm() {
         <main style={conteudo}>
           <button type="button" onClick={lidarComVoltar} style={voltarButton}>
             <BiArrowBack size={18} />
-              {textoVoltar}
+            {textoVoltar}
           </button>
 
-          <div
-            style={
-              cabecalhoPagina
-            }
-          >
+          <div style={cabecalhoPagina}>
             <div>
-              <h2 style={titulo}>
-                Catálogo de Badges
-              </h2>
-
-              <div
-                style={subtitulo}
-              >
-                Total de{" "}
-                {
-                  badgesFiltrados.length
-                }{" "}
-                {badgesFiltrados.length ===
-                1
-                  ? "badge"
-                  : "badges"}
+              <h2 style={titulo}>Catálogo de Badges</h2>
+              <div style={subtitulo}>
+                Total de {badgesFiltrados.length}{" "}
+                {badgesFiltrados.length === 1 ? "badge" : "badges"}
               </div>
             </div>
 
             <div style={acoesTopo}>
-
-                  <button
-                                  type="button"
-                                  onClick={() =>
-                                    navigate(
-                                      "/tm/certificados"
-                                    )
-                                  }
-                                  style={certificadoButton}
-                                >
-                                  <BiCertification
-                                    size={17}
-                                  />
-                  
-                                  Gerar Certificado
-                                  Personalizado
-                                </button>
-
               <button
                 type="button"
-                onClick={
-                  exportarExcel
-                }
-                style={excelButton}
+                onClick={() => navigate("/tm/certificados")}
+                style={certificadoButton}
               >
-                <BiSpreadsheet
-                  size={17}
-                />
+                <BiCertification size={17} />
+                Gerar Certificado Personalizado
+              </button>
 
+              <button type="button" onClick={exportarExcel} style={excelButton}>
+                <BiSpreadsheet size={17} />
                 Excel
               </button>
 
-              <button
-                type="button"
-                onClick={gerarPdf}
-                style={pdfButton}
-              >
-                <BiFile
-                  size={17}
-                />
-
+              <button type="button" onClick={gerarPdf} style={pdfButton}>
+                <BiFile size={17} />
                 PDF
               </button>
             </div>
           </div>
 
           {/* PESQUISA */}
-
-          <div
-            style={
-              pesquisaLinha
-            }
-          >
-            <div
-              style={pesquisaBox}
-            >
-              <BiSearch
-                size={19}
-                color="#94a3b8"
-              />
-
+          <div style={pesquisaLinha}>
+            <div style={pesquisaBox}>
+              <BiSearch size={19} color="#94a3b8" />
               <input
                 type="text"
                 value={pesquisa}
-                onChange={(
-                  event
-                ) =>
-                  setPesquisa(
-                    event.target
-                      .value
-                  )
-                }
+                onChange={(event) => setPesquisa(event.target.value)}
                 placeholder="Buscar badges, áreas ou Service Lines..."
                 style={pesquisaInput}
               />
@@ -879,204 +494,99 @@ function CatalogoBadgesTm() {
           </div>
 
           {/* FILTROS */}
-
-          <div
-            style={
-              filtrosContainer
-            }
-          >
-            <div
-              style={filtroCampo}
-            >
-              <label
-                style={filtroLabel}
-              >
-                <BiFilterAlt
-                  size={16}
-                />
-
+          <div style={filtrosContainer}>
+            <div style={filtroCampo}>
+              <label style={filtroLabel}>
+                <BiFilterAlt size={16} />
                 Tipo de badge
               </label>
-
               <select
-                value={
-                  filtroTipo
-                }
-                onChange={(
-                  event
-                ) =>
-                  setFiltroTipo(
-                    event.target
-                      .value
-                  )
-                }
+                value={filtroTipo}
+                onChange={(event) => setFiltroTipo(event.target.value)}
                 style={selectFiltro}
               >
-                <option value="TODOS">
-                  Todos os tipos
-                </option>
-
-                <option value="NORMAL">
-                  Normais
-                </option>
-
-                <option value="ESPECIAL">
-                  Especiais
-                </option>
+                <option value="TODOS">Todos os tipos</option>
+                <option value="NORMAL">Normais</option>
+                <option value="ESPECIAL">Especiais</option>
               </select>
             </div>
 
-            <div
-              style={filtroCampo}
-            >
-              <label
-                style={filtroLabel}
-              >
-                <BiFilterAlt
-                  size={16}
-                />
-
+            <div style={filtroCampo}>
+              <label style={filtroLabel}>
+                <BiFilterAlt size={16} />
                 Service Line
               </label>
-
               <select
-                value={
-                  filtroServiceLine
-                }
-                onChange={(
-                  event
-                ) =>
-                  setFiltroServiceLine(
-                    event.target
-                      .value
-                  )
-                }
+                value={filtroServiceLine}
+                onChange={(event) => setFiltroServiceLine(event.target.value)}
                 style={selectFiltro}
               >
-                <option value="TODAS">
-                  Todas as Service
-                  Lines
-                </option>
-
-                {serviceLines.map(
-                  (
-                    nomeServiceLine
-                  ) => (
-                    <option
-                      key={
-                        nomeServiceLine
-                      }
-                      value={
-                        nomeServiceLine
-                      }
-                    >
-                      {
-                        nomeServiceLine
-                      }
-                    </option>
-                  )
-                )}
+                <option value="TODAS">Todas as Service Lines</option>
+                {serviceLines.map((nomeServiceLine) => (
+                  <option key={nomeServiceLine} value={nomeServiceLine}>
+                    {nomeServiceLine}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div
-              style={filtroCampo}
-            >
-              <label
-                style={filtroLabel}
-              >
-                <BiSortAlt2
-                  size={16}
-                />
-
+            <div style={filtroCampo}>
+              <label style={filtroLabel}>
+                <BiSortAlt2 size={16} />
                 Ordenar por
               </label>
-
               <select
                 value={ordenacao}
-                onChange={(
-                  event
-                ) =>
-                  setOrdenacao(
-                    event.target
-                      .value
-                  )
-                }
+                onChange={(event) => setOrdenacao(event.target.value)}
                 style={selectFiltro}
               >
-                <option value="NOME_ASC">
-                  Nome A-Z
-                </option>
-
-                <option value="NOME_DESC">
-                  Nome Z-A
-                </option>
-
-                <option value="PONTOS_DESC">
-                  Mais pontos
-                </option>
-
-                <option value="PONTOS_ASC">
-                  Menos pontos
-                </option>
-
-                <option value="SERVICELINE_ASC">
-                  Service Line A-Z
-                </option>
+                <option value="NOME_ASC">Nome A-Z</option>
+                <option value="NOME_DESC">Nome Z-A</option>
+                <option value="PONTOS_DESC">Mais pontos</option>
+                <option value="PONTOS_ASC">Menos pontos</option>
+                <option value="SERVICELINE_ASC">Service Line A-Z</option>
               </select>
             </div>
           </div>
 
-          <div
-            style={
-              catalogoInfoRow
-            }
-          >
-            <div
-              style={catalogoInfo}
-            >
-              Catálogo completo de
-              badges de todas as
-              Service Lines
+          <div style={catalogoInfoRow}>
+            <div style={catalogoInfo}>
+              Catálogo completo de badges de todas as Service Lines
             </div>
           </div>
 
-          {erro && (
-            <div style={erroBox}>
-              {erro}
-            </div>
-          )}
+          {erro && <div style={erroBox}>{erro}</div>}
 
           {isLoading ? (
-            <div style={loadingBox}>
-              A carregar badges...
-            </div>
-          ) : badgesFiltrados.length >
-            0 ? (
-            <div
-              style={listaBadges}
-            >
-              {badgesFiltrados.map(
-                (badge) => (
+            <div style={loadingBox}>A carregar badges...</div>
+          ) : badgesFiltrados.length > 0 ? (
+            <> {/* Adicionado o fragment correto aqui */}
+              <div style={listaBadges}>
+                {badgesPaginados.map((badge) => (
                   <BadgeCard
-                    key={
-                      badge.id_badge_modelo
-                    }
+                    key={badge.id_badge_modelo}
                     badge={badge}
                     onConsultar={() =>
-                      navigate(
-                        `/tm/badges/${badge.id_badge_modelo}`
-                      )
+                      navigate(`/tm/badges/${badge.id_badge_modelo}`)
                     }
                   />
-                )
-              )}
-            </div>
+                ))}
+              </div>
+
+              <PaginacaoCatalogo
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                onAnterior={() =>
+                  setPaginaAtual((pagina) => Math.max(1, pagina - 1))
+                }
+                onProxima={() =>
+                  setPaginaAtual((pagina) => Math.min(totalPaginas, pagina + 1))
+                }
+                onSelecionarPagina={setPaginaAtual}
+              />
+            </>
           ) : (
-            <div style={loadingBox}>
-              Não foram encontrados
-              badges.
-            </div>
+            <div style={loadingBox}>Não foram encontrados badges.</div>
           )}
         </main>
 
@@ -1090,155 +600,79 @@ function CatalogoBadgesTm() {
    CARD DO BADGE
 ========================================================= */
 
-function BadgeCard({
-  badge,
-  onConsultar,
-}) {
-  const especial =
-    String(
-      badge.tipo_badge
-    ).toUpperCase() ===
-    "ESPECIAL";
+function BadgeCard({ badge, onConsultar }) {
+  const especial = String(badge.tipo_badge).toUpperCase() === "ESPECIAL";
 
   return (
     <article
       style={{
         ...badgeCard,
-
-        background: especial
-          ? "#fff3cd"
-          : "white",
-
-        border: especial
-          ? "1px solid #f59e0b"
-          : "1px solid #e5e7eb",
+        background: especial ? "#fff3cd" : "white",
+        border: especial ? "1px solid #f59e0b" : "1px solid #e5e7eb",
       }}
     >
-      <div
-        style={
-          serviceLineTexto
-        }
-      >
+      <div style={serviceLineTexto}>
         Service Line:{" "}
-        <span
-          style={
-            serviceLineLink
-          }
-        >
-          {
-            badge.nome_serviceline
-          }
-        </span>
+        <span style={serviceLineLink}>{badge.nome_serviceline}</span>
       </div>
 
-      <div
-        style={badgeConteudo}
-      >
+      <div style={badgeConteudo}>
         <div
           style={{
             ...badgeImagemBox,
-
-            background: especial
-              ? "#ff8a00"
-              : "#eff6ff",
-
-            border: especial
-              ? "2px solid #f59e0b"
-              : "2px solid #dbeafe",
+            background: especial ? "#ff8a00" : "#eff6ff",
+            border: especial ? "2px solid #f59e0b" : "2px solid #dbeafe",
           }}
         >
           {badge.imagem ? (
             <img
               src={badge.imagem}
-              alt={
-                badge.nome_badge
-              }
+              alt={badge.nome_badge}
               style={badgeImagem}
             />
           ) : (
             <BiMedal
               size={34}
-              color={
-                especial
-                  ? "white"
-                  : "#2563eb"
-              }
+              color={especial ? "white" : "#2563eb"}
             />
           )}
         </div>
 
         <div style={badgeInfo}>
-          <div style={badgeNome}>
-            {badge.nome_badge}
-          </div>
+          <div style={badgeNome}>{badge.nome_badge}</div>
 
-          <div
-            style={
-              badgeDescricao
-            }
-          >
-            {
-              badge
-                .descricao_badge_modelo
-            }
-          </div>
+          <div style={badgeDescricao}>{badge.descricao_badge_modelo}</div>
 
-          <div
-            style={areasTexto}
-          >
-            Área:{" "}
-            {badge.nome_areas}
-          </div>
+          <div style={areasTexto}>Área: {badge.nome_areas}</div>
 
           <DebugBadgePanel badge={badge} />
 
           <span
             style={{
               ...nivelBadge,
-
-              background: especial
-                ? "#ff8a00"
-                : "#eff6ff",
-
-              color: especial
-                ? "white"
-                : "#2563eb",
+              background: especial ? "#ff8a00" : "#eff6ff",
+              color: especial ? "white" : "#2563eb",
             }}
           >
-            {especial
-              ? "Especial"
-              : badge.nome_nivel}
+            {especial ? "Especial" : badge.nome_nivel}
           </span>
         </div>
 
-        <div
-          style={badgeActions}
-        >
+        <div style={badgeActions}>
           <div style={pontosBox}>
-            <div
-              style={pontosLabel}
-            >
-              Pontos
-            </div>
+            <div style={pontosLabel}>Pontos</div>
 
             <div
               style={{
                 ...pontosValor,
-
-                background: especial
-                  ? "#facc15"
-                  : "#eff6ff",
+                background: especial ? "#facc15" : "#eff6ff",
               }}
             >
               {badge.pontos}
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onConsultar}
-            style={consultarButton}
-          >
+          <button type="button" onClick={onConsultar} style={consultarButton}>
             Consultar
           </button>
         </div>
@@ -1246,6 +680,126 @@ function BadgeCard({
     </article>
   );
 }
+
+/* =========================================================
+   PAGINAÇÃO
+========================================================= */
+
+function PaginacaoCatalogo({
+  paginaAtual,
+  totalPaginas,
+  onAnterior,
+  onProxima,
+  onSelecionarPagina,
+}) {
+  if (totalPaginas <= 1) {
+    return null;
+  }
+
+  const disabledAnterior = paginaAtual === 1;
+  const disabledProxima = paginaAtual === totalPaginas;
+
+  const criarPaginasVisiveis = () => {
+    if (totalPaginas <= 5) {
+      return Array.from({ length: totalPaginas }, (_, index) => index + 1);
+    }
+
+    if (paginaAtual <= 3) {
+      return [1, 2, 3, 4, "...", totalPaginas];
+    }
+
+    if (paginaAtual >= totalPaginas - 2) {
+      return [
+        1,
+        "...",
+        totalPaginas - 3,
+        totalPaginas - 2,
+        totalPaginas - 1,
+        totalPaginas,
+      ];
+    }
+
+    return [
+      1,
+      "...",
+      paginaAtual - 1,
+      paginaAtual,
+      paginaAtual + 1,
+      "...",
+      totalPaginas,
+    ];
+  };
+
+  const paginasVisiveis = criarPaginasVisiveis();
+
+  return (
+    <div style={paginationWrapper}>
+      <div style={paginationBox}>
+        <button
+          type="button"
+          onClick={onAnterior}
+          disabled={disabledAnterior}
+          style={{
+            ...paginationButton,
+            color: disabledAnterior ? "#cbd0d6" : "#5f6b7a",
+            cursor: disabledAnterior ? "not-allowed" : "pointer",
+            background: disabledAnterior ? "#fafafa" : "white",
+          }}
+        >
+          ‹
+        </button>
+
+        {paginasVisiveis.map((pagina, index) => {
+          if (pagina === "...") {
+            return (
+              <div key={`ellipsis-${index}`} style={paginationEllipsis}>
+                ...
+              </div>
+            );
+          }
+
+          const ativa = Number(pagina) === Number(paginaAtual);
+
+          return (
+            <button
+              key={pagina}
+              type="button"
+              onClick={() => onSelecionarPagina(Number(pagina))}
+              style={{
+                ...paginationButton,
+                background: ativa ? "#e8edf3" : "white",
+                color: ativa ? "#1f2937" : "#667085",
+                borderColor: ativa ? "#d6dce4" : "transparent",
+                fontWeight: ativa ? 700 : 500,
+                cursor: "pointer",
+              }}
+            >
+              {pagina}
+            </button>
+          );
+        })}
+
+        <div style={paginationCounter}>
+          {paginaAtual}/{totalPaginas}
+        </div>
+
+        <button
+          type="button"
+          onClick={onProxima}
+          disabled={disabledProxima}
+          style={{
+            ...paginationButton,
+            color: disabledProxima ? "#cbd0d6" : "#5f6b7a",
+            cursor: disabledProxima ? "not-allowed" : "pointer",
+            background: disabledProxima ? "#fafafa" : "white",
+          }}
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  );
+};
 
 /* =========================================================
    ESTILOS
@@ -1635,6 +1189,58 @@ const certificadoButton = {
   cursor: "pointer",
   boxShadow:
     "0 2px 5px rgba(15, 23, 42, 0.12)",
+};
+
+const paginationWrapper = {
+  display: "flex",
+  justifyContent: "center",
+  marginTop: 24,
+  marginBottom: 24,
+};
+
+const paginationBox = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+  background: "white",
+  border: "1px solid #dfe3e8",
+  borderRadius: 9,
+  padding: 5,
+  boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+};
+
+const paginationButton = {
+  width: 34,
+  height: 32,
+  border: "1px solid transparent",
+  borderRadius: 6,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 14,
+  lineHeight: 1,
+  padding: 0,
+  transition:
+    "background-color 0.15s ease, border-color 0.15s ease",
+};
+
+const paginationEllipsis = {
+  width: 30,
+  height: 32,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#8a94a3",
+  fontSize: 13,
+};
+
+const paginationCounter = {
+  minWidth: 42,
+  padding: "0 6px",
+  textAlign: "center",
+  color: "#667085",
+  fontSize: 12,
+  fontWeight: 500,
 };
 
 export default CatalogoBadgesTm;

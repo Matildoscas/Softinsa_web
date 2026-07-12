@@ -260,13 +260,15 @@ function InformacaoBadgeTm() {
   const [erro, setErro] =
     useState("");
 
-  const voltarPara =
-    location.state?.voltarPara ||
-    "/tm/badges";
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
 
-  const textoVoltar =
-    location.state?.textoVoltar ||
-    "Voltar ao catálogo";
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm/consultores");
+    }
+  };
 
   useEffect(() => {
     carregarBadge();
@@ -370,16 +372,9 @@ function InformacaoBadgeTm() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button
-            type="button"
-            onClick={() =>
-              navigate(voltarPara)
-            }
-            style={voltarButton}
-          >
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
             <BiArrowBack size={18} />
-
-            {textoVoltar}
+              {textoVoltar}
           </button>
 
           <div style={separador} />

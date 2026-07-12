@@ -45,7 +45,7 @@ function AvaliacaoSolicitacaoTM() {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/tm/consultores");
+      navigate("/tm");
     }
   };
 
@@ -54,42 +54,39 @@ function AvaliacaoSolicitacaoTM() {
       try {
         setLoading(true);
         const response = await api.get(`/candidaturas/pedido/${id}`);
-        const linhasBD = response.data;
+        console.log(response.data);
 
-        if (!linhasBD || linhasBD.length === 0) {
-          setError("Nenhum dado encontrado para esta solicitação.");
+        const dados = response.data;
+
+        if (!dados) {
+          setError("Nenhum dado encontrado.");
           setLoading(false);
           return;
         }
-        
-        const primeiraLinha = linhasBD[0];
 
         setCandidatura({
-          consultor: {
-            id: primeiraLinha.id_consultor,
-            nome: primeiraLinha.nome_consultor,
-            email: primeiraLinha.email_consultor,
-            dataContratacao: primeiraLinha.data_contratacao || "Não disponível", 
-            departamento: primeiraLinha.departamento || "Technology Consulting",
-            badgesConquistados: primeiraLinha.badges_conquistados || 0
-          },
+          consultor: dados.consultor,
+
           badge: {
-            id: primeiraLinha.id_badge,
-            nome: primeiraLinha.nome_badge,
-            descricao: primeiraLinha.descricao_badge,
-            categoria: primeiraLinha.categoria_badge || "Tecnologia",
-            dataSolicitacao: new Date(primeiraLinha.data_submisao).toLocaleDateString('pt-PT')
+            id: dados.id_badge_modelo,
+            nome: dados.nome_badge,
+            descricao: dados.descricao_badge,
+            categoria: "Tecnologia",
+            dataSolicitacao: new Date(dados.data_submisao)
+            .toLocaleDateString("pt-PT")
           }
         });
 
-        const requisitosTratados = linhasBD.map(linha => ({
-          id: linha.id_requisitos,                    
-          idEvidencia: linha.id_evidencia,            
+        const requisitosTratados = dados.requisitos.map(linha => ({
+          estado: linha.id_evidencia
+    ? (linha.estado_evidencia_tm || "PENDENTE")
+    : "SEM_EVIDENCIA"                    
+          ,idEvidencia: linha.id_evidencia,            
           idCandidaturaPedido: linha.id_candidatura_pedido, 
           titulo: linha.nome_requisito,
           descricao: linha.descricao_requisito,
           evidenciaTexto: linha.descricao_evidencia,
-          documento: WebGLVertexArrayObject.nome_ficheiro, // Mantido como original
+          //documento: WebGLVertexArrayObject.nome_ficheiro, 
           documento: linha.nome_ficheiro,
           caminhoFicheiro: linha.caminho_ficheiro, 
           estado: linha.id_evidencia ? (linha.estado_evidencia_tm || 'PENDENTE') : 'SEM_EVIDENCIA'
@@ -315,11 +312,11 @@ function AvaliacaoSolicitacaoTM() {
                     <div style={{ fontWeight: '600', color: '#495057', wordBreak: 'break-all' }}>{candidatura.consultor.email}</div>
                   </div>
                   <div>
-                    <div style={{ color: '#adb5bd', fontSize: '11px', fontWeight: '500' }}>Data de Contratação</div>
+                    <div style={{ color: '#adb5bd', fontSize: '11px', fontWeight: '500' }}>Data de Entrada</div>
                     <div style={{ fontWeight: '600', color: '#495057' }}>{candidatura.consultor.dataContratacao}</div>
                   </div>
                   <div>
-                    <div style={{ color: '#adb5bd', fontSize: '11px', fontWeight: '500' }}>Departamento</div>
+                    <div style={{ color: '#adb5bd', fontSize: '11px', fontWeight: '500' }}>Area do consultor</div>
                     <div style={{ fontWeight: '600', color: '#495057' }}>{candidatura.consultor.departamento}</div>
                   </div>
                   <div>
@@ -349,7 +346,7 @@ function AvaliacaoSolicitacaoTM() {
               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                 <p style={{ margin: 0, fontSize: '11px', color: '#adb5bd', fontWeight: '500' }}>Solicitado em {candidatura.badge.dataSolicitacao}</p>
                 <button
-                  onClick={() => navigate(`/tm/badge/${candidatura.badge.id}`)}
+                  onClick={() => navigate(`/tm/badges/${candidatura.badge.id}`)}
                   style={{ background: 'none', border: '1px solid #6c757d', color: '#495057', padding: '4px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
                 >
                   Ver Detalhes do Badge

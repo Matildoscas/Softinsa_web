@@ -1021,6 +1021,16 @@ function GerarCertificadoTm() {
     }
   }
 
+  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm");
+    }
+  };
+
   /* =======================================================
      GERAR EXCEL / CSV
   ======================================================= */
@@ -1156,15 +1166,9 @@ function GerarCertificadoTm() {
         <TmLeftSidebar />
 
         <main style={conteudo}>
-          <button
-            type="button"
-            onClick={() =>
-              navigate("/tm")
-            }
-            style={voltarButton}
-          >
+          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
             <BiArrowBack size={18} />
-            Voltar
+              {textoVoltar}
           </button>
 
           <div style={separador} />
