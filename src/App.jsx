@@ -25,7 +25,7 @@ import GestaoServiceLines from './pages/Admin/gestao_servicelines.jsx';
 import InformacoesAvisos from './pages/Admin/avisos_informacoes.jsx';
 import PoliticasRGPD from './pages/Admin/politicas_rgpd.jsx';
 import PerfilAdmin from './pages/Admin/perfil_admin.jsx';
-import DefinicoesAdmin from './pages/Admin/definicoes_admin.jsx';
+import DefinicoesAdminPage from './pages/Admin/definicoes_admin.jsx';
 
 import CertificadoPage from './pages/Consultor/certificado.jsx';
 import ConfiguracaoAssinaturaPage from './pages/Consultor/configuracao_assinatura.jsx';
@@ -148,7 +148,7 @@ function App() {
         <Route path="/admin/pedidos-badges" element={<GestaoPedidosBadges />}/>
         <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
         <Route path="/admin/perfil" element={<PerfilAdmin />} />
-        <Route path="/admin/definicoes" element={<DefinicoesAdmin />} />
+        <Route path="/admin/definicoes" element={<DefinicoesAdminPage />} />
 
         // Rotas Service Line Leader
         <Route path="/sll" element={<DashboardSll />} />
