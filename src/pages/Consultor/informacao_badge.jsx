@@ -966,80 +966,47 @@ const revogarPublicacao =
     navigate(`/submeter-evidencias/${badge.id}`);
   }
 
-  const obterUrlPublicaCertificado =
-  async () => {
-    const userId =
-      obterUserId();
+  const obterUrlPublicaCertificado = async () => {
+    const userId = obterUserId();
 
     if (!userId) {
       return "";
     }
 
     const idHistoricoDireto =
-      conquistadoBadge
-        ?.id_candidatura_historico ||
-      conquistadoBadge
-        ?.id_historico ||
-      conquistadoBadge
-        ?.idHistorico;
+      conquistadoBadge?.id_candidatura_historico ||
+      conquistadoBadge?.id_historico ||
+      conquistadoBadge?.idHistorico;
 
     if (idHistoricoDireto) {
       return `${window.location.origin}/verificar/CERT-${idHistoricoDireto}-${userId}`;
     }
 
     try {
-      const response =
-        await api.get(
-          `/certificados/disponiveis/${userId}`
-        );
-
-      const lista =
-        Array.isArray(response.data)
-          ? response.data
-          : Array.isArray(response.data?.certificados)
-            ? response.data.certificados
-            : Array.isArray(response.data?.data)
-              ? response.data.data
-              : [];
-
-      const certificado =
-        lista.find((item) => {
-          const idBadgeCert =
-            item.id_badge_modelo ||
-            item.id_badge ||
-        const estadoPendenteLegivel =
-          pendente
-            ? estadoPendente.includes(
-                "REJEIT"
-              ) || estadoPendente.includes(
-                "RECUS"
-              )
-              ? "Candidatura rejeitada"
-              : estadoPendente.includes(
-                  "CANDIDATURA_EFETUADA"
-                )
-                ? "Candidatura efetuada"
-                : estadoPendente.includes(
-                    "CANDIDATURA_INICIADA"
-                  )
-                  ? "Candidatura iniciada"
-                  : estadoPendente.includes(
-                    "RASCUNHO"
-                  )
-                    ? "Candidatura iniciada"
-                    : pendenteTemEvidencias ||
-                        estadoPendente.includes(
-                          "PENDENTE"
-                        ) ||
-                        estadoPendente.includes(
-                          "VALIDAC"
-                        )
-                      ? "Candidatura efetuada"
-                      : "Candidatura iniciada"
-            : "";
-        err
+      const response = await api.get(
+        `/certificados/disponiveis/${userId}`
       );
 
+      const lista = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.certificados)
+          ? response.data.certificados
+          : Array.isArray(response.data?.data)
+            ? response.data.data
+            : [];
+
+      const certificado = lista.find((item) => {
+        const idBadgeCert =
+          item.id_badge_modelo ||
+          item.id_badge ||
+          item.id;
+
+        return Number(idBadgeCert) === Number(badge?.id);
+      });
+
+      return certificado?.url_publica || "";
+    } catch (err) {
+      console.error("Erro ao obter URL pública do certificado:", err);
       return "";
     }
   };
