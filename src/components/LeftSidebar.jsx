@@ -6,6 +6,7 @@ import {
 import {
   BiChevronDown,
   BiChevronRight,
+  BiBook,
   BiGlobe,
   BiGrid,
   BiMedal,
@@ -32,6 +33,7 @@ function LeftSidebar() {
 
   const rotasBadges = [
     "/catalogo-badges",
+    "/progresso-badges",
     "/meus_badges",
     "/badge-detalhe",
     "/historico_badges",
@@ -205,6 +207,13 @@ function LeftSidebar() {
           <SidebarItem
             to="/catalogo-badges"
             label="Catálogo de Badges"
+            nested
+          />
+
+          <SidebarItem
+            to="/progresso-badges"
+            icon={<BiBook size={15} />}
+            label="Progresso dos Badges"
             nested
           />
 

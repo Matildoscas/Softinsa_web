@@ -124,6 +124,16 @@ function PaginaPerfil() {
               badgesRaw
             );
 
+          const totalPontosCalculado =
+            badgesUnicos.reduce(
+              (total, badge) =>
+                total +
+                obterPontosTotaisBadge(
+                  badge
+                ),
+              0
+            );
+
           setStats({
             total_badges:
               Number(
@@ -133,21 +143,7 @@ function PaginaPerfil() {
               ),
 
             total_pontos:
-              Math.max(
-                Number(
-                  dashboardRes.data
-                    .total_pontos ||
-                  0
-                ),
-                badgesUnicos.reduce(
-                  (total, badge) =>
-                    total +
-                    obterPontosTotaisBadge(
-                      badge
-                    ),
-                  0
-                )
-              ),
+              totalPontosCalculado,
           });
 
           setBadgesConquistados(

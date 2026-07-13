@@ -608,31 +608,13 @@ function DashboardConsultor() {
                         0
                     ),
 
-                    total_pontos: Math.max(
-                        Number(
-                            dashboardRes.data
-                                .total_pontos ||
-                            0
-                        ),
-
-                        badgesUnicos.reduce(
-                            (total, badge) => {
-                                const pontosBase =
-                                    Number(
-                                        badge.pontos ||
-                                        0
-                                    );
-
-                                const pontosExtra =
-                                    Number(
-                                        badge.pontos_extra ||
-                                        0
-                                    );
-
-                                return total + pontosBase + pontosExtra;
-                            },
-                            0
-                        )
+                    total_pontos: badgesUnicos.reduce(
+                        (total, badge) =>
+                            total +
+                            obterPontosTotaisBadge(
+                                badge
+                            ),
+                        0
                     ),
                 });
 

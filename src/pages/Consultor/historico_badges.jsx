@@ -71,6 +71,16 @@ function HistoricoBadgesPage() {
           badgesRaw
         );
 
+        const totalPontosCalculado =
+          badgesUnicos.reduce(
+            (total, badge) =>
+              total +
+              obterPontosTotaisBadge(
+                badge
+              ),
+            0
+          );
+
         console.table(
             badgesRaw.map((b) => ({
                 id: b.id,
@@ -95,7 +105,7 @@ function HistoricoBadgesPage() {
 
         setStats({
           total_badges: Number(dashboardRes.data.total_badges || 0),
-          total_pontos: Number(dashboardRes.data.total_pontos || 0),
+          total_pontos: totalPontosCalculado,
         });
       })
       .catch((err) => {

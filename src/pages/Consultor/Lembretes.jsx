@@ -40,6 +40,8 @@ import Header from "../../components/Header.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 
+import { obterPontosTotaisBadge } from "../../utils/badgeBonus.js";
+
 function construirRotaSubmissaoBadge(
   idBadgeModelo
 ) {
@@ -1887,9 +1889,7 @@ function LembretePage() {
                             badge.nome_badge
                           }{" "}
                           —{" "}
-                          {
-                            badge.pontos
-                          }{" "}
+                          {obterPontosTotaisBadge(badge)}{" "}
                           pontos
                         </option>
                       )

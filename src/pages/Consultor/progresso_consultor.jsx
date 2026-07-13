@@ -500,12 +500,22 @@ function ProgressoPage() {
                 )
                 .slice(0, 3);
 
+            const totalPontosCalculado =
+              conquistados.reduce(
+                (total, badge) =>
+                  total +
+                  obterPontosTotaisBadge(
+                    badge
+                  ),
+                0
+              );
+
             setBadgesProgresso(learningPaths);
             setBadgesConquistados(ranking);
 
             setStats({
                 total_badges: Number(dashboardRes.data.total_badges || 0),
-                total_pontos: Number(dashboardRes.data.total_pontos || 0),
+              total_pontos: totalPontosCalculado,
             });
 
             setBadgeStats({
