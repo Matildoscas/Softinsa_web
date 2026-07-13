@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineArrowLeft } from "react-icons/hi";
 import {
@@ -8,22 +8,27 @@ import {
   HiOutlineDocumentText,
   HiOutlineLogout,
   HiOutlineTrash,
+  HiOutlinePhotograph,
 } from "react-icons/hi";
 import { BiChevronRight } from "react-icons/bi";
 
 import Header from "../../components/Header.jsx";
 import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
-import api from "../../services/api.js";
+import api, { buildUploadUrl } from "../../services/api.js";
 
 function DefinicoesConsultorPage() {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [user, setUser] = useState(null);
 
   const [nome, setNome] = useState("");
   const [contacto, setContacto] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [fotoFile, setFotoFile] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState(null);
+  const [isSavingFoto, setIsSavingFoto] = useState(false);
 
   const [passwordAtual, setPasswordAtual] = useState("");
   const [novaPassword, setNovaPassword] = useState("");
@@ -48,6 +53,9 @@ function DefinicoesConsultorPage() {
     setUser(userData);
     setNome(userData.nome_completo || userData.nome || "");
     setContacto("");
+    if (userData.foto_perfil) {
+      setFotoPreview(buildUploadUrl(userData.foto_perfil));
+    }
 
     api.get(`/utilizadores/${userId}`)
       .then((res) => {
@@ -65,13 +73,25 @@ function DefinicoesConsultorPage() {
             userData.nome_completo,
           contacto:
             utilizador.contacto || "",
+            foto_perfil:
+              utilizador.foto_perfil ||
+              utilizador.FOTO_PERFIL ||
+              userData.foto_perfil ||
+              null,
         };
+        
 
         localStorage.setItem("user", JSON.stringify(userAtualizado));
 
         setUser(userAtualizado);
         setNome(userAtualizado.nome_completo || userAtualizado.nome || "");
         setContacto(userAtualizado.contacto || "");
+        setFotoPreview(
+          userAtualizado.foto_perfil
+            ? buildUploadUrl(userAtualizado.foto_perfil)
+            : null
+        );
+
       })
       .catch((err) => {
         console.error("Erro ao carregar utilizador:", err);
@@ -110,11 +130,113 @@ function DefinicoesConsultorPage() {
         utilizadorAtualizado.estado_conta ||
         utilizadorAtualizado.ESTADO_CONTA ||
         user.estado_conta,
+      foto_perfil:
+        utilizadorAtualizado.foto_perfil ||
+        utilizadorAtualizado.FOTO_PERFIL ||
+        user.foto_perfil ||
+        null,
     };
 
     localStorage.setItem("user", JSON.stringify(userAtualizado));
     setUser(userAtualizado);
   };
+
+  function handleEscolherFoto(e) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const tiposPermitidos = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+    ];
+
+    if (!tiposPermitidos.includes(file.type)) {
+      alert("A imagem deve ser PNG, JPG, JPEG ou WEBP.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("A imagem não pode ter mais de 2MB.");
+      return;
+    }
+
+    setFotoFile(file);
+    setFotoPreview(URL.createObjectURL(file));
+  }
+
+  async function handleGuardarFoto() {
+    const id = getUserId();
+
+    if (!id) {
+      alert("Sessão inválida. Faça login novamente.");
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    if (!fotoFile) {
+      alert("Escolhe uma imagem primeiro.");
+      return;
+    }
+
+    try {
+      setIsSavingFoto(true);
+
+      const formData = new FormData();
+      formData.append("foto", fotoFile);
+
+      const response = await api.put(
+        `/utilizadores/${id}/foto`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const dadosFoto =
+        response.data?.dados ||
+        response.data?.utilizador ||
+        response.data;
+
+      const fotoPerfilAtualizada =
+        dadosFoto.foto_perfil ||
+        dadosFoto.FOTO_PERFIL ||
+        dadosFoto.foto ||
+        null;
+
+      const userAtualizado = {
+        ...user,
+        foto_perfil: fotoPerfilAtualizada,
+      };
+
+      localStorage.setItem("user", JSON.stringify(userAtualizado));
+      setUser(userAtualizado);
+      setFotoFile(null);
+
+      setFotoPreview(
+        fotoPerfilAtualizada
+          ? buildUploadUrl(fotoPerfilAtualizada)
+          : fotoPreview
+      );
+
+      alert("Foto de perfil atualizada com sucesso.");
+    } catch (err) {
+      console.error("Erro ao atualizar foto:", err);
+      console.error("STATUS:", err.response?.status);
+      console.error("BODY:", err.response?.data);
+
+      alert(
+        err.response?.data?.error ||
+          "Erro ao atualizar foto de perfil."
+      );
+    } finally {
+      setIsSavingFoto(false);
+    }
+  }
 
   const handleGuardarPerfil = async () => {
     const id = getUserId();
@@ -355,6 +477,63 @@ function DefinicoesConsultorPage() {
             </div>
 
             <div style={rightCol}>
+              <SectionCard titulo="Foto de Perfil">
+                <div style={fotoContainer}>
+                  <div style={fotoPreviewBox}>
+                    {fotoPreview ? (
+                      <img
+                        src={fotoPreview}
+                        alt="Foto de perfil"
+                        style={fotoPreviewImg}
+                      />
+                    ) : (
+                      <HiOutlineUser size={46} color="#9ca3af" />
+                    )}
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div style={fotoTitle}>
+                      Atualizar fotografia
+                    </div>
+
+                    <div style={fotoSubText}>
+                      Usa uma imagem PNG, JPG ou WEBP até 2MB.
+                    </div>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      style={{ display: "none" }}
+                      onChange={handleEscolherFoto}
+                    />
+
+                    <button
+                      type="button"
+                      style={secondaryPhotoBtn}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <HiOutlinePhotograph size={16} />
+                      Escolher foto
+                    </button>
+                  </div>
+                </div>
+
+                {fotoFile && (
+                  <button
+                    style={{
+                      ...primaryBtn,
+                      opacity: isSavingFoto ? 0.7 : 1,
+                      cursor: isSavingFoto ? "not-allowed" : "pointer",
+                      marginTop: 14,
+                    }}
+                    onClick={handleGuardarFoto}
+                    disabled={isSavingFoto}
+                  >
+                    {isSavingFoto ? "A guardar foto..." : "Guardar foto"}
+                  </button>
+                )}
+              </SectionCard>
               <SectionCard titulo="Conta">
                 <OptionRow
                   icon={<HiOutlineDocumentText size={18} />}
@@ -731,6 +910,59 @@ const dangerBtn = {
   color: "white",
   fontSize: 14,
   fontWeight: 600,
+  cursor: "pointer",
+};
+
+const fotoContainer = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+};
+
+const fotoPreviewBox = {
+  width: 76,
+  height: 76,
+  borderRadius: "50%",
+  background: "#f3f4f6",
+  border: "2px solid #e5e7eb",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  flexShrink: 0,
+};
+
+const fotoPreviewImg = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+};
+
+const fotoTitle = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: "#111827",
+  marginBottom: 4,
+};
+
+const fotoSubText = {
+  fontSize: 12,
+  color: "#6b7280",
+  lineHeight: 1.4,
+  marginBottom: 10,
+};
+
+const secondaryPhotoBtn = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  border: "1px solid #cbd5e1",
+  background: "white",
+  color: "#4470AF",
+  borderRadius: 9,
+  padding: "8px 12px",
+  fontSize: 13,
+  fontWeight: 700,
   cursor: "pointer",
 };
 
