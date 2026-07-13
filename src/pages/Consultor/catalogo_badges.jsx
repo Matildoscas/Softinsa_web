@@ -1342,6 +1342,18 @@ function CatalogoBadgeRow({
     conquistado &&
     ganhouBonus;
 
+  const desafioAtivo =
+    !conquistado &&
+    (
+      Boolean(
+        desafio?.id_lembrete
+      ) ||
+      Boolean(
+        pendente
+          ?.tem_desafio_ativo
+      )
+    );
+
   const pontosExtraVisiveis =
     bonusAtivo
       ? pontosExtra
@@ -1358,18 +1370,6 @@ function CatalogoBadgeRow({
       : desafioAtivo
         ? pontos * 2
         : pontos;
-
-  const desafioAtivo =
-    !conquistado &&
-    (
-      Boolean(
-        desafio?.id_lembrete
-      ) ||
-      Boolean(
-        pendente
-          ?.tem_desafio_ativo
-      )
-    );
 
   const desafioTitulo =
     desafio?.titulo ||
