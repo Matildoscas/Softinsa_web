@@ -257,7 +257,7 @@ function CertificadoPage() {
       textoNivelNormalizado.includes("MASTER") ||
       textoNivelNormalizado.includes("LIDER DE CONHECIMENTO")
     ) {
-      return "Nível E";o
+      return "Nível E";
     }
 
     const nivelTexto = textoNivelNormalizado.match(
@@ -353,8 +353,8 @@ function CertificadoPage() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
-        <Spinner animation="border" variant="primary" />
+      <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }} role="status" aria-live="polite" aria-label="A carregar certificado">
+        <Spinner animation="border" variant="primary" aria-hidden="true" />
       </div>
     );
   }
@@ -368,14 +368,14 @@ function CertificadoPage() {
           <LeftSidebar />
 
           <main style={mainStyle}>
-            <button style={backBtn} onClick={() => navigate(-1)}>
+            <button style={backBtn} onClick={() => navigate(-1)} aria-label="Voltar para a pagina anterior">
               <HiOutlineArrowLeft style={{ marginRight: 6 }} />
               Voltar
             </button>
 
             <hr style={{ borderColor: "#e5e7eb", margin: "8px 0 20px" }} />
 
-            <div className="text-muted">
+            <div className="text-muted" role="status" aria-live="polite">
               Certificado não encontrado ou badge ainda não conquistado.
             </div>
           </main>
@@ -421,15 +421,15 @@ function CertificadoPage() {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <LeftSidebar />
 
-        <main style={mainStyle}>
-          <button style={backBtn} onClick={() => navigate(-1)}>
+        <main style={mainStyle} aria-labelledby="titulo-certificado-consultor">
+          <button style={backBtn} onClick={() => navigate(-1)} aria-label="Voltar para a pagina anterior">
             <HiOutlineArrowLeft style={{ marginRight: 6 }} />
             Voltar
           </button>
 
           <hr style={{ borderColor: "#e5e7eb", margin: "8px 0 20px" }} />
 
-          <div style={certCard} id="certificado-print">
+          <div style={certCard} id="certificado-print" role="region" aria-labelledby="titulo-certificado-consultor">
             <div style={certificateTopLine} />
             <div style={certificateHeader}>
             <img
@@ -438,7 +438,7 @@ function CertificadoPage() {
               style={certLogo}
             />
 
-            <div style={certTitle}>
+            <div style={certTitle} id="titulo-certificado-consultor">
               Certificado de Competências
             </div>
 
@@ -517,17 +517,18 @@ function CertificadoPage() {
             <div style={{ height: 40 }} />
 
             <div style={actionsRow} className="no-print">
-              <button style={actionBtn} onClick={handleGerarPDF}>
+              <button style={actionBtn} onClick={handleGerarPDF} aria-label="Gerar certificado em PDF">
                 Gerar PDF
               </button>
 
-              <button style={actionBtn} onClick={handleGerarExcel}>
+              <button style={actionBtn} onClick={handleGerarExcel} aria-label="Gerar certificado em Excel">
                 Gerar Excel
               </button>
 
               <button
                 style={actionBtn}
                 onClick={handleCopiarLinkVerificacao}
+                aria-label="Copiar link de verificacao do certificado"
               >
                 Copiar Link de Verificação
               </button>

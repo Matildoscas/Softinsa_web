@@ -1160,13 +1160,14 @@ function gerarExcel() {
       <div style={corpo}>
         <SllLeftSidebar />
 
-        <main style={conteudo}>
+        <main style={conteudo} aria-labelledby="titulo-gerar-certificado-sll">
           <button
             type="button"
             onClick={() =>
               navigate("/sll")
             }
             style={voltarButton}
+            aria-label="Voltar para a pagina principal do Service Line Leader"
           >
             <BiArrowBack size={18} />
             Voltar
@@ -1175,7 +1176,7 @@ function gerarExcel() {
           <div style={separador} />
 
           <div style={cabecalhoPagina}>
-            <h1 style={titulo}>
+            <h1 style={titulo} id="titulo-gerar-certificado-sll">
               Gerar Certificado
             </h1>
 
@@ -1196,18 +1197,18 @@ function gerarExcel() {
           </div>
 
           {erro && (
-            <div style={erroBox}>
+            <div style={erroBox} role="alert" aria-live="assertive">
               {erro}
             </div>
           )}
 
           {mensagem && (
-            <div style={sucessoBox}>
+            <div style={sucessoBox} role="status" aria-live="polite">
               {mensagem}
             </div>
           )}
 
-          <section style={certificadoCard}>
+          <section style={certificadoCard} aria-label="Formulario de geracao de certificado">
             <div style={cardTitulo}>
               <BiCertification
                 size={20}
@@ -1219,18 +1220,20 @@ function gerarExcel() {
 
             <div style={formGrid}>
               <div style={campo}>
-                <label style={label}>
+                <label style={label} htmlFor="sll-consultor-select">
                   <BiUser size={16} />
                   Nome do consultor
                 </label>
 
                 <select
+                  id="sll-consultor-select"
                   value={idConsultor}
                   onChange={alterarConsultor}
                   disabled={
                     isLoadingConsultores
                   }
                   style={select}
+                  aria-label="Selecionar consultor"
                 >
                   <option value="">
                     {isLoadingConsultores
@@ -1270,13 +1273,14 @@ function gerarExcel() {
               </div>
 
               <div style={campo}>
-                <label style={label}>
+                <label style={label} htmlFor="sll-badge-select">
                   <BiBadge size={16} />
                   Badge conquistado pelo
                   consultor
                 </label>
 
                 <select
+                  id="sll-badge-select"
                   value={idHistorico}
                   onChange={(event) => {
                     setIdHistorico(
@@ -1290,6 +1294,7 @@ function gerarExcel() {
                     isLoadingBadges
                   }
                   style={select}
+                  aria-label="Selecionar badge conquistado"
                 >
                   <option value="">
                     {!idConsultor
@@ -1403,6 +1408,7 @@ function gerarExcel() {
                         ? "not-allowed"
                         : "pointer",
                 }}
+                      aria-label="Preparar pre-visualizacao do certificado"
                 >
                 <BiCertification size={18} />
 

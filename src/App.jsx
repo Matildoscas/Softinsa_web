@@ -65,6 +65,7 @@ import InformacaoBadgeSll from './pages/ServiceLineLeader/informacao_badge_sll.j
 import InformacaoConsultorSll from './pages/ServiceLineLeader/informacao_consultor_sll.jsx';
 import ListaConsultoresSll from './pages/ServiceLineLeader/lista_consultores_sll.jsx';
 import NotificacoesSllPage from './pages/ServiceLineLeader/notificacoes_sll.jsx';
+import PerfilSllPage from './pages/ServiceLineLeader/perfil_sll.jsx';
 import RankingBadgesSll from './pages/ServiceLineLeader/ranking_badges_sll.jsx';
 import SolicitacoesBadgesSll from './pages/ServiceLineLeader/solicitacoes_badges_sll.jsx';
 import StatusCandidaturasSllPage from './pages/ServiceLineLeader/status_candidaturas_sll.jsx';
@@ -162,6 +163,7 @@ function App() {
         <Route path="/sll/relatorios" element={<GerarRelatorioSll />} />
         <Route path="/sll/consultores" element={<ListaConsultoresSll />}/>
         <Route path="/sll/consultores/:idConsultor" element={<InformacaoConsultorSll />}/>
+        <Route path="/sll/perfil" element={<PerfilSllPage />}/>
         <Route path="/sll/definicoes" element={<DefinicoesSllPage />}/>
         <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
         <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSllPage />}/>

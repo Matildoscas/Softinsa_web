@@ -976,11 +976,12 @@ function GerarCertificadoTm() {
       <div style={corpo}>
         <TmLeftSidebar />
 
-        <main style={conteudo}>
+        <main style={conteudo} aria-labelledby="titulo-gerar-certificado-tm">
           <button
             type="button"
             onClick={lidarComVoltar}
             style={voltarButton}
+            aria-label="Voltar para a pagina anterior"
           >
             <BiArrowBack size={18} />
             {textoVoltar}
@@ -990,7 +991,7 @@ function GerarCertificadoTm() {
 
           <div style={paginaInterna}>
             <div style={cabecalhoPagina}>
-              <h1 style={titulo}>
+              <h1 style={titulo} id="titulo-gerar-certificado-tm">
                 Gerar Certificado
               </h1>
 
@@ -1011,19 +1012,20 @@ function GerarCertificadoTm() {
             </div>
 
             {erro && (
-              <div style={erroBox}>
+              <div style={erroBox} role="alert" aria-live="assertive">
                 {erro}
               </div>
             )}
 
             {mensagem && (
-              <div style={sucessoBox}>
+              <div style={sucessoBox} role="status" aria-live="polite">
                 {mensagem}
               </div>
             )}
 
             <section
               style={certificadoCard}
+              aria-label="Formulario de geracao de certificado"
             >
               <div style={cardTitulo}>
                 <BiCertification
@@ -1035,18 +1037,20 @@ function GerarCertificadoTm() {
 
               <div style={formGrid}>
                 <div style={campo}>
-                  <label style={label}>
+                  <label style={label} htmlFor="tm-consultor-select">
                     <BiUser size={16} />
                     Nome do consultor
                   </label>
 
                   <select
+                    id="tm-consultor-select"
                     value={idConsultor}
                     onChange={alterarConsultor}
                     disabled={
                       isLoadingConsultores
                     }
                     style={select}
+                    aria-label="Selecionar consultor"
                   >
                     <option value="">
                       {isLoadingConsultores
@@ -1087,13 +1091,14 @@ function GerarCertificadoTm() {
                 </div>
 
                 <div style={campo}>
-                  <label style={label}>
+                  <label style={label} htmlFor="tm-badge-select">
                     <BiBadge size={16} />
                     Badge conquistado pelo
                     consultor
                   </label>
 
                   <select
+                    id="tm-badge-select"
                     value={idHistorico}
                     onChange={alterarBadge}
                     disabled={
@@ -1101,6 +1106,7 @@ function GerarCertificadoTm() {
                       isLoadingBadges
                     }
                     style={select}
+                    aria-label="Selecionar badge conquistado"
                   >
                     <option value="">
                       {!idConsultor
@@ -1227,6 +1233,7 @@ function GerarCertificadoTm() {
                       ? "not-allowed"
                       : "pointer",
                 }}
+                aria-label="Preparar pre-visualizacao do certificado"
               >
                 <BiCertification
                   size={18}

@@ -555,6 +555,11 @@ function SubmeterEvidenciasPage() {
       ? Math.min(3, badge.requisitos.length)
       : 0;
 
+  const textoMinimoEnvio =
+    minimoParaEnviar > 0
+      ? `A candidatura e iniciada em modo rascunho. Pode guardar progresso, cancelar com motivo ou enviar quando tiver pelo menos ${minimoParaEnviar} ficheiros distribuidos por ${minimoParaEnviar} requisitos. Podes anexar mais do que ${minimoParaEnviar} evidencias.`
+      : "A candidatura e iniciada em modo rascunho. Pode guardar progresso e enviar quando tiver evidencias anexadas.";
+
   const podeEnviar =
     minimoParaEnviar > 0 &&
     totalFicheiros >= minimoParaEnviar &&
@@ -817,7 +822,7 @@ function SubmeterEvidenciasPage() {
           <div style={sectionCard}>
             <div style={sectionTitle}>Descrição</div>
             <p style={{ fontSize: 13, color: "#374151", marginTop: 8, marginBottom: 0, lineHeight: 1.65 }}>
-              A candidatura é iniciada em modo rascunho. Pode guardar progresso, cancelar com motivo ou enviar quando tiver pelo menos 3 ficheiros distribuídos por 3 requisitos.
+              {textoMinimoEnvio}
             </p>
           </div>
 
