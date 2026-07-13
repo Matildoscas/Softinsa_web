@@ -647,11 +647,25 @@ function BadgeDetailPage() {
                 "DESAFIO_TM" &&
               Number(
                 item.id_badge_modelo
-              ) === Number(id)
+              ) === Number(id) &&
+              ![
+                "CONCLUIDO",
+                "CONCLUIDO_SEM_PREMIO",
+                "RECUSADO",
+                "REJEITADO_VALIDACAO",
+                "CANCELADO",
+              ].includes(
+                String(
+                  item.estado_lembrete ||
+                    ""
+                ).toUpperCase()
+              )
           );
 
         setDesafiosBadge(
-          desafiosDoBadge
+          badgeConquistado
+            ? []
+            : desafiosDoBadge
         );
 
         setConquistado(!!badgeConquistado);

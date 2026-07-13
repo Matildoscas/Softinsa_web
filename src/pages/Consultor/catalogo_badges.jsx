@@ -1351,12 +1351,15 @@ function CatalogoBadgeRow({
       : pontos;
 
   const desafioAtivo =
-    Boolean(
-      desafio?.id_lembrete
-    ) ||
-    Boolean(
-      pendente
-        ?.tem_desafio_ativo
+    !conquistado &&
+    (
+      Boolean(
+        desafio?.id_lembrete
+      ) ||
+      Boolean(
+        pendente
+          ?.tem_desafio_ativo
+      )
     );
 
   const desafioTitulo =
