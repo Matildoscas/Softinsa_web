@@ -16,6 +16,77 @@ import {
   removerBadgesDuplicados,
 } from "../../utils/badgeBonus.js";
 
+function normalizarTexto(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+function obterCodigoNivelBadge(badge) {
+  const codigoDireto =
+    badge.codigo_nivel ||
+    badge.CODIGO_NIVEL ||
+    badge.nivel_codigo ||
+    "";
+
+  if (codigoDireto) {
+    return normalizarTexto(codigoDireto);
+  }
+
+  const nomeNivel =
+    badge.nome_nivel ||
+    badge.NOME_NIVEL ||
+    badge.nivel ||
+    badge.nomeNivel ||
+    "";
+
+  const nome = normalizarTexto(nomeNivel);
+
+  if (["A", "JUNIOR"].includes(nome)) return "A";
+  if (["B", "INTERMEDIO"].includes(nome)) return "B";
+  if (["C", "SENIOR"].includes(nome)) return "C";
+  if (["D", "ESPECIALISTA"].includes(nome)) return "D";
+
+  if (
+    [
+      "E",
+      "LIDER DE CONHECIMENTO",
+      "LEADER OF KNOWLEDGE",
+      "KNOWLEDGE LEADER",
+    ].includes(nome)
+  ) {
+    return "E";
+  }
+
+  const idNivel = Number(badge.id_nivel || badge.ID_NIVEL || 0);
+
+  if (idNivel >= 1 && idNivel <= 5) {
+    return ["", "A", "B", "C", "D", "E"][idNivel];
+  }
+
+  const pontosBase = Number(badge.pontos || 0);
+
+  if (pontosBase === 50) return "A";
+  if (pontosBase === 100) return "B";
+  if (pontosBase === 150) return "C";
+  if (pontosBase === 200) return "D";
+  if (pontosBase === 300) return "E";
+
+  return "";
+}
+
+function badgeEhEspecial(badge) {
+  return obterCodigoNivelBadge(badge) === "E";
+}
+
+function badgeEhComum(badge) {
+  return ["A", "B", "C", "D"].includes(
+    obterCodigoNivelBadge(badge)
+  );
+}
+
 function MeusBadgesPage() {
   const navigate = useNavigate();
 
@@ -109,16 +180,16 @@ function MeusBadgesPage() {
       : true;
 
     const matchNivel = nivelFiltro
-      ? Number(b.id_nivel) === Number(nivelFiltro)
+      ? codigoNivel === nivelFiltro
       : true;
 
-    const nivel = Number(b.id_nivel || 0);
+    const codigoNivel = obterCodigoNivelBadge(b);
 
     const matchTipo =
       tipoFiltro === "comuns"
-        ? nivel >= 1 && nivel <= 4
+        ? badgeEhComum(b)
         : tipoFiltro === "especiais"
-          ? nivel === 5
+          ? badgeEhEspecial(b)
           : true;
 
     return matchArea && matchNivel && matchTipo;
@@ -241,11 +312,11 @@ function MeusBadgesPage() {
                   style={filterInput}
                 >
                   <option value="">Todos</option>
-                  <option value="1">Nível A</option>
-                  <option value="2">Nível B</option>
-                  <option value="3">Nível C</option>
-                  <option value="4">Nível D</option>
-                  <option value="5">Nível E</option>
+                  <option value="A">Nível A</option>
+                  <option value="B">Nível B</option>
+                  <option value="C">Nível C</option>
+                  <option value="D">Nível D</option>
+                  <option value="E">Nível E</option>
                 </Form.Select>
               </div>
             </div>
