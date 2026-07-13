@@ -30,7 +30,6 @@ function SolicitacaoBadges() {
   const [loading, setLoading] = useState(true);
 
   // Estados dos Filtros
-  const [filtroEstado, setFiltroEstado] = useState("Todos"); // "Todos", "Por avaliar", "Em avaliação"
   const [filtroAmbito, setFiltroAmbito] = useState("MinhaArea"); // 🎯 NOVO FILTRO: "MinhaArea" ou "Todos"
   const [pesquisa, setPesquisa] = useState("");
 
@@ -71,10 +70,7 @@ function SolicitacaoBadges() {
       const estadoCandidatura = c.estado_validacao || c.estado || "Por avaliar";
       const matchEstado = filtroEstado === "Todos" ? true : estadoCandidatura === filtroEstado;
 
-      // 3. 🎯 NOVO: Filtro por Âmbito de Visualização (Minha Área vs Todas)
-      const matchAmbito = filtroAmbito === "Todos" ? true : c.da_minha_area === true;
-
-      return matchTexto && matchEstado && matchAmbito;
+      return matchTexto && matchEstado;
     })
     .sort((a, b) => {
       // ORDENAÇÃO SOLICITADA: Mais perto de acabar em cima
@@ -113,19 +109,6 @@ function SolicitacaoBadges() {
             {/* BARRA DE FILTROS RECONFIGURADA */}
             <div style={filterBar}>
               
-              {/* 🎯 NOVO: Dropdown de Escopo de Visualização */}
-              <div style={filterGroup}>
-                <label style={filterLabel}>Visualização</label>
-                <Form.Select 
-                  style={{ ...filterInput, width: "190px", borderColor: "#2563EB", fontWeight: "500" }}
-                  value={filtroAmbito}
-                  onChange={(e) => setFiltroAmbito(e.target.value)}
-                >
-                  <option value="MinhaArea">Minha Área / SL</option>
-                  <option value="Todos">Todas as Áreas</option>
-                </Form.Select>
-              </div>
-
               {/* Filtro por Estado de Avaliação */}
               <div style={filterGroup}>
                 <label style={filterLabel}>Filtrar por Estado</label>
@@ -244,13 +227,7 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
           <span style={{ fontSize: "22px" }}>🏅</span>
           <div>
             <div style={badgeTitle}>
-              {badgeNome} 
-              {/* 🎯 TAG VISUAL EXTRA: Mostra um pequeno badge caso a candidatura seja de fora da área dele */}
-              {!pedido.da_minha_area && (
-                <span style={{ fontSize: '10px', marginLeft: '8px', padding: '2px 6px', backgroundColor: '#f3f4f6', color: '#6b7280', borderRadius: '4px', fontWeight: 'normal' }}>
-                  Outra Área
-                </span>
-              )}
+              {badgeNome}               
             </div>
             <div style={serviceLine}>{areaNome}</div>
           </div>
