@@ -154,6 +154,10 @@ function CriarDesafioTm() {
 
   const [badges, setBadges] = useState([]);
 
+  const [badgesConquistadosIds, setBadgesConquistadosIds] = useState([]);
+
+  const [badgesComDesafioAtivoIds, setBadgesComDesafioAtivoIds] = useState([]);
+
   const [idConsultor, setIdConsultor] = useState(idConsultorInicial);
 
   const [idBadgeModelo, setIdBadgeModelo] = useState("");
@@ -165,6 +169,8 @@ function CriarDesafioTm() {
   const [descricao, setDescricao] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isLoadingBadgesConsultor, setIsLoadingBadgesConsultor] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -240,6 +246,66 @@ function CriarDesafioTm() {
     }
   }
 
+  useEffect(() => {
+    async function carregarBadgesConquistadosConsultor() {
+      if (!idConsultor) {
+        setBadgesConquistadosIds([]);
+        setBadgesComDesafioAtivoIds([]);
+        return;
+      }
+
+      try {
+        setIsLoadingBadgesConsultor(true);
+
+        const [respostaBadges, respostaLembretes] = await Promise.all([
+          api.get(`/badges/conquistados/${idConsultor}`),
+          api.get(`/lembretes/consultor/${idConsultor}`),
+        ]);
+
+        const ids = Array.isArray(respostaBadges.data)
+          ? respostaBadges.data.map((badge) =>
+              String(
+                badge.id_badge_modelo ||
+                  badge.id,
+              ),
+            )
+          : [];
+
+        const desafiosAtivosIds = Array.isArray(
+          respostaLembretes.data?.todos,
+        )
+          ? respostaLembretes.data.todos
+              .filter(
+                (item) =>
+                  String(item.tipo_lembrete || "").toUpperCase() ===
+                    "DESAFIO_TM" &&
+                  [
+                    "AGUARDA_ACEITACAO",
+                    "PENDENTE",
+                    "EM_VALIDACAO",
+                    "ATRASADO",
+                  ].includes(
+                    String(item.estado_lembrete || "").toUpperCase(),
+                  ),
+              )
+              .map((item) => String(item.id_badge_modelo))
+          : [];
+
+        setBadgesConquistadosIds(ids);
+        setBadgesComDesafioAtivoIds(desafiosAtivosIds);
+      } catch (err) {
+        console.error("Erro ao carregar badges conquistados do consultor:", err);
+
+        setBadgesConquistadosIds([]);
+        setBadgesComDesafioAtivoIds([]);
+      } finally {
+        setIsLoadingBadgesConsultor(false);
+      }
+    }
+
+    carregarBadgesConquistadosConsultor();
+  }, [idConsultor]);
+
   const consultorSelecionado = useMemo(
     () =>
       consultores.find(
@@ -248,13 +314,49 @@ function CriarDesafioTm() {
     [consultores, idConsultor],
   );
 
+  const badgesDisponiveis = useMemo(
+    () =>
+      badges.filter(
+        (badge) =>
+          !badgesConquistadosIds.includes(
+            String(badge.id_badge_modelo),
+          ) &&
+          !badgesComDesafioAtivoIds.includes(
+            String(badge.id_badge_modelo),
+          ),
+      ),
+    [
+      badges,
+      badgesComDesafioAtivoIds,
+      badgesConquistadosIds,
+    ],
+  );
+
   const badgeSelecionado = useMemo(
     () =>
-      badges.find(
+      badgesDisponiveis.find(
         (badge) => String(badge.id_badge_modelo) === String(idBadgeModelo),
       ) || null,
-    [badges, idBadgeModelo],
+    [badgesDisponiveis, idBadgeModelo],
   );
+
+  useEffect(() => {
+    if (!idBadgeModelo) {
+      return;
+    }
+
+    const badgeAindaDisponivel = badgesDisponiveis.some(
+      (badge) => String(badge.id_badge_modelo) === String(idBadgeModelo),
+    );
+
+    if (badgeAindaDisponivel) {
+      return;
+    }
+
+    setIdBadgeModelo("");
+    setTitulo("");
+    setDescricao("");
+  }, [badgesDisponiveis, idBadgeModelo]);
 
   const pontosBase = Number(badgeSelecionado?.pontos || 0);
 
@@ -267,7 +369,7 @@ function CriarDesafioTm() {
 
     setIdBadgeModelo(novoId);
 
-    const badge = badges.find(
+    const badge = badgesDisponiveis.find(
       (item) => String(item.id_badge_modelo) === String(novoId),
     );
 
@@ -539,11 +641,11 @@ function CriarDesafioTm() {
                     <Form.Select
                       value={idBadgeModelo}
                       onChange={selecionarBadge}
-                      disabled={!idConsultor}
+                      disabled={!idConsultor || isLoadingBadgesConsultor}
                     >
                       <option value="">Selecionar badge</option>
 
-                      {badges.map((badge) => (
+                      {badgesDisponiveis.map((badge) => (
                         <option
                           key={badge.id_badge_modelo}
                           value={badge.id_badge_modelo}
@@ -552,6 +654,12 @@ function CriarDesafioTm() {
                         </option>
                       ))}
                     </Form.Select>
+
+                    {idConsultor && !isLoadingBadgesConsultor && badgesDisponiveis.length === 0 && (
+                      <div style={ajudaSelect}>
+                        Este consultor já conquistou os badges disponíveis ou já tem desafios ativos para eles.
+                      </div>
+                    )}
                   </Form.Group>
 
                   <Form.Group>
@@ -744,6 +852,12 @@ const separador = {
   height: 1,
   background: "#d1d5db",
   margin: "16px 0 20px",
+};
+
+const ajudaSelect = {
+  marginTop: 8,
+  fontSize: 12,
+  color: "#64748b",
 };
 
 const cabecalho = {
