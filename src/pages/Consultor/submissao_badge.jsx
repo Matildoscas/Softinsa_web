@@ -137,6 +137,7 @@ function SubmeterEvidenciasPage() {
   const [mensagemModalErro, setMensagemModalErro] = useState("");
   const [mostrarModalCancelar, setMostrarModalCancelar] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
+  const [contextoReabertura, setContextoReabertura] = useState(null);
 
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
@@ -397,12 +398,42 @@ function SubmeterEvidenciasPage() {
         }
       );
 
+      const reabertura =
+        rascunhoResponse.data?.reabertura || null;
+
+      setContextoReabertura(reabertura);
+
       hidratarRascunho(rascunhoResponse.data);
-      setMensagemInfo(
-        rascunhoResponse.data?.criada
-          ? "Candidatura iniciada em modo rascunho. Pode guardar progresso antes de enviar."
-          : "Rascunho carregado com sucesso."
-      );
+
+      if (reabertura) {
+        const totalReaproveitado = Number(
+          reabertura.total_evidencias_reaproveitadas || 0
+        );
+
+        const comentario = String(
+          reabertura.comentario_rejeicao || ""
+        ).trim();
+
+        setMensagemInfo(
+          [
+            totalReaproveitado > 0
+              ? `Reabertura concluída: ${totalReaproveitado} ${totalReaproveitado === 1 ? "evidência foi" : "evidências foram"} reaproveitada${totalReaproveitado === 1 ? "" : "s"} em rascunho.`
+              : "Reabertura concluída: não foram encontradas evidências aceites para reaproveitar.",
+            "Todas as evidências seguem para nova validação pelo TM e SLL quando submeteres novamente.",
+            comentario
+              ? `Comentário da rejeição: ${comentario}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join("\n")
+        );
+      } else {
+        setMensagemInfo(
+          rascunhoResponse.data?.criada
+            ? "Candidatura iniciada em modo rascunho. Pode guardar progresso antes de enviar."
+            : "Rascunho carregado com sucesso."
+        );
+      }
     } catch (err) {
       const erro = mensagemErroCandidatura(
         err,
@@ -419,6 +450,31 @@ function SubmeterEvidenciasPage() {
     carregarPagina();
   }, [id]);
 
+  useEffect(() => {
+    if (!contextoReabertura) {
+      return;
+    }
+
+    const comentario = String(
+      contextoReabertura.comentario_rejeicao || ""
+    ).trim();
+
+    if (!comentario) {
+      return;
+    }
+
+    setMensagemInfo((prev) => {
+      if (String(prev || "").includes("Comentário da rejeição:")) {
+        return prev;
+      }
+
+      const base = String(prev || "").trim();
+      return [base, `Comentário da rejeição: ${comentario}`]
+        .filter(Boolean)
+        .join("\n");
+    });
+  }, [contextoReabertura]);
+
   const adicionarFicheiros = (requisitoKey, files) => {
     const novos = Array.from(files || []);
 
@@ -434,6 +490,44 @@ function SubmeterEvidenciasPage() {
       [requisitoKey]: (prev[requisitoKey] || []).filter((_, i) => i !== index),
     }));
   };
+
+  async function removerEvidenciaGuardada(requisitoKey, idEvidencia) {
+    if (!candidatura?.id_candidatura_pedido || !userId || !idEvidencia) {
+      return;
+    }
+
+    try {
+      setAcaoLoading(true);
+
+      await api.delete(
+        `/candidaturas/${candidatura.id_candidatura_pedido}/evidencias/${idEvidencia}`,
+        {
+          data: {
+            id_utilizador: userId,
+          },
+        }
+      );
+
+      setEvidenciasGuardadas((prev) => ({
+        ...prev,
+        [requisitoKey]: (prev[requisitoKey] || []).filter(
+          (item) => Number(item?.id_evidencia) !== Number(idEvidencia)
+        ),
+      }));
+
+      setMensagemInfo("Evidência removida do rascunho.");
+    } catch (err) {
+      setMensagemModalErro(
+        mensagemErroCandidatura(
+          err,
+          "Não foi possível remover a evidência guardada."
+        )
+      );
+      setMostrarModalErro(true);
+    } finally {
+      setAcaoLoading(false);
+    }
+  }
 
   const totalFicheirosNovos = Object.values(ficheirosPorRequisito)
     .reduce((total, lista) => total + lista.length, 0);
@@ -758,6 +852,7 @@ function SubmeterEvidenciasPage() {
                     evidenciasGuardadas={evidenciasGuardadas[requisitoKey] || []}
                     onAddFiles={(files) => adicionarFicheiros(requisitoKey, files)}
                     onRemoveFile={(fileIndex) => removerFicheiro(requisitoKey, fileIndex)}
+                    onRemoveSavedEvidence={(idEvidencia) => removerEvidenciaGuardada(requisitoKey, idEvidencia)}
                     defaultOpen={index === 0}
                   />
                 );
@@ -1056,6 +1151,7 @@ function RequisitoUploadRow({
   evidenciasGuardadas = [],
   onAddFiles,
   onRemoveFile,
+  onRemoveSavedEvidence,
   defaultOpen,
 }) {
   const [open, setOpen] = useState(defaultOpen || false);
@@ -1124,6 +1220,15 @@ function RequisitoUploadRow({
                       Ver ficheiro
                     </a>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => onRemoveSavedEvidence?.(evidencia.id_evidencia)}
+                    style={removeFileBtn}
+                    title="Remover evidência guardada"
+                  >
+                    <HiOutlineTrash size={16} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -1282,6 +1387,7 @@ const infoBox = {
   padding: 14,
   marginBottom: 16,
   fontSize: 13,
+  whiteSpace: "pre-line",
 };
 
 const heroCard = {

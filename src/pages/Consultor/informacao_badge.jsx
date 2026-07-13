@@ -69,9 +69,11 @@ function candidaturaFinalizada(item) {
   return (
     estado.includes("REJEIT") ||
     estado.includes("RECUS") ||
+    estado.includes("DESIST") ||
     estado.includes("CANCEL") ||
     estado.includes("FINAL") ||
     fase.includes("HISTORICO") ||
+    fase.includes("DESIST") ||
     fase.includes("CANCEL") ||
     fase.includes("FINALIZ") ||
     fase.includes("REJEIT") ||
@@ -544,11 +546,6 @@ function BadgeDetailPage() {
           .replace(/[\u0300-\u036f]/g, "")
           .toUpperCase();
 
-        const totalEvidenciasBadge = Number(
-          candidaturaStatusBadge?.total_evidencias ||
-            0
-        );
-
         const faseGeralBadge = String(
           candidaturaStatusBadge?.fase_geral ||
             ""
@@ -582,13 +579,18 @@ function BadgeDetailPage() {
             "EM_VALIDACAO",
           ].includes(
             estadoPedidoBadge
-          ) ||
-          totalEvidenciasBadge >= 3;
+          );
 
         setTemCandidaturaAberta(
           (existeCandidaturaAberta ||
             existePendenteNoBadge) &&
-            !candidaturaEfetuada
+            !candidaturaEfetuada &&
+            !estadoCatalogo.includes(
+              "REJEIT"
+            ) &&
+            !estadoCatalogo.includes(
+              "RECUS"
+            )
         );
 
         setOcultarAcaoCandidatura(
@@ -600,6 +602,17 @@ function BadgeDetailPage() {
         ) {
           setEstadoCandidaturaBadge(
             "Candidatura efetuada"
+          );
+        } else if (
+          estadoCatalogo.includes(
+            "REJEIT"
+          ) ||
+          estadoCatalogo.includes(
+            "RECUS"
+          )
+        ) {
+          setEstadoCandidaturaBadge(
+            "Candidatura rejeitada"
           );
         } else if (
           existeCandidaturaAberta ||
@@ -960,74 +973,47 @@ const revogarPublicacao =
     navigate(`/submeter-evidencias/${badge.id}`);
   }
 
-  const obterUrlPublicaCertificado =
-  async () => {
-    const userId =
-      obterUserId();
+  const obterUrlPublicaCertificado = async () => {
+    const userId = obterUserId();
 
     if (!userId) {
       return "";
     }
 
     const idHistoricoDireto =
-      conquistadoBadge
-        ?.id_candidatura_historico ||
-      conquistadoBadge
-        ?.id_historico ||
-      conquistadoBadge
-        ?.idHistorico;
+      conquistadoBadge?.id_candidatura_historico ||
+      conquistadoBadge?.id_historico ||
+      conquistadoBadge?.idHistorico;
 
     if (idHistoricoDireto) {
       return `${window.location.origin}/verificar/CERT-${idHistoricoDireto}-${userId}`;
     }
 
     try {
-      const response =
-        await api.get(
-          `/certificados/disponiveis/${userId}`
-        );
-
-      const lista =
-        Array.isArray(response.data)
-          ? response.data
-          : Array.isArray(response.data?.certificados)
-            ? response.data.certificados
-            : Array.isArray(response.data?.data)
-              ? response.data.data
-              : [];
-
-      const certificado =
-        lista.find((item) => {
-          const idBadgeCert =
-            item.id_badge_modelo ||
-            item.id_badge ||
-            item.badge_id;
-
-          return (
-            Number(idBadgeCert) ===
-            Number(badge?.id || id)
-          );
-        });
-
-      const idHistorico =
-        certificado
-          ?.id_candidatura_historico ||
-        certificado
-          ?.id_historico ||
-        certificado
-          ?.idHistorico;
-
-      if (!idHistorico) {
-        return "";
-      }
-
-      return `${window.location.origin}/verificar/CERT-${idHistorico}-${userId}`;
-    } catch (err) {
-      console.error(
-        "Erro ao obter certificado para LinkedIn:",
-        err
+      const response = await api.get(
+        `/certificados/disponiveis/${userId}`
       );
 
+      const lista = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.certificados)
+          ? response.data.certificados
+          : Array.isArray(response.data?.data)
+            ? response.data.data
+            : [];
+
+      const certificado = lista.find((item) => {
+        const idBadgeCert =
+          item.id_badge_modelo ||
+          item.id_badge ||
+          item.id;
+
+        return Number(idBadgeCert) === Number(badge?.id);
+      });
+
+      return certificado?.url_publica || "";
+    } catch (err) {
+      console.error("Erro ao obter URL pública do certificado:", err);
       return "";
     }
   };
@@ -1945,7 +1931,9 @@ const copiarAssinatura =
                   />
                   {temCandidaturaAberta
                     ? "Continuar candidatura"
-                    : "Submeter Evidências"}
+                    : estadoCandidaturaBadge === "Candidatura rejeitada"
+                      ? "Voltar a submeter evidências"
+                      : "Submeter Evidências"}
                 </button>
               )
             )}
@@ -2062,12 +2050,17 @@ const copiarAssinatura =
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Iniciar candidatura</Modal.Title>
+            <Modal.Title>
+              {estadoCandidaturaBadge === "Candidatura rejeitada"
+                ? "Reabrir candidatura"
+                : "Iniciar candidatura"}
+            </Modal.Title>
         </Modal.Header>
 
         <Modal.Body>
-          Ao continuar, vais iniciar uma candidatura para este badge.
-          Podes guardar progresso e submeter evidências quando estiveres pronto.
+            {estadoCandidaturaBadge === "Candidatura rejeitada"
+              ? "Esta candidatura foi rejeitada. Ao continuar, vais abrir um novo envio para este badge e podes voltar a submeter as evidências."
+              : "Ao continuar, vais iniciar uma candidatura para este badge. Podes guardar progresso e submeter evidências quando estiveres pronto."}
         </Modal.Body>
 
         <Modal.Footer>
@@ -2079,7 +2072,9 @@ const copiarAssinatura =
           </Button>
 
           <Button onClick={avancarInicioCandidatura}>
-            Iniciar candidatura
+            {estadoCandidaturaBadge === "Candidatura rejeitada"
+              ? "Reabrir candidatura"
+              : "Iniciar candidatura"}
           </Button>
         </Modal.Footer>
       </Modal>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Spinner, Modal, Form } from 'react-bootstrap'; // 🎯 ADICIONADO: Modal e Form aqui
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Card, Button, Spinner, Modal, Form } from 'react-bootstrap';
 import { 
   BiArrowBack,
   BiBadge, 
@@ -21,6 +21,7 @@ import api from "../../services/api.js";
 function AvaliacaoSolicitacaoTM() {
   const { id } = useParams(); 
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Estados principais
   const [candidatura, setCandidatura] = useState(null);
@@ -77,19 +78,16 @@ function AvaliacaoSolicitacaoTM() {
           }
         });
 
-        const requisitosTratados = dados.requisitos.map(linha => ({
-          estado: linha.id_evidencia
-    ? (linha.estado_evidencia_tm || "PENDENTE")
-    : "SEM_EVIDENCIA"                    
-          ,idEvidencia: linha.id_evidencia,            
+        const requisitosTratados = dados.requisitos.map((linha, index) => ({
+          id: linha.id_requisitos || linha.id_evidencia || index,
+          estado: linha.id_evidencia ? (linha.estado_evidencia_tm || "PENDENTE") : "SEM_EVIDENCIA",
+          idEvidencia: linha.id_evidencia,            
           idCandidaturaPedido: linha.id_candidatura_pedido, 
           titulo: linha.nome_requisito,
           descricao: linha.descricao_requisito,
           evidenciaTexto: linha.descricao_evidencia,
-          //documento: WebGLVertexArrayObject.nome_ficheiro, 
           documento: linha.nome_ficheiro,
           caminhoFicheiro: linha.caminho_ficheiro, 
-          estado: linha.id_evidencia ? (linha.estado_evidencia_tm || 'PENDENTE') : 'SEM_EVIDENCIA'
         }));
 
         setRequisitos(requisitosTratados);
@@ -184,7 +182,7 @@ function AvaliacaoSolicitacaoTM() {
         setAvaliandoId(modalConfig.idEvidencia); 
         await api.post("/candidaturas/tm/avaliar-evidencia", {
           id_evidencia: modalConfig.idEvidencia,
-          id_candidatura_pedido: modalConfig.idCandidaturaPedido,
+          id_candidatura_pedido: modalConfig.idCandidaturaPedido || Number(id),
           estado: "REJEITADA", 
           comentarios: textoComentario
         });

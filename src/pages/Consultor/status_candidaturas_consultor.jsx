@@ -50,7 +50,11 @@ function formatarEstadoHumano(valor) {
     APROVADA: "Aprovada",
     APROVADO_FINAL: "Aprovado em definitivo",
     REJEITADO: "Rejeitado",
+    REJEITADO_TM: "Candidatura rejeitada",
+    REJEITADO_SLL: "Candidatura rejeitada",
     RECUSADO: "Recusado",
+    DESISTIDA: "Desistida",
+    DESISTIDO: "Desistida",
     CANCELADO: "Cancelado",
     FINALIZADO: "Concluído",
     CONCLUIDO: "Concluído",
@@ -129,20 +133,11 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
 }
 
 function candidaturaEstaFinalizada(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
+  if (candidaturaEstaDesistida(item)) {
+    return true;
+  }
 
-  return (
-    estado.includes("REJEIT") ||
-    estado.includes("RECUS") ||
-    estado.includes("CANCEL") ||
-    estado.includes("FINAL") ||
-    fase.includes("HISTORICO") ||
-    fase.includes("CANCEL") ||
-    fase.includes("FINALIZ") ||
-    fase.includes("REJEIT") ||
-    fase.includes("CONCLUID")
-  );
+  return candidaturaEstaObtida(item);
 }
 
 function candidaturaEstaObtida(item) {
@@ -154,6 +149,73 @@ function candidaturaEstaObtida(item) {
 
 function candidaturaEstaEmProcesso(item) {
   return !candidaturaEstaFinalizada(item);
+}
+
+function candidaturaTemRejeicaoEmEvidencias(item) {
+  return (
+    Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
+    Number(item?.evidencias_rejeitadas_sll || 0) > 0
+  );
+}
+
+function candidaturaEstaDesistida(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("DESIST") ||
+    fase.includes("DESIST") ||
+    estado.includes("CANCEL") ||
+    fase.includes("CANCEL")
+  );
+}
+
+function candidaturaEstaRejeitada(item) {
+  if (candidaturaEstaDesistida(item) || candidaturaEstaObtida(item)) {
+    return false;
+  }
+
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return true;
+  }
+
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
+    fase.includes("REJEIT") ||
+    fase.includes("RECUS")
+  );
+}
+
+function estadoGeralVisivel(item) {
+  if (candidaturaEstaRejeitada(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.estado_geral || item?.estado_final || "-";
+}
+
+function faseGeralVisivel(item) {
+  if (candidaturaEstaRejeitada(item)) {
+    return "REJEITADA";
+  }
+
+  return item?.fase_geral || "-";
+}
+
+function extrairMotivoRejeicao(detalhe) {
+  return (
+    String(
+      detalhe?.candidatura?.comentarios_tm ||
+        detalhe?.candidatura?.motivo_estado_final ||
+        detalhe?.candidatura?.comentarios_sll ||
+        ""
+    ).trim() ||
+    "A candidatura foi rejeitada."
+  );
 }
 
 function EstadoChip({ titulo, valor }) {
@@ -234,6 +296,7 @@ export default function StatusCandidaturasConsultor() {
   const [pesquisa, setPesquisa] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetalhe, setIsLoadingDetalhe] = useState(false);
+  const [isAExecutarAcao, setIsAExecutarAcao] = useState(false);
   const [erro, setErro] = useState("");
 
   const utilizador = obterUtilizadorGuardado();
@@ -293,6 +356,37 @@ export default function StatusCandidaturasConsultor() {
     }
   }
 
+  async function desistirCandidaturaSelecionada() {
+    const candidatura = detalhe?.candidatura;
+
+    if (!idUtilizador || !candidatura?.id_candidatura_pedido) {
+      return;
+    }
+
+    const confirmou = window.confirm(
+      "Queres desistir desta candidatura rejeitada? Esta candidatura será removida do teu progresso."
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setIsAExecutarAcao(true);
+      setErro("");
+
+      await api.patch(`/candidaturas/${candidatura.id_candidatura_pedido}/desistir`, {
+        id_utilizador: idUtilizador,
+      });
+
+      await atualizarPagina();
+    } catch (err) {
+      setErro(err.response?.data?.error || "Não foi possível desistir da candidatura.");
+    } finally {
+      setIsAExecutarAcao(false);
+    }
+  }
+
   useEffect(() => {
     carregarLista();
   }, []);
@@ -338,6 +432,18 @@ export default function StatusCandidaturasConsultor() {
       String(item.fase_geral || "").toLowerCase().includes(termo)
     );
   }, [listaPorModo, pesquisa]);
+
+  const candidaturaSelecionadaRejeitada = candidaturaEstaRejeitada(detalhe?.candidatura);
+  const candidaturaSelecionadaDesistida = candidaturaEstaDesistida(detalhe?.candidatura);
+  const mostrarAcoesRejeicao =
+    modoLista === "EM_PROCESSO" &&
+    candidaturaSelecionadaRejeitada &&
+    !candidaturaSelecionadaDesistida &&
+    !candidaturaEstaFinalizada(detalhe?.candidatura);
+  const estadoVisivelDetalhe = estadoGeralVisivel(detalhe?.candidatura);
+  const faseVisivelDetalhe = faseGeralVisivel(detalhe?.candidatura);
+
+  const motivoRejeicao = extrairMotivoRejeicao(detalhe);
 
   return (
     <div style={pagina}>
@@ -413,7 +519,9 @@ export default function StatusCandidaturasConsultor() {
                 <div style={listaCards}>
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
-                    const geral = chipEstado(item.estado_geral);
+                    const estadoVisivel = estadoGeralVisivel(item);
+                    const faseVisivel = faseGeralVisivel(item);
+                    const geral = chipEstado(estadoVisivel);
 
                     return (
                       <button
@@ -440,7 +548,7 @@ export default function StatusCandidaturasConsultor() {
                               border: `1px solid ${geral.border}`,
                             }}
                           >
-                            {formatarEstadoHumano(item.estado_geral)}
+                            {formatarEstadoHumano(estadoVisivel)}
                           </span>
                         </div>
 
@@ -454,7 +562,7 @@ export default function StatusCandidaturasConsultor() {
                           <span>{item.email}</span>
                         </div>
 
-                        <div style={metaLinha}>Etapa: <strong>{formatarEstadoHumano(item.fase_geral)}</strong></div>
+                        <div style={metaLinha}>Etapa: <strong>{formatarEstadoHumano(faseVisivel)}</strong></div>
                         <div style={metaLinha}>
                           Evidências decididas: <strong>Talent Manager {item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>Service Line Leader {item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
                         </div>
@@ -477,7 +585,7 @@ export default function StatusCandidaturasConsultor() {
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Estado da candidatura</div>
                     <div style={estadoPrincipalWrapper}>
-                      <EstadoPrincipalChip titulo="Estado geral" valor={detalhe.candidatura?.estado_geral} />
+                      <EstadoPrincipalChip titulo="Estado geral" valor={estadoVisivelDetalhe} />
                     </div>
                     <div style={estadoGridFases}>
                       <EstadoChip titulo="Pedido" valor={detalhe.candidatura?.estado_candidatura_pedido} />
@@ -485,9 +593,36 @@ export default function StatusCandidaturasConsultor() {
                       <EstadoChip titulo="Avaliação do Service Line Leader" valor={detalhe.candidatura?.estado_candidaturasll} />
                     </div>
                     <div style={estadoRodapeGrid}>
-                      <EstadoChip titulo="Etapa" valor={detalhe.candidatura?.fase_geral} />
+                      <EstadoChip titulo="Etapa" valor={faseVisivelDetalhe} />
                       <EstadoChip titulo="Resultado concluído" valor={detalhe.candidatura?.estado_final} />
                     </div>
+
+                    {mostrarAcoesRejeicao && (
+                      <div style={rejeicaoBox}>
+                        <div style={rejeicaoTitulo}>Candidatura rejeitada</div>
+                        <div style={rejeicaoTexto}>
+                          Esta candidatura foi rejeitada. Podes abrir o badge para voltar a submeter evidências ou desistir desta candidatura para a remover do progresso.
+                        </div>
+                        <div style={acoesRejeicaoLinha}>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/badge-detalhe/${detalhe.candidatura?.id_badge_modelo}`)}
+                            style={abrirBadgeButton}
+                            disabled={isAExecutarAcao}
+                          >
+                            Abrir badge
+                          </button>
+                          <button
+                            type="button"
+                            onClick={desistirCandidaturaSelecionada}
+                            style={desistirButton}
+                            disabled={isAExecutarAcao}
+                          >
+                            Desistir candidatura
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div style={secaoDetalhe}>
@@ -515,6 +650,13 @@ export default function StatusCandidaturasConsultor() {
                       ))}
                     </div>
                   </div>
+
+                  {candidaturaSelecionadaRejeitada && (
+                    <div style={motivoRejeicaoResumo}>
+                      <div style={motivoRejeicaoLabel}>Motivo da rejeição</div>
+                      <div style={motivoRejeicaoTexto}>{motivoRejeicao}</div>
+                    </div>
+                  )}
                 </>
               )}
             </section>
@@ -847,4 +989,92 @@ const requisitoNome = {
   fontSize: 12,
   color: "#1f2937",
   fontWeight: 600,
+};
+
+const rejeicaoBox = {
+  marginTop: 10,
+  border: "1px solid #fecaca",
+  background: "#fff1f2",
+  borderRadius: 10,
+  padding: 12,
+};
+
+const rejeicaoTitulo = {
+  fontSize: 13,
+  fontWeight: 800,
+  color: "#9f1239",
+  marginBottom: 6,
+};
+
+const rejeicaoTexto = {
+  fontSize: 13,
+  color: "#7f1d1d",
+  lineHeight: 1.45,
+};
+
+const acoesRejeicaoLinha = {
+  marginTop: 10,
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap",
+};
+
+const abrirBadgeButton = {
+  marginTop: 10,
+  border: "none",
+  background: "#1d4ed8",
+  color: "white",
+  borderRadius: 9,
+  padding: "9px 12px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const desistirButton = {
+  marginTop: 10,
+  border: "1px solid #f43f5e",
+  background: "#fff1f2",
+  color: "#be123c",
+  borderRadius: 9,
+  padding: "9px 12px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const motivoRejeicaoResumo = {
+  marginTop: 10,
+  border: "1px solid #fecaca",
+  background: "#fff7f7",
+  borderRadius: 10,
+  padding: 12,
+};
+
+const motivoRejeicaoLabel = {
+  fontSize: 11,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  color: "#be123c",
+  marginBottom: 4,
+};
+
+const motivoRejeicaoTexto = {
+  fontSize: 13,
+  color: "#7f1d1d",
+  lineHeight: 1.45,
+};
+
+const motivoRejeicaoSubtexto = {
+  marginTop: 6,
+  fontSize: 12,
+  color: "#991b1b",
+};
+
+const motivoRejeicaoLista = {
+  marginTop: 8,
+  fontSize: 12,
+  color: "#7f1d1d",
+  display: "grid",
+  gap: 4,
 };
