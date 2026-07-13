@@ -9,7 +9,7 @@ import {
 } from "react-icons/bi";
 import { useNavigate, useParams } from "react-router-dom";
 
-import api from "../../services/api.js";
+import api, { buildUploadUrl } from "../../services/api.js";
 import Header from "../../components/Header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
@@ -24,6 +24,15 @@ function normalizarUtilizador(u) {
       u.CARGO ||
       "Consultor"
   );
+
+  const fotoPerfil =
+    u.foto_perfil ||
+    u.FOTO_PERFIL ||
+    u.foto ||
+    u.FOTO ||
+    u.imagem ||
+    u.IMAGEM ||
+    null;
 
   return {
     id:
@@ -107,6 +116,7 @@ function normalizarUtilizador(u) {
         u.TOTAL_PONTOS ||
         0
     ),
+    foto_perfil: fotoPerfil,
   };
 }
 
@@ -279,6 +289,61 @@ function StatusBadge({ status }) {
     >
       {status}
     </span>
+  );
+}
+
+function obterFotoPerfilSrc(utilizador) {
+  const foto =
+    utilizador?.foto_perfil ||
+    utilizador?.FOTO_PERFIL ||
+    utilizador?.foto ||
+    utilizador?.imagem ||
+    null;
+
+  if (!foto) {
+    return null;
+  }
+
+  return buildUploadUrl(foto);
+}
+
+function PerfilAvatar({ utilizador, size = 90 }) {
+  const [erroImagem, setErroImagem] = useState(false);
+
+  const fotoSrc = obterFotoPerfilSrc(utilizador);
+
+  if (!fotoSrc || erroImagem) {
+    return (
+      <div
+        style={{
+          ...profileAvatar,
+          width: size,
+          height: size,
+        }}
+      >
+        <BiUserCircle
+          size={Math.round(size * 0.67)}
+          color="#3b82f6"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        ...profileAvatar,
+        width: size,
+        height: size,
+      }}
+    >
+      <img
+        src={fotoSrc}
+        alt={utilizador?.nome_display || "Foto de perfil"}
+        style={profileAvatarImg}
+        onError={() => setErroImagem(true)}
+      />
+    </div>
   );
 }
 
@@ -643,9 +708,7 @@ function EditarConta() {
             form && (
               <div style={card}>
                 <div style={profileHeader}>
-                  <div style={profileAvatar}>
-                    <BiUserCircle size={60} color="#3b82f6" />
-                  </div>
+                  <PerfilAvatar utilizador={form} size={90} />
 
                   <div style={{ flex: 1 }}>
                     <div
@@ -1025,6 +1088,14 @@ const profileAvatar = {
   justifyContent: "center",
   flexShrink: 0,
   border: "3px solid #bfdbfe",
+  overflow: "hidden",
+};
+
+const profileAvatarImg = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
 };
 
 const profileStatsGrid = {
