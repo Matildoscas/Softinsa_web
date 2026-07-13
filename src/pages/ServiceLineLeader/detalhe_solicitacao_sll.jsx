@@ -1242,33 +1242,26 @@ async function rejeitarCandidatura() {
           ? dados.requisitos
           : [];
 
+      const todasEvidencias =
+        requisitos.flatMap(
+          (requisito) =>
+            Array.isArray(
+              requisito.evidencias
+            )
+              ? requisito.evidencias
+              : []
+        );
+
       const total =
-        requisitos.length;
+        todasEvidencias.length;
 
       const aprovadosTm =
-        requisitos.filter(
-          (requisito) => {
-            const evidencias =
-              Array.isArray(
-                requisito.evidencias
-              )
-                ? requisito.evidencias
-                : [];
-
-            if (
-              evidencias.length === 0
-            ) {
-              return false;
-            }
-
-            return evidencias.every(
-              (evidencia) =>
-                estadoEhAprovado(
-                  evidencia
-                    .estado_evidencia_tm
-                )
-            );
-          }
+        todasEvidencias.filter(
+          (evidencia) =>
+            estadoEhAprovado(
+              evidencia
+                .estado_evidencia_tm
+            )
         ).length;
 
       const estadoSll =
@@ -1602,7 +1595,7 @@ async function rejeitarCandidatura() {
                       /
                       {
                         alertaAprovacaoTm.total
-                      } requisitos. Falta aprovação final do SLL.
+                      } evidências. Falta aprovação final do SLL.
                     </span>
                   )}
                 </div>

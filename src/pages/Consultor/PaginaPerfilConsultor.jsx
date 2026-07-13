@@ -133,10 +133,20 @@ function PaginaPerfil() {
               ),
 
             total_pontos:
-              Number(
-                dashboardRes.data
-                  .total_pontos ||
-                0
+              Math.max(
+                Number(
+                  dashboardRes.data
+                    .total_pontos ||
+                  0
+                ),
+                badgesUnicos.reduce(
+                  (total, badge) =>
+                    total +
+                    obterPontosTotaisBadge(
+                      badge
+                    ),
+                  0
+                )
               ),
           });
 
@@ -411,7 +421,7 @@ function PaginaPerfil() {
             <Button
               variant="light"
               onClick={() =>
-                navigate("/status-candidaturas")
+                navigate("/progresso")
               }
               className="
                 d-flex

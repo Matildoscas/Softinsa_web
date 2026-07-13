@@ -112,7 +112,7 @@ function App() {
         <Route path="/notificacoes" element={<NotificacaoPage />} />
         <Route path="/desafios" element={<DesafiosConsultorPage />} />
         <Route path="/lembretes" element={<LembretePage />} />
-        <Route path="/progresso" element={<StatusCandidaturasConsultorPage />} />
+        <Route path="/progresso" element={<ProgressoPage />} />
         <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
         <Route path="/historico_badges" element={<HistoricoBadgesPage />} />
         <Route path="/meus_badges" element={<MeusBadgesPage />} />

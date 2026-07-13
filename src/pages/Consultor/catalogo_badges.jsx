@@ -1331,6 +1331,9 @@ function CatalogoBadgeRow({
       badge
     );
 
+  const badgeEspecialNivelE =
+    codigoNivel === "5";
+
   const {
     ganhouBonus,
     pontosExtra,
@@ -1487,12 +1490,23 @@ function CatalogoBadgeRow({
         border:
           bonusAtivo
             ? "2px solid #d4af37"
+            : badgeEspecialNivelE
+              ? "2px solid #f59e0b"
             : badgeCard.border,
 
         boxShadow:
           bonusAtivo
             ? "0 0 0 3px rgba(212,175,55,0.12)"
+            : badgeEspecialNivelE
+              ? "0 0 0 3px rgba(245,158,11,0.12)"
             : "none",
+
+        background:
+          bonusAtivo
+            ? "#fffef8"
+            : badgeEspecialNivelE
+              ? "linear-gradient(135deg, #fff8e6 0%, #ffffff 100%)"
+              : "white",
       }}
       onClick={onClick}
     >
@@ -1574,13 +1588,19 @@ function CatalogoBadgeRow({
             <span
               style={{
                 background:
-                  "#f1f5f9",
+                  badgeEspecialNivelE
+                    ? "#fff7d6"
+                    : "#f1f5f9",
 
                 color:
-                  "#334155",
+                  badgeEspecialNivelE
+                    ? "#9a6b00"
+                    : "#334155",
 
                 border:
-                  "1px solid #cbd5e1",
+                  badgeEspecialNivelE
+                    ? "1px solid #f0d36b"
+                    : "1px solid #cbd5e1",
 
                 borderRadius:
                   999,
@@ -1599,6 +1619,22 @@ function CatalogoBadgeRow({
                 codigoNivel
               )}
             </span>
+
+            {badgeEspecialNivelE && (
+              <span
+                style={{
+                  background: "#ffedd5",
+                  color: "#c2410c",
+                  border: "1px solid #fdba74",
+                  borderRadius: 999,
+                  padding: "3px 9px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                Badge especial
+              </span>
+            )}
 
             {!bonusAtivo &&
               desafioAtivo && (
