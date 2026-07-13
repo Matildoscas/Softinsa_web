@@ -16,7 +16,7 @@ import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 // Chamadas de API externa
-import api from "../../services/api"; 
+import api, { buildUploadUrl } from "../../services/api";
 
 function obterUtilizadorGuardado() {
   const storedUser = localStorage.getItem("user");
@@ -35,6 +35,61 @@ const obterSaudacao = () => {
   if (hora >= 12 && hora < 20) return "Boa tarde";
   return "Boa noite";
 };
+
+function obterFotoPerfilSrc(user) {
+  const foto =
+    user?.foto_perfil ||
+    user?.FOTO_PERFIL ||
+    user?.foto ||
+    user?.imagem ||
+    null;
+
+  if (!foto) {
+    return null;
+  }
+
+  return buildUploadUrl(foto);
+}
+
+function WelcomeProfilePhoto({ user, size = 72 }) {
+  const [erroImagem, setErroImagem] = useState(false);
+
+  const fotoSrc = obterFotoPerfilSrc(user);
+
+  if (!fotoSrc || erroImagem) {
+    return (
+      <div
+        style={{
+          ...welcomePhotoWrapper,
+          width: size,
+          height: size,
+        }}
+      >
+        <BiUserCircle
+          size={Math.round(size * 0.72)}
+          color="rgba(255,255,255,0.85)"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        ...welcomePhotoWrapper,
+        width: size,
+        height: size,
+      }}
+    >
+      <img
+        src={fotoSrc}
+        alt="Foto de perfil"
+        style={welcomePhotoImage}
+        onError={() => setErroImagem(true)}
+      />
+    </div>
+  );
+}
 
 function DashboardTMUnificado() {
   const navigate = useNavigate();
@@ -56,6 +111,7 @@ function DashboardTMUnificado() {
   const [resumo, setResumo] = useState({});
   const [consultores, setConsultores] = useState([]);
   const [consultoresPorArea, setConsultoresPorArea] = useState([]);
+  const [tmUser, setTmUser] = useState(null);
 
   // Extração inteligente de Áreas e Service Lines únicas (baseado nos dados vindos do gráfico)
   const opcoesFiltros = useMemo(() => {
@@ -135,6 +191,7 @@ function DashboardTMUnificado() {
   // Carregamento Inicial do Dashboard (Resumo e Dados Gráfico)
   async function carregarDashboard() {
     const user = obterUtilizadorGuardado();
+    setTmUser(user);
     const userId = user?.id_utilizador || user?.ID_UTILIZADOR || user?.id;
 
     if (!userId) {
@@ -263,9 +320,7 @@ function DashboardTMUnificado() {
                     <WelcomeItem icon={<BiBriefcase size={20} />} label="Service Lines" value={configuracao.descricaoSll} />
                   </div>
                 </div>
-                <div style={welcomeAvatar}>
-                  <BiUserCircle size={58} color="rgba(255,255,255,0.88)" />
-                </div>
+                <WelcomeProfilePhoto user={tmUser} size={68} />
               </section>
 
               {/* Grid de Métricas Expandido e Dinâmico */}
@@ -541,5 +596,23 @@ const errorBox = { background: "#fee2e2", border: "1px solid #fecaca", borderRad
 const emptyBox = { background: "white", border: "1px solid #e5e7eb", borderRadius: 10, padding: 26, textAlign: "center", color: "#9ca3af", fontSize: 12 };
 const emptyChart = { height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 12 };
 const consultorArea = { color: "#111827", fontSize: 10, marginTop: 3 };
+const welcomePhotoWrapper = {
+  borderRadius: "50%",
+  background: "rgba(255,255,255,0.17)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  border: "3px solid rgba(255,255,255,0.45)",
+  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
+  flexShrink: 0,
+};
+
+const welcomePhotoImage = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
 
 export default DashboardTMUnificado;

@@ -13,7 +13,7 @@ import {
 } from "react-bootstrap";
 import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../../services/api.js'; // Garante que o caminho está correto
+import api, { buildUploadUrl } from '../../services/api.js'; // Garante que o caminho está correto
 
 // Importação dos teus componentes estruturais
 import Header from '../../components/Header.jsx';
@@ -248,6 +248,61 @@ function normalizarBadge(badge) {
         ganhou_bonus: ganhouBonus,
         pontos_extra: pontosExtra,
     };
+}
+
+function obterFotoPerfilSrc(user) {
+  const foto =
+    user?.foto_perfil ||
+    user?.FOTO_PERFIL ||
+    user?.foto ||
+    user?.imagem ||
+    null;
+
+  if (!foto) {
+    return null;
+  }
+
+  return buildUploadUrl(foto);
+}
+
+function WelcomeProfilePhoto({ user, size = 72 }) {
+  const [erroImagem, setErroImagem] = useState(false);
+
+  const fotoSrc = obterFotoPerfilSrc(user);
+
+  if (!fotoSrc || erroImagem) {
+    return (
+      <div
+        style={{
+          ...welcomePhotoWrapper,
+          width: size,
+          height: size,
+        }}
+      >
+        <BiUserCircle
+          size={Math.round(size * 0.72)}
+          color="rgba(255,255,255,0.85)"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        ...welcomePhotoWrapper,
+        width: size,
+        height: size,
+      }}
+    >
+      <img
+        src={fotoSrc}
+        alt="Foto de perfil"
+        style={welcomePhotoImage}
+        onError={() => setErroImagem(true)}
+      />
+    </div>
+  );
 }
 
 function DashboardConsultor() {
@@ -761,9 +816,7 @@ function DashboardConsultor() {
                                     </Link>
                                 </div>
                             </div>
-                            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <BiUserCircle size={50} color="rgba(255,255,255,0.8)" />
-                            </div>
+                            <WelcomeProfilePhoto user={user} size={72} />
                         </Card.Body>
                     </Card>
 
@@ -1475,6 +1528,25 @@ const celebracaoButton = {
   fontWeight: 800,
   boxShadow:
     "0 12px 24px rgba(37, 99, 235, 0.25)",
+};
+
+const welcomePhotoWrapper = {
+  borderRadius: "50%",
+  background: "rgba(255,255,255,0.17)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  border: "3px solid rgba(255,255,255,0.45)",
+  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
+  flexShrink: 0,
+};
+
+const welcomePhotoImage = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
 };
 
 export default DashboardConsultor;
