@@ -125,7 +125,7 @@ function App() {
         
         // Rotas Admin
         <Route path="/admin" element={<DashboardAdmin />} />
-        <Route path="/admin/utilizadores" element={<div>Todos os Utilizadores</div>} />
+        <Route path="/admin/contas" element={<GestaoContas />} />
         <Route path="/admin/contas" element={<GestaoContas />} />
         <Route path="/admin/contas/novo" element={<CriarConta />} />
         <Route path="/admin/contas/editar/:id" element={<EditarConta />} />
