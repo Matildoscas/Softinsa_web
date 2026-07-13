@@ -99,7 +99,7 @@ function obterRotasUtilizador(user) {
   if (isSll) {
     return {
       inicio: "/sll",
-      perfil: "/sll/definicoes",
+      perfil: "/sll/perfil",
       definicoes:
         "/sll/definicoes",
       notificacoes:

@@ -14,22 +14,20 @@ import {
 } from "react-icons/bi";
 
 import {
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 
 import { jsPDF } from "jspdf";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/TM_Header.jsx";
 import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
 import LogoSoftinsa from "../../assets/logo.png";
-
-/* =========================================================
-   UTILIZADOR AUTENTICADO
-========================================================= */
 
 function obterUtilizadorGuardado() {
   const guardado =
@@ -51,10 +49,6 @@ function obterUtilizadorGuardado() {
   }
 }
 
-/* =========================================================
-   NORMALIZAÇÃO
-========================================================= */
-
 function normalizarConsultor(
   consultor
 ) {
@@ -75,13 +69,12 @@ function normalizarConsultor(
 
     nome_area:
       consultor.nome_area ||
-      "Sem área",
+      "Sem area",
 
     total_badges_aprovados:
       Number(
         consultor
-          .total_badges_aprovados ??
-          consultor.total_badges ??
+          .total_badges_aprovados ||
           0
       ),
   };
@@ -102,14 +95,9 @@ function normalizarBadge(badge) {
       badge.nome_badge ||
       "Badge sem nome",
 
-    descricao_badge_modelo:
-      badge
-        .descricao_badge_modelo ||
-      "",
-
     nome_nivel:
       badge.nome_nivel ||
-      "Não disponível",
+      "Sem nivel",
 
     pontos: Number(
       badge.pontos || 0
@@ -123,68 +111,10 @@ function normalizarBadge(badge) {
     imagem:
       badge.imagem ||
       null,
+
+    debug: badge.debug || null,
   };
 }
-
-function normalizarCertificado(
-  certificado
-) {
-  return {
-    ...certificado,
-
-    id_candidatura_historico:
-      certificado
-        .id_candidatura_historico,
-
-    id_utilizador:
-      certificado.id_utilizador,
-
-    nome_completo:
-      certificado.nome_completo ||
-      certificado.nome_utilizador ||
-      "Consultor",
-
-    email:
-      certificado.email ||
-      "Não disponível",
-
-    cargo:
-      certificado.cargo ||
-      "Consultor/a",
-
-    nome_area:
-      certificado.nome_area ||
-      "Não disponível",
-
-    nome_serviceline:
-      certificado.nome_serviceline ||
-      "Não disponível",
-
-    nome_badge:
-      certificado.nome_badge ||
-      "Badge sem nome",
-
-    nome_nivel:
-      certificado.nome_nivel ||
-      "Não disponível",
-
-    pontos: Number(
-      certificado.pontos || 0
-    ),
-
-    imagem:
-      certificado.imagem ||
-      null,
-
-    codigo_certificado:
-      certificado.codigo_certificado ||
-      null,
-  };
-}
-
-/* =========================================================
-   FUNÇÕES AUXILIARES
-========================================================= */
 
 function formatarData(data) {
   if (!data) {
@@ -200,11 +130,7 @@ function formatarData(data) {
 
   const date = new Date(data);
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return new Date().toLocaleDateString(
       "pt-PT",
       {
@@ -249,29 +175,21 @@ function criarCodigoVerificacao(
   certificado
 ) {
   if (
-    certificado.codigo_certificado
-  ) {
-    return certificado.codigo_certificado;
-  }
-
-  if (
     certificado.codigo_verificacao
   ) {
     return certificado.codigo_verificacao;
   }
 
   const historico = String(
-    certificado
-      .id_candidatura_historico ||
+    certificado.id_candidatura_historico ||
       0
   ).padStart(6, "0");
 
   const utilizador = String(
-    certificado.id_utilizador ||
-      0
+    certificado.id_utilizador || 0
   ).padStart(4, "0");
 
-  return `CERT-${historico}-${utilizador}`;
+  return `SL-${historico}-${utilizador}`;
 }
 
 function carregarImagemComoDataUrl(
@@ -315,13 +233,12 @@ function carregarImagemComoDataUrl(
   );
 }
 
-/* =========================================================
-   PÁGINA
-========================================================= */
-
 function GerarCertificadoTm() {
   const navigate =
     useNavigate();
+
+  const location =
+    useLocation();
 
   const [
     talentManager,
@@ -333,10 +250,8 @@ function GerarCertificadoTm() {
     setConsultores,
   ] = useState([]);
 
-  const [
-    badges,
-    setBadges,
-  ] = useState([]);
+  const [badges, setBadges] =
+    useState([]);
 
   const [
     idConsultor,
@@ -378,13 +293,6 @@ function GerarCertificadoTm() {
     carregarConsultores();
   }, []);
 
-  /* =======================================================
-     CARREGAR CONSULTORES DO TM
-
-     ROTA CORRETA:
-     GET /api/tm/:idUtilizador/consultores
-  ======================================================= */
-
   async function carregarConsultores() {
     const utilizador =
       obterUtilizadorGuardado();
@@ -408,7 +316,7 @@ function GerarCertificadoTm() {
 
       const response =
         await api.get(
-          `/tm/${idUtilizador}/consultores`
+          `/tm/${idUtilizador}/certificados/consultores`
         );
 
       const dados =
@@ -416,7 +324,7 @@ function GerarCertificadoTm() {
 
       setTalentManager(
         dados.talentManager ||
-        null
+          null
       );
 
       const lista =
@@ -435,21 +343,11 @@ function GerarCertificadoTm() {
         err
       );
 
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
-
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
-
       setConsultores([]);
 
       setErro(
         err.response?.data?.error ||
-          "Não foi possível carregar os consultores."
+          "Nao foi possivel carregar os consultores."
       );
     } finally {
       setIsLoadingConsultores(
@@ -458,17 +356,21 @@ function GerarCertificadoTm() {
     }
   }
 
-  /* =======================================================
-     CARREGAR BADGES APROVADOS DO CONSULTOR
-
-     ROTA CORRETA:
-     GET /api/certificados/disponiveis/:idConsultor
-  ======================================================= */
-
   async function carregarBadges(
     novoIdConsultor
   ) {
-    if (!novoIdConsultor) {
+    const utilizador =
+      obterUtilizadorGuardado();
+
+    const idUtilizador =
+      utilizador?.id_utilizador ||
+      utilizador?.ID_UTILIZADOR ||
+      utilizador?.id;
+
+    if (
+      !novoIdConsultor ||
+      !idUtilizador
+    ) {
       setBadges([]);
       return;
     }
@@ -481,14 +383,14 @@ function GerarCertificadoTm() {
 
       const response =
         await api.get(
-          `/certificados/disponiveis/${novoIdConsultor}`
+          `/tm/${idUtilizador}/certificados/consultores/${novoIdConsultor}/badges`
         );
 
       const lista =
         Array.isArray(
-          response.data
+          response.data?.badges
         )
-          ? response.data.map(
+          ? response.data.badges.map(
               normalizarBadge
             )
           : [];
@@ -509,21 +411,11 @@ function GerarCertificadoTm() {
         err
       );
 
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
-
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
-
       setBadges([]);
 
       setErro(
         err.response?.data?.error ||
-          "Não foi possível carregar os badges aprovados do consultor."
+          "Nao foi possivel carregar os badges aprovados do consultor."
       );
     } finally {
       setIsLoadingBadges(false);
@@ -573,15 +465,6 @@ function GerarCertificadoTm() {
       ]
     );
 
-  /* =======================================================
-     PREPARAR CERTIFICADO
-
-     ROTA CORRETA:
-     GET /api/certificados/:idHistorico/:idConsultor
-
-     O backend devolve diretamente o certificado.
-  ======================================================= */
-
   async function prepararCertificado() {
     if (
       !idConsultor ||
@@ -594,6 +477,22 @@ function GerarCertificadoTm() {
       return;
     }
 
+    const utilizador =
+      obterUtilizadorGuardado();
+
+    const idUtilizador =
+      utilizador?.id_utilizador ||
+      utilizador?.ID_UTILIZADOR ||
+      utilizador?.id;
+
+    if (!idUtilizador) {
+      setErro(
+        "Nao foi possivel identificar o Talent Manager."
+      );
+
+      return;
+    }
+
     try {
       setIsPreparing(true);
       setErro("");
@@ -601,19 +500,16 @@ function GerarCertificadoTm() {
 
       const response =
         await api.get(
-          `/certificados/${idHistorico}/${idConsultor}`
+          `/tm/${idUtilizador}/certificados/historico/${idHistorico}`
         );
 
       const certificado =
-        response.data
-          ? normalizarCertificado(
-              response.data
-            )
-          : null;
+        response.data?.certificado ||
+        null;
 
       if (!certificado) {
         setErro(
-          "Não foi possível obter os dados do certificado."
+          "Nao foi possivel obter os dados do certificado."
         );
 
         return;
@@ -622,38 +518,20 @@ function GerarCertificadoTm() {
       setCertificadoPreview(
         certificado
       );
-
-      setMensagem(
-        "Certificado preparado com sucesso."
-      );
     } catch (err) {
       console.error(
         "Erro ao preparar certificado:",
         err
       );
 
-      console.error(
-        "STATUS:",
-        err.response?.status
-      );
-
-      console.error(
-        "BODY:",
-        err.response?.data
-      );
-
       setErro(
         err.response?.data?.error ||
-          "Não foi possível preparar o certificado."
+          "Nao foi possivel preparar o certificado."
       );
     } finally {
       setIsPreparing(false);
     }
   }
-
-  /* =======================================================
-     GERAR PDF
-  ======================================================= */
 
   async function gerarPdf() {
     if (!certificadoPreview) {
@@ -677,12 +555,10 @@ function GerarCertificadoTm() {
       });
 
       const largura =
-        pdf.internal.pageSize
-          .getWidth();
+        pdf.internal.pageSize.getWidth();
 
       const altura =
-        pdf.internal.pageSize
-          .getHeight();
+        pdf.internal.pageSize.getHeight();
 
       const codigo =
         criarCodigoVerificacao(
@@ -693,8 +569,6 @@ function GerarCertificadoTm() {
         await carregarImagemComoDataUrl(
           LogoSoftinsa
         );
-
-      /* Moldura exterior */
 
       pdf.setDrawColor(
         37,
@@ -711,8 +585,6 @@ function GerarCertificadoTm() {
         altura - 20
       );
 
-      /* Moldura interior */
-
       pdf.setDrawColor(
         191,
         219,
@@ -728,8 +600,6 @@ function GerarCertificadoTm() {
         altura - 30
       );
 
-      /* Logótipo */
-
       pdf.addImage(
         logoDataUrl,
         "PNG",
@@ -738,8 +608,6 @@ function GerarCertificadoTm() {
         48,
         14
       );
-
-      /* Título */
 
       pdf.setFont(
         "helvetica",
@@ -755,7 +623,7 @@ function GerarCertificadoTm() {
       pdf.setFontSize(25);
 
       pdf.text(
-        "Certificado de Competências",
+        "Certificado de Competencias",
         largura / 2,
         54,
         {
@@ -785,8 +653,6 @@ function GerarCertificadoTm() {
         }
       );
 
-      /* Nome */
-
       pdf.setFont(
         "helvetica",
         "bold"
@@ -806,12 +672,9 @@ function GerarCertificadoTm() {
         91,
         {
           align: "center",
-          maxWidth:
-            largura - 50,
+          maxWidth: largura - 50,
         }
       );
-
-      /* Cargo */
 
       pdf.setFont(
         "helvetica",
@@ -827,10 +690,9 @@ function GerarCertificadoTm() {
       );
 
       pdf.text(
-        certificado.cargo ||
-          "Consultor/a",
+        `Consultor - Service Line: ${certificado.nome_serviceline}`,
         largura / 2,
-        103,
+        102,
         {
           align: "center",
         }
@@ -839,13 +701,11 @@ function GerarCertificadoTm() {
       pdf.text(
         "concluiu com sucesso o badge",
         largura / 2,
-        120,
+        119,
         {
           align: "center",
         }
       );
-
-      /* Badge */
 
       pdf.setFont(
         "helvetica",
@@ -860,25 +720,15 @@ function GerarCertificadoTm() {
         39
       );
 
-      const textoBadge =
-        certificado.nome_nivel &&
-        certificado.nome_nivel !==
-          "Não disponível"
-          ? `${certificado.nome_badge} — ${certificado.nome_nivel}`
-          : certificado.nome_badge;
-
       pdf.text(
-        textoBadge,
+        `${certificado.nome_badge} - Nivel ${certificado.nome_nivel}`,
         largura / 2,
-        135,
+        134,
         {
           align: "center",
-          maxWidth:
-            largura - 50,
+          maxWidth: largura - 50,
         }
       );
-
-      /* Área */
 
       pdf.setFont(
         "helvetica",
@@ -894,53 +744,28 @@ function GerarCertificadoTm() {
       );
 
       pdf.text(
-        `Área: ${certificado.nome_area}`,
+        `Area: ${certificado.nome_area}`,
         largura / 2,
-        148,
+        146,
         {
           align: "center",
         }
       );
 
-      if (
-        certificado.nome_serviceline &&
-        certificado.nome_serviceline !==
-          "Não disponível"
-      ) {
-        pdf.text(
-          `Service Line: ${certificado.nome_serviceline}`,
-          largura / 2,
-          156,
-          {
-            align: "center",
-          }
-        );
-      }
-
-      /* Emissão e código */
-
-      const dataEmissao =
-        certificado.data_emissao ||
-        certificado
-          .data_entrada_historico ||
-        certificado
-          .data_avaliacao_sll;
-
       pdf.text(
-        `Data de emissão: ${formatarData(
-          dataEmissao
+        `Data de emissao: ${formatarData(
+          certificado.data_entrada_historico ||
+            certificado.data_avaliacao_sll
         )}`,
         35,
-        169
+        165
       );
 
       pdf.text(
-        `Código de verificação: ${codigo}`,
+        `Codigo de verificacao: ${codigo}`,
         35,
-        178
+        174
       );
-
-      /* Assinaturas */
 
       pdf.setDrawColor(
         100,
@@ -982,12 +807,10 @@ function GerarCertificadoTm() {
         }
       );
 
-      /* Rodapé */
-
       pdf.setFontSize(8);
 
       pdf.text(
-        `Certificado n.º ${certificado.id_candidatura_historico}`,
+        `Certificado n.o ${certificado.id_candidatura_historico}`,
         20,
         altura - 15
       );
@@ -1016,24 +839,10 @@ function GerarCertificadoTm() {
       );
 
       setErro(
-        "Não foi possível gerar o PDF."
+        "Nao foi possivel gerar o PDF."
       );
     }
   }
-
-  const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
-
-  const lidarComVoltar = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/tm");
-    }
-  };
-
-  /* =======================================================
-     GERAR EXCEL / CSV
-  ======================================================= */
 
   function gerarExcel() {
     if (!certificadoPreview) {
@@ -1052,17 +861,10 @@ function GerarCertificadoTm() {
         certificado
       );
 
-    const dataEmissao =
-      certificado.data_emissao ||
-      certificado
-        .data_entrada_historico ||
-      certificado
-        .data_avaliacao_sll;
-
     const linhas = [
       [
         "Campo",
-        "Informação",
+        "Informacao",
       ],
       [
         "Consultor",
@@ -1073,15 +875,11 @@ function GerarCertificadoTm() {
         certificado.email,
       ],
       [
-        "Cargo",
-        certificado.cargo,
-      ],
-      [
         "Service Line",
         certificado.nome_serviceline,
       ],
       [
-        "Área",
+        "Area",
         certificado.nome_area,
       ],
       [
@@ -1089,7 +887,7 @@ function GerarCertificadoTm() {
         certificado.nome_badge,
       ],
       [
-        "Nível",
+        "Nivel",
         certificado.nome_nivel,
       ],
       [
@@ -1097,13 +895,14 @@ function GerarCertificadoTm() {
         certificado.pontos || 0,
       ],
       [
-        "Data de emissão",
+        "Data de emissao",
         formatarData(
-          dataEmissao
+          certificado.data_entrada_historico ||
+            certificado.data_avaliacao_sll
         ),
       ],
       [
-        "Código de verificação",
+        "Codigo de verificacao",
         codigo,
       ],
     ];
@@ -1158,6 +957,18 @@ function GerarCertificadoTm() {
     URL.revokeObjectURL(url);
   }
 
+  const textoVoltar =
+    location.state?.textoVoltar ||
+    "Voltar atras";
+
+  const lidarComVoltar = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/tm");
+    }
+  };
+
   return (
     <div style={pagina}>
       <Header />
@@ -1165,22 +976,27 @@ function GerarCertificadoTm() {
       <div style={corpo}>
         <TmLeftSidebar />
 
-        <main style={conteudo}>
-          <button type="button" onClick={lidarComVoltar} style={voltarButton}>
+        <main style={conteudo} aria-labelledby="titulo-gerar-certificado-tm">
+          <button
+            type="button"
+            onClick={lidarComVoltar}
+            style={voltarButton}
+            aria-label="Voltar para a pagina anterior"
+          >
             <BiArrowBack size={18} />
-              {textoVoltar}
+            {textoVoltar}
           </button>
 
           <div style={separador} />
 
           <div style={paginaInterna}>
             <div style={cabecalhoPagina}>
-              <h1 style={titulo}>
+              <h1 style={titulo} id="titulo-gerar-certificado-tm">
                 Gerar Certificado
               </h1>
 
               <div style={subtitulo}>
-                Especialização:{" "}
+                Especializacao:{" "}
                 <strong>
                   {talentManager
                     ?.especializacao_tm ||
@@ -1196,53 +1012,52 @@ function GerarCertificadoTm() {
             </div>
 
             {erro && (
-              <div style={erroBox}>
+              <div style={erroBox} role="alert" aria-live="assertive">
                 {erro}
               </div>
             )}
 
             {mensagem && (
-              <div style={sucessoBox}>
+              <div style={sucessoBox} role="status" aria-live="polite">
                 {mensagem}
               </div>
             )}
 
             <section
               style={certificadoCard}
+              aria-label="Formulario de geracao de certificado"
             >
               <div style={cardTitulo}>
                 <BiCertification
                   size={20}
                   color="#2563eb"
                 />
-
-                Informações do
-                Certificado
+                Informacoes do Certificado
               </div>
 
               <div style={formGrid}>
                 <div style={campo}>
-                  <label style={label}>
+                  <label style={label} htmlFor="tm-consultor-select">
                     <BiUser size={16} />
                     Nome do consultor
                   </label>
 
                   <select
+                    id="tm-consultor-select"
                     value={idConsultor}
-                    onChange={
-                      alterarConsultor
-                    }
+                    onChange={alterarConsultor}
                     disabled={
                       isLoadingConsultores
                     }
                     style={select}
+                    aria-label="Selecionar consultor"
                   >
                     <option value="">
                       {isLoadingConsultores
                         ? "A carregar consultores..."
                         : consultores.length ===
                             0
-                          ? "Não existem consultores disponíveis"
+                          ? "Nao existem consultores disponiveis"
                           : "Selecionar consultor"}
                     </option>
 
@@ -1259,7 +1074,7 @@ function GerarCertificadoTm() {
                           {
                             consultor.nome_completo
                           }{" "}
-                          —{" "}
+                          -{" "}
                           {
                             consultor
                               .total_badges_aprovados
@@ -1276,22 +1091,22 @@ function GerarCertificadoTm() {
                 </div>
 
                 <div style={campo}>
-                  <label style={label}>
+                  <label style={label} htmlFor="tm-badge-select">
                     <BiBadge size={16} />
                     Badge conquistado pelo
                     consultor
                   </label>
 
                   <select
+                    id="tm-badge-select"
                     value={idHistorico}
-                    onChange={
-                      alterarBadge
-                    }
+                    onChange={alterarBadge}
                     disabled={
                       !idConsultor ||
                       isLoadingBadges
                     }
                     style={select}
+                    aria-label="Selecionar badge conquistado"
                   >
                     <option value="">
                       {!idConsultor
@@ -1300,7 +1115,7 @@ function GerarCertificadoTm() {
                           ? "A carregar badges..."
                           : badges.length ===
                               0
-                            ? "O consultor não tem badges aprovados"
+                            ? "O consultor nao tem badges aprovados"
                             : "Selecionar badge"}
                     </option>
 
@@ -1316,15 +1131,8 @@ function GerarCertificadoTm() {
                               .id_candidatura_historico
                           }
                         >
-                          {badge.nome_badge}
-
-                          {badge.nome_nivel !==
-                          "Não disponível"
-                            ? ` — ${badge.nome_nivel}`
-                            : ""}
-
-                          {" — "}
-
+                          {badge.nome_badge} -{" "}
+                          {badge.nome_nivel} -{" "}
                           {formatarData(
                             badge.data_conquista
                           )}
@@ -1342,9 +1150,7 @@ function GerarCertificadoTm() {
                   }
                 >
                   <div
-                    style={
-                      imagemBadgeBox
-                    }
+                    style={imagemBadgeBox}
                   >
                     {badgeSelecionado.imagem ? (
                       <img
@@ -1355,9 +1161,7 @@ function GerarCertificadoTm() {
                           badgeSelecionado
                             .nome_badge
                         }
-                        style={
-                          imagemBadge
-                        }
+                        style={imagemBadge}
                       />
                     ) : (
                       <BiCertification
@@ -1376,21 +1180,28 @@ function GerarCertificadoTm() {
                     </div>
 
                     <div style={dadosBadge}>
-                      {badgeSelecionado.nome_nivel !==
-                      "Não disponível"
-                        ? `Nível ${badgeSelecionado.nome_nivel} · `
-                        : ""}
-
+                      Nivel{" "}
+                      {
+                        badgeSelecionado
+                          .nome_nivel
+                      }{" "}
+                      .{" "}
                       {
                         badgeSelecionado
                           .pontos
                       }{" "}
-                      pontos · conquistado em{" "}
+                      pontos . conquistado em{" "}
                       {formatarData(
                         badgeSelecionado
                           .data_conquista
                       )}
                     </div>
+
+                    <DebugBadgePanel
+                      badge={
+                        badgeSelecionado
+                      }
+                    />
                   </div>
                 </div>
               )}
@@ -1422,6 +1233,7 @@ function GerarCertificadoTm() {
                       ? "not-allowed"
                       : "pointer",
                 }}
+                aria-label="Preparar pre-visualizacao do certificado"
               >
                 <BiCertification
                   size={18}
@@ -1429,7 +1241,7 @@ function GerarCertificadoTm() {
 
                 {isPreparing
                   ? "A preparar certificado..."
-                  : "Pré-visualizar certificado"}
+                  : "Pre-visualizar certificado"}
               </button>
             </section>
 
@@ -1446,8 +1258,6 @@ function GerarCertificadoTm() {
                   setCertificadoPreview(
                     null
                   );
-
-                  setMensagem("");
                 }}
               />
             )}
@@ -1460,10 +1270,6 @@ function GerarCertificadoTm() {
   );
 }
 
-/* =========================================================
-   PRÉ-VISUALIZAÇÃO
-========================================================= */
-
 function CertificadoPreview({
   certificado,
   onPdf,
@@ -1475,18 +1281,11 @@ function CertificadoPreview({
       certificado
     );
 
-  const dataEmissao =
-    certificado.data_emissao ||
-    certificado
-      .data_entrada_historico ||
-    certificado
-      .data_avaliacao_sll;
-
   return (
     <section style={previewWrapper}>
       <div style={previewTopo}>
         <h2 style={previewTitulo}>
-          Pré-visualização do
+          Pre-visualizacao do
           Certificado
         </h2>
 
@@ -1495,7 +1294,7 @@ function CertificadoPreview({
           onClick={onAlterar}
           style={alterarButton}
         >
-          Alterar seleção
+          Alterar selecao
         </button>
       </div>
 
@@ -1507,7 +1306,7 @@ function CertificadoPreview({
         />
 
         <h1 style={tituloCertificado}>
-          Certificado de Competências
+          Certificado de Competencias
         </h1>
 
         <div style={certificamosTexto}>
@@ -1519,14 +1318,12 @@ function CertificadoPreview({
         </div>
 
         <div style={cargoCertificado}>
-          {certificado.cargo ||
-            "Consultor/a"}
-
-          {certificado.nome_serviceline &&
-          certificado.nome_serviceline !==
-            "Não disponível"
-            ? ` — Service Line: ${certificado.nome_serviceline}`
-            : ""}
+          Consultor - Service Line:{" "}
+          <strong>
+            {
+              certificado.nome_serviceline
+            }
+          </strong>
         </div>
 
         <div style={conclusaoTexto}>
@@ -1534,33 +1331,29 @@ function CertificadoPreview({
         </div>
 
         <div style={badgeCertificado}>
-          {certificado.nome_badge}
-
-          {certificado.nome_nivel &&
-          certificado.nome_nivel !==
-            "Não disponível"
-            ? ` — ${certificado.nome_nivel}`
-            : ""}
+          {certificado.nome_badge} - Nivel{" "}
+          {certificado.nome_nivel}
         </div>
 
         <div style={informacoesCertificado}>
           <div>
-            <strong>Área:</strong>{" "}
+            <strong>Area:</strong>{" "}
             {certificado.nome_area}
           </div>
 
           <div>
             <strong>
-              Data de emissão:
+              Data de emissao:
             </strong>{" "}
             {formatarData(
-              dataEmissao
+              certificado.data_entrada_historico ||
+                certificado.data_avaliacao_sll
             )}
           </div>
 
           <div>
             <strong>
-              Código de verificação:
+              Codigo de verificacao:
             </strong>{" "}
             {codigo}
           </div>
@@ -1613,10 +1406,6 @@ function CertificadoPreview({
     </section>
   );
 }
-
-/* =========================================================
-   ESTILOS
-========================================================= */
 
 const pagina = {
   minHeight: "100vh",
@@ -1801,10 +1590,6 @@ const gerarButton = {
   fontSize: 13,
   fontWeight: 700,
 };
-
-/* =========================================================
-   PREVIEW — LARGURA TOTAL
-========================================================= */
 
 const previewWrapper = {
   width: "100%",

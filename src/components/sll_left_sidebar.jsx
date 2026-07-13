@@ -26,7 +26,7 @@ function SllLeftSidebar() {
       <div style={profileBox}>
         <BiUserCircle size={25} color="#6b7280" />
 
-        <span style={profileName}>Service Line</span>
+        <span style={profileName}>Service Line Leader</span>
       </div>
 
       <div style={pagesLabel}>Pages</div>

@@ -22,7 +22,7 @@ function obterRotasUtilizador(user) {
     return { inicio: "/tm", perfil: "/tm/perfil", definicoes: "/tm/definicoes", notificacoes: "/tm/notificacoes" };
   }
   if (isSll) {
-    return { inicio: "/sll", perfil: "/sll/definicoes", definicoes: "/sll/definicoes", notificacoes: "/sll/notificacoes" };
+    return { inicio: "/sll", perfil: "/sll/perfil", definicoes: "/sll/definicoes", notificacoes: "/sll/notificacoes" };
   }
   if (isAdmin) {
     return { inicio: "/admin", perfil: "/admin", definicoes: "/admin", notificacoes: "/admin/notificacoes" };
