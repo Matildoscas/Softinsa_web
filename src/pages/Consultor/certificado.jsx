@@ -9,6 +9,7 @@ import LeftSidebar from "../../components/LeftSidebar.jsx";
 import RightSidebar from "../../components/RightSidebar.jsx";
 import api from "../../services/api.js";
 import logoImg from "../../assets/logo.png";
+import { obterPontosTotaisBadge } from "../../utils/badgeBonus.js";
 
 function SignatureIcon() {
   return (
@@ -321,6 +322,11 @@ function CertificadoPage() {
     return `${window.location.origin}/verificar/${codigo}`;
   };
 
+  const pontosCertificado =
+    obterPontosTotaisBadge(
+      badge
+    );
+
   const handleGerarPDF = () => {
     window.print();
   };
@@ -334,7 +340,7 @@ function CertificadoPage() {
       ["Badge", getNomeBadge()],
       ["Nível", getNivel()],
       ["Requisitos", getRequisitosTexto()],
-      ["Pontos", badge?.pontos || 0],
+      ["Pontos", pontosCertificado],
       ["Data de emissão", getDataEmissao()],
       ["Código de verificação", getCodigoVerificacao()],
       ["URL de verificação", getUrlVerificacao()],

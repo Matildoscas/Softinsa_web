@@ -1342,13 +1342,22 @@ function CatalogoBadgeRow({
     conquistado &&
     ganhouBonus;
 
+  const pontosExtraVisiveis =
+    bonusAtivo
+      ? pontosExtra
+      : desafioAtivo
+        ? pontos
+        : 0;
+
   const pontosTotais =
     bonusAtivo
       ? obterPontosTotaisBadge(
           conquistadoBadge ||
             badge
         )
-      : pontos;
+      : desafioAtivo
+        ? pontos * 2
+        : pontos;
 
   const desafioAtivo =
     !conquistado &&
@@ -1454,6 +1463,8 @@ function CatalogoBadgeRow({
     bonusAtivo &&
     pontosExtra > 0
       ? `${estadoBase} • +${pontosExtra} pontos extra`
+      : desafioAtivo
+        ? `${estadoBase} • +${pontos} pontos extra se concluído no prazo`
       : estadoBase;
 
   const corEstado =
@@ -1698,8 +1709,7 @@ function CatalogoBadgeRow({
             {pontosTotais}
           </div>
 
-          {bonusAtivo &&
-            pontosExtra > 0 && (
+          {pontosExtraVisiveis > 0 && (
               <div
                 style={{
                   fontSize:
@@ -1715,7 +1725,7 @@ function CatalogoBadgeRow({
                     "nowrap",
                 }}
               >
-                +{pontosExtra} extra
+                +{pontosExtraVisiveis} extra
               </div>
             )}
         </div>
