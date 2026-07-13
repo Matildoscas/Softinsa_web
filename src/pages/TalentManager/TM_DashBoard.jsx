@@ -488,6 +488,52 @@ function WelcomeItem({ icon, label, value }) {
   );
 }
 
+function obterFotoConsultorSrc(consultor) {
+  const foto =
+    consultor?.foto_perfil ||
+    consultor?.FOTO_PERFIL ||
+    consultor?.foto ||
+    consultor?.imagem ||
+    null;
+
+  if (!foto) return null;
+
+  return buildUploadUrl(foto);
+}
+
+function ConsultorAvatar({ consultor }) {
+  const [erroImagem, setErroImagem] = useState(false);
+
+  const nome =
+    consultor.nome_completo ||
+    consultor.nome ||
+    "Consultor";
+
+  const fotoSrc = obterFotoConsultorSrc(consultor);
+
+  if (!fotoSrc || erroImagem) {
+    return (
+      <div style={consultorAvatar}>
+        <BiUserCircle
+          size={42}
+          color="#6092bf"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div style={consultorAvatar}>
+      <img
+        src={fotoSrc}
+        alt={nome}
+        style={consultorAvatarImg}
+        onError={() => setErroImagem(true)}
+      />
+    </div>
+  );
+}
+
 function ConsultorCard({ consultor, onVerPerfil }) {
   const nome = consultor.nome_completo || consultor.nome || "Consultor";
   const email = consultor.email || consultor.email_softinsa || "Sem email";
@@ -497,7 +543,7 @@ function ConsultorCard({ consultor, onVerPerfil }) {
   return (
     <article style={consultorCard}>
       <div style={consultorMain}>
-        <div style={consultorAvatar}><BiUserCircle size={42} color="#6092bf" /></div>
+        <ConsultorAvatar consultor={consultor} />
         <div style={consultorInfo}>
           <div style={consultorTopLine}>
             <span style={consultorName}>{nome}</span>
@@ -565,7 +611,24 @@ const areaTotal = { fontSize: 12, color: "#111827", marginTop: 4 };
 const viewAllButton = { display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #d1d5db", borderRadius: 8, background: "white", color: "#111827", padding: "7px 13px", fontSize: 12, cursor: "pointer" };
 const consultorCard = { width: "100%", background: "white", border: "1px solid #bfdbfe", borderRadius: 12, marginBottom: 14, overflow: "hidden", boxSizing: "border-box" };
 const consultorMain = { display: "flex", alignItems: "center", gap: 14, padding: "16px 18px" };
-const consultorAvatar = { width: 48, height: 48, borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
+const consultorAvatar = {
+  width: 48,
+  height: 48,
+  borderRadius: "50%",
+  background: "#eff6ff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  overflow: "hidden",
+  border: "1px solid #dbeafe",
+};
+const consultorAvatarImg = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
 const consultorInfo = { flex: 1, minWidth: 0 };
 const consultorTopLine = { display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" };
 const consultorName = { fontSize: 14, color: "#111827", fontWeight: 500 };

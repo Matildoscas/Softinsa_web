@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { HiOutlineArrowLeft } from "react-icons/hi";
 import {
   HiOutlineUser,
@@ -35,6 +35,7 @@ function obterUtilizadorGuardado() {
 
 function TM_DefinicoesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
 
   // 📝 Dados Pessoais & Corporativos (Estados trazidos e adaptados da Versão 2)
@@ -108,6 +109,11 @@ function TM_DefinicoesPage() {
       setNome(userData.nome_completo || userData.nome || "");
       setContacto(userData.contacto || "");
       setFotoPerfil(userData.foto_perfil || null);
+      setPreviewFoto(
+        userData.foto_perfil
+          ? buildUploadUrl(userData.foto_perfil)
+          : null
+      );
       setNotificacoesEmail(userData.notificacoes_email ?? true);
       setNotificacoesPlataforma(userData.notificacoes_plataforma ?? true);
 
@@ -214,6 +220,11 @@ function TM_DefinicoesPage() {
         setNome(userAtualizado.nome_completo || userAtualizado.nome || "");
         setContacto(userAtualizado.contacto || "");
         setFotoPerfil(userAtualizado.foto_perfil || null);
+        setPreviewFoto(
+          userAtualizado.foto_perfil
+            ? buildUploadUrl(userAtualizado.foto_perfil)
+            : null
+        );
         setNotificacoesEmail(userAtualizado.notificacoes_email ?? true);
         setNotificacoesPlataforma(userAtualizado.notificacoes_plataforma ?? true);
 
@@ -297,7 +308,24 @@ function TM_DefinicoesPage() {
   function handleFotoChange(event) {
     const file = event.target.files?.[0];
 
-    if (!file) {
+    if (!file) return;
+
+    const tiposPermitidos = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+    ];
+
+    if (!tiposPermitidos.includes(file.type)) {
+      setErro("A imagem deve ser PNG, JPG, JPEG ou WEBP.");
+      setMensagem("");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErro("A imagem não pode ter mais de 2MB.");
+      setMensagem("");
       return;
     }
 
@@ -310,7 +338,15 @@ function TM_DefinicoesPage() {
   async function handleUploadFoto() {
     const id = getUserId();
 
-    if (!ficheiroFoto || !id) {
+    if (!id) {
+      setErro("Sessão inválida. Inicia sessão novamente.");
+      localStorage.clear();
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    if (!ficheiroFoto) {
+      setErro("Escolhe uma imagem primeiro.");
       return;
     }
 
@@ -333,33 +369,47 @@ function TM_DefinicoesPage() {
       );
 
       const dadosAtualizados =
+        response.data?.dados ||
         response.data?.utilizador ||
         response.data ||
         {};
 
-      atualizarLocalStorageGlobal(dadosAtualizados);
-
-      setFotoPerfil(
+      const fotoPerfilAtualizada =
         dadosAtualizados.foto_perfil ||
         dadosAtualizados.FOTO_PERFIL ||
-        null
-      );
+        dadosAtualizados.foto ||
+        null;
 
+      const userAtualizado = {
+        ...user,
+        foto_perfil: fotoPerfilAtualizada,
+      };
+
+      atualizarLocalStorageGlobal(userAtualizado);
+
+      setFotoPerfil(fotoPerfilAtualizada);
       setFicheiroFoto(null);
-      setPreviewFoto(null);
+
+      setPreviewFoto(
+        fotoPerfilAtualizada
+          ? buildUploadUrl(fotoPerfilAtualizada)
+          : null
+      );
 
       setMensagem("Foto de perfil atualizada com sucesso.");
     } catch (err) {
       console.error("Erro ao enviar foto:", err);
+      console.error("STATUS:", err.response?.status);
+      console.error("BODY:", err.response?.data);
 
       setErro(
         err.response?.data?.error ||
-        "Erro ao fazer upload da foto."
+          "Erro ao fazer upload da foto."
       );
     } finally {
-    setIsUploadingFoto(false);
+      setIsUploadingFoto(false);
+    }
   }
-}
 
   // 💾 Guardar Perfil com a Lógica e Endpoint da VERSÃO 2
  async function handleGuardarPerfil(event) {
@@ -554,11 +604,14 @@ function TM_DefinicoesPage() {
               <SectionCard titulo="Foto de Perfil">
                 <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 12 }}>
                   <div style={avatarContainer}>
-                    {fotoPerfil ? (
+                    {previewFoto || fotoPerfil ? (
                       <img
                         src={previewFoto || buildUploadUrl(fotoPerfil)}
                         alt="Perfil"
                         style={avatarImg}
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
                       />
                     ) : (
                       <div style={avatarPlaceholder}>
