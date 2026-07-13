@@ -75,7 +75,7 @@ function obterCodigoNivel(nomeNivel, index) {
   return mapa[nome] || ["A", "B", "C", "D", "E"][index] || "";
 }
 
-function abrirTrocarBadge(nivel) {
+/*function abrirTrocarBadge(nivel) {
   setNivelParaTrocarBadge(nivel);
   setBadgeSelecionadoId("");
   setModalBadgeAberta(true);
@@ -123,6 +123,105 @@ async function guardarTrocaBadge() {
   } finally {
     setATrocarBadge(false);
   }
+}*/
+
+function garantirArray(valor) {
+  if (!valor) return [];
+
+  if (Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (typeof valor === "string") {
+    try {
+      const parsed = JSON.parse(valor);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function normalizarBadge(badge) {
+  const requisitos = garantirArray(
+    badge.requisitos ||
+      badge.REQUISITOS ||
+      badge.requisitosData ||
+      []
+  );
+
+  return {
+    id:
+      badge.id ||
+      badge.id_badge_modelo ||
+      badge.ID_BADGE_MODELO ||
+      "",
+
+    nome:
+      badge.nome ||
+      badge.nome_badge ||
+      badge.NOME_BADGE ||
+      "Badge sem nome",
+
+    descricao:
+      badge.descricao ||
+      badge.descricao_badge_modelo ||
+      badge.DESCRICAO_BADGE_MODELO ||
+      "",
+
+    pontos: Number(
+      badge.pontos ||
+        badge.PONTOS ||
+        0
+    ),
+
+    id_nivel:
+      badge.id_nivel ||
+      badge.ID_NIVEL ||
+      "",
+
+    nome_nivel:
+      badge.nome_nivel ||
+      badge.NOME_NIVEL ||
+      "",
+
+    codigo_nivel:
+      badge.codigo_nivel ||
+      obterCodigoNivel(
+        badge.nome_nivel ||
+          badge.NOME_NIVEL ||
+          "",
+        0
+      ),
+
+    requisitos: requisitos.map((req, index) => ({
+      id:
+        req.id ||
+        req.id_requisitos ||
+        req.ID_REQUISITOS ||
+        index,
+
+      titulo:
+        req.titulo ||
+        req.nome_requisito ||
+        req.NOME_REQUISITO ||
+        `Requisito ${index + 1}`,
+
+      nome:
+        req.nome_requisito ||
+        req.titulo ||
+        req.NOME_REQUISITO ||
+        `Requisito ${index + 1}`,
+
+      descricao:
+        req.descricao ||
+        req.descricao_requisito ||
+        req.DESCRICAO_REQUISITO ||
+        "",
+    })),
+  };
 }
 
 function normalizarNivel(n, index = 0) {
@@ -270,7 +369,14 @@ function SelectDropdown({ options, value, onChange, placeholder, erro }) {
   );
 }
 
-function NivelCard({ nivel, areaId, onEditarRequisitos, onEditarNivel, onDesativarNivel }) {
+function NivelCard({
+  nivel,
+  areaId,
+  onEditarRequisitos,
+  onEditarNivel,
+  onDesativarNivel,
+  onTrocarBadge,
+}) {
   const estadoNormalizado = normalizarEstadoNivel(nivel.estado_nivel);
   const estaInativo = estadoNormalizado === "INATIVO";
   return (
@@ -561,6 +667,61 @@ function EditarArea() {
 
   function handleEditarRequisitos(nivel) {
     navigate(`/admin/niveis/${nivel.id_nivel}/requisitos`);
+  }
+
+  function abrirTrocarBadge(nivel) {
+    setNivelParaTrocarBadge(nivel);
+    setBadgeSelecionadoId("");
+    setErroGeral("");
+    setSucesso("");
+    setModalBadgeAberta(true);
+  }
+
+  function fecharTrocarBadge() {
+    if (aTrocarBadge) return;
+
+    setModalBadgeAberta(false);
+    setNivelParaTrocarBadge(null);
+    setBadgeSelecionadoId("");
+  }
+
+  async function guardarTrocaBadge() {
+    if (!nivelParaTrocarBadge || !badgeSelecionadoId) {
+      setErroGeral("Seleciona um badge rascunho.");
+      return;
+    }
+
+    try {
+      setATrocarBadge(true);
+      setErroGeral("");
+      setSucesso("");
+
+      await api.put(
+        `/niveis/${nivelParaTrocarBadge.id_nivel}/badge`,
+        {
+          id_badge_modelo: Number(badgeSelecionadoId),
+        }
+      );
+
+      setSucesso("Badge do nível atualizado com sucesso.");
+
+      setModalBadgeAberta(false);
+      setNivelParaTrocarBadge(null);
+      setBadgeSelecionadoId("");
+
+      await carregarDados();
+    } catch (err) {
+      console.error("Erro ao trocar badge do nível:", err);
+      console.error("STATUS:", err.response?.status);
+      console.error("BODY:", err.response?.data);
+
+      setErroGeral(
+        err.response?.data?.error ||
+          "Não foi possível trocar o badge deste nível."
+      );
+    } finally {
+      setATrocarBadge(false);
+    }
   }
 
   function abrirCriarNivel() {
@@ -1780,6 +1941,91 @@ const modalConfirmButtonRed = {
   padding: "9px 15px",
   fontSize: 13,
   fontWeight: 700,
+};
+
+const modalCardLarge = {
+  position: "relative",
+  width: "100%",
+  maxWidth: 620,
+  background: "white",
+  borderRadius: 18,
+  padding: "28px 28px 24px",
+  boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)",
+  border: "1px solid #e5e7eb",
+  textAlign: "left",
+};
+
+const inputStyleNormal = {
+  width: "100%",
+  height: 42,
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  padding: "0 12px",
+  fontSize: 14,
+  color: "#111827",
+  background: "white",
+  outline: "none",
+  boxSizing: "border-box",
+  marginBottom: 12,
+};
+
+const emptySmallBox = {
+  background: "#f8fafc",
+  border: "1px dashed #cbd5e1",
+  borderRadius: 10,
+  padding: 12,
+  color: "#64748b",
+  fontSize: 12,
+  marginTop: 10,
+};
+
+const badgePreviewBox = {
+  background: "#f8fafc",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 14,
+  marginTop: 14,
+};
+
+const badgePreviewTitle = {
+  fontSize: 15,
+  fontWeight: 800,
+  color: "#111827",
+  marginBottom: 4,
+};
+
+const badgePreviewDescription = {
+  fontSize: 12,
+  color: "#64748b",
+  lineHeight: 1.45,
+  marginBottom: 8,
+};
+
+const badgePreviewMeta = {
+  fontSize: 12,
+  color: "#2563eb",
+  marginBottom: 12,
+};
+
+const reqPreviewBox = {
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: 10,
+  marginTop: 8,
+};
+
+const reqPreviewTitle = {
+  fontSize: 12,
+  fontWeight: 800,
+  color: "#111827",
+  marginBottom: 3,
+};
+
+const reqPreviewDescription = {
+  fontSize: 11,
+  color: "#64748b",
+  lineHeight: 1.4,
 };
 
 export default EditarArea;
