@@ -798,6 +798,27 @@ function BadgeDetailPage() {
     conquistadoBadge
   );
 
+  const desafioAtivo =
+    desafiosBadge.length > 0;
+
+  const pontosBaseBadge =
+    Number(
+      badge?.pontos || 0
+    );
+
+  const pontosExtraBadge =
+    ganhouBonus
+      ? Number(
+          pontosExtra || 0
+        )
+      : desafioAtivo
+        ? pontosBaseBadge
+        : 0;
+
+  const pontosTotaisBadge =
+    pontosBaseBadge +
+    pontosExtraBadge;
+
   const obterUserId = () => {
   const storedUser =
     localStorage.getItem("user");
@@ -1680,6 +1701,35 @@ const copiarAssinatura =
             <p style={{ fontSize: 13, color: "#374151", marginTop: 8, marginBottom: 0, lineHeight: 1.65 }}>
               {badge.descricao || "Sem descrição disponível."}
             </p>
+          </div>
+
+          <div style={sectionCard}>
+            <div style={sectionTitle}>Pontos</div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginTop: 10 }}>
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: "#ffffff" }}>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>Badge</div>
+                <div style={{ fontSize: 24, color: "#111827", fontWeight: 800 }}>{pontosBaseBadge}</div>
+              </div>
+
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: pontosExtraBadge > 0 ? "#fffdf4" : "#ffffff" }}>
+                <div style={{ fontSize: 11, color: pontosExtraBadge > 0 ? "#9a6b00" : "#64748b", fontWeight: 700 }}>Extra do desafio</div>
+                <div style={{ fontSize: 24, color: pontosExtraBadge > 0 ? "#9a6b00" : "#111827", fontWeight: 800 }}>+{pontosExtraBadge}</div>
+              </div>
+
+              <div style={{ border: "1px solid #dbeafe", borderRadius: 12, padding: 14, background: "#eff6ff" }}>
+                <div style={{ fontSize: 11, color: "#1d4ed8", fontWeight: 700 }}>{ganhouBonus ? "Total recebido" : desafioAtivo ? "Total possível" : "Total"}</div>
+                <div style={{ fontSize: 24, color: "#1e3a8a", fontWeight: 800 }}>{pontosTotaisBadge}</div>
+              </div>
+            </div>
+
+            {(ganhouBonus || desafioAtivo) && (
+              <div style={{ marginTop: 12, fontSize: 12, color: ganhouBonus ? "#9a6b00" : "#2563eb", fontWeight: 600 }}>
+                {ganhouBonus
+                  ? `Este badge atribuiu +${pontosExtraBadge} pontos extra por conclusão do desafio no prazo.`
+                  : `Este badge está com desafio ativo e pode atribuir +${pontosExtraBadge} pontos extra se for concluído no prazo.`}
+              </div>
+            )}
           </div>
 
           <NivelSelector nivelAtual={obterNivelBadge(badge)} />

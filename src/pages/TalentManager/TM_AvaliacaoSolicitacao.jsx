@@ -78,16 +78,20 @@ function AvaliacaoSolicitacaoTM() {
           }
         });
 
-        const requisitosTratados = dados.requisitos.map((linha, index) => ({
-          id: linha.id_requisitos || linha.id_evidencia || index,
-          estado: linha.id_evidencia ? (linha.estado_evidencia_tm || "PENDENTE") : "SEM_EVIDENCIA",
-          idEvidencia: linha.id_evidencia,            
-          idCandidaturaPedido: linha.id_candidatura_pedido, 
-          titulo: linha.nome_requisito,
-          descricao: linha.descricao_requisito,
-          evidenciaTexto: linha.descricao_evidencia,
-          documento: linha.nome_ficheiro,
-          caminhoFicheiro: linha.caminho_ficheiro, 
+        const requisitosTratados = dados.requisitos.map((requisito, index) => ({
+          id: requisito.id_requisitos || index,
+          titulo: requisito.nome_requisito,
+          descricao: requisito.descricao_requisito,
+          evidencias: Array.isArray(requisito.evidencias)
+            ? requisito.evidencias.map((evidencia) => ({
+                idEvidencia: evidencia.id_evidencia,
+                idCandidaturaPedido: evidencia.id_candidatura_pedido,
+                estado: evidencia.estado_evidencia_tm || "PENDENTE",
+                evidenciaTexto: evidencia.descricao_evidencia,
+                documento: evidencia.nome_ficheiro,
+                caminhoFicheiro: evidencia.caminho_ficheiro,
+              }))
+            : [],
         }));
 
         setRequisitos(requisitosTratados);
@@ -109,6 +113,12 @@ function AvaliacaoSolicitacaoTM() {
 
   const toggleAccordion = (idReq) => {
     setIdExpandido(prevId => prevId === idReq ? null : idReq);
+  };
+
+  const obterEvidenciasRequisito = (requisito) => {
+    return Array.isArray(requisito?.evidencias)
+      ? requisito.evidencias
+      : [];
   };
 
   const handleVisualizarFicheiro = (caminhoFicheiro) => {
@@ -215,19 +225,41 @@ function AvaliacaoSolicitacaoTM() {
     return "SEM_EVIDENCIA";
   };
 
+  const obterEstadoRequisito = (requisito) => {
+    const evidencias = obterEvidenciasRequisito(requisito);
+
+    if (evidencias.length === 0) {
+      return "SEM_EVIDENCIA";
+    }
+
+    const estados = evidencias.map((evidencia) =>
+      normalizarEstadoAvaliacao(evidencia.estado),
+    );
+
+    if (estados.some((estado) => estado === "REJEITADA")) {
+      return "REJEITADA";
+    }
+
+    if (estados.every((estado) => estado === "APROVADA")) {
+      return "APROVADA";
+    }
+
+    return "PENDENTE";
+  };
+
   // Cálculos de Progresso
   const totalRequisitos = requisitos.length;
   const avaliadosCount = requisitos.filter((r) => {
-    const estado = normalizarEstadoAvaliacao(r.estado);
+    const estado = obterEstadoRequisito(r);
     return estado === "APROVADA" || estado === "REJEITADA";
   }).length;
 
   const todosAprovados = requisitos.length > 0 && requisitos.every((r) => {
-    return normalizarEstadoAvaliacao(r.estado) === "APROVADA";
+    return obterEstadoRequisito(r) === "APROVADA";
   });
 
   const peloMenosUmRejeitado = requisitos.length > 0 && requisitos.some((r) => {
-    return normalizarEstadoAvaliacao(r.estado) === "REJEITADA";
+    return obterEstadoRequisito(r) === "REJEITADA";
   });
 
   const percentagemProgresso = totalRequisitos > 0 ? (avaliadosCount / totalRequisitos) * 100 : 0;
@@ -355,9 +387,10 @@ function AvaliacaoSolicitacaoTM() {
             {/* LISTA DE REQUISITOS */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {requisitos.map((req) => {
-                const configEstado = obterEstiloEstado(req.estado);
-                const temEvidenciaReal = req.idEvidencia && req.estado !== 'SEM_EVIDENCIA';
-                const estaAvaliandoEste = avaliandoId === req.idEvidencia;
+                const estadoRequisito = obterEstadoRequisito(req);
+                const configEstado = obterEstiloEstado(estadoRequisito);
+                const evidencias = obterEvidenciasRequisito(req);
+                const temEvidenciaReal = evidencias.length > 0;
 
                 return (
                   <div key={req.id} style={{ backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e9ecef', overflow: 'hidden' }}>
@@ -368,6 +401,9 @@ function AvaliacaoSolicitacaoTM() {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontWeight: '700', fontSize: '14px', color: '#212529' }}>{req.titulo}</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
+                          {evidencias.length} evidência(s)
+                        </span>
                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', fontWeight: '700', backgroundColor: configEstado.bg, color: configEstado.text }}>
                           {configEstado.label}
                         </span>
@@ -384,63 +420,78 @@ function AvaliacaoSolicitacaoTM() {
 
                         {temEvidenciaReal ? (
                           <>
-                            {req.evidenciaTexto && (
-                              <div>
-                                <div style={{ fontWeight: '700', color: '#495057', marginBottom: '6px' }}>Evidência apresentada</div>
-                                <p style={{ color: '#495057', backgroundColor: '#f8f9fa', padding: '12px', borderRadius: '8px', margin: 0, border: '1px solid #e9ecef' }}>
-                                  {req.evidenciaTexto}
-                                </p>
-                              </div>
-                            )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              {evidencias.map((evidencia, index) => {
+                                const estadoEvidencia = normalizarEstadoAvaliacao(evidencia.estado);
+                                const estaAvaliandoEste = avaliandoId === evidencia.idEvidencia;
 
-                            {req.documento && (
-                              <div>
-                                <div style={{ fontWeight: '700', color: '#495057', marginBottom: '8px' }}>Documentos</div>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8f9fa', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e9ecef', maxWidth: '400px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span>📄</span>
-                                    <div>
-                                      <div style={{ fontWeight: '600', color: '#495057', fontSize: '12px' }}>{req.documento}</div>
+                                return (
+                                  <div key={evidencia.idEvidencia || index} style={{ backgroundColor: '#f8f9fa', border: '1px solid #e9ecef', borderRadius: '10px', padding: '12px' }}>
+                                    <div style={{ fontWeight: '700', color: '#334155', fontSize: '12px', marginBottom: '8px' }}>
+                                      Evidência {index + 1}
+                                    </div>
+
+                                    {evidencia.evidenciaTexto && (
+                                      <div style={{ marginBottom: '10px' }}>
+                                        <div style={{ fontWeight: '700', color: '#495057', marginBottom: '6px' }}>Descrição da evidência</div>
+                                        <p style={{ color: '#495057', backgroundColor: '#ffffff', padding: '12px', borderRadius: '8px', margin: 0, border: '1px solid #e9ecef' }}>
+                                          {evidencia.evidenciaTexto}
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {evidencia.documento && (
+                                      <div>
+                                        <div style={{ fontWeight: '700', color: '#495057', marginBottom: '8px' }}>Documento</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span>📄</span>
+                                            <div>
+                                              <div style={{ fontWeight: '600', color: '#495057', fontSize: '12px' }}>{evidencia.documento}</div>
+                                            </div>
+                                          </div>
+                                          <button 
+                                            onClick={() => handleVisualizarFicheiro(evidencia.caminhoFicheiro)}
+                                            style={{ background: 'none', border: 'none', color: '#0d6efd', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                                          >
+                                            Visualizar
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', gap: '10px', paddingTop: '10px', flexWrap: 'wrap' }}>
+                                      {estadoEvidencia === 'PENDENTE' ? (
+                                        <>
+                                          <button 
+                                            onClick={() => handleAceitarEvidencia(evidencia.idEvidencia, evidencia.idCandidaturaPedido)}
+                                            disabled={avaliandoId !== null}
+                                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#0d6efd', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                          >
+                                            {estaAvaliandoEste ? (
+                                              <>
+                                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                A processar...
+                                              </>
+                                            ) : '✓ Validar Evidência'}
+                                          </button>
+                                          <button 
+                                            onClick={() => handleRejeitarEvidencia(evidencia.idEvidencia, evidencia.idCandidaturaPedido)}
+                                            disabled={avaliandoId !== null}
+                                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#e9ecef', color: '#495057' }}
+                                          >
+                                            ✕ Rejeitar Evidência
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <div style={{ fontStyle: 'italic', color: '#6c757d', fontSize: '12px', marginTop: '4px' }}>
+                                          Ação concluída para esta evidência ({estadoEvidencia.toLowerCase()}).
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
-                                  <button 
-                                    onClick={() => handleVisualizarFicheiro(req.caminhoFicheiro)}
-                                    style={{ background: 'none', border: 'none', color: '#0d6efd', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
-                                  >
-                                    Visualizar
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-
-                            <div style={{ display: 'flex', gap: '10px', paddingTop: '10px' }}>
-                              {req.estado?.toUpperCase() === 'PENDENTE' ? (
-                                <>
-                                  <button 
-                                    onClick={() => handleAceitarEvidencia(req.idEvidencia, req.idCandidaturaPedido)}
-                                    disabled={avaliandoId !== null}
-                                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#0d6efd', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}
-                                  >
-                                    {estaAvaliandoEste ? (
-                                      <>
-                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                        A processar...
-                                      </>
-                                    ) : '✓ Validar Evidência'}
-                                  </button>
-                                  <button 
-                                    onClick={() => handleRejeitarEvidencia(req.idEvidencia, req.idCandidaturaPedido)}
-                                    disabled={avaliandoId !== null}
-                                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#e9ecef', color: '#495057' }}
-                                  >
-                                    ✕ Rejeitar Evidência
-                                  </button>
-                                </>
-                              ) : (
-                                <div style={{ fontStyle: 'italic', color: '#6c757d', fontSize: '12px', marginTop: '4px' }}>
-                                  Ação concluída para esta evidência ({req.estado?.toLowerCase()}).
-                                </div>
-                              )}
+                                );
+                              })}
                             </div>
                           </>
                         ) : (
@@ -459,7 +510,7 @@ function AvaliacaoSolicitacaoTM() {
             <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e9ecef', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <h6 style={{ fontWeight: '700', color: '#212529', margin: '0 0 4px 0' }}>Progresso de Avaliação</h6>
-                <small style={{ color: '#adb5bd', fontWeight: '600' }}>{avaliadosCount} / {totalRequisitos} Requisitos Evaluados</small>
+                <small style={{ color: '#adb5bd', fontWeight: '600' }}>{avaliadosCount} / {totalRequisitos} requisitos avaliados</small>
               </div>
 
               <div style={{ width: '100%', backgroundColor: '#e9ecef', borderRadius: '10px', height: '10px', maxWidth: '400px', margin: '0 auto', overflow: 'hidden' }}>
