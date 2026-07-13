@@ -138,7 +138,7 @@ function PerfilSllPage() {
       console.error("Erro ao carregar perfil SLL:", err);
       setErro(
         err.response?.data?.error ||
-          "Nao foi possivel carregar os dados do perfil."
+          "Não foi possível carregar os dados do perfil."
       );
     } finally {
       setLoading(false);
@@ -206,7 +206,7 @@ function PerfilSllPage() {
 
                   <StatChip
                     icon={<BiClipboard size={20} color="#fff" />}
-                    label="Evidencias Pendentes"
+                    label="Evidências Pendentes"
                     value={resumo?.evidencias_pendentes || 0}
                   />
 
@@ -252,7 +252,7 @@ function PerfilSllPage() {
               style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}
             >
               <BiBell size={18} color="#0d6efd" />
-              Notificacoes
+              Notificações
             </Button>
 
             <Button
@@ -274,11 +274,11 @@ function PerfilSllPage() {
 
                 <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
                   <LinhaResumo
-                    label="Badges atribuidos no mes"
+                    label="Badges atribuídos no mês"
                     value={resumo?.badges_atribuidos_mes || 0}
                   />
                   <LinhaResumo
-                    label="Pontos obtidos no mes"
+                    label="Pontos obtidos no mês"
                     value={resumo?.pontos_obtidos_mes || 0}
                   />
                   <LinhaResumo
@@ -292,7 +292,7 @@ function PerfilSllPage() {
             <Card className="border-0" style={cardPanel}>
               <Card.Body>
                 <h2 style={tituloCard}>Dados Pessoais</h2>
-                <div style={subtituloCard}>Informacao atual do teu registo</div>
+                <div style={subtituloCard}>Informação atual do teu registo</div>
 
                 <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
                   <LinhaResumo
@@ -339,7 +339,7 @@ function PerfilSllPage() {
                       <div key={`${item.id_utilizador}-${index}`} style={linhaConsultor}>
                         <div>
                           <div style={nomeConsultor}>{item.nome_completo || "Consultor"}</div>
-                          <div style={metaConsultor}>{item.nome_area || "Sem area"}</div>
+                          <div style={metaConsultor}>{item.nome_area || "Sem área"}</div>
                         </div>
 
                         <div style={statsConsultor}>
@@ -355,11 +355,11 @@ function PerfilSllPage() {
 
             <Card className="border-0" style={cardPanel}>
               <Card.Body>
-                <h2 style={tituloCard}>Tendencia Anual</h2>
-                <div style={subtituloCard}>Evolucao de badges e pontos por mes</div>
+                <h2 style={tituloCard}>Tendência Anual</h2>
+                <div style={subtituloCard}>Evolução de badges e pontos por mês</div>
 
                 {graficoAnual.length === 0 ? (
-                  <div style={vazioBox}>Sem dados para o grafico anual.</div>
+                  <div style={vazioBox}>Sem dados para o gráfico anual.</div>
                 ) : (
                   <div style={{ width: "100%", height: 250, marginTop: 8 }}>
                     <ResponsiveContainer>
