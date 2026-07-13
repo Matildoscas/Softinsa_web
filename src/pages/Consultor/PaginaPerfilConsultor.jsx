@@ -37,6 +37,60 @@ import {
   removerBadgesDuplicados,
 } from "../../utils/badgeBonus.js";
 
+function normalizarAreaBadge(badge) {
+  return String(
+    badge?.nome_area ||
+      badge?.nome_areas ||
+      badge?.area ||
+      badge?.area_nome ||
+      badge?.nome_area_utilizador ||
+      ""
+  ).trim();
+}
+
+function obterAreaPrincipal(badges) {
+  const contagem = new Map();
+
+  badges.forEach((badge) => {
+    const area = normalizarAreaBadge(badge);
+
+    if (!area) {
+      return;
+    }
+
+    contagem.set(area, (contagem.get(area) || 0) + 1);
+  });
+
+  const ordenadas = Array.from(contagem.entries()).sort((a, b) => {
+    if (b[1] !== a[1]) {
+      return b[1] - a[1];
+    }
+
+    return a[0].localeCompare(b[0], "pt-PT");
+  });
+
+  return ordenadas[0]?.[0] || "Área não definida";
+}
+
+function obterDistribuicaoAreas(badges) {
+  const mapa = new Map();
+
+  badges.forEach((badge) => {
+    const area = normalizarAreaBadge(badge) || "Sem área definida";
+    mapa.set(area, (mapa.get(area) || 0) + 1);
+  });
+
+  return Array.from(mapa.entries())
+    .sort((a, b) => {
+      if (b[1] !== a[1]) {
+        return b[1] - a[1];
+      }
+
+      return a[0].localeCompare(b[0], "pt-PT");
+    })
+    .map(([area, total]) => ({ area, total }));
+}
+
 function PaginaPerfil() {
   const navigate = useNavigate();
 
@@ -53,6 +107,12 @@ function PaginaPerfil() {
     badgesConquistados,
     setBadgesConquistados,
   ] = useState([]);
+
+  const [perfilResumo, setPerfilResumo] = useState({
+    areaPrincipal: "Área não definida",
+    areasDistribuicao: [],
+    ultimoBadge: null,
+  });
 
   const [loading, setLoading] =
     useState(true);
@@ -134,6 +194,13 @@ function PaginaPerfil() {
               0
             );
 
+          const badgesOrdenados = [...badgesUnicos].sort((a, b) => {
+            const dataA = new Date(a.data_atribuicao || a.data_emissao || 0).getTime();
+            const dataB = new Date(b.data_atribuicao || b.data_emissao || 0).getTime();
+
+            return dataB - dataA;
+          });
+
           setStats({
             total_badges:
               Number(
@@ -149,6 +216,12 @@ function PaginaPerfil() {
           setBadgesConquistados(
             badgesUnicos
           );
+
+          setPerfilResumo({
+            areaPrincipal: obterAreaPrincipal(badgesUnicos),
+            areasDistribuicao: obterDistribuicaoAreas(badgesUnicos),
+            ultimoBadge: badgesOrdenados[0] || null,
+          });
         }
       )
       .catch((err) => {
@@ -262,6 +335,24 @@ function PaginaPerfil() {
                     "Consultor"}
                   !
                 </h5>
+
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "rgba(255,255,255,0.16)",
+                    border: "1px solid rgba(255,255,255,0.22)",
+                    borderRadius: 999,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    marginBottom: 14,
+                  }}
+                >
+                  <BiMedal size={16} />
+                  Área principal: {perfilResumo.areaPrincipal}
+                </div>
 
                 <div
                   className="
@@ -404,6 +495,52 @@ function PaginaPerfil() {
               </div>
             </Card.Body>
           </Card>
+
+          <div className="d-flex gap-3 flex-wrap mb-4">
+            <Card className="border-0 flex-grow-1" style={{ minWidth: 260, borderRadius: 12, background: "white" }}>
+              <Card.Body>
+                <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>Área de atuação</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#111827", marginTop: 4 }}>
+                  {perfilResumo.areaPrincipal}
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+                  Baseado nos badges conquistados e na área onde tens maior presença.
+                </div>
+              </Card.Body>
+            </Card>
+
+            <Card className="border-0 flex-grow-1" style={{ minWidth: 260, borderRadius: 12, background: "white" }}>
+              <Card.Body>
+                <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>Última conquista</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#111827", marginTop: 4 }}>
+                  {perfilResumo.ultimoBadge?.nome || perfilResumo.ultimoBadge?.nome_badge || "Sem conquistas recentes"}
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+                  {perfilResumo.ultimoBadge?.data_atribuicao
+                    ? new Date(perfilResumo.ultimoBadge.data_atribuicao).toLocaleDateString("pt-PT")
+                    : "Aguardando a próxima conquista"}
+                </div>
+              </Card.Body>
+            </Card>
+
+            <Card className="border-0 flex-grow-1" style={{ minWidth: 260, borderRadius: 12, background: "white" }}>
+              <Card.Body>
+                <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600 }}>Áreas com badges</div>
+                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {perfilResumo.areasDistribuicao.length > 0 ? (
+                    perfilResumo.areasDistribuicao.slice(0, 4).map((item) => (
+                      <div key={item.area} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                        <span style={{ fontSize: 13, color: "#111827", fontWeight: 600 }}>{item.area}</span>
+                        <span style={{ fontSize: 13, color: "#2563eb", fontWeight: 700 }}>{item.total}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>Ainda sem distribuição disponível.</div>
+                  )}
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
 
           <div
             className="
