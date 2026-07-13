@@ -20,6 +20,7 @@ import {
 import { jsPDF } from "jspdf";
 
 import api from "../../services/api.js";
+import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 
 import Header from "../../components/TM_Header.jsx";
 import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
@@ -102,14 +103,9 @@ function normalizarBadge(badge) {
       badge.nome_badge ||
       "Badge sem nome",
 
-    descricao_badge_modelo:
-      badge
-        .descricao_badge_modelo ||
-      "",
-
     nome_nivel:
       badge.nome_nivel ||
-      "Não disponível",
+      "Sem nível",
 
     pontos: Number(
       badge.pontos || 0
@@ -123,62 +119,8 @@ function normalizarBadge(badge) {
     imagem:
       badge.imagem ||
       null,
-  };
-}
 
-function normalizarCertificado(
-  certificado
-) {
-  return {
-    ...certificado,
-
-    id_candidatura_historico:
-      certificado
-        .id_candidatura_historico,
-
-    id_utilizador:
-      certificado.id_utilizador,
-
-    nome_completo:
-      certificado.nome_completo ||
-      certificado.nome_utilizador ||
-      "Consultor",
-
-    email:
-      certificado.email ||
-      "Não disponível",
-
-    cargo:
-      certificado.cargo ||
-      "Consultor/a",
-
-    nome_area:
-      certificado.nome_area ||
-      "Não disponível",
-
-    nome_serviceline:
-      certificado.nome_serviceline ||
-      "Não disponível",
-
-    nome_badge:
-      certificado.nome_badge ||
-      "Badge sem nome",
-
-    nome_nivel:
-      certificado.nome_nivel ||
-      "Não disponível",
-
-    pontos: Number(
-      certificado.pontos || 0
-    ),
-
-    imagem:
-      certificado.imagem ||
-      null,
-
-    codigo_certificado:
-      certificado.codigo_certificado ||
-      null,
+    debug: badge.debug || null,
   };
 }
 
@@ -249,12 +191,6 @@ function criarCodigoVerificacao(
   certificado
 ) {
   if (
-    certificado.codigo_certificado
-  ) {
-    return certificado.codigo_certificado;
-  }
-
-  if (
     certificado.codigo_verificacao
   ) {
     return certificado.codigo_verificacao;
@@ -271,7 +207,7 @@ function criarCodigoVerificacao(
       0
   ).padStart(4, "0");
 
-  return `CERT-${historico}-${utilizador}`;
+  return `SL-${historico}-${utilizador}`;
 }
 
 function carregarImagemComoDataUrl(
@@ -605,11 +541,7 @@ function GerarCertificadoTm() {
         );
 
       const certificado =
-        response.data
-          ? normalizarCertificado(
-              response.data
-            )
-          : null;
+        response.data || null;
 
       if (!certificado) {
         setErro(
@@ -621,10 +553,6 @@ function GerarCertificadoTm() {
 
       setCertificadoPreview(
         certificado
-      );
-
-      setMensagem(
-        "Certificado preparado com sucesso."
       );
     } catch (err) {
       console.error(
@@ -811,8 +739,6 @@ function GerarCertificadoTm() {
         }
       );
 
-      /* Cargo */
-
       pdf.setFont(
         "helvetica",
         "normal"
@@ -827,10 +753,9 @@ function GerarCertificadoTm() {
       );
 
       pdf.text(
-        certificado.cargo ||
-          "Consultor/a",
+        `Consultor — Service Line: ${certificado.nome_serviceline}`,
         largura / 2,
-        103,
+        102,
         {
           align: "center",
         }
@@ -839,7 +764,7 @@ function GerarCertificadoTm() {
       pdf.text(
         "concluiu com sucesso o badge",
         largura / 2,
-        120,
+        119,
         {
           align: "center",
         }
@@ -860,17 +785,10 @@ function GerarCertificadoTm() {
         39
       );
 
-      const textoBadge =
-        certificado.nome_nivel &&
-        certificado.nome_nivel !==
-          "Não disponível"
-          ? `${certificado.nome_badge} — ${certificado.nome_nivel}`
-          : certificado.nome_badge;
-
       pdf.text(
-        textoBadge,
+        `${certificado.nome_badge} — Nível ${certificado.nome_nivel}`,
         largura / 2,
-        135,
+        134,
         {
           align: "center",
           maxWidth:
@@ -896,48 +814,25 @@ function GerarCertificadoTm() {
       pdf.text(
         `Área: ${certificado.nome_area}`,
         largura / 2,
-        148,
+        146,
         {
           align: "center",
         }
       );
 
-      if (
-        certificado.nome_serviceline &&
-        certificado.nome_serviceline !==
-          "Não disponível"
-      ) {
-        pdf.text(
-          `Service Line: ${certificado.nome_serviceline}`,
-          largura / 2,
-          156,
-          {
-            align: "center",
-          }
-        );
-      }
-
-      /* Emissão e código */
-
-      const dataEmissao =
-        certificado.data_emissao ||
-        certificado
-          .data_entrada_historico ||
-        certificado
-          .data_avaliacao_sll;
-
       pdf.text(
         `Data de emissão: ${formatarData(
-          dataEmissao
+          certificado.data_entrada_historico ||
+            certificado.data_avaliacao_sll
         )}`,
         35,
-        169
+        165
       );
 
       pdf.text(
         `Código de verificação: ${codigo}`,
         35,
-        178
+        174
       );
 
       /* Assinaturas */
@@ -1052,13 +947,6 @@ function GerarCertificadoTm() {
         certificado
       );
 
-    const dataEmissao =
-      certificado.data_emissao ||
-      certificado
-        .data_entrada_historico ||
-      certificado
-        .data_avaliacao_sll;
-
     const linhas = [
       [
         "Campo",
@@ -1071,10 +959,6 @@ function GerarCertificadoTm() {
       [
         "Email",
         certificado.email,
-      ],
-      [
-        "Cargo",
-        certificado.cargo,
       ],
       [
         "Service Line",
@@ -1099,7 +983,8 @@ function GerarCertificadoTm() {
       [
         "Data de emissão",
         formatarData(
-          dataEmissao
+          certificado.data_entrada_historico ||
+            certificado.data_avaliacao_sll
         ),
       ],
       [
@@ -1318,10 +1203,9 @@ function GerarCertificadoTm() {
                         >
                           {badge.nome_badge}
 
-                          {badge.nome_nivel !==
-                          "Não disponível"
-                            ? ` — ${badge.nome_nivel}`
-                            : ""}
+                          {" — "}
+
+                          {badge.nome_nivel}
 
                           {" — "}
 
@@ -1376,11 +1260,12 @@ function GerarCertificadoTm() {
                     </div>
 
                     <div style={dadosBadge}>
-                      {badgeSelecionado.nome_nivel !==
-                      "Não disponível"
-                        ? `Nível ${badgeSelecionado.nome_nivel} · `
-                        : ""}
-
+                      Nível{" "}
+                      {
+                        badgeSelecionado
+                          .nome_nivel
+                      }{" "}
+                      ·{" "}
                       {
                         badgeSelecionado
                           .pontos
@@ -1391,6 +1276,8 @@ function GerarCertificadoTm() {
                           .data_conquista
                       )}
                     </div>
+
+                    <DebugBadgePanel badge={badgeSelecionado} />
                   </div>
                 </div>
               )}
@@ -1446,8 +1333,6 @@ function GerarCertificadoTm() {
                   setCertificadoPreview(
                     null
                   );
-
-                  setMensagem("");
                 }}
               />
             )}
@@ -1474,13 +1359,6 @@ function CertificadoPreview({
     criarCodigoVerificacao(
       certificado
     );
-
-  const dataEmissao =
-    certificado.data_emissao ||
-    certificado
-      .data_entrada_historico ||
-    certificado
-      .data_avaliacao_sll;
 
   return (
     <section style={previewWrapper}>
@@ -1519,14 +1397,12 @@ function CertificadoPreview({
         </div>
 
         <div style={cargoCertificado}>
-          {certificado.cargo ||
-            "Consultor/a"}
-
-          {certificado.nome_serviceline &&
-          certificado.nome_serviceline !==
-            "Não disponível"
-            ? ` — Service Line: ${certificado.nome_serviceline}`
-            : ""}
+          Consultor — Service Line:{" "}
+          <strong>
+            {
+              certificado.nome_serviceline
+            }
+          </strong>
         </div>
 
         <div style={conclusaoTexto}>
@@ -1534,13 +1410,8 @@ function CertificadoPreview({
         </div>
 
         <div style={badgeCertificado}>
-          {certificado.nome_badge}
-
-          {certificado.nome_nivel &&
-          certificado.nome_nivel !==
-            "Não disponível"
-            ? ` — ${certificado.nome_nivel}`
-            : ""}
+          {certificado.nome_badge} — Nível{" "}
+          {certificado.nome_nivel}
         </div>
 
         <div style={informacoesCertificado}>
@@ -1554,7 +1425,8 @@ function CertificadoPreview({
               Data de emissão:
             </strong>{" "}
             {formatarData(
-              dataEmissao
+              certificado.data_entrada_historico ||
+                certificado.data_avaliacao_sll
             )}
           </div>
 
