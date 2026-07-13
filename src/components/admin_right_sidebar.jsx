@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BiBell, BiUserCircle, BiGrid, BiMedal } from "react-icons/bi";
-import api from "../services/api.js";
+import api, { buildUploadUrl } from "../services/api.js";
 
 function AdminRightSidebar() {
   const [notifications, setNotifications] = useState([]);
@@ -143,6 +143,17 @@ function TopUserCard({ user, posicao }) {
     0
   );
 
+  const fotoPerfil =
+    user.foto_perfil ||
+    user.FOTO_PERFIL ||
+    user.foto ||
+    user.imagem ||
+    null;
+
+  const fotoSrc = fotoPerfil
+    ? buildUploadUrl(fotoPerfil)
+    : null;
+
   const rankingStyle = getRankingStyle(posicao);
 
   return (
@@ -153,13 +164,33 @@ function TopUserCard({ user, posicao }) {
         border: `1px solid ${rankingStyle.border}`,
       }}
     >
-      <div
-        style={{
-          ...avatar,
-          background: rankingStyle.avatarBg,
-        }}
-      >
-        <span style={{ fontSize: 18 }}>{rankingStyle.medalha}</span>
+      <div style={avatarWrapper}>
+        {fotoSrc ? (
+          <img
+            src={fotoSrc}
+            alt={nome}
+            style={avatarImage}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          <BiUserCircle
+            size={38}
+            color={rankingStyle.text}
+          />
+        )}
+
+        <div
+          style={{
+            ...rankingBadge,
+            background: rankingStyle.badgeBg,
+            color: rankingStyle.text,
+            border: `1px solid ${rankingStyle.border}`,
+          }}
+        >
+          {posicao}
+        </div>
       </div>
 
       <div style={{ flex: 1 }}>
@@ -188,29 +219,26 @@ function TopUserCard({ user, posicao }) {
 function getRankingStyle(posicao) {
   if (posicao === 1) {
     return {
-      medalha: "🥇",
       background: "#fff8e1",
       border: "#facc15",
-      avatarBg: "#fef3c7",
+      badgeBg: "#fef3c7",
       text: "#92400e",
     };
   }
 
   if (posicao === 2) {
     return {
-      medalha: "🥈",
       background: "#f3f4f6",
       border: "#9ca3af",
-      avatarBg: "#e5e7eb",
+      badgeBg: "#e5e7eb",
       text: "#374151",
     };
   }
 
   return {
-    medalha: "🥉",
     background: "#fff1e6",
     border: "#d97706",
-    avatarBg: "#fed7aa",
+    badgeBg: "#fed7aa",
     text: "#92400e",
   };
 }
@@ -305,14 +333,41 @@ const topUserCard = {
   padding: "9px 10px",
 };
 
-const avatar = {
-  width: 38,
-  height: 38,
+const avatarWrapper = {
+  width: 44,
+  height: 44,
   borderRadius: "50%",
+  position: "relative",
+  flexShrink: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  flexShrink: 0,
+  background: "#f3f4f6",
+  overflow: "visible",
+};
+
+const avatarImage = {
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  objectFit: "cover",
+  display: "block",
+  border: "2px solid white",
+  boxShadow: "0 1px 4px rgba(15, 23, 42, 0.18)",
+};
+
+const rankingBadge = {
+  position: "absolute",
+  right: -3,
+  bottom: -3,
+  width: 18,
+  height: 18,
+  borderRadius: "50%",
+  fontSize: 10,
+  fontWeight: 800,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const userName = {
