@@ -172,10 +172,8 @@ function EditarLearningPath() {
     nome: "",
     descricao: "",
     estado: "ATIVO",
-    id_servicelines: [],
   });
 
-  const [serviceLines, setServiceLines] = useState([]);
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -192,20 +190,9 @@ function EditarLearningPath() {
       setIsLoading(true);
       setErroGeral("");
 
-      const [lpRes, slRes] = await Promise.all([
-        api.get(`/learningpaths/${id}`),
-        api.get("/servicelines/select"),
-      ]);
+      const lpRes = await api.get(`/learningpaths/${id}`);
 
       const lp = lpRes.data?.learningpath || lpRes.data;
-
-      const serviceLinesAssociadas = Array.isArray(lp.serviceLines)
-        ? lp.serviceLines
-        : Array.isArray(lp.servicelines)
-          ? lp.servicelines
-          : Array.isArray(lp.service_lines)
-            ? lp.service_lines
-            : [];
 
       setForm({
         nome: lp.nome_learningpaths || lp.nome || "",
@@ -215,24 +202,8 @@ function EditarLearningPath() {
             lp.estado_learningpaths ||
             lp.estado
         ),
-        id_servicelines: serviceLinesAssociadas.map((sl) =>
-          sl.id_serviceline || sl.id || sl.ID_SERVICELINE
-        ),
       });
 
-      const slData = slRes.data;
-
-      const lista = Array.isArray(slData)
-        ? slData
-        : Array.isArray(slData.servicelines)
-          ? slData.servicelines
-          : Array.isArray(slData.serviceLines)
-            ? slData.serviceLines
-            : Array.isArray(slData.data)
-              ? slData.data
-              : [];
-
-      setServiceLines(lista.map(normalizarServiceLine));
     } catch (err) {
       console.error("Erro ao carregar Learning Path:", err);
       console.error("STATUS:", err.response?.status);
@@ -273,13 +244,6 @@ function EditarLearningPath() {
       novosErros.descricao = "A descrição é obrigatória.";
     }
 
-    if (
-      !Array.isArray(form.id_servicelines) ||
-      form.id_servicelines.length === 0
-    ) {
-      novosErros.id_servicelines = "Seleciona pelo menos uma Service Line.";
-    }
-
     setErros(novosErros);
 
     return Object.keys(novosErros).length === 0;
@@ -297,7 +261,6 @@ function EditarLearningPath() {
         nome_learningpaths: form.nome.trim(),
         descricao_learningpaths: form.descricao.trim(),
         estado_learningpath: normalizarEstado(form.estado),
-        id_servicelines: form.id_servicelines.map(Number),
       });
 
       setSucesso("Learning Path atualizado com sucesso.");
@@ -485,29 +448,6 @@ function EditarLearningPath() {
                   >
                     Ativo
                   </button>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 8 }}>
-                <label style={labelStyle}>
-                  Service Lines <span style={{ color: "#dc2626" }}>*</span>
-                </label>
-
-                <MultiSelectDropdown
-                  options={serviceLines}
-                  values={form.id_servicelines}
-                  onChange={set("id_servicelines")}
-                  placeholder="Selecione uma ou mais Service Lines"
-                  erro={erros.id_servicelines}
-                />
-
-                {erros.id_servicelines && (
-                  <div style={fieldError}>{erros.id_servicelines}</div>
-                )}
-
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                  As áreas associadas são determinadas automaticamente pelas
-                  Service Lines escolhidas.
                 </div>
               </div>
 
