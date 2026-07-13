@@ -49,6 +49,17 @@ export function obterBonusBadge(badge) {
   };
 }
 
+export function obterPontosTotaisBadge(badge) {
+  const pontosBase = Number(
+    badge?.pontos ?? 0
+  );
+
+  const { pontosExtra } =
+    obterBonusBadge(badge);
+
+  return pontosBase + Number(pontosExtra || 0);
+}
+
 export function removerBadgesDuplicados(lista) {
   const mapa = new Map();
 

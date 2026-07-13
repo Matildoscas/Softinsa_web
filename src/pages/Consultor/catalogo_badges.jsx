@@ -41,6 +41,7 @@ import api from
 
 import {
   obterBonusBadge,
+  obterPontosTotaisBadge,
   removerBadgesDuplicados,
 } from "../../utils/badgeBonus.js";
 
@@ -1341,6 +1342,14 @@ function CatalogoBadgeRow({
     conquistado &&
     ganhouBonus;
 
+  const pontosTotais =
+    bonusAtivo
+      ? obterPontosTotaisBadge(
+          conquistadoBadge ||
+            badge
+        )
+      : pontos;
+
   const desafioAtivo =
     Boolean(
       desafio?.id_lembrete
@@ -1683,7 +1692,7 @@ function CatalogoBadgeRow({
                 700,
             }}
           >
-            {pontos}
+            {pontosTotais}
           </div>
 
           {bonusAtivo &&
