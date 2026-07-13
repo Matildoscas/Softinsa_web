@@ -5,7 +5,7 @@ import {
 } from "react";
 
 import {
-  BiArrowBack,
+      navigate("/login", {
   BiBadge,
   BiCertification,
   BiFile,
@@ -14,9 +14,9 @@ import {
 } from "react-icons/bi";
 
 import {
-  useNavigate,
-} from "react-router-dom";
-
+      const response =
+        await api.get(
+          `/tm/${idUtilizador}/certificados/consultores`
 import { jsPDF } from "jspdf";
 
 import api from "../../services/api.js";
@@ -72,9 +72,9 @@ function normalizarConsultor(
 
     email:
       consultor.email ||
-      "Sem email",
-
-    nome_area:
+        const response =
+          await api.get(
+            `/tm/${idUtilizador}/certificados/consultores/${novoIdConsultor}/badges`
       consultor.nome_area ||
       "Sem área",
 
@@ -203,12 +203,13 @@ function criarCodigoVerificacao(
   ).padStart(6, "0");
 
   const utilizador = String(
-    certificado.id_utilizador ||
-      0
-  ).padStart(4, "0");
+      const response =
+        await api.get(
+          `/tm/${idUtilizador}/certificados/historico/${idHistorico}`
 
   return `SL-${historico}-${utilizador}`;
-}
+        response.data?.certificado ||
+        null;
 
 function carregarImagemComoDataUrl(
   origem
@@ -318,7 +319,7 @@ function GerarCertificadoTm() {
      CARREGAR CONSULTORES DO TM
 
      ROTA CORRETA:
-     GET /api/tm/:idUtilizador/consultores
+      GET /api/tm/:idUtilizador/certificados/consultores
   ======================================================= */
 
   async function carregarConsultores() {
@@ -344,7 +345,7 @@ function GerarCertificadoTm() {
 
       const response =
         await api.get(
-          `/tm/${idUtilizador}/consultores`
+          `/tm/${idUtilizador}/certificados/consultores`
         );
 
       const dados =
@@ -398,13 +399,26 @@ function GerarCertificadoTm() {
      CARREGAR BADGES APROVADOS DO CONSULTOR
 
      ROTA CORRETA:
-     GET /api/certificados/disponiveis/:idConsultor
+      GET /api/tm/:idUtilizador/certificados/consultores/:idConsultor/badges
   ======================================================= */
 
   async function carregarBadges(
     novoIdConsultor
   ) {
+    const utilizador =
+      obterUtilizadorGuardado();
+
+    const idUtilizador =
+      utilizador?.id_utilizador ||
+      utilizador?.ID_UTILIZADOR ||
+      utilizador?.id;
+
     if (!novoIdConsultor) {
+      setBadges([]);
+      return;
+    }
+
+    if (!idUtilizador) {
       setBadges([]);
       return;
     }
@@ -417,14 +431,14 @@ function GerarCertificadoTm() {
 
       const response =
         await api.get(
-          `/certificados/disponiveis/${novoIdConsultor}`
+          `/tm/${idUtilizador}/certificados/consultores/${novoIdConsultor}/badges`
         );
 
       const lista =
         Array.isArray(
-          response.data
+          response.data?.badges
         )
-          ? response.data.map(
+          ? response.data.badges.map(
               normalizarBadge
             )
           : [];
@@ -513,9 +527,7 @@ function GerarCertificadoTm() {
      PREPARAR CERTIFICADO
 
      ROTA CORRETA:
-     GET /api/certificados/:idHistorico/:idConsultor
-
-     O backend devolve diretamente o certificado.
+      GET /api/tm/:idUtilizador/certificados/historico/:idHistorico
   ======================================================= */
 
   async function prepararCertificado() {
@@ -530,6 +542,22 @@ function GerarCertificadoTm() {
       return;
     }
 
+    const utilizador =
+      obterUtilizadorGuardado();
+
+    const idUtilizador =
+      utilizador?.id_utilizador ||
+      utilizador?.ID_UTILIZADOR ||
+      utilizador?.id;
+
+    if (!idUtilizador) {
+      setErro(
+        "Não foi possível identificar o Talent Manager."
+      );
+
+      return;
+    }
+
     try {
       setIsPreparing(true);
       setErro("");
@@ -537,11 +565,12 @@ function GerarCertificadoTm() {
 
       const response =
         await api.get(
-          `/certificados/${idHistorico}/${idConsultor}`
+          `/tm/${idUtilizador}/certificados/historico/${idHistorico}`
         );
 
       const certificado =
-        response.data || null;
+        response.data?.certificado ||
+        null;
 
       if (!certificado) {
         setErro(
