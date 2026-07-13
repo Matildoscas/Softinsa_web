@@ -47,7 +47,8 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
     estados.some(
       (estado) =>
         estado.includes("REJEIT") ||
-        estado.includes("RECUS")
+        estado.includes("RECUS") ||
+        estado.includes("CANCEL")
     )
   ) {
     return "REJEITADO";
@@ -109,7 +110,8 @@ function candidaturaEstaFinalizada(item) {
         estado.includes("FINAL") ||
         fase.includes("FECH") ||
         fase.includes("HISTOR") ||
-        fase.includes("CONCLUID")
+        fase.includes("CONCLUID") ||
+        fase.includes("REJEIT")
       );
 
     return cancelada || aprovadaConcluida;
@@ -124,6 +126,8 @@ function candidaturaEstaRejeitada(item) {
     estado.includes("RECUS") ||
     fase.includes("REJEIT") ||
     fase.includes("RECUS") ||
+    estado.includes("CANCEL") ||  
+    estado.includes("CANCEL") ||
     Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
     Number(item?.evidencias_rejeitadas_sll || 0) > 0
   );
