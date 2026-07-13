@@ -23,7 +23,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import api from "../../services/api.js";
+import api, { buildUploadUrl } from "../../services/api.js";
 
 import Header from "../../components/Header.jsx";
 import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
@@ -39,6 +39,61 @@ function obterUtilizadorGuardado() {
   } catch {
     return null;
   }
+}
+
+function obterFotoPerfilSrc(user) {
+  const foto =
+    user?.foto_perfil ||
+    user?.FOTO_PERFIL ||
+    user?.foto ||
+    user?.imagem ||
+    null;
+
+  if (!foto) {
+    return null;
+  }
+
+  return buildUploadUrl(foto);
+}
+
+function WelcomeProfilePhoto({ user, size = 72 }) {
+  const [erroImagem, setErroImagem] = useState(false);
+
+  const fotoSrc = obterFotoPerfilSrc(user);
+
+  if (!fotoSrc || erroImagem) {
+    return (
+      <div
+        style={{
+          ...welcomePhotoWrapper,
+          width: size,
+          height: size,
+        }}
+      >
+        <BiUserCircle
+          size={Math.round(size * 0.72)}
+          color="rgba(255,255,255,0.85)"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        ...welcomePhotoWrapper,
+        width: size,
+        height: size,
+      }}
+    >
+      <img
+        src={fotoSrc}
+        alt="Foto de perfil"
+        style={welcomePhotoImage}
+        onError={() => setErroImagem(true)}
+      />
+    </div>
+  );
 }
 
 function PaginaPrincipalSll() {
@@ -68,6 +123,7 @@ function PaginaPrincipalSll() {
     useState([]);
 
   const [grafico, setGrafico] = useState([]);
+  const [sllUser, setSllUser] = useState(null);
 
   useEffect(() => {
     carregarDashboard();
@@ -75,6 +131,8 @@ function PaginaPrincipalSll() {
 
   async function carregarDashboard() {
     const user = obterUtilizadorGuardado();
+
+    setSllUser(user);
 
     const userId =
       user?.id_utilizador ||
@@ -277,12 +335,7 @@ function PaginaPrincipalSll() {
                   </div>
                 </div>
 
-                <div style={welcomeAvatar}>
-                  <BiUserCircle
-                    size={58}
-                    color="rgba(255,255,255,0.85)"
-                  />
-                </div>
+                <WelcomeProfilePhoto user={sllUser} size={68} />
               </section>
 
               <section style={statsRow}>
@@ -960,6 +1013,25 @@ const statsRow = {
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: 16,
   marginBottom: 24,
+};
+
+const welcomePhotoWrapper = {
+  borderRadius: "50%",
+  background: "rgba(255,255,255,0.17)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  border: "3px solid rgba(255,255,255,0.45)",
+  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
+  flexShrink: 0,
+};
+
+const welcomePhotoImage = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
 };
 
 export default PaginaPrincipalSll;

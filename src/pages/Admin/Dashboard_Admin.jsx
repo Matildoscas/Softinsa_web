@@ -24,7 +24,7 @@ import {
   Cell,
 } from "recharts";
 
-import api from "../../services/api.js";
+import api, { buildUploadUrl } from "../../services/api.js";
 
 import Header from "../../components/Header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
@@ -136,6 +136,61 @@ function ChartTabs({ tabs, active, onChange }) {
   );
 }
 
+function obterFotoPerfilSrc(user) {
+  const foto =
+    user?.foto_perfil ||
+    user?.FOTO_PERFIL ||
+    user?.foto ||
+    user?.imagem ||
+    null;
+
+  if (!foto) {
+    return null;
+  }
+
+  return buildUploadUrl(foto);
+}
+
+function WelcomeProfilePhoto({ user, size = 72 }) {
+  const [erroImagem, setErroImagem] = useState(false);
+
+  const fotoSrc = obterFotoPerfilSrc(user);
+
+  if (!fotoSrc || erroImagem) {
+    return (
+      <div
+        style={{
+          ...welcomePhotoWrapper,
+          width: size,
+          height: size,
+        }}
+      >
+        <BiUserCircle
+          size={Math.round(size * 0.72)}
+          color="rgba(255,255,255,0.85)"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        ...welcomePhotoWrapper,
+        width: size,
+        height: size,
+      }}
+    >
+      <img
+        src={fotoSrc}
+        alt="Foto de perfil"
+        style={welcomePhotoImage}
+        onError={() => setErroImagem(true)}
+      />
+    </div>
+  );
+}
+
 // ─── MAIN PAGE ─────────────────────────────────────────────
 
 function PaginaPrincipalAdmin() {
@@ -166,6 +221,7 @@ function PaginaPrincipalAdmin() {
   const [areasDetalhe, setAreasDetalhe] = useState([]);
   const [badgesPorLearningPath, setBadgesPorLearningPath] = useState([]);
   const [badgesPorNivelLearningPath, setBadgesPorNivelLearningPath] = useState([]);
+  const [adminUser, setAdminUser] = useState(null);
 
   // ─── RESUMO PRINCIPAL ─────────────────────────────────────
 
@@ -177,6 +233,8 @@ function PaginaPrincipalAdmin() {
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
+
+        setAdminUser(user);
 
         nomeAdmin =
           user.nome_completo ||
@@ -497,22 +555,7 @@ function PaginaPrincipalAdmin() {
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: "50%",
-                    background: "rgba(255,255,255,0.15)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <BiUserCircle
-                    size={50}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                </div>
+                <WelcomeProfilePhoto user={adminUser} size={72} />
               </div>
             </Card.Body>
           </Card>
@@ -1152,5 +1195,24 @@ function getAreaColor(index) {
 
   return colors[index % colors.length];
 }
+
+const welcomePhotoWrapper = {
+  borderRadius: "50%",
+  background: "rgba(255,255,255,0.17)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  border: "3px solid rgba(255,255,255,0.45)",
+  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
+  flexShrink: 0,
+};
+
+const welcomePhotoImage = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
 
 export default PaginaPrincipalAdmin;
