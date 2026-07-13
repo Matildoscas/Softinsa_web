@@ -18,7 +18,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import api from "../../services/api.js";
+import api, { buildUploadUrl } from "../../services/api.js";
 import Header from "../../components/Header.jsx";
 import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
@@ -158,6 +158,15 @@ function normalizarConta(u) {
     u.DATA_REGISTO ||
     null;
 
+  const fotoPerfil =
+    u.foto_perfil ||
+    u.FOTO_PERFIL ||
+    u.foto ||
+    u.FOTO ||
+    u.imagem ||
+    u.IMAGEM ||
+    null;
+
   return {
     id,
     nome,
@@ -167,7 +176,62 @@ function normalizarConta(u) {
     badges: Number(badges || 0),
     dataRegisto: formatarData(data),
     status: estado?.toString().toUpperCase() === "ATIVO" ? "Ativo" : "Inativo",
+    foto_perfil: fotoPerfil,
   };
+}
+
+function obterFotoPerfilSrc(conta) {
+  const foto =
+    conta?.foto_perfil ||
+    conta?.FOTO_PERFIL ||
+    conta?.foto ||
+    conta?.imagem ||
+    null;
+
+  if (!foto) return null;
+
+  return buildUploadUrl(foto);
+}
+
+function PerfilAvatar({ conta, size = 28 }) {
+  const [erroImagem, setErroImagem] = useState(false);
+
+  const fotoSrc = obterFotoPerfilSrc(conta);
+
+  if (!fotoSrc || erroImagem) {
+    return (
+      <div
+        style={{
+          ...avatarMini,
+          width: size,
+          height: size,
+        }}
+      >
+        <BiUserCircle
+          size={Math.round(size * 0.72)}
+          color="#d97706"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        ...avatarMini,
+        width: size,
+        height: size,
+        overflow: "hidden",
+      }}
+    >
+      <img
+        src={fotoSrc}
+        alt={conta?.nome || "Utilizador"}
+        style={avatarImg}
+        onError={() => setErroImagem(true)}
+      />
+    </div>
+  );
 }
 
 function GestaoContas() {
@@ -702,9 +766,7 @@ function GestaoContas() {
                               gap: 8,
                             }}
                           >
-                            <div style={avatarMini}>
-                              <BiUserCircle size={20} color="#d97706" />
-                            </div>
+                            <PerfilAvatar conta={c} size={28} />
 
                             <span
                                 style={{
@@ -898,9 +960,7 @@ function DesativarContaModal({ conta, loading, onClose, onConfirm }) {
         </p>
 
         <div style={modalUserBox}>
-          <div style={modalUserAvatar}>
-            <BiUserCircle size={24} color="#d97706" />
-          </div>
+          <PerfilAvatar conta={conta} size={38} />
 
           <div style={{ flex: 1 }}>
             <div style={modalUserName}>{conta.nome}</div>
@@ -937,6 +997,13 @@ function DesativarContaModal({ conta, loading, onClose, onConfirm }) {
     </div>
   );
 }
+
+const avatarImg = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
 
 const labelFiltro = {
   fontSize: 11,
