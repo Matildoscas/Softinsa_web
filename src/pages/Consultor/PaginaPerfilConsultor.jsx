@@ -91,6 +91,10 @@ function obterDistribuicaoAreas(badges) {
     .map(([area, total]) => ({ area, total }));
 }
 
+function normalizarAreaTexto(valor) {
+  return String(valor || "").trim();
+}
+
 function PaginaPerfil() {
   const navigate = useNavigate();
 
@@ -107,6 +111,8 @@ function PaginaPerfil() {
     badgesConquistados,
     setBadgesConquistados,
   ] = useState([]);
+
+  const [dadosPerfil, setDadosPerfil] = useState(null);
 
   const [perfilResumo, setPerfilResumo] = useState({
     areaPrincipal: "Área não definida",
@@ -164,12 +170,17 @@ function PaginaPerfil() {
       ),
 
       api.get(
+        `/utilizadores/${userId}`
+      ),
+
+      api.get(
         `/badges/conquistados/${userId}`
       ),
     ])
       .then(
         ([
           dashboardRes,
+          userRes,
           badgesRes,
         ]) => {
           const badgesRaw =
@@ -217,8 +228,17 @@ function PaginaPerfil() {
             badgesUnicos
           );
 
+          setDadosPerfil(
+            userRes.data || null
+          );
+
           setPerfilResumo({
-            areaPrincipal: obterAreaPrincipal(badgesUnicos),
+            areaPrincipal:
+              normalizarAreaTexto(
+                userRes.data?.nome_area ||
+                  userRes.data?.departamento ||
+                  obterAreaPrincipal(badgesUnicos)
+              ),
             areasDistribuicao: obterDistribuicaoAreas(badgesUnicos),
             ultimoBadge: badgesOrdenados[0] || null,
           });
@@ -504,7 +524,9 @@ function PaginaPerfil() {
                   {perfilResumo.areaPrincipal}
                 </div>
                 <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                  Baseado nos badges conquistados e na área onde tens maior presença.
+                  {dadosPerfil?.nome_area
+                    ? "Área obtida diretamente do perfil do consultor."
+                    : "Baseado nos badges conquistados e na área onde tens maior presença."}
                 </div>
               </Card.Body>
             </Card>
