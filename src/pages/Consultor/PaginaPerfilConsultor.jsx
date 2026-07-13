@@ -164,7 +164,7 @@ function PaginaPerfil() {
 
     setLoading(true);
 
-    Promise.all([
+    Promise.allSettled([
       api.get(
         `/utilizadores/dashboard/${userId}`
       ),
@@ -177,18 +177,28 @@ function PaginaPerfil() {
         `/badges/conquistados/${userId}`
       ),
     ])
-      .then(
-        ([
-          dashboardRes,
-          userRes,
-          badgesRes,
-        ]) => {
-          const badgesRaw =
-            Array.isArray(
-              badgesRes.data
-            )
-              ? badgesRes.data
-              : [];
+      .then((resultados) => {
+        const dashboardRes =
+          resultados[0].status === "fulfilled"
+            ? resultados[0].value
+            : { data: { total_badges: 0, total_pontos: 0 } };
+
+        const userRes =
+          resultados[1].status === "fulfilled"
+            ? resultados[1].value
+            : { data: null };
+
+        const badgesRes =
+          resultados[2].status === "fulfilled"
+            ? resultados[2].value
+            : { data: [] };
+
+        const badgesRaw =
+          Array.isArray(
+            badgesRes.data
+          )
+            ? badgesRes.data
+            : [];
 
           const badgesUnicos =
             removerBadgesDuplicados(
@@ -249,6 +259,20 @@ function PaginaPerfil() {
           "Erro ao carregar dados do perfil:",
           err
         );
+
+        const areaFallback =
+          normalizarAreaTexto(
+            dadosPerfil?.nome_area ||
+              dadosPerfil?.departamento ||
+              obterAreaPrincipal(badgesConquistados)
+          );
+
+        if (areaFallback) {
+          setPerfilResumo((anterior) => ({
+            ...anterior,
+            areaPrincipal: areaFallback,
+          }));
+        }
 
         console.error(
           "STATUS:",
