@@ -617,6 +617,34 @@ function ConfirmDeleteModal({ badgeNome, loading, onClose, onConfirm }) {
   );
 }
 
+function normalizarTexto(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+function obterPontosPorNivel(nomeNivel) {
+  const nivel = normalizarTexto(nomeNivel);
+
+  if (["A", "JUNIOR"].includes(nivel)) return 50;
+  if (["B", "INTERMEDIO"].includes(nivel)) return 100;
+  if (["C", "SENIOR"].includes(nivel)) return 150;
+  if (["D", "ESPECIALISTA"].includes(nivel)) return 200;
+
+  if (
+    [
+      "E",
+      "LIDER DE CONHECIMENTO",
+    ].includes(nivel)
+  ) {
+    return 300;
+  }
+
+  return 0;
+}
+
 function EditarBadge() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -681,30 +709,22 @@ function EditarBadge() {
 
       setNiveis(niveisNormalizados);
 
-      const [
-        badgeRes,
-        serviceLinesRaw,
-        areasRaw,
-      ] = await Promise.all([
-        api.get(`/badges/admin/${id}`),
-        getServiceLines(),
-        getAreas(),
-      ]);
+      const badgeRes = await api.get(`/badges/admin/${id}`);
 
       const badge =
         badgeRes.data?.badge ||
         badgeRes.data;
 
-      const areasNormalizadas = areasRaw
+      /*const areasNormalizadas = areasRaw
         .map(normalizarArea)
-        .filter((area) => area.value);
+        .filter((area) => area.value);*/
 
-      const serviceLinesNormalizadas =
+      /*const serviceLinesNormalizadas =
         serviceLinesRaw
           .map(normalizarServiceLine)
-          .filter((sl) => sl.value);
+          .filter((sl) => sl.value);*/
 
-      const serviceLinesDasAreas = Array.from(
+      /*const serviceLinesDasAreas = Array.from(
         new Map(
           areasNormalizadas
             .filter((area) => area.id_serviceline)
@@ -716,15 +736,15 @@ function EditarBadge() {
               },
             ])
         ).values()
-      );
+      );*/
 
-      setAreas(areasNormalizadas);
+      /*setAreas(areasNormalizadas);
 
       setServiceLines(
         serviceLinesNormalizadas.length > 0
           ? serviceLinesNormalizadas
           : serviceLinesDasAreas
-      );
+      );*/
 
       const tempo = calcularTempoExpiracao(
         badge.tempo_expiracao ||
@@ -1383,7 +1403,7 @@ function EditarBadge() {
                   value={form.pontos || 0}
                   disabled
                   style={{
-                    ...inputStyle("pontos"),
+                    ...inputStyleBase,
                     background: "#f3f4f6",
                     color: "#64748b",
                     cursor: "not-allowed",
@@ -1493,11 +1513,7 @@ function EditarBadge() {
 
                     setErro("");
                   }}
-                  placeholder={
-                    loadingNiveis
-                      ? "A carregar níveis..."
-                      : "Selecione um nível"
-                  }
+                  placeholder="Selecione um nível"
                   erro={erros.id_nivel}
                 />
 
