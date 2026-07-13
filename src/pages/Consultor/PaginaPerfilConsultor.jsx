@@ -421,7 +421,7 @@ function PaginaPerfil() {
             <Button
               variant="light"
               onClick={() =>
-                navigate("/progresso")
+                navigate("/progresso-badges")
               }
               className="
                 d-flex

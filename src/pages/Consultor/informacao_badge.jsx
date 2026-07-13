@@ -798,6 +798,9 @@ function BadgeDetailPage() {
     conquistadoBadge
   );
 
+  const badgeEspecialNivelE =
+    obterNivelBadge(badge) === "E";
+
   const desafioAtivo =
     desafiosBadge.length > 0;
 
@@ -1650,14 +1653,20 @@ const copiarAssinatura =
 
               border: ganhouBonus
                 ? "2px solid #d4af37"
+                : badgeEspecialNivelE
+                  ? "2px solid #f59e0b"
                 : heroCard.border,
 
               background: ganhouBonus
                 ? "#fffdf4"
+                : badgeEspecialNivelE
+                  ? "linear-gradient(135deg, #fff8e6 0%, #ffffff 100%)"
                 : heroCard.background,
 
               boxShadow: ganhouBonus
                 ? "0 0 0 3px rgba(212,175,55,0.12)"
+                : badgeEspecialNivelE
+                  ? "0 0 0 3px rgba(245,158,11,0.12)"
                 : "none",
             }}
           >
@@ -1669,6 +1678,24 @@ const copiarAssinatura =
             <div style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginTop: 10 }}>
               {badge.nome}
             </div>
+
+            {badgeEspecialNivelE && (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: "6px 12px",
+                  background: "#ffedd5",
+                  color: "#c2410c",
+                  border: "1px solid #fdba74",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                Badge especial de nível E
+              </div>
+            )}
+
             {badge.nome_area && (
               <div style={{ fontSize: 13, color: "#4470AF", marginTop: 4 }}>
                 {badge.nome_area}
