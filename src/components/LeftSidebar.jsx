@@ -6,7 +6,6 @@ import {
 import {
   BiChevronDown,
   BiChevronRight,
-  BiBook,
   BiGlobe,
   BiGrid,
   BiMedal,
@@ -212,7 +211,6 @@ function LeftSidebar() {
 
           <SidebarItem
             to="/progresso-badges"
-            icon={<BiBook size={15} />}
             label="Progresso dos Badges"
             nested
           />

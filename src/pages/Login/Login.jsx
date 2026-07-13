@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Form, Button, InputGroup, Alert, Spinner } from "react-bootstrap";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -7,14 +7,26 @@ import ImagemLogin from "../../assets/imagem_login.png";
 import {
   definirUtilizadorAnalytics,
 } from "../../services/firebaseAnalytics";
+import {
+  consumirAvisoSessaoExpirada,
+} from "../../services/api.js";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [avisoSessao, setAvisoSessao] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const expirou = consumirAvisoSessaoExpirada();
+
+    if (expirou) {
+      setAvisoSessao(true);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -115,6 +127,8 @@ function LoginPage() {
         "jwt",
         String(data.token),
       );
+
+      setAvisoSessao(false);
 
       localStorage.setItem(
         "user",
@@ -240,6 +254,12 @@ function LoginPage() {
                 <h1 style={{ color: "#5d87ff", fontSize: "3rem" }}>Login</h1>
                 <p className="text-muted">Bem-vindo à Softinsa</p>
               </div>
+
+              {avisoSessao && (
+                <Alert variant="warning" className="mb-3">
+                  Tempo de sessão acabou.
+                </Alert>
+              )}
 
               {error && <Alert variant="danger">{error}</Alert>}
 

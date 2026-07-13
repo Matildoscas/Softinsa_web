@@ -1,6 +1,55 @@
 
 import axios from 'axios';
 
+const SESSION_EXPIRED_FLAG = "softinsa_session_expired";
+
+function normalizarUrlRequisicao(url) {
+  return String(url || "")
+    .trim()
+    .toLowerCase();
+}
+
+function pedidoPublicoDeAutenticacao(url) {
+  return normalizarUrlRequisicao(url).includes("/auth/");
+}
+
+function limparCredenciaisSessao() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("jwt");
+  localStorage.removeItem("user");
+
+  sessionStorage.removeItem(SESSION_EXPIRED_FLAG);
+}
+
+function marcarSessaoExpirada() {
+  sessionStorage.setItem(SESSION_EXPIRED_FLAG, "1");
+}
+
+export function limparSessaoAutenticada() {
+  limparCredenciaisSessao();
+}
+
+export function consumirAvisoSessaoExpirada() {
+  const ativo =
+    sessionStorage.getItem(SESSION_EXPIRED_FLAG) === "1";
+
+  if (ativo) {
+    sessionStorage.removeItem(SESSION_EXPIRED_FLAG);
+  }
+
+  return ativo;
+}
+
+export function terminarSessaoPorExpiracao() {
+  limparCredenciaisSessao();
+  marcarSessaoExpirada();
+
+  if (typeof window !== "undefined") {
+    window.location.replace("/login");
+  }
+}
+
 const api = axios.create({
   // 🛑 COMENTADO AGORA: Servidor de produção na Nuvem
   baseURL: 'https://softinsa-api.onrender.com/api' 
@@ -23,6 +72,16 @@ const buildUploadUrl = (path) => {
 // O resto do teu código (interceptor) fica exatamente igual...
 api.interceptors.request.use(
   async (config) => {
+    config.headers = config.headers || {};
+
+    if (pedidoPublicoDeAutenticacao(config.url)) {
+      delete config.headers.Authorization;
+      delete config.headers["x-access-token"];
+      config.__softinsaAuthTokenAttached = false;
+
+      return config;
+    }
+
     // 💡 Procura por todos os nomes possíveis que o teu Login possa ter usado
     let token = 
       localStorage.getItem('token') || 
@@ -69,6 +128,8 @@ api.interceptors.request.use(
     ) {
       token = token.slice(1, -1).trim();
     }
+
+    config.__softinsaAuthTokenAttached = Boolean(token);
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -87,6 +148,8 @@ api.interceptors.response.use(
     const data = error?.response?.data;
     const method = String(error?.config?.method || "GET").toUpperCase();
     const url = error?.config?.url || "";
+    const pedidoAutenticado = Boolean(error?.config?.__softinsaAuthTokenAttached);
+    const pedidoPublico = pedidoPublicoDeAutenticacao(url);
 
     if (status === 401 || status >= 500) {
       console.error("[API][ERRO]", {
@@ -95,6 +158,10 @@ api.interceptors.response.use(
         url,
         body: data,
       });
+    }
+
+    if (status === 401 && pedidoAutenticado && !pedidoPublico) {
+      terminarSessaoPorExpiracao();
     }
 
     return Promise.reject(error);
