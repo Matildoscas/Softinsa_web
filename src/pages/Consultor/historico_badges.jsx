@@ -12,6 +12,7 @@ import BadgeImage from "../../components/badge_image.jsx";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
 import {
   obterBonusBadge,
+  obterPontosTotaisBadge,
   removerBadgesDuplicados,
 } from "../../utils/badgeBonus.js";
 
@@ -253,6 +254,11 @@ function HistoricoBadgeCard({
     pontosExtra,
   } = obterBonusBadge(badge);
 
+  const pontosTotais =
+    obterPontosTotaisBadge(
+      badge
+    );
+
   return (
     <div
       style={{
@@ -390,7 +396,7 @@ function HistoricoBadgeCard({
               fontWeight: 700,
             }}
           >
-            {badge.pontos || 0}
+            {pontosTotais}
           </div>
 
           {ganhouBonus &&

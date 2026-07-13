@@ -10,7 +10,11 @@ import LeftSidebar from "../../components/LeftSidebar.jsx";
 import api from "../../services/api.js";
 import BadgeImage from "../../components/badge_image.jsx";
 import DebugBadgePanel from "../../components/DebugBadgePanel.jsx";
-import {obterBonusBadge, removerBadgesDuplicados,} from "../../utils/badgeBonus.js";
+import {
+  obterBonusBadge,
+  obterPontosTotaisBadge,
+  removerBadgesDuplicados,
+} from "../../utils/badgeBonus.js";
 
 function MeusBadgesPage() {
   const navigate = useNavigate();
@@ -495,6 +499,14 @@ function CatalogoBadgeRow({
     conquistado &&
     ganhouBonus;
 
+  const pontosTotais =
+    bonusAtivo
+      ? obterPontosTotaisBadge(
+          conquistadoBadge ||
+            badge
+        )
+      : pontos;
+
   const pendenteTemEvidencias =
     Number(
       pendente?.total_evidencias_submetidas ||
@@ -761,7 +773,7 @@ function CatalogoBadgeRow({
                 700,
             }}
           >
-            {pontos}
+            {pontosTotais}
           </div>
 
           {bonusAtivo &&

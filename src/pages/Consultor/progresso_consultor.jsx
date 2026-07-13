@@ -15,6 +15,7 @@ import LeftSidebar from '../../components/LeftSidebar.jsx';
 import BadgeImage from "../../components/badge_image.jsx";
 import {
   obterBonusBadge,
+  obterPontosTotaisBadge,
 } from "../../utils/badgeBonus.js";
 import {
   EVENTO_NOTIFICACOES_ATUALIZADAS,
@@ -134,13 +135,26 @@ function ProgressoBadgeCard({ nome, descricao, pontos, progresso }) {
 function RankingCard({
   badge,
   nome,
-  pontos,
   dataAtribuicao,
 }) {
   const {
     ganhouBonus,
     pontosExtra,
   } = obterBonusBadge(badge);
+
+  const pontosTotais =
+    obterPontosTotaisBadge(
+      badge
+    );
+
+  const pontosBase =
+    Math.max(
+      pontosTotais -
+        Number(
+          pontosExtra || 0
+        ),
+      0
+    );
 
   const dataFormatada =
     dataAtribuicao
@@ -211,8 +225,8 @@ function RankingCard({
           }}
         >
           {ganhouBonus
-            ? `${pontos} base + ${pontosExtra} extra`
-            : `Ganhou +${pontos} pts`}
+            ? `${pontosTotais} pts (${pontosBase} + ${pontosExtra})`
+            : `Ganhou +${pontosTotais} pts`}
         </div>
       </div>
 
@@ -479,7 +493,11 @@ function ProgressoPage() {
             });
 
             const ranking = [...conquistados]
-                .sort((a, b) => Number(b.pontos || 0) - Number(a.pontos || 0))
+                .sort(
+                  (a, b) =>
+                    obterPontosTotaisBadge(b) -
+                    obterPontosTotaisBadge(a)
+                )
                 .slice(0, 3);
 
             setBadgesProgresso(learningPaths);
@@ -700,9 +718,6 @@ function ProgressoPage() {
                                         b.nome ||
                                         b.nome_badge ||
                                         "Badge"
-                                    }
-                                    pontos={
-                                        Number(b.pontos || 0)
                                     }
                                     dataAtribuicao={
                                         b.data_atribuicao

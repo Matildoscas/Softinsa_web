@@ -32,6 +32,10 @@ import {
   obterTipoNotificacao,
 } from "../../utils/notificacoesUtils.js";
 
+import {
+    obterPontosTotaisBadge,
+} from "../../utils/badgeBonus.js";
+
 function detetarMimeImagem(bytes) {
     if (!bytes || bytes.length < 4) return "image/png";
 
@@ -852,7 +856,7 @@ function DashboardConsultor() {
                                     key={b.id || b.id_badge_modelo || i}
                                     name={b.nome || b.nome_badge || "Badge"}
                                     desc={b.descricao || b.descricao_badge_modelo || ""}
-                                    points={b.pontos || 0}
+                                    points={obterPontosTotaisBadge(b)}
                                     imageUrl={b.imagem_url || b.imagem || b.url_imagem}
                                     progress={b.progress || b.progresso || 0}
                                     conquistado={true}

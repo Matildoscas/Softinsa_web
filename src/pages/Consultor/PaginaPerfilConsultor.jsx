@@ -33,6 +33,7 @@ import BadgeImage from "../../components/badge_image.jsx";
 
 import {
   obterBonusBadge,
+  obterPontosTotaisBadge,
   removerBadgesDuplicados,
 } from "../../utils/badgeBonus.js";
 
@@ -490,9 +491,8 @@ function PaginaPerfil() {
                       ""
                     }
                     points={
-                      Number(
-                        badge.pontos ||
-                        0
+                      obterPontosTotaisBadge(
+                        badge
                       )
                     }
                     dateConquered={

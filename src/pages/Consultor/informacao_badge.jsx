@@ -15,6 +15,7 @@ import BadgeImage, {
 } from "../../components/badge_image.jsx";
 import {
   obterBonusBadge,
+  obterPontosTotaisBadge,
 } from "../../utils/badgeBonus.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
@@ -2151,6 +2152,11 @@ function RequisitoRow({ req, defaultOpen }) {
 }
 
 function RelatedBadgeRow({ badge, onClick }) {
+  const pontosTotais =
+    obterPontosTotaisBadge(
+      badge
+    );
+
   return (
     <div style={{ ...relatedCard, cursor: "pointer" }} onClick={onClick}>
       <div style={relatedContent}>
@@ -2174,7 +2180,7 @@ function RelatedBadgeRow({ badge, onClick }) {
             Pontos
           </div>
           <div style={{ fontSize: 17, fontWeight: 700, color: "#111827" }}>
-            {badge.pontos || 0}
+            {pontosTotais}
           </div>
         </div>
       </div>
