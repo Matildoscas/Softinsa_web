@@ -32,6 +32,7 @@ function SolicitacaoBadges() {
   // Estados dos Filtros
   const [filtroAmbito, setFiltroAmbito] = useState("MinhaArea"); // 🎯 NOVO FILTRO: "MinhaArea" ou "Todos"
   const [pesquisa, setPesquisa] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("Todos");
 
   const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
 
