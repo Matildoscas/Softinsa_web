@@ -30,6 +30,7 @@ function AvaliacaoSolicitacaoTM() {
   const [error, setError] = useState(null);
   const [idExpandido, setIdExpandido] = useState(null);
   const [atualizarDados, setAtualizarDados] = useState(0);
+  const [erroGuardarDecisoes, setErroGuardarDecisoes] = useState("");
 
   // Controlar loadings das ações assíncronas
   const [avaliandoId, setAvaliandoId] = useState(null); 
@@ -95,6 +96,7 @@ function AvaliacaoSolicitacaoTM() {
         }));
 
         setRequisitos(requisitosTratados);
+        setErroGuardarDecisoes("");
         
         if (requisitosTratados.length > 0 && !idExpandido) {
           setIdExpandido(requisitosTratados[0].id);
@@ -121,6 +123,28 @@ function AvaliacaoSolicitacaoTM() {
       : [];
   };
 
+  const obterEstadoEfetivoEvidencia = (evidencia) =>
+    evidencia?.estado || "PENDENTE";
+
+  const atualizarEstadoLocalEvidencia = (idEvidencia, estado, comentario = "") => {
+    setRequisitos((prev) =>
+      prev.map((requisito) => ({
+        ...requisito,
+        evidencias: obterEvidenciasRequisito(requisito).map((evidencia) =>
+          String(evidencia.idEvidencia) === String(idEvidencia)
+            ? {
+                ...evidencia,
+                estado,
+                comentarioTm: comentario,
+              }
+            : evidencia,
+        ),
+      })),
+    );
+
+    setErroGuardarDecisoes("");
+  };
+
   const handleVisualizarFicheiro = (caminhoFicheiro) => {
     if (!caminhoFicheiro) return;
     const urlBase = api.defaults.baseURL 
@@ -133,21 +157,43 @@ function AvaliacaoSolicitacaoTM() {
   // ACEITAR EVIDÊNCIA 
   const handleAceitarEvidencia = async (idEvidencia, idCandidaturaPedido) => {
     if (!idEvidencia || idEvidencia === 'SEM_EVIDENCIA') return;
-    
+
     try {
-      setAvaliandoId(idEvidencia); 
+      setAvaliandoId(idEvidencia);
       await api.post("/candidaturas/tm/avaliar-evidencia", {
-        id_v_evidencia: idEvidencia, 
+        id_v_evidencia: idEvidencia,
         id_evidencia: idEvidencia,
-        id_candidatura_pedido: idCandidaturaPedido || Number(id), 
-        estado: "APROVADO" 
+        id_candidatura_pedido: idCandidaturaPedido || Number(id),
+        estado: "APROVADO",
       });
-      setAtualizarDados(prev => prev + 1); 
+
+      atualizarEstadoLocalEvidencia(idEvidencia, 'APROVADO');
     } catch (err) {
       console.error("Erro ao aceitar evidência:", err);
-      alert("Erro ao aceitar a evidência.");
+      setErroGuardarDecisoes(err.response?.data?.error || "Não foi possível guardar a aprovação da evidência.");
     } finally {
-      setAvaliandoId(null); 
+      setAvaliandoId(null);
+    }
+  };
+
+  const handleDesfazerEvidencia = async (idEvidencia, idCandidaturaPedido) => {
+    if (!idEvidencia || idEvidencia === 'SEM_EVIDENCIA') return;
+
+    try {
+      setAvaliandoId(idEvidencia);
+      await api.post("/candidaturas/tm/avaliar-evidencia", {
+        id_v_evidencia: idEvidencia,
+        id_evidencia: idEvidencia,
+        id_candidatura_pedido: idCandidaturaPedido || Number(id),
+        estado: "PENDENTE",
+      });
+
+      atualizarEstadoLocalEvidencia(idEvidencia, 'PENDENTE', '');
+    } catch (err) {
+      console.error("Erro ao desfazer avaliação da evidência:", err);
+      setErroGuardarDecisoes(err.response?.data?.error || "Não foi possível desfazer a avaliação da evidência.");
+    } finally {
+      setAvaliandoId(null);
     }
   };
 
@@ -184,35 +230,40 @@ function AvaliacaoSolicitacaoTM() {
       return;
     }
 
-    setShowModal(false); // Fecha o modal
+    setShowModal(false);
 
     try {
       if (modalConfig.tipo === "EVIDENCIA") {
-        // Fluxo de rejeição de 1 evidência (vai para comentarios_tm)
-        setAvaliandoId(modalConfig.idEvidencia); 
+        setAvaliandoId(modalConfig.idEvidencia);
         await api.post("/candidaturas/tm/avaliar-evidencia", {
+          id_v_evidencia: modalConfig.idEvidencia,
           id_evidencia: modalConfig.idEvidencia,
           id_candidatura_pedido: modalConfig.idCandidaturaPedido || Number(id),
-          estado: "REJEITADA", 
-          comentarios: textoComentario
+          estado: "REJEITADA",
+          comentarios: textoComentario.trim(),
         });
-        setAtualizarDados(prev => prev + 1); 
+
+        atualizarEstadoLocalEvidencia(
+          modalConfig.idEvidencia,
+          'REJEITADA',
+          textoComentario.trim(),
+        );
 
       } else if (modalConfig.tipo === "GLOBAL") {
-        // Fluxo de rejeição global (cria Notificação + vinculo Recebido no backend)
         setFinalizando(true);
+
         await api.post("/candidaturas/tm/finalizar-avaliacao", {
           id_candidatura_pedido: Number(id),
           estado: "REJEITADO", 
-          comentarios: textoComentario
+          comentarios: textoComentario.trim()
         });
         navigate('/tm/Solicitacoes');
       }
     } catch (err) {
       console.error("Erro ao submeter rejeição:", err);
-      alert(`Erro no Servidor: ${err.response?.data?.error || err.message}`);
+      setErroGuardarDecisoes(err.response?.data?.error || err.message || "Não foi possível guardar a rejeição.");
     } finally {
-      setAvaliandoId(null); 
+      setAvaliandoId(null);
       setFinalizando(false);
     }
   };
@@ -233,7 +284,9 @@ function AvaliacaoSolicitacaoTM() {
     }
 
     const estados = evidencias.map((evidencia) =>
-      normalizarEstadoAvaliacao(evidencia.estado),
+      normalizarEstadoAvaliacao(
+        obterEstadoEfetivoEvidencia(evidencia),
+      ),
     );
 
     if (estados.some((estado) => estado === "REJEITADA")) {
@@ -277,6 +330,7 @@ function AvaliacaoSolicitacaoTM() {
     if (!todosAprovados) return;
     try {
       setFinalizando(true); 
+
       await api.post("/candidaturas/tm/finalizar-avaliacao", {
         id_candidatura_pedido: Number(id), 
         estado: "APROVADO", 
@@ -285,7 +339,7 @@ function AvaliacaoSolicitacaoTM() {
       navigate('/tm/Solicitacoes'); 
     } catch (err) {
       console.error("Erro ao finalizar badge:", err);
-      alert(`Erro no Servidor: ${err.response?.data?.error || err.message}`);
+      setErroGuardarDecisoes(err.response?.data?.error || err.message || "Não foi possível finalizar a avaliação.");
     } finally {
       setFinalizando(false); 
     }
@@ -422,7 +476,9 @@ function AvaliacaoSolicitacaoTM() {
                           <>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                               {evidencias.map((evidencia, index) => {
-                                const estadoEvidencia = normalizarEstadoAvaliacao(evidencia.estado);
+                                const estadoEvidencia = normalizarEstadoAvaliacao(
+                                  obterEstadoEfetivoEvidencia(evidencia),
+                                );
                                 const estaAvaliandoEste = avaliandoId === evidencia.idEvidencia;
 
                                 return (
@@ -461,32 +517,30 @@ function AvaliacaoSolicitacaoTM() {
                                     )}
 
                                     <div style={{ display: 'flex', gap: '10px', paddingTop: '10px', flexWrap: 'wrap' }}>
-                                      {estadoEvidencia === 'PENDENTE' ? (
-                                        <>
-                                          <button 
-                                            onClick={() => handleAceitarEvidencia(evidencia.idEvidencia, evidencia.idCandidaturaPedido)}
-                                            disabled={avaliandoId !== null}
-                                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#0d6efd', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}
-                                          >
-                                            {estaAvaliandoEste ? (
-                                              <>
-                                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                                A processar...
-                                              </>
-                                            ) : '✓ Validar Evidência'}
-                                          </button>
-                                          <button 
-                                            onClick={() => handleRejeitarEvidencia(evidencia.idEvidencia, evidencia.idCandidaturaPedido)}
-                                            disabled={avaliandoId !== null}
-                                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#e9ecef', color: '#495057' }}
-                                          >
-                                            ✕ Rejeitar Evidência
-                                          </button>
-                                        </>
-                                      ) : (
-                                        <div style={{ fontStyle: 'italic', color: '#6c757d', fontSize: '12px', marginTop: '4px' }}>
-                                          Ação concluída para esta evidência ({estadoEvidencia.toLowerCase()}).
-                                        </div>
+                                      <button 
+                                        onClick={() => handleAceitarEvidencia(evidencia.idEvidencia, evidencia.idCandidaturaPedido)}
+                                        disabled={finalizando || estaAvaliandoEste}
+                                        style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: finalizando || estaAvaliandoEste ? 'not-allowed' : 'pointer', backgroundColor: estadoEvidencia === 'APROVADA' ? '#198754' : '#0d6efd', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', opacity: finalizando || estaAvaliandoEste ? 0.6 : 1 }}
+                                      >
+                                        {estaAvaliandoEste ? 'A guardar...' : estadoEvidencia === 'APROVADA' ? '✓ Aprovada' : '✓ Validar Evidência'}
+                                      </button>
+
+                                      <button 
+                                        onClick={() => handleRejeitarEvidencia(evidencia.idEvidencia, evidencia.idCandidaturaPedido)}
+                                        disabled={finalizando || estaAvaliandoEste}
+                                        style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: finalizando || estaAvaliandoEste ? 'not-allowed' : 'pointer', backgroundColor: estadoEvidencia === 'REJEITADA' ? '#dc3545' : '#e9ecef', color: estadoEvidencia === 'REJEITADA' ? '#ffffff' : '#495057', opacity: finalizando || estaAvaliandoEste ? 0.6 : 1 }}
+                                      >
+                                        {estadoEvidencia === 'REJEITADA' ? '✕ Rejeitada' : '✕ Rejeitar Evidência'}
+                                      </button>
+
+                                      {estadoEvidencia !== 'PENDENTE' && (
+                                        <button 
+                                          onClick={() => handleDesfazerEvidencia(evidencia.idEvidencia, evidencia.idCandidaturaPedido)}
+                                          disabled={finalizando || estaAvaliandoEste}
+                                          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: '700', cursor: finalizando || estaAvaliandoEste ? 'not-allowed' : 'pointer', backgroundColor: '#ffffff', color: '#475569', opacity: finalizando || estaAvaliandoEste ? 0.6 : 1 }}
+                                        >
+                                          Desfazer
+                                        </button>
                                       )}
                                     </div>
                                   </div>
@@ -508,6 +562,12 @@ function AvaliacaoSolicitacaoTM() {
 
             {/* CARD INFERIOR: PROGRESSO E SUBMISSÃO DINÂMICA */}
             <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e9ecef', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {erroGuardarDecisoes && (
+                <div style={{ color: '#b91c1c', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '10px 12px', fontSize: '12px', fontWeight: '600' }}>
+                  {erroGuardarDecisoes}
+                </div>
+              )}
+
               <div>
                 <h6 style={{ fontWeight: '700', color: '#212529', margin: '0 0 4px 0' }}>Progresso de Avaliação</h6>
                 <small style={{ color: '#adb5bd', fontWeight: '600' }}>{avaliadosCount} / {totalRequisitos} requisitos avaliados</small>
