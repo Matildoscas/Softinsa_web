@@ -5,9 +5,10 @@ import {
   BiBell,
   BiGrid,
   BiMedal,
+  BiUserCircle,
 } from "react-icons/bi";
 
-import api from "../services/api.js";
+import api, { buildUploadUrl } from "../services/api.js";
 
 function obterUtilizadorGuardado() {
   const storedUser = localStorage.getItem("user");
@@ -245,6 +246,17 @@ function TopUserCard({
     utilizador.total_badges || 0
   );
 
+  const fotoPerfil =
+    utilizador.foto_perfil ||
+    utilizador.FOTO_PERFIL ||
+    utilizador.foto ||
+    utilizador.imagem ||
+    null;
+
+  const fotoSrc = fotoPerfil
+    ? buildUploadUrl(fotoPerfil)
+    : null;
+
   const estilo = obterEstiloRanking(posicao);
 
   return (
@@ -268,15 +280,33 @@ function TopUserCard({
         cursor: "pointer",
       }}
     >
-      <div
-        style={{
-          ...avatar,
-          background: estilo.avatar,
-        }}
-      >
-        <span style={{ fontSize: 18 }}>
-          {estilo.medalha}
-        </span>
+      <div style={avatarWrapper}>
+        {fotoSrc ? (
+          <img
+            src={fotoSrc}
+            alt={nome}
+            style={avatarImage}
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          <BiUserCircle
+            size={38}
+            color={estilo.text}
+          />
+        )}
+
+        <div
+          style={{
+            ...rankingBadge,
+            background: estilo.badgeBg,
+            color: estilo.text,
+            border: `1px solid ${estilo.border}`,
+          }}
+        >
+          {posicao}
+        </div>
       </div>
 
       <div style={{ flex: 1 }}>
@@ -303,29 +333,26 @@ function TopUserCard({
 function obterEstiloRanking(posicao) {
   if (posicao === 1) {
     return {
-      medalha: "🥇",
       background: "#fff8e1",
       border: "#facc15",
-      avatar: "#fef3c7",
+      badgeBg: "#fef3c7",
       text: "#92400e",
     };
   }
 
   if (posicao === 2) {
     return {
-      medalha: "🥈",
       background: "#f3f4f6",
       border: "#9ca3af",
-      avatar: "#e5e7eb",
+      badgeBg: "#e5e7eb",
       text: "#374151",
     };
   }
 
   return {
-    medalha: "🥉",
     background: "#fff1e6",
     border: "#d97706",
-    avatar: "#fed7aa",
+    badgeBg: "#fed7aa",
     text: "#92400e",
   };
 }
@@ -467,6 +494,43 @@ const viewAllLink = {
   textDecoration: "none",
   color: "#111827",
   background: "white",
+};
+
+const avatarWrapper = {
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  position: "relative",
+  flexShrink: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#f3f4f6",
+  overflow: "visible",
+};
+
+const avatarImage = {
+  width: 44,
+  height: 44,
+  borderRadius: "50%",
+  objectFit: "cover",
+  display: "block",
+  border: "2px solid white",
+  boxShadow: "0 1px 4px rgba(15, 23, 42, 0.18)",
+};
+
+const rankingBadge = {
+  position: "absolute",
+  right: -3,
+  bottom: -3,
+  width: 18,
+  height: 18,
+  borderRadius: "50%",
+  fontSize: 10,
+  fontWeight: 800,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 export default SllRightSidebar;
