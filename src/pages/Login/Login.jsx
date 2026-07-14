@@ -346,6 +346,15 @@ function LoginPage() {
                 >
                   Ver galeria de badges
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline-secondary"
+                  className="w-100 mt-2"
+                  disabled={loading}
+                  onClick={() => navigate("/microsite")}
+                >
+                  Conhecer o site
+                </Button>
               </Form>
             </Card.Body>
           </Card>
