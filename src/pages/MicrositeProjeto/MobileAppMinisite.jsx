@@ -2,6 +2,23 @@ import { useMemo } from 'react';
 import logoImg from '../../assets/logo.png';
 
 function MobileAppMinisite() {
+  const installUrlDefault = import.meta.env.VITE_APP_INSTALL_URL || '';
+  const installUrlAndroid = import.meta.env.VITE_APP_INSTALL_URL_ANDROID || '';
+  const installUrlIos = import.meta.env.VITE_APP_INSTALL_URL_IOS || '';
+  const appDeepLink = import.meta.env.VITE_APP_DEEP_LINK || '';
+
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isAndroid = /Android/i.test(userAgent);
+  const isIos = /iPhone|iPad|iPod/i.test(userAgent);
+
+  const installUrl =
+    (isAndroid && installUrlAndroid) ||
+    (isIos && installUrlIos) ||
+    installUrlDefault;
+
+  const hasInstallUrl = Boolean(installUrl);
+  const hasDeepLink = Boolean(appDeepLink);
+
   const features = useMemo(
     () => [
       'Consulta de badges e progresso em tempo real',
@@ -11,9 +28,22 @@ function MobileAppMinisite() {
     []
   );
 
+  const handleOpenAppClick = () => {
+    if (!hasDeepLink) {
+      window.alert('Deep link da app ainda nao foi configurado.');
+      return;
+    }
+
+    window.location.href = appDeepLink;
+  };
+
   const handleInstallClick = () => {
-    // Placeholder until app stores and deep links are ready.
-    window.alert('Botao de instalacao em preparacao. Vamos ativar em breve.');
+    if (!hasInstallUrl) {
+      window.alert('URL de instalacao ainda nao foi configurada.');
+      return;
+    }
+
+    window.location.href = installUrl;
   };
 
   return (
@@ -34,13 +64,24 @@ function MobileAppMinisite() {
           ))}
         </ul>
 
-        <button type="button" className="mobile-minisite-install" onClick={handleInstallClick}>
-          Instalar app (em breve)
+        <button
+          type="button"
+          className="mobile-minisite-install"
+          onClick={handleInstallClick}
+          disabled={!hasInstallUrl}
+        >
+          {hasInstallUrl ? 'Instalar app' : 'Instalacao da app em breve'}
         </button>
 
-        <a className="mobile-minisite-link" href="/login">
-          Continuar para a versao web
-        </a>
+        {hasDeepLink && (
+          <button type="button" className="mobile-minisite-link" onClick={handleOpenAppClick}>
+            Ja tens a app? Abrir agora
+          </button>
+        )}
+
+        <p className="mobile-minisite-note">
+          O acesso web em telemovel esta temporariamente bloqueado. Usa a app para continuar.
+        </p>
       </section>
     </main>
   );

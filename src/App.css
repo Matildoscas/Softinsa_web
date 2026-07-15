@@ -305,7 +305,17 @@
   box-shadow: 0 10px 22px rgba(3, 105, 161, 0.24);
 }
 
+.mobile-minisite-install:disabled {
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  box-shadow: none;
+  transform: none;
+}
+
 .mobile-minisite-link {
+  border: none;
+  background: transparent;
+  cursor: pointer;
   text-align: center;
   color: #1d4ed8;
   font-size: 0.92rem;
@@ -315,6 +325,14 @@
 
 .mobile-minisite-link:hover {
   text-decoration: underline;
+}
+
+.mobile-minisite-note {
+  margin: 0;
+  color: #475569;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-align: center;
 }
 
 @media (min-width: 821px) {

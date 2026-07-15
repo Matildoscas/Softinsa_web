@@ -92,17 +92,24 @@ import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';
 import TM_Solicitacoes from './pages/TalentManager/TM_Solicitacoes.jsx';
 import TM_statuscandidatura from './pages/TalentManager/TM_statuscandidatura.jsx';
 
-function LoginEntryPage() {
+function useMobileWebBlock() {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 820px)').matches;
+
+    const ua = window.navigator?.userAgent || '';
+    const isMobileUA = /Android|iPhone|iPad|iPod|Mobile|IEMobile|Opera Mini/i.test(ua);
+    const isNarrowViewport = window.matchMedia('(max-width: 820px)').matches;
+
+    return isMobileUA || isNarrowViewport;
   });
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 820px)');
 
     const handleMediaChange = (event) => {
-      setIsMobile(event.matches);
+      const ua = window.navigator?.userAgent || '';
+      const isMobileUA = /Android|iPhone|iPad|iPod|Mobile|IEMobile|Opera Mini/i.test(ua);
+      setIsMobile(isMobileUA || event.matches);
     };
 
     setIsMobile(mediaQuery.matches);
@@ -122,17 +129,22 @@ function LoginEntryPage() {
     };
   }, []);
 
-  return isMobile ? <MobileAppMinisite /> : <LoginPage />;
+  return isMobile;
 }
 
 function App() {
+  const shouldBlockMobileWeb = useMobileWebBlock();
+
   return (
     <Router>
+      {shouldBlockMobileWeb ? (
+        <MobileAppMinisite />
+      ) : (
       <Routes>
         
         // Rotas públicas
-        <Route path="/" element={<LoginEntryPage />} />
-        <Route path="/login" element={<LoginEntryPage />} />
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/galeria-badges" element={<GaleriaBadgesPage />} />
         <Route path="/badges/:userId/:badgeId" element={<BadgePublicoIndividualPage />}/>
         <Route path="/verificar/:codigo" element={<VerificarCertificadoPage />}/>
@@ -236,6 +248,7 @@ function App() {
         <Route path="/tm/desafios/novo" element={<TM_criar_desafio />} />
 
       </Routes>
+      )}
     </Router>
   );
 }
