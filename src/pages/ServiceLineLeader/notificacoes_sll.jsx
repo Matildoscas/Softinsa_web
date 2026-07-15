@@ -5,6 +5,7 @@ import {
 
 import {
   Alert,
+  Button,
   Spinner,
 } from "react-bootstrap";
 
@@ -20,6 +21,10 @@ import SllLeftSidebar from "../../components/sll_left_sidebar.jsx";
 import SllRightSidebar from "../../components/sll_right_sidebar.jsx";
 
 import api from "../../services/api.js";
+import {
+  emitirAtualizacaoNotificacoes,
+  notificacaoNaoLida,
+} from "../../utils/notificacoesUtils.js";
 
 /* =========================================================
    UTILIZADOR AUTENTICADO
@@ -63,6 +68,9 @@ function NotificacoesSllPage() {
   const [erro, setErro] =
     useState("");
 
+  const [marcandoTodas, setMarcandoTodas] =
+    useState(false);
+
   useEffect(() => {
     carregarNotificacoes();
   }, []);
@@ -96,9 +104,27 @@ function NotificacoesSllPage() {
       );
 
       setNotificacoes(
-        Array.isArray(response.data)
+        (Array.isArray(response.data)
           ? response.data
-          : []
+          : [])
+          .sort((a, b) => {
+            const dataA =
+              new Date(
+                a.data_envio ||
+                  a.DATA_ENVIO ||
+                  0
+              ).getTime();
+
+            const dataB =
+              new Date(
+                b.data_envio ||
+                  b.DATA_ENVIO ||
+                  0
+              ).getTime();
+
+            return dataA - dataB;
+          })
+          .slice(0, 5)
       );
     } catch (err) {
       console.error(
@@ -127,6 +153,57 @@ function NotificacoesSllPage() {
     }
   }
 
+  async function marcarTodasComoLidas() {
+    const utilizador =
+      obterUtilizadorGuardado();
+
+    const userId =
+      utilizador?.id_utilizador ||
+      utilizador?.ID_UTILIZADOR ||
+      utilizador?.id;
+
+    if (!userId) {
+      return;
+    }
+
+    try {
+      setMarcandoTodas(true);
+      setErro("");
+
+      await api.patch(
+        `/notificacoes/utilizador/${userId}/lidas`
+      );
+
+      setNotificacoes((anteriores) =>
+        anteriores.map((item) => ({
+          ...item,
+          lida: true,
+          lido: true,
+          estado_leitura: "LIDA",
+          estado_notificacao: "LIDA",
+        }))
+      );
+
+      emitirAtualizacaoNotificacoes();
+    } catch (err) {
+      console.error(
+        "Erro ao marcar todas as notificações do SLL como lidas:",
+        err
+      );
+
+      setErro(
+        "Não foi possível marcar todas as notificações como lidas."
+      );
+    } finally {
+      setMarcandoTodas(false);
+    }
+  }
+
+  const totalNaoLidas =
+    notificacoes.filter(
+      notificacaoNaoLida
+    ).length;
+
   return (
     <div style={pagina}>
       <Header />
@@ -149,13 +226,32 @@ function NotificacoesSllPage() {
           <div style={separador} />
 
           <div style={cabecalhoPagina}>
-            <h1 style={titulo}>
-              Notificações
-            </h1>
+            <div style={cabecalhoNotificacoesTop}>
+              <div>
+                <h1 style={titulo}>
+                  Notificações
+                </h1>
 
-            <div style={subtitulo}>
-              Notificações recebidas pela sua
-              conta de Service Line Leader
+                <div style={subtitulo}>
+                  Notificações recebidas pela sua
+                  conta de Service Line Leader
+                </div>
+              </div>
+
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={marcarTodasComoLidas}
+                disabled={
+                  loading ||
+                  marcandoTodas ||
+                  totalNaoLidas === 0
+                }
+              >
+                {marcandoTodas
+                  ? "A marcar..."
+                  : "Marcar todas como lidas"}
+              </Button>
             </div>
           </div>
 
@@ -373,6 +469,14 @@ const separador = {
 const cabecalhoPagina = {
   maxWidth: 920,
   margin: "0 auto 20px",
+};
+
+const cabecalhoNotificacoesTop = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  flexWrap: "wrap",
 };
 
 const titulo = {
