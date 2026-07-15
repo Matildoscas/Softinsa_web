@@ -143,7 +143,7 @@ function DashboardTMUnificado() {
       descricaoBadges: `${dados.badges_atribuidos_mes || 0} atribuídos este mês`,
       descricaoSll: `${totalSllAtivos} Service Lines Ativas`,
       tituloLista: "Ranking de Consultores",
-      descricaoLista: `A acompanhar ${dados.total_consultores_acompanhados || 0} consultores`,
+      descricaoLista: `Total de ${dados.total_consultores_acompanhados || 0} consultores`,
       graficoTitulo: "Distribuição de Consultores por Área / Service Line",
     };
 
