@@ -47,6 +47,7 @@ import SubmeterEvidenciasPage from './pages/Consultor/submissao_badge.jsx';
 import BadgePublicoIndividualPage from './pages/Galeria_Pública/BadgePublicoIndividual.jsx';
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
 import VerificarCertificadoPage from './pages/Galeria_Pública/VerificarCertificado.jsx';
+import MicrositeProjeto from './pages/MicrositeProjeto/MicrositeProjeto.jsx';
 
 import AtivarContaPage from './pages/Login/ativar_conta.jsx';
 import AreaPage from './pages/Login/AreaRegister.jsx';
@@ -100,6 +101,7 @@ function App() {
         <Route path="/galeria-badges" element={<GaleriaBadgesPage />} />
         <Route path="/badges/:userId/:badgeId" element={<BadgePublicoIndividualPage />}/>
         <Route path="/verificar/:codigo" element={<VerificarCertificadoPage />}/>
+        <Route path="/microsite" element={<MicrositeProjeto />} />
 
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register-area" element={<AreaPage />} />
