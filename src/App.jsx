@@ -27,6 +27,7 @@ import InformacoesAvisos from './pages/Admin/avisos_informacoes.jsx';
 import PoliticasRGPD from './pages/Admin/politicas_rgpd.jsx';
 import PerfilAdminPage from './pages/Admin/perfil_admin.jsx';
 import DefinicoesAdminPage from './pages/Admin/definicoes_admin.jsx';
+import NotificacaoAdminPage from "./pages/Admin/notificacao_admin.jsx";
 
 import CertificadoPage from './pages/Consultor/certificado.jsx';
 import ConfiguracaoAssinaturaPage from './pages/Consultor/configuracao_assinatura.jsx';
@@ -203,6 +204,7 @@ function App() {
         <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
         <Route path="/admin/perfil" element={<PerfilAdminPage />} />
         <Route path="/admin/definicoes" element={<DefinicoesAdminPage />} />
+        <Route path="/admin/notificacoes" element={<NotificacaoAdminPage />}/>
 
         // Rotas Service Line Leader
         <Route path="/sll" element={<DashboardSll />} />
