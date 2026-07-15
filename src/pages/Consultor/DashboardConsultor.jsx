@@ -454,7 +454,10 @@ function DashboardConsultor() {
         const userData = JSON.parse(storedUser);
         setUser(userData);
 
-        const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+        const userId =
+            userData.id_utilizador ||
+            userData.ID_UTILIZADOR ||
+            userData.id;
         setUserId(userId);
 
         if (!userId) {
