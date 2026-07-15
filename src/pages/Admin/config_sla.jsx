@@ -118,19 +118,101 @@ function ConfiguracaoSLA() {
       setSucesso("");
       setResultado(null);
 
-      const response =
-        await api.post("/admin/sla/processar-alertas", {});
+      if (Number(form.sla_tm_dias) <= 0) {
+        setErro(
+          "O SLA do Talent Manager deve ser superior a 0."
+        );
+        return;
+      }
 
-      setResultado(response.data?.resultado || null);
-      setSucesso("Verificação de SLA executada com sucesso.");
+      if (Number(form.sla_sll_dias) <= 0) {
+        setErro(
+          "O SLA do Service Line Leader deve ser superior a 0."
+        );
+        return;
+      }
+
+      const payloadConfig = {
+        sla_tm_dias:
+          Number(form.sla_tm_dias),
+
+        sla_sll_dias:
+          Number(form.sla_sll_dias),
+
+        alerta_email:
+          Boolean(form.alerta_email),
+
+        alerta_push:
+          Boolean(form.alerta_push),
+
+        estado_configuracao:
+          form.estado_configuracao,
+      };
+
+      /*
+      * Guarda primeiro a configuração atual
+      * apresentada no formulário.
+      */
+      await api.put(
+        "/admin/sla/config",
+        payloadConfig
+      );
+
+      /*
+      * Depois executa a verificação.
+      * forcar_envio permite voltar a testar
+      * candidaturas cuja notificação já existe.
+      */
+      const response = await api.post(
+        "/admin/sla/processar-alertas",
+        {
+          forcar_envio: true,
+        }
+      );
+
+      const resultadoProcessamento =
+        response.data?.resultado ||
+        response.data ||
+        null;
+
+      setResultado(
+        resultadoProcessamento
+      );
+
+      if (
+        resultadoProcessamento &&
+        !resultadoProcessamento.alerta_email &&
+        !resultadoProcessamento.alerta_push
+      ) {
+        setErro(
+          "A configuração foi guardada, mas nenhum canal de alerta ficou ativo."
+        );
+
+        return;
+      }
+
+      setSucesso(
+        "Configuração guardada e verificação de SLA executada com sucesso."
+      );
     } catch (err) {
-      console.error("Erro ao processar alertas SLA:", err);
-      console.error("STATUS:", err.response?.status);
-      console.error("BODY:", err.response?.data);
+      console.error(
+        "Erro ao processar alertas SLA:",
+        err
+      );
+
+      console.error(
+        "STATUS:",
+        err.response?.status
+      );
+
+      console.error(
+        "BODY:",
+        err.response?.data
+      );
 
       setErro(
         err.response?.data?.error ||
-          "Não foi possível processar os alertas de SLA."
+        "Não foi possível processar os alertas de SLA."
       );
     } finally {
       setAProcessar(false);
