@@ -10,6 +10,7 @@ import {
   Button,
   Spinner,
   Modal,
+    ProgressBar,
 } from "react-bootstrap";
 import { BiMedal, BiStar, BiUserCircle, BiGrid, BiMenu } from 'react-icons/bi';
 import { useNavigate, Link } from 'react-router-dom';
@@ -35,6 +36,8 @@ import {
 import {
     obterPontosTotaisBadge,
 } from "../../utils/badgeBonus.js";
+
+const MAX_BADGES_OBTIDOS_VISIVEIS = 3;
 
 function detetarMimeImagem(bytes) {
     if (!bytes || bytes.length < 4) return "image/png";
@@ -315,6 +318,7 @@ function DashboardConsultor() {
     // Estados para os dados da BD
     const [user, setUser] = useState(null);
     const [progressoBadges, setProgressoBadges] = useState([]);
+    const [progressoLearningPaths, setProgressoLearningPaths] = useState([]);
     const [recomendados, setRecomendados] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -465,6 +469,16 @@ function DashboardConsultor() {
         Promise.all([
             api.get(`/badges/conquistados/${userId}`),
             api.get(`/badges/recomendados/${userId}`),
+            api
+                .get(`/badges/progresso/${userId}`)
+                .catch((err) => {
+                    console.error(
+                        "Erro ao carregar progresso das Learning Paths:",
+                        err.response?.data || err.message
+                    );
+
+                    return { data: [] };
+                }),
             api.get(
             `/utilizadores/dashboard/${userId}`
             )
@@ -473,6 +487,7 @@ function DashboardConsultor() {
             ([
                 progressoRes,
                 recomendadosRes,
+                learningPathsRes,
                 dashboardRes,
             ]) => {
                 console.log(
@@ -595,6 +610,12 @@ function DashboardConsultor() {
 
                 setProgressoBadges(
                     badgesUnicos
+                );
+
+                setProgressoLearningPaths(
+                    Array.isArray(learningPathsRes.data)
+                        ? learningPathsRes.data
+                        : []
                 );
 
                 setRecomendados(
@@ -828,12 +849,50 @@ function DashboardConsultor() {
 
                     {/* Seção: Badges com Progresso */}
                     <BadgeSection 
+                        title="Progresso de Learning Paths"
+                        sub={`${progressoLearningPaths.length} learning path(s)`}
+                        onVerTodos={() => navigate('/progresso')}
+                    >
+                        {progressoLearningPaths.length > 0 ? (
+                            progressoLearningPaths.map((lp, i) => {
+                                const percentagem = Number(lp.percentagem || 0);
+
+                                return (
+                                    <div
+                                        key={lp.id_learningpaths || lp.nome_learningpath || i}
+                                        style={learningPathProgressCard}
+                                    >
+                                        <div style={learningPathProgressTitle}>
+                                            {lp.nome_learningpath || "Learning Path"}
+                                        </div>
+
+                                        <ProgressBar
+                                            now={percentagem}
+                                            style={{ height: 8, marginTop: 8 }}
+                                        />
+
+                                        <div style={learningPathProgressMeta}>
+                                            {Number(lp.badges_conquistados || 0)} / {Number(lp.total_badges || 0)} badges concluídos • {percentagem}%
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <p className="text-muted small ms-2 mb-0">
+                                Sem learning paths disponíveis de momento.
+                            </p>
+                        )}
+                    </BadgeSection>
+
+                    <BadgeSection 
                         title="Badges Obtidos" 
                         sub={`Tem ${progressoBadges.length} badge(s)`}
                         onVerTodos={() => navigate('/catalogo-badges')}
                     >
                         {progressoBadges.length > 0 ? (
-                            progressoBadges.map((b, i) => (
+                            progressoBadges
+                                .slice(0, MAX_BADGES_OBTIDOS_VISIVEIS)
+                                .map((b, i) => (
                                 <BadgeCard
                                     key={b.id || b.id_badge_modelo || i}
                                     name={b.nome || b.nome_badge || "Badge"}
@@ -851,7 +910,7 @@ function DashboardConsultor() {
                                             : "Conquistado recentemente"
                                     }
                                 />
-                            ))
+                                ))
                             ) : (
                             <p className="text-muted small ms-2">
                                 Não tem badges em progresso de momento.
@@ -1325,6 +1384,26 @@ const dashboardCatalogButton = {
 
   transition:
     "background-color 0.15s ease, border-color 0.15s ease",
+};
+
+const learningPathProgressCard = {
+    background: "white",
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+};
+
+const learningPathProgressTitle = {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#111827",
+};
+
+const learningPathProgressMeta = {
+    fontSize: 11,
+    color: "#6b7280",
+    marginTop: 6,
 };
 
 const marcosBox = {
