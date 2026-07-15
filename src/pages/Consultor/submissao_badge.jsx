@@ -912,7 +912,7 @@ function SubmeterEvidenciasPage() {
                 lineHeight: 1.55,
               }}
             >
-              <strong style={{ color: "#111827" }}>RGPD / Privacidade:</strong> os dados usados nesta publicação destinam-se apenas à divulgação do badge aprovado e à associação opcional do teu perfil LinkedIn. Podes retirar esta autorização a qualquer momento nas definições do badge.
+              <strong style={{ color: "#111827" }}>RGPD / Privacidade:</strong> ao continuar, aceitas estes termos. Os dados usados nesta publicação destinam-se apenas à divulgação do badge aprovado e à associação opcional do teu perfil LinkedIn. Podes consultar os <a href="/admin/rgpd" target="_blank" rel="noreferrer" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>RGPD completos</a> e retirar esta autorização a qualquer momento nas definições do badge.
             </div>
 
             <Form.Check
@@ -924,7 +924,11 @@ function SubmeterEvidenciasPage() {
                   event.target.checked
                 )
               }
-              label="Autorizo a publicação e partilha pública deste badge caso seja aprovado."
+              label={
+                <>
+                  Aceito estes termos e autorizo a publicação e partilha pública deste badge caso seja aprovado.
+                </>
+              }
               style={{
                 fontSize: 13,
                 color: "#111827",

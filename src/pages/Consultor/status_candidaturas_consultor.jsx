@@ -349,7 +349,7 @@ function StepperCandidatura({ candidatura }) {
   const passos = [
     {
       titulo: "Candidatura iniciada",
-      descricao: "O consultor submeteu a candidatura.",
+      descricao: "O consultor iniciou a candidatura e ainda não submeteu.",
       cor: "#2563eb",
     },
     {
