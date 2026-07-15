@@ -22,7 +22,9 @@ import api from "../services/api.js";
 
 import {
   EVENTO_NOTIFICACOES_ATUALIZADAS,
+  emitirAtualizacaoNotificacoes,
   formatarTituloNotificacao,
+  obterIdNotificacao,
   notificacaoNaoLida,
   ordenarNotificacoesRecentes,
 } from "../utils/notificacoesUtils.js";
@@ -134,6 +136,40 @@ const NotificationPopover =
           setNotifications(
             naoLidas
           );
+
+          if (
+            naoLidas.length > 0
+          ) {
+            try {
+              await api.patch(
+                `/notificacoes/utilizador/${userId}/lidas`
+              );
+
+              setNotifications(
+                (anteriores) =>
+                  anteriores.filter(
+                    (item) =>
+                      notificacaoNaoLida(item) &&
+                      !naoLidas.some(
+                        (naoLida) =>
+                          String(
+                            obterIdNotificacao(naoLida)
+                          ) ===
+                          String(
+                            obterIdNotificacao(item)
+                          )
+                      )
+                  )
+              );
+
+              emitirAtualizacaoNotificacoes();
+            } catch (erroMarcarTodas) {
+              console.error(
+                "Erro ao marcar notificações como lidas ao abrir popover:",
+                erroMarcarTodas
+              );
+            }
+          }
         } catch (err) {
           const status = Number(
             err?.response?.status || 0

@@ -51,6 +51,11 @@ function NotificacaoPage() {
   ] = useState(null);
 
   const [
+    marcandoTodas,
+    setMarcandoTodas,
+  ] = useState(false);
+
+  const [
     userId,
     setUserId,
   ] = useState(null);
@@ -296,6 +301,59 @@ function NotificacaoPage() {
     }
   }
 
+  async function marcarTodasComoLidas() {
+    if (!userId) {
+      return;
+    }
+
+    try {
+      setMarcandoTodas(true);
+      setErro(null);
+
+      await api.patch(
+        `/notificacoes/utilizador/${userId}/lidas`
+      );
+
+      setNotificacoes((anteriores) =>
+        anteriores.map((item) => ({
+          ...item,
+          lida: true,
+          lido: true,
+          estado_leitura: "LIDA",
+          estado_notificacao: "LIDA",
+        }))
+      );
+
+      emitirAtualizacaoNotificacoes();
+    } catch (err) {
+      console.error(
+        "Erro ao marcar todas as notificações como lidas:",
+        err
+      );
+
+      console.error(
+        "STATUS:",
+        err.response?.status
+      );
+
+      console.error(
+        "BODY:",
+        err.response?.data
+      );
+
+      setErro(
+        "Não foi possível marcar todas as notificações como lidas."
+      );
+    } finally {
+      setMarcandoTodas(false);
+    }
+  }
+
+  const totalNaoLidas =
+    notificacoes.filter(
+      notificacaoNaoLida
+    ).length;
+
   return (
     <div
       style={{
@@ -374,9 +432,26 @@ function NotificacaoPage() {
             </span>
           </Button>
 
-          <h5 className="mb-3">
-            Notificações
-          </h5>
+          <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+            <h5 className="mb-0">
+              Notificações
+            </h5>
+
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={marcarTodasComoLidas}
+              disabled={
+                loading ||
+                marcandoTodas ||
+                totalNaoLidas === 0
+              }
+            >
+              {marcandoTodas
+                ? "A marcar..."
+                : "Marcar todas como lidas"}
+            </Button>
+          </div>
 
           {loading && (
             <div
