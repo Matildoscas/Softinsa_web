@@ -595,24 +595,8 @@ function InformacoesAvisos() {
               ? usersData.data
               : [];
 
-      const avisosAdministrativos =
-        listaAvisos.filter(
-          (aviso) => {
-            const tipo =
-              aviso.tipo_notificacao ||
-              aviso.TIPO_NOTIFICACAO ||
-              "";
-
-            return String(tipo)
-              .toUpperCase()
-              .startsWith(
-                PREFIXO_AVISO_ADMIN
-              );
-          }
-        );
-
       setAvisos(
-        avisosAdministrativos.map(
+        listaAvisos.map(
           normalizarAviso
         )
       );
