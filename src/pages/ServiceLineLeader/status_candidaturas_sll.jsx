@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BiBadge, Bisort, BiEnvelope, BiRefresh, BiSearch, BiUserCircle } from "react-icons/bi";
+import { BiBadge, BiSort, BiEnvelope, BiRefresh, BiSearch, BiUserCircle } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";

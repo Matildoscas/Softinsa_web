@@ -81,7 +81,7 @@ function AdminRightSidebar() {
       )}
 
       <div style={{ textAlign: "right", marginTop: 4 }}>
-        <a href="/admin/notificacoes" style={smallLink}>
+        <a href="/admin/notificacoespage" style={smallLink}>
           Ver todas as notificações
         </a>
       </div>
