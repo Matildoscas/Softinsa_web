@@ -804,6 +804,10 @@ function BadgeDetailPage() {
   const desafioAtivo =
     desafiosBadge.length > 0;
 
+  const temDesafioRelacionado =
+    ganhouBonus ||
+    desafioAtivo;
+
   const pontosBaseBadge =
     Number(
       badge?.pontos || 0
@@ -1739,18 +1743,22 @@ const copiarAssinatura =
                 <div style={{ fontSize: 24, color: "#111827", fontWeight: 800 }}>{pontosBaseBadge}</div>
               </div>
 
-              <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: pontosExtraBadge > 0 ? "#fffdf4" : "#ffffff" }}>
-                <div style={{ fontSize: 11, color: pontosExtraBadge > 0 ? "#9a6b00" : "#64748b", fontWeight: 700 }}>Extra do desafio</div>
-                <div style={{ fontSize: 24, color: pontosExtraBadge > 0 ? "#9a6b00" : "#111827", fontWeight: 800 }}>+{pontosExtraBadge}</div>
-              </div>
+              {temDesafioRelacionado && (
+                <>
+                  <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: pontosExtraBadge > 0 ? "#fffdf4" : "#ffffff" }}>
+                    <div style={{ fontSize: 11, color: pontosExtraBadge > 0 ? "#9a6b00" : "#64748b", fontWeight: 700 }}>Extra do desafio</div>
+                    <div style={{ fontSize: 24, color: pontosExtraBadge > 0 ? "#9a6b00" : "#111827", fontWeight: 800 }}>+{pontosExtraBadge}</div>
+                  </div>
 
-              <div style={{ border: "1px solid #dbeafe", borderRadius: 12, padding: 14, background: "#eff6ff" }}>
-                <div style={{ fontSize: 11, color: "#1d4ed8", fontWeight: 700 }}>{ganhouBonus ? "Total recebido" : desafioAtivo ? "Total possível" : "Total"}</div>
-                <div style={{ fontSize: 24, color: "#1e3a8a", fontWeight: 800 }}>{pontosTotaisBadge}</div>
-              </div>
+                  <div style={{ border: "1px solid #dbeafe", borderRadius: 12, padding: 14, background: "#eff6ff" }}>
+                    <div style={{ fontSize: 11, color: "#1d4ed8", fontWeight: 700 }}>{ganhouBonus ? "Total recebido" : "Total possível"}</div>
+                    <div style={{ fontSize: 24, color: "#1e3a8a", fontWeight: 800 }}>{pontosTotaisBadge}</div>
+                  </div>
+                </>
+              )}
             </div>
 
-            {(ganhouBonus || desafioAtivo) && (
+            {temDesafioRelacionado && (
               <div style={{ marginTop: 12, fontSize: 12, color: ganhouBonus ? "#9a6b00" : "#2563eb", fontWeight: 600 }}>
                 {ganhouBonus
                   ? `Este badge atribuiu +${pontosExtraBadge} pontos extra por conclusão do desafio no prazo.`
