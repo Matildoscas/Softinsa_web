@@ -971,124 +971,6 @@ function CatalogoBadgesSll() {
    CARD DO BADGE
 ========================================================= */
 
-function BadgeCard({
-  badge,
-  onConsultar,
-}) {
-  const especial =
-    String(
-      badge.tipo_badge
-    ).toUpperCase() === "ESPECIAL";
-
-  return (
-    <div
-      style={{
-        ...badgeCard,
-
-        cursor: "pointer",
-
-        border: especial
-          ? "2px solid #f59e0b"
-          : badgeCard.border,
-
-        boxShadow: especial
-          ? "0 0 0 3px rgba(245, 158, 11, 0.12)"
-          : "none",
-      }}
-      onClick={onConsultar}
-    >
-      <div style={badgeContent}>
-        <div
-          style={{
-            ...badgeImagemBox,
-
-            background: especial
-              ? "#a48d73"
-              : "#eff6ff",
-
-            border: especial
-              ? "2px solid #f59e0b"
-              : "2px solid #dbeafe",
-          }}
-        >
-          {badge.imagem ? (
-            <img
-              src={badge.imagem}
-              alt={badge.nome_badge}
-              style={badgeImagem}
-            />
-          ) : (
-            <BiMedal
-              size={34}
-              color={
-                especial
-                  ? "white"
-                  : "#2563eb"
-              }
-            />
-          )}
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={badgeNome}>
-              {badge.nome_badge}
-            </div>
-
-            {especial && (
-              <span style={especialPill}>
-                Especial
-              </span>
-            )}
-          </div>
-
-          <div style={badgeDescricao}>
-            {badge.descricao_badge_modelo}
-
-            {badge.nome_areas && (
-              <div style={areaLinha}>
-                {badge.nome_areas}
-              </div>
-            )}
-
-            {badge.nome_nivel && (
-              <div style={nivelLinha}>
-                {badge.nome_nivel}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={pointsBox}>
-          <div style={pointsLabel}>
-            Pontos
-          </div>
-
-          <div style={pointsValue}>
-            {badge.pontos}
-          </div>
-        </div>
-      </div>
-
-      <div style={statusBar}>
-        Service Line:{" "}
-        <strong>{badge.nome_serviceline}</strong>
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================
-   MODAL DO BADGE
-========================================================= */
-
 function BadgeCard({ badge, onConsultar }) {
   const especial = String(badge.tipo_badge).toUpperCase() === "ESPECIAL";
 
@@ -1206,6 +1088,105 @@ function BadgeCard({ badge, onConsultar }) {
         </div>
       </div>
     </article>
+  );
+}
+
+/* =========================================================
+   MODAL DO BADGE
+========================================================= */
+
+function BadgeModal({
+  badge,
+  onClose,
+}) {
+  return (
+    <div style={modalOverlay}>
+      <div style={modalCard}>
+        <button
+          type="button"
+          onClick={onClose}
+          style={modalClose}
+        >
+          <BiX size={22} />
+        </button>
+
+        <div style={modalHeader}>
+          <div style={modalImagem}>
+            {badge.imagem ? (
+              <img
+                src={badge.imagem}
+                alt={badge.nome_badge}
+                style={badgeImagem}
+              />
+            ) : (
+              <BiMedal
+                size={34}
+                color="#2563eb"
+              />
+            )}
+          </div>
+
+          <div>
+            <h3 style={modalTitle}>
+              {badge.nome_badge}
+            </h3>
+
+            <div
+              style={modalServiceLine}
+            >
+              {badge.nome_serviceline}
+            </div>
+          </div>
+        </div>
+
+        <p style={modalDescription}>
+          {
+            badge.descricao_badge_modelo
+          }
+        </p>
+
+        <div style={modalGrid}>
+          <ModalInfo
+            label="Nível"
+            value={badge.nome_nivel}
+          />
+
+          <ModalInfo
+            label="Pontos"
+            value={`${badge.pontos} pts`}
+          />
+
+          <ModalInfo
+            label="Requisitos"
+            value={
+              badge.numero_requisitos
+            }
+          />
+
+          <ModalInfo
+            label="Tipo"
+            value={badge.tipo_badge}
+          />
+        </div>
+
+        <div style={modalAreas}>
+          <strong>
+            Áreas associadas:
+          </strong>{" "}
+          {badge.nome_areas}
+        </div>
+
+        <div style={modalActions}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={fecharButton}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
