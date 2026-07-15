@@ -120,8 +120,7 @@ function normalizarLinks(links) {
   return links
     .map((link) => {
       if (
-        typeof link ===
-        "string"
+        typeof link === "string"
       ) {
         return link;
       }
@@ -155,12 +154,12 @@ function normalizarRequisito(
       requisito.descricao ||
       "Sem descrição.",
 
-    links:
-      normalizarLinks(
-        requisito.links
-      ),
+    links: normalizarLinks(
+      requisito.links
+    ),
   };
 }
+
 
 function normalizarBadge(badge) {
   return {
