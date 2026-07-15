@@ -1089,98 +1089,123 @@ function BadgeCard({
    MODAL DO BADGE
 ========================================================= */
 
-function BadgeModal({
-  badge,
-  onClose,
-}) {
-  return (
-    <div style={modalOverlay}>
-      <div style={modalCard}>
-        <button
-          type="button"
-          onClick={onClose}
-          style={modalClose}
-        >
-          <BiX size={22} />
-        </button>
+function BadgeCard({ badge, onConsultar }) {
+  const especial = String(badge.tipo_badge).toUpperCase() === "ESPECIAL";
 
-        <div style={modalHeader}>
-          <div style={modalImagem}>
-            {badge.imagem ? (
-              <img
-                src={badge.imagem}
-                alt={badge.nome_badge}
-                style={badgeImagem}
-              />
-            ) : (
-              <BiMedal
-                size={34}
-                color="#2563eb"
-              />
+  return (
+    <article
+      onClick={onConsultar}
+      style={{
+        ...badgeCard,
+        cursor: "pointer",
+        background: especial ? "#fff3cd" : "white",
+        border: especial ? "2px solid #f59e0b" : "1px solid #e5e7eb",
+        boxShadow: especial
+          ? "0 0 0 3px rgba(245, 158, 11, 0.12)"
+          : "none",
+        transition: "transform 0.15s ease, box-shadow 0.15s ease",
+      }}
+    >
+      {/* 1. Service Line no topo (como gostas na Versão 1) */}
+      <div style={serviceLineTexto}>
+        Service Line:{" "}
+        <span style={serviceLineLink}>{badge.nome_serviceline}</span>
+      </div>
+
+      <div style={badgeConteudo}>
+        {/* 2. Caixa da Imagem com as cores vibrantes da Versão 1 */}
+        <div
+          style={{
+            ...badgeImagemBox,
+            background: especial ? "#ff8a00" : "#eff6ff",
+            border: especial ? "2px solid #f59e0b" : "2px solid #dbeafe",
+          }}
+        >
+          {badge.imagem ? (
+            <img
+              src={badge.imagem}
+              alt={badge.nome_badge}
+              style={badgeImagem}
+            />
+          ) : (
+            <BiMedal
+              size={34}
+              color={especial ? "white" : "#2563eb"}
+            />
+          )}
+        </div>
+
+        {/* 3. Informações Centrais */}
+        <div style={{ ...badgeInfo, flex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: "4px",
+            }}
+          >
+            <div style={badgeNome}>{badge.nome_badge}</div>
+            
+            {/* Pill de Especial ao lado do nome (da Versão 2) */}
+            {especial && (
+              <span
+                style={{
+                  background: "#ff8a00",
+                  color: "white",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                }}
+              >
+                Especial
+              </span>
             )}
           </div>
 
-          <div>
-            <h3 style={modalTitle}>
-              {badge.nome_badge}
-            </h3>
+          <div style={badgeDescricao}>{badge.descricao_badge_modelo}</div>
 
-            <div
-              style={modalServiceLine}
+          {badge.nome_areas && (
+            <div style={areasTexto}>Área: {badge.nome_areas}</div>
+          )}
+
+          {/* Nível do Badge (apenas se não for especial, para evitar duplicados) */}
+          {badge.nome_nivel && !especial && (
+            <span
+              style={{
+                ...nivelBadge,
+                background: "#eff6ff",
+                color: "#2563eb",
+                marginTop: "6px",
+                display: "inline-block",
+              }}
             >
-              {badge.nome_serviceline}
-            </div>
+              {badge.nome_nivel}
+            </span>
+          )}
+
+          {/* Painel de Debug (Versão 1) mantido para ajudar no desenvolvimento */}
+          <DebugBadgePanel badge={badge} />
+        </div>
+
+        {/* 4. Caixa de Pontuação à Direita */}
+        <div style={pontosBox}>
+          <div style={pontosLabel}>Pontos</div>
+          <div
+            style={{
+              ...pontosValor,
+              background: especial ? "#facc15" : "#eff6ff",
+              color: especial ? "#78350f" : "#2563eb",
+            }}
+          >
+            {badge.pontos}
           </div>
         </div>
-
-        <p style={modalDescription}>
-          {
-            badge.descricao_badge_modelo
-          }
-        </p>
-
-        <div style={modalGrid}>
-          <ModalInfo
-            label="Nível"
-            value={badge.nome_nivel}
-          />
-
-          <ModalInfo
-            label="Pontos"
-            value={`${badge.pontos} pts`}
-          />
-
-          <ModalInfo
-            label="Requisitos"
-            value={
-              badge.numero_requisitos
-            }
-          />
-
-          <ModalInfo
-            label="Tipo"
-            value={badge.tipo_badge}
-          />
-        </div>
-
-        <div style={modalAreas}>
-          <strong>
-            Áreas associadas:
-          </strong>{" "}
-          {badge.nome_areas}
-        </div>
-
-        <div style={modalActions}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={fecharButton}
-          >
-            Fechar
-          </button>
-        </div>
       </div>
-    </div>
+    </article>
   );
 }
 
