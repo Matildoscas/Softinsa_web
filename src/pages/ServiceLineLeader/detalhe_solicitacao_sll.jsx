@@ -898,6 +898,11 @@ function DetalheSolicitacaoSll() {
     setMotivoRejeicao,
   ] = useState("");
 
+  const [
+    motivosRejeicaoPorEvidencia,
+    setMotivosRejeicaoPorEvidencia,
+  ] = useState({});
+
   const [dados, setDados] =
     useState(null);
 
@@ -1068,6 +1073,7 @@ function DetalheSolicitacaoSll() {
     );
 
     setDecisoesPendentes({});
+    setMotivosRejeicaoPorEvidencia({});
     setErroGuardarDecisoes("");
 
     setDados(
@@ -1417,13 +1423,56 @@ async function rejeitarCandidatura() {
 
         const copia = { ...prev };
         delete copia[chave];
+
+        setMotivosRejeicaoPorEvidencia((prevMotivos) => {
+          if (!prevMotivos[chave]) {
+            return prevMotivos;
+          }
+
+          const copiaMotivos = {
+            ...prevMotivos,
+          };
+
+          delete copiaMotivos[chave];
+          return copiaMotivos;
+        });
+
         return copia;
       }
 
       if (prev[chave] === estado) {
         const copia = { ...prev };
         delete copia[chave];
+
+        setMotivosRejeicaoPorEvidencia((prevMotivos) => {
+          if (!prevMotivos[chave]) {
+            return prevMotivos;
+          }
+
+          const copiaMotivos = {
+            ...prevMotivos,
+          };
+
+          delete copiaMotivos[chave];
+          return copiaMotivos;
+        });
+
         return copia;
+      }
+
+      if (estado !== "REJEITADO") {
+        setMotivosRejeicaoPorEvidencia((prevMotivos) => {
+          if (!prevMotivos[chave]) {
+            return prevMotivos;
+          }
+
+          const copiaMotivos = {
+            ...prevMotivos,
+          };
+
+          delete copiaMotivos[chave];
+          return copiaMotivos;
+        });
       }
 
       return {
@@ -1431,6 +1480,24 @@ async function rejeitarCandidatura() {
         [chave]: estado,
       };
     });
+  }
+
+  function definirMotivoEvidencia(
+    evidencia,
+    valor
+  ) {
+    const chave = String(
+      evidencia?.id_evidencia || ""
+    );
+
+    if (!chave) {
+      return;
+    }
+
+    setMotivosRejeicaoPorEvidencia((prev) => ({
+      ...prev,
+      [chave]: valor,
+    }));
   }
 
   async function confirmarAvaliacoes() {
@@ -1442,6 +1509,30 @@ async function rejeitarCandidatura() {
       dados?.candidatura?.comentarios_sll ||
       ""
     ).trim();
+
+    const idsRejeitados = Object.entries(
+      decisoesPendentes
+    )
+      .filter(([, estado]) => estado === "REJEITADO")
+      .map(([id]) => String(id));
+
+    const faltaMotivoPorEvidencia =
+      idsRejeitados.some(
+        (idEvidencia) =>
+          !String(
+            motivosRejeicaoPorEvidencia[
+              idEvidencia
+            ] || ""
+          )
+            .trim()
+      );
+
+    if (faltaMotivoPorEvidencia) {
+      setErroGuardarDecisoes(
+        "Indica o motivo específico em cada evidência rejeitada."
+      );
+      return;
+    }
 
     if (
       temRejeicoesPendentes &&
@@ -1471,6 +1562,14 @@ async function rejeitarCandidatura() {
             estado,
             motivo:
               estado === "REJEITADO"
+                ? String(
+                    motivosRejeicaoPorEvidencia[
+                      idEvidencia
+                    ] || ""
+                  ).trim() || undefined
+                : undefined,
+            motivo_candidatura:
+              estado === "REJEITADO"
                 ? motivoRejeicao.trim() || undefined
                 : undefined,
           }
@@ -1478,6 +1577,7 @@ async function rejeitarCandidatura() {
       }
 
       setDecisoesPendentes({});
+      setMotivosRejeicaoPorEvidencia({});
       setMotivoRejeicao("");
       await carregarDetalhe();
     } catch (err) {
@@ -1693,6 +1793,12 @@ async function rejeitarCandidatura() {
                       onDefinirDecisao={
                         definirDecisaoEvidencia
                       }
+                      motivosRejeicaoPorEvidencia={
+                        motivosRejeicaoPorEvidencia
+                      }
+                      onDefinirMotivoEvidencia={
+                        definirMotivoEvidencia
+                      }
                       desativado={
                         aGuardarDecisoes
                       }
@@ -1737,7 +1843,7 @@ async function rejeitarCandidatura() {
                           marginBottom: 6,
                         }}
                       >
-                        Motivo da rejeição
+                        Motivo geral da candidatura
                       </label>
 
                       <textarea
@@ -1748,7 +1854,7 @@ async function rejeitarCandidatura() {
                             event.target.value
                           )
                         }
-                        placeholder="Explica ao consultor o motivo das evidências rejeitadas."
+                        placeholder="Explica o motivo global da candidatura (além dos motivos por evidência)."
                         rows={3}
                         style={{
                           width: "100%",
@@ -2191,6 +2297,8 @@ function RequisitoCard({
   podeAvaliar,
   decisoesPendentes,
   onDefinirDecisao,
+  motivosRejeicaoPorEvidencia,
+  onDefinirMotivoEvidencia,
   desativado,
 }) {
   const [aberto, setAberto] =
@@ -2301,6 +2409,12 @@ function RequisitoCard({
                     normalizarEstadoValor(
                       ev.estado_evidencia_sll
                     );
+                  const motivoPendenteRejeicao =
+                    String(
+                      motivosRejeicaoPorEvidencia[
+                        chave
+                      ] || ""
+                    );
 
                   return (
                     <div key={ev.id_evidencia} style={evidenciaRow}>
@@ -2371,6 +2485,53 @@ function RequisitoCard({
                               }}
                             >
                               <strong>Motivo da rejeição:</strong> {motivoRejeicaoEvidencia}
+                            </div>
+                          )}
+
+                          {podeAvaliar && decisaoLocal === "REJEITADO" && (
+                            <div
+                              style={{
+                                marginTop: 2,
+                                maxWidth: 620,
+                                width: "100%",
+                              }}
+                            >
+                              <label
+                                htmlFor={`motivo-evidencia-${chave}`}
+                                style={{
+                                  display: "block",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  color: "#7f1d1d",
+                                  marginBottom: 6,
+                                }}
+                              >
+                                Motivo desta evidência
+                              </label>
+
+                              <textarea
+                                id={`motivo-evidencia-${chave}`}
+                                value={motivoPendenteRejeicao}
+                                onChange={(event) =>
+                                  onDefinirMotivoEvidencia(
+                                    ev,
+                                    event.target.value
+                                  )
+                                }
+                                placeholder="Explica porque esta evidência em específico foi rejeitada."
+                                rows={2}
+                                disabled={desativado}
+                                style={{
+                                  width: "100%",
+                                  border: "1px solid #fecaca",
+                                  borderRadius: 8,
+                                  padding: "8px 10px",
+                                  fontSize: 12,
+                                  color: "#7f1d1d",
+                                  background: "#fff7f7",
+                                  resize: "vertical",
+                                }}
+                              />
                             </div>
                           )}
                         </div>
