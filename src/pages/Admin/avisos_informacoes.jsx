@@ -40,12 +40,32 @@ const TITULOS_NOTIFICACAO = {
 const ROWS_PER_PAGE = 6;
 
 function normalizarEstado(estado) {
-  const e = String(estado || "").trim().toUpperCase();
+  const e =
+    String(estado || "")
+      .trim()
+      .toUpperCase();
 
-  if (e === "ATIVO" || e === "ATIVA" || e === "ACTIVE") return "ATIVO";
-  if (e === "INATIVO" || e === "INATIVA" || e === "INACTIVE") return "INATIVO";
+  if (
+    e === "ATIVO" ||
+    e === "ATIVA" ||
+    e === "ACTIVE"
+  ) {
+    return "ATIVO";
+  }
 
-  return "ATIVO";
+  if (
+    e === "INATIVO" ||
+    e === "INATIVA" ||
+    e === "INACTIVE"
+  ) {
+    return "INATIVO";
+  }
+
+  /*
+   * Um aviso administrativo deve ter
+   * obrigatoriamente ATIVO ou INATIVO.
+   */
+  return "INATIVO";
 }
 
 function formatarTituloNotificacao(tipo) {
@@ -595,8 +615,36 @@ function InformacoesAvisos() {
               ? usersData.data
               : [];
 
+      const avisosAdministrativos =
+        listaAvisos.filter(
+          (aviso) => {
+            const tipo =
+              String(
+                aviso.tipo_notificacao ||
+                aviso.TIPO_NOTIFICACAO ||
+                ""
+              )
+                .trim()
+                .toUpperCase();
+
+            return tipo.startsWith(
+              PREFIXO_AVISO_ADMIN
+            );
+          }
+        );
+
+      console.log(
+        "[AVISOS ADMIN] Resposta total:",
+        listaAvisos.length
+      );
+
+      console.log(
+        "[AVISOS ADMIN] Após filtro:",
+        avisosAdministrativos.length
+      );
+
       setAvisos(
-        listaAvisos.map(
+        avisosAdministrativos.map(
           normalizarAviso
         )
       );

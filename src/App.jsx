@@ -204,7 +204,7 @@ function App() {
         <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
         <Route path="/admin/perfil" element={<PerfilAdminPage />} />
         <Route path="/admin/definicoes" element={<DefinicoesAdminPage />} />
-        <Route path="/admin/notificacoes" element={<NotificacaoAdminPage />}/>
+        <Route path="/admin/notificacoespage" element={<NotificacaoAdminPage />}/>
 
         // Rotas Service Line Leader
         <Route path="/sll" element={<DashboardSll />} />
