@@ -12,6 +12,7 @@ import {
 import {
   BiBell,
   BiArrowBack,
+  BiTrash,
 } from "react-icons/bi";
 
 import { useNavigate } from "react-router-dom";
@@ -56,6 +57,7 @@ function obterUtilizadorGuardado() {
 
 function NotificacoesSllPage() {
   const navigate = useNavigate();
+  const PAGE_SIZE = 10;
 
   const [
     notificacoes,
@@ -71,18 +73,33 @@ function NotificacoesSllPage() {
   const [marcandoTodas, setMarcandoTodas] =
     useState(false);
 
+  const [apagandoTodas, setApagandoTodas] =
+    useState(false);
+
+  const [apagandoId, setApagandoId] =
+    useState(null);
+
+  const [paginaAtual, setPaginaAtual] =
+    useState(1);
+
   useEffect(() => {
     carregarNotificacoes();
   }, []);
 
-  async function carregarNotificacoes() {
+  function obterIdLogado() {
     const utilizador =
       obterUtilizadorGuardado();
 
-    const userId =
+    return (
       utilizador?.id_utilizador ||
       utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+      utilizador?.id ||
+      null
+    );
+  }
+
+  async function carregarNotificacoes() {
+    const userId = obterIdLogado();
 
     if (!userId) {
       navigate(
@@ -122,10 +139,11 @@ function NotificacoesSllPage() {
                   0
               ).getTime();
 
-            return dataA - dataB;
+    return dataB - dataA;
           })
-          .slice(0, 5)
       );
+
+  setPaginaAtual(1);
     } catch (err) {
       console.error(
         "Erro ao carregar notificações do SLL:",
@@ -154,13 +172,7 @@ function NotificacoesSllPage() {
   }
 
   async function marcarTodasComoLidas() {
-    const utilizador =
-      obterUtilizadorGuardado();
-
-    const userId =
-      utilizador?.id_utilizador ||
-      utilizador?.ID_UTILIZADOR ||
-      utilizador?.id;
+    const userId = obterIdLogado();
 
     if (!userId) {
       return;
@@ -199,10 +211,118 @@ function NotificacoesSllPage() {
     }
   }
 
+  async function apagarNotificacao(notificacao) {
+    const userId = obterIdLogado();
+    const idNotificacao =
+      notificacao.id_notificacoes ||
+      notificacao.id_notificacao ||
+      notificacao.id;
+
+    if (!userId || !idNotificacao) {
+      return;
+    }
+
+    try {
+      setErro("");
+      setApagandoId(idNotificacao);
+
+      await api.delete(
+        `/notificacoes/${idNotificacao}`,
+        {
+          data: {
+            id_utilizador: userId,
+          },
+        }
+      );
+
+      setNotificacoes((anteriores) =>
+        anteriores.filter((item) => {
+          const idItem =
+            item.id_notificacoes ||
+            item.id_notificacao ||
+            item.id;
+
+          return (
+            String(idItem) !==
+            String(idNotificacao)
+          );
+        })
+      );
+
+      emitirAtualizacaoNotificacoes();
+    } catch (err) {
+      console.error(
+        "Erro ao apagar notificação do SLL:",
+        err
+      );
+
+      setErro(
+        "Não foi possível apagar a notificação."
+      );
+    } finally {
+      setApagandoId(null);
+    }
+  }
+
+  async function apagarTodasNotificacoes() {
+    const userId = obterIdLogado();
+
+    if (!userId) {
+      return;
+    }
+
+    try {
+      setErro("");
+      setApagandoTodas(true);
+
+      await api.delete(`/notificacoes/limpar/${userId}`);
+
+      setNotificacoes([]);
+      setPaginaAtual(1);
+
+      emitirAtualizacaoNotificacoes();
+    } catch (err) {
+      console.error(
+        "Erro ao apagar todas as notificações do SLL:",
+        err
+      );
+
+      setErro(
+        "Não foi possível apagar todas as notificações."
+      );
+    } finally {
+      setApagandoTodas(false);
+    }
+  }
+
   const totalNaoLidas =
     notificacoes.filter(
       notificacaoNaoLida
     ).length;
+
+  const totalPaginas =
+    Math.max(
+      1,
+      Math.ceil(
+        notificacoes.length /
+          PAGE_SIZE
+      )
+    );
+
+  const paginaAjustada =
+    Math.min(
+      paginaAtual,
+      totalPaginas
+    );
+
+  const indiceInicial =
+    (paginaAjustada - 1) * PAGE_SIZE;
+
+  const notificacoesPaginadas =
+    notificacoes.slice(
+      indiceInicial,
+      indiceInicial + PAGE_SIZE
+    );
 
   return (
     <div style={pagina}>
@@ -252,6 +372,21 @@ function NotificacoesSllPage() {
                   ? "A marcar..."
                   : "Marcar todas como lidas"}
               </Button>
+
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={apagarTodasNotificacoes}
+                disabled={
+                  loading ||
+                  apagandoTodas ||
+                  notificacoes.length === 0
+                }
+              >
+                {apagandoTodas
+                  ? "A apagar..."
+                  : "Apagar todas"}
+              </Button>
             </div>
           </div>
 
@@ -282,7 +417,7 @@ function NotificacoesSllPage() {
             !erro &&
             notificacoes.length > 0 && (
               <div style={lista}>
-                {notificacoes.map(
+                {notificacoesPaginadas.map(
                   (
                     notificacao,
                     index
@@ -296,9 +431,59 @@ function NotificacoesSllPage() {
                       notificacao={
                         notificacao
                       }
+                      onApagar={() =>
+                        apagarNotificacao(notificacao)
+                      }
+                      apagando={
+                        String(apagandoId) ===
+                        String(
+                          notificacao.id_notificacoes ||
+                            notificacao.id_notificacao ||
+                            notificacao.id ||
+                            index
+                        )
+                      }
                     />
                   )
                 )}
+              </div>
+            )}
+
+          {!loading &&
+            !erro &&
+            notificacoes.length > 0 && (
+              <div style={paginacaoBarra}>
+                <span style={paginacaoInfo}>
+                  Página {paginaAjustada} de {totalPaginas}
+                </span>
+
+                <div style={paginacaoAcoes}>
+                  <button
+                    type="button"
+                    style={paginacaoBotao}
+                    disabled={paginaAjustada <= 1}
+                    onClick={() =>
+                      setPaginaAtual((atual) =>
+                        Math.max(1, atual - 1)
+                      )
+                    }
+                  >
+                    Anterior
+                  </button>
+
+                  <button
+                    type="button"
+                    style={paginacaoBotao}
+                    disabled={paginaAjustada >= totalPaginas}
+                    onClick={() =>
+                      setPaginaAtual((atual) =>
+                        Math.min(totalPaginas, atual + 1)
+                      )
+                    }
+                  >
+                    Seguinte
+                  </button>
+                </div>
               </div>
             )}
         </main>
@@ -315,6 +500,8 @@ function NotificacoesSllPage() {
 
 function NotificationCard({
   notificacao,
+  onApagar,
+  apagando,
 }) {
   const tituloNotificacao =
     notificacao.tipo_notificacao ||
@@ -361,6 +548,18 @@ function NotificationCard({
 
         <div style={descricaoCard}>
           {descricao}
+        </div>
+
+        <div style={acoesCard}>
+          <button
+            type="button"
+            style={apagarBotao}
+            onClick={onApagar}
+            disabled={apagando}
+          >
+            <BiTrash size={15} />
+            {apagando ? "A apagar..." : "Apagar"}
+          </button>
         </div>
       </div>
     </article>
@@ -590,6 +789,58 @@ const descricaoCard = {
   fontSize: 12,
   lineHeight: 1.5,
   marginTop: 4,
+};
+
+const acoesCard = {
+  marginTop: 10,
+  display: "flex",
+  justifyContent: "flex-start",
+};
+
+const apagarBotao = {
+  border: "1px solid #fecaca",
+  background: "#fef2f2",
+  color: "#b91c1c",
+  borderRadius: 8,
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 600,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  cursor: "pointer",
+};
+
+const paginacaoBarra = {
+  maxWidth: 920,
+  margin: "12px auto 0",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  flexWrap: "wrap",
+};
+
+const paginacaoInfo = {
+  color: "#64748b",
+  fontSize: 12,
+};
+
+const paginacaoAcoes = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+};
+
+const paginacaoBotao = {
+  border: "1px solid #d1d5db",
+  background: "#ffffff",
+  color: "#374151",
+  borderRadius: 8,
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
 };
 
 export default NotificacoesSllPage;

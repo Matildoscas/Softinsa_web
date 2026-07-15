@@ -54,13 +54,16 @@ function formatarDataRelativa(data) {
 ========================================================= */
 function NotificacoesTm() {
   const navigate = useNavigate();
+  const PAGE_SIZE = 10;
   const [notificacoes, setNotificacoes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState("");
 
   const [isLimparLoading, setIsLimparLoading] = useState(false);
   const [isMarcarTodasLoading, setIsMarcarTodasLoading] = useState(false);
+  const [apagandoId, setApagandoId] = useState(null);
   const [marcandoLidasIds, setMarcandoLidasIds] = useState([]);
+  const [paginaAtual, setPaginaAtual] = useState(1);
   
   // 🎯 NOVO ESTADO PARA O POP-UP PERSONALIZADO
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -100,10 +103,11 @@ function NotificacoesTm() {
           .sort((a, b) => {
             const dataA = new Date(a.data_envio || a.DATA_ENVIO || 0).getTime();
             const dataB = new Date(b.data_envio || b.DATA_ENVIO || 0).getTime();
-            return dataA - dataB;
+            return dataB - dataA;
           })
-          .slice(0, 5)
       );
+
+      setPaginaAtual(1);
     } catch (err) {
       console.error("Erro ao carregar notificações do TM:", err);
       setNotificacoes([]);
@@ -194,6 +198,7 @@ function NotificacoesTm() {
       setMostrarModal(false); // Fecha o pop-up imediatamente ao clicar em sim
       await api.delete(`/notificacoes/limpar/${idUtilizador}`);
       setNotificacoes([]); 
+      setPaginaAtual(1);
     } catch (err) {
       console.error("Erro ao limpar notificações:", err);
       alert("Não foi possível limpar as notificações.");
@@ -201,6 +206,44 @@ function NotificacoesTm() {
       setIsLimparLoading(false);
     }
   }
+
+  async function lidarApagarNotificacao(idNotificacao) {
+    const idUtilizador = obterIdLogado();
+
+    if (!idUtilizador || !idNotificacao) {
+      return;
+    }
+
+    try {
+      setApagandoId(idNotificacao);
+      setErro("");
+
+      await api.delete(`/notificacoes/${idNotificacao}`, {
+        data: {
+          id_utilizador: idUtilizador,
+        },
+      });
+
+      setNotificacoes((anteriores) =>
+        anteriores.filter((item) => {
+          const idItem = item.id_notificacoes || item.id_notificacao || item.id;
+          return String(idItem) !== String(idNotificacao);
+        })
+      );
+
+      emitirAtualizacaoNotificacoes();
+    } catch (err) {
+      console.error("Erro ao apagar notificação:", err);
+      setErro("Não foi possível apagar a notificação.");
+    } finally {
+      setApagandoId(null);
+    }
+  }
+
+  const totalPaginas = Math.max(1, Math.ceil(notificacoes.length / PAGE_SIZE));
+  const paginaAjustada = Math.min(paginaAtual, totalPaginas);
+  const indiceInicial = (paginaAjustada - 1) * PAGE_SIZE;
+  const notificacoesPaginadas = notificacoes.slice(indiceInicial, indiceInicial + PAGE_SIZE);
 
   return (
     <div style={pagina}>
@@ -264,7 +307,7 @@ function NotificacoesTm() {
             <div style={mensagemBox}>A carregar notificações...</div>
           ) : notificacoes.length > 0 ? (
             <div style={lista}>
-              {notificacoes.map((notificacao, index) => {
+              {notificacoesPaginadas.map((notificacao, index) => {
                 const idNotif = notificacao.id_notificacoes || notificacao.id_notificacao || notificacao.id || index;
                 const estaEmLoading = marcandoLidasIds.includes(idNotif);
 
@@ -275,12 +318,40 @@ function NotificacoesTm() {
                     notificacao={notificacao}
                     onMarcarLida={lidarMarcarComoLida}
                     isMarking={estaEmLoading}
+                    onApagar={lidarApagarNotificacao}
+                    isDeleting={String(apagandoId) === String(idNotif)}
                   />
                 );
               })}
             </div>
           ) : (
             <div style={mensagemBox}>Ainda não tem notificações.</div>
+          )}
+
+          {!isLoading && notificacoes.length > 0 && (
+            <div style={paginacaoBarra}>
+              <span style={paginacaoInfo}>Página {paginaAjustada} de {totalPaginas}</span>
+
+              <div style={paginacaoAcoes}>
+                <button
+                  type="button"
+                  style={paginacaoBotao}
+                  disabled={paginaAjustada <= 1}
+                  onClick={() => setPaginaAtual((atual) => Math.max(1, atual - 1))}
+                >
+                  Anterior
+                </button>
+
+                <button
+                  type="button"
+                  style={paginacaoBotao}
+                  disabled={paginaAjustada >= totalPaginas}
+                  onClick={() => setPaginaAtual((atual) => Math.min(totalPaginas, atual + 1))}
+                >
+                  Seguinte
+                </button>
+              </div>
+            </div>
           )}
         </main>
 
@@ -323,7 +394,7 @@ function NotificacoesTm() {
 /* =========================================================
    COMPONENT CARD DE NOTIFICAÇÃO
 ========================================================= */
-function NotificationCard({ notificacao, idNotificacao, onMarcarLida, isMarking }) {
+function NotificationCard({ notificacao, idNotificacao, onMarcarLida, isMarking, onApagar, isDeleting }) {
   const tituloNotificacao = notificacao.tipo_notificacao || notificacao.titulo || "Notificação";
   const descricao = notificacao.conteudo || notificacao.mensagem || notificacao.descricao || "";
   const estado = notificacao.estado_notificacao || "Enviada";
@@ -375,6 +446,25 @@ function NotificationCard({ notificacao, idNotificacao, onMarcarLida, isMarking 
           </button>
         </div>
       )}
+
+      <div style={acoesArea}>
+        <button
+          type="button"
+          title={isDeleting ? "A apagar..." : "Apagar notificação"}
+          onClick={() => onApagar(idNotificacao)}
+          disabled={isDeleting}
+          style={{
+            ...marcarLidaBtn,
+            opacity: isDeleting ? 0.6 : 1,
+            cursor: isDeleting ? "not-allowed" : "pointer",
+            background: isDeleting ? "#e5e7eb" : "#fef2f2",
+            borderColor: isDeleting ? "#d1d5db" : "#fecaca",
+            color: isDeleting ? "#94a3b8" : "#dc2626",
+          }}
+        >
+          {isDeleting ? <span style={spinnerTexto}>...</span> : <BiTrash size={19} />}
+        </button>
+      </div>
     </article>
   );
 }
@@ -454,6 +544,37 @@ const spinnerTexto = {
   fontWeight: "bold",
   color: "#94a3b8",
   letterSpacing: 1
+};
+
+const paginacaoBarra = {
+  marginTop: 14,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  flexWrap: "wrap",
+};
+
+const paginacaoInfo = {
+  color: "#64748b",
+  fontSize: 12,
+};
+
+const paginacaoAcoes = {
+  display: "flex",
+  gap: 8,
+  alignItems: "center",
+};
+
+const paginacaoBotao = {
+  border: "1px solid #d1d5db",
+  background: "#fff",
+  color: "#374151",
+  borderRadius: 8,
+  padding: "6px 10px",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
 };
 
 /* 🎯 NOVOS ESTILOS DO POP-UP CUSTOMIZADO */
