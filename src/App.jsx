@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 import './App.css';
 
@@ -48,6 +49,7 @@ import BadgePublicoIndividualPage from './pages/Galeria_Pública/BadgePublicoInd
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
 import VerificarCertificadoPage from './pages/Galeria_Pública/VerificarCertificado.jsx';
 import MicrositeProjeto from './pages/MicrositeProjeto/MicrositeProjeto.jsx';
+import MobileAppMinisite from './pages/MicrositeProjeto/MobileAppMinisite.jsx';
 
 import AtivarContaPage from './pages/Login/ativar_conta.jsx';
 import AreaPage from './pages/Login/AreaRegister.jsx';
@@ -90,14 +92,47 @@ import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';
 import TM_Solicitacoes from './pages/TalentManager/TM_Solicitacoes.jsx';
 import TM_statuscandidatura from './pages/TalentManager/TM_statuscandidatura.jsx';
 
+function LoginEntryPage() {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 820px)').matches;
+  });
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 820px)');
+
+    const handleMediaChange = (event) => {
+      setIsMobile(event.matches);
+    };
+
+    setIsMobile(mediaQuery.matches);
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMediaChange);
+    } else {
+      mediaQuery.addListener(handleMediaChange);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleMediaChange);
+      } else {
+        mediaQuery.removeListener(handleMediaChange);
+      }
+    };
+  }, []);
+
+  return isMobile ? <MobileAppMinisite /> : <LoginPage />;
+}
+
 function App() {
   return (
     <Router>
       <Routes>
         
         // Rotas públicas
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<LoginEntryPage />} />
+        <Route path="/login" element={<LoginEntryPage />} />
         <Route path="/galeria-badges" element={<GaleriaBadgesPage />} />
         <Route path="/badges/:userId/:badgeId" element={<BadgePublicoIndividualPage />}/>
         <Route path="/verificar/:codigo" element={<VerificarCertificadoPage />}/>
