@@ -128,14 +128,6 @@ function candidaturaEstaRejeitada(item) {
   );
 }
 
-function candidaturaEstaFinalizada(item) {
-  if (candidaturaEstaCancelada(item)) {
-    return true;
-  }
-
-  return candidaturaEstaObtida(item);
-}
-
 function candidaturaEstaObtida(item) {
   const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
   const fase = normalizarEstado(item?.fase_geral);
