@@ -654,7 +654,7 @@ function PaginaPerfil() {
               }}
             >
               <BiMenu size={18} />
-              Minha Galeria Publica
+              Galeria Publica
             </Button>
           </div>
 

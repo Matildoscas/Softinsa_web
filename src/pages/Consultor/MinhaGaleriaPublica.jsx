@@ -95,16 +95,6 @@ function MinhaGaleriaPublicaPage() {
               <div style={{ marginTop: 8, fontSize: 13, color: "#64748b" }}>
                 Aqui ves apenas os teus badges com consentimento publico ativo.
               </div>
-
-              <div style={{ marginTop: 10 }}>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  onClick={() => navigate("/galeria-badges")}
-                >
-                  Ver galeria publica geral
-                </Button>
-              </div>
             </Card.Body>
           </Card>
 
@@ -169,10 +159,18 @@ function MinhaGaleriaPublicaPage() {
                           size="sm"
                           variant="primary"
                           onClick={() =>
-                            navigate(`/badges/${userId}/${idBadge}`)
+                            navigate(
+                              `/badges/${userId}/${idBadge}`,
+                              {
+                                state: {
+                                  backTo: "/perfil_consultor",
+                                  backLabel: "Voltar ao perfil",
+                                },
+                              }
+                            )
                           }
                         >
-                          Ver pagina publica
+                          Ver
                         </Button>
 
                         {badge.linkedin_url && (

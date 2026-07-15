@@ -27,6 +27,7 @@ import {
 } from "react-icons/fa";
 
 import {
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -147,6 +148,8 @@ function copiarTexto(texto) {
 function BadgePublicoIndividualPage() {
   const navigate =
     useNavigate();
+  const location =
+    useLocation();
 
   const {
     userId,
@@ -194,6 +197,14 @@ function BadgePublicoIndividualPage() {
         badgeId,
       ]
     );
+
+  const destinoVoltar =
+    location.state?.backTo ||
+    "/galeria-badges";
+
+  const textoVoltar =
+    location.state?.backLabel ||
+    "Voltar à galeria";
 
   useEffect(() => {
     if (
@@ -388,11 +399,11 @@ function BadgePublicoIndividualPage() {
 
             <Button
               onClick={() =>
-                navigate("/")
+                navigate(destinoVoltar)
               }
               style={primaryButton}
             >
-              Voltar à galeria pública
+              {textoVoltar}
             </Button>
           </div>
         </main>
@@ -409,11 +420,11 @@ function BadgePublicoIndividualPage() {
           type="button"
           style={backButton}
           onClick={() =>
-            navigate("/")
+            navigate(destinoVoltar)
           }
         >
           <BiArrowBack size={18} />
-          Voltar à galeria
+          {textoVoltar}
         </button>
 
         <section style={heroCard}>

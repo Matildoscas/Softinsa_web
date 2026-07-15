@@ -361,17 +361,6 @@ function GaleriaBadgesPage() {
         const dados = Array.isArray(res.data) ? res.data : [];
         const badgesNormalizados = normalizarBadgesComRequisitos(dados);
 
-        console.log("BADGES GALERIA:", badgesNormalizados);
-        console.log("TOTAL BADGES:", badgesNormalizados.length);
-        console.log(
-          "REQUISITOS:",
-          badgesNormalizados.map((b) => ({
-            id: b.id,
-            nome: b.nome,
-            requisitos: b.requisitos.length,
-          }))
-        );
-
         setBadges(badgesNormalizados);
       })
       .catch((err) => {
@@ -1284,6 +1273,7 @@ const contentWrapper = {
 
   margin: "0 auto",
 };
+
 
 const areaSection = {
   marginBottom: 42,
