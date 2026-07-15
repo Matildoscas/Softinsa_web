@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Spinner, Button, Modal } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Spinner, Button, Modal, Alert } from "react-bootstrap";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BiTrophy, BiStar, BiUser, BiChevronUp, BiChevronDown } from "react-icons/bi";
 import logoImg from "../../assets/logo.png";
 import api from "../../services/api.js";
@@ -9,11 +9,16 @@ const niveis = ["A", "B", "C", "D", "E"];
 
 function GaleriaBadgesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [badges, setBadges] = useState([]);
+  const [badgesTodos, setBadgesTodos] = useState([]);
+  const [badgesMeusPublicos, setBadgesMeusPublicos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [badgeSelecionado, setBadgeSelecionado] = useState(null);
+  const [erro, setErro] = useState("");
+  const [utilizadorLogado, setUtilizadorLogado] = useState(null);
+  const [abaAtiva, setAbaAtiva] = useState("TODOS");
 
   const areasPorPagina = 3;
 
@@ -355,34 +360,90 @@ function GaleriaBadgesPage() {
   };
 
   useEffect(() => {
-    api
-      .get("/badges/galeria/publica")
-      .then((res) => {
-        const dados = Array.isArray(res.data) ? res.data : [];
-        const badgesNormalizados = normalizarBadgesComRequisitos(dados);
+    const storedUser = localStorage.getItem("user");
 
-        console.log("BADGES GALERIA:", badgesNormalizados);
-        console.log("TOTAL BADGES:", badgesNormalizados.length);
-        console.log(
-          "REQUISITOS:",
-          badgesNormalizados.map((b) => ({
-            id: b.id,
-            nome: b.nome,
-            requisitos: b.requisitos.length,
-          }))
-        );
+    let idUtilizador = null;
 
-        setBadges(badgesNormalizados);
-      })
-      .catch((err) => {
-        console.error("Erro ao carregar galeria:", err);
-        console.error("STATUS:", err.response?.status);
-        console.error("BODY:", err.response?.data);
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        idUtilizador =
+          user?.id_utilizador ||
+          user?.ID_UTILIZADOR ||
+          user?.id ||
+          null;
+
+        if (idUtilizador) {
+          setUtilizadorLogado({
+            id_utilizador: idUtilizador,
+            nome_completo: user?.nome_completo || user?.NOME_COMPLETO || "",
+          });
+        }
+      } catch {
+        idUtilizador = null;
+      }
+    }
+
+    const abaQuery = new URLSearchParams(location.search).get("aba");
+
+    if (abaQuery === "minha" && idUtilizador) {
+      setAbaAtiva("MINHA");
+    } else {
+      setAbaAtiva("TODOS");
+    }
+
+    setLoading(true);
+    setErro("");
+
+    const pedidos = [
+      api.get("/badges/galeria/publica"),
+      idUtilizador
+        ? api.get(`/badges/publico/${idUtilizador}`)
+        : Promise.resolve({ data: { badges: [] } }),
+    ];
+
+    Promise.allSettled(pedidos)
+      .then(([todosRes, meusRes]) => {
+        if (todosRes.status === "fulfilled") {
+          const dadosTodos = Array.isArray(todosRes.value.data)
+            ? todosRes.value.data
+            : [];
+
+          setBadgesTodos(
+            normalizarBadgesComRequisitos(dadosTodos)
+          );
+        } else {
+          setBadgesTodos([]);
+          setErro("Nao foi possivel carregar a galeria publica.");
+          console.error("Erro ao carregar galeria publica:", todosRes.reason);
+        }
+
+        if (meusRes.status === "fulfilled") {
+          const dadosMeus = Array.isArray(meusRes.value.data?.badges)
+            ? meusRes.value.data.badges
+            : [];
+
+          setBadgesMeusPublicos(
+            normalizarBadgesComRequisitos(dadosMeus)
+          );
+        } else {
+          setBadgesMeusPublicos([]);
+          console.error("Erro ao carregar badges publicos do consultor:", meusRes.reason);
+        }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [location.search]);
+
+  const badgesVisiveis =
+    abaAtiva === "MINHA"
+      ? badgesMeusPublicos
+      : badgesTodos;
+
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [abaAtiva]);
 // 1. Agrupa os badges por área
-  const badgesAgrupadosPorArea = badges.reduce((acc, badge) => {
+  const badgesAgrupadosPorArea = badgesVisiveis.reduce((acc, badge) => {
     const area = badge.nome_area || "Área não definida";
 
     if (!acc[area]) {
@@ -427,10 +488,31 @@ function GaleriaBadgesPage() {
   const fim = inicio + areasPorPagina;
   const areasPaginaAtual = areasOrdenadas.slice(inicio, fim);
 
-  const totalPontos = badges.reduce(
+  const totalPontos = badgesVisiveis.reduce(
     (total, badge) => total + Number(badge.pontos || 0),
     0
   );
+
+  function alterarAba(valor) {
+    if (valor === "MINHA" && !utilizadorLogado?.id_utilizador) {
+      return;
+    }
+
+    setAbaAtiva(valor);
+
+    const params = new URLSearchParams(location.search);
+
+    if (valor === "MINHA") {
+      params.set("aba", "minha");
+    } else {
+      params.delete("aba");
+    }
+
+    const sufixo = params.toString();
+    navigate(`/galeria-badges${sufixo ? `?${sufixo}` : ""}`, {
+      replace: true,
+    });
+  }
 
   if (loading) {
     return (
@@ -459,7 +541,7 @@ function GaleriaBadgesPage() {
                 </div>
                 <div>
                   <div style={heroStatLabel}>Badges</div>
-                  <div style={heroStatValue}>{badges.length}</div>
+                  <div style={heroStatValue}>{badgesVisiveis.length}</div>
                 </div>
               </div>
 
@@ -479,6 +561,44 @@ function GaleriaBadgesPage() {
             <BiUser size={52} />
           </div>
         </section>
+
+        {utilizadorLogado?.id_utilizador && (
+          <div style={tabsWrapper}>
+            <button
+              type="button"
+              onClick={() => alterarAba("TODOS")}
+              style={{
+                ...tabButton,
+                ...(abaAtiva === "TODOS" ? tabButtonActive : null),
+              }}
+            >
+              Todos os badges públicos
+            </button>
+
+            <button
+              type="button"
+              onClick={() => alterarAba("MINHA")}
+              style={{
+                ...tabButton,
+                ...(abaAtiva === "MINHA" ? tabButtonActive : null),
+              }}
+            >
+              Meus badges públicos
+            </button>
+          </div>
+        )}
+
+        {!loading && erro && (
+          <Alert variant="danger" className="mb-3">
+            {erro}
+          </Alert>
+        )}
+
+        {!loading && !erro && abaAtiva === "MINHA" && badgesVisiveis.length === 0 && (
+          <Alert variant="light" className="border mb-3">
+            Ainda nao tens badges com publicacao publica ativa.
+          </Alert>
+        )}
 
         <div style={contentWrapper}>
           {areasPaginaAtual.map((area) => (
@@ -1283,6 +1403,30 @@ const contentWrapper = {
   maxWidth: 1320,
 
   margin: "0 auto",
+};
+
+const tabsWrapper = {
+  display: "flex",
+  gap: 10,
+  marginBottom: 14,
+  flexWrap: "wrap",
+};
+
+const tabButton = {
+  border: "1px solid #bfdbfe",
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  borderRadius: 999,
+  padding: "8px 14px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const tabButtonActive = {
+  background: "#2563eb",
+  color: "#fff",
+  border: "1px solid #2563eb",
 };
 
 const areaSection = {

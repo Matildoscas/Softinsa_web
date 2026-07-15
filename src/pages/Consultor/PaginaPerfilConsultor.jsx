@@ -640,7 +640,7 @@ function PaginaPerfil() {
             <Button
               variant="light"
               onClick={() =>
-                navigate("/minha-galeria-publica")
+                navigate("/galeria-badges?aba=minha")
               }
               className="
                 d-flex
@@ -654,7 +654,7 @@ function PaginaPerfil() {
               }}
             >
               <BiMenu size={18} />
-              Minha Galeria Publica
+              Galeria Publica
             </Button>
           </div>
 
