@@ -533,63 +533,54 @@ function InformacaoBadgeTm() {
                   </div>
                 ) : (
                   <>
-                    <div
-                      style={
-                        niveisContainer
-                      }
-                    >
-                      {CODIGOS_NIVEIS.map(
-                        (codigo) => {
-                          const ativo =
-                            codigo ===
-                            codigoNivel;
+                    <div style={niveisContainer}>
+                  {CODIGOS_NIVEIS.map(
+                    (codigo) => {
+                      const ativo =
+                        codigo ===
+                        codigoNivel;
 
-                          return (
-                            <div
-                              key={
-                                codigo
-                              }
-                              style={{
-                                ...nivelCard,
+                      return (
+                        <div
+                          key={codigo}
+                          style={{
+                            ...nivelCard,
 
-                                border:
-                                  ativo
-                                    ? "2px solid #2563eb"
-                                    : "1px solid #dbe3ef",
+                            border: ativo
+                              ? "2px solid #2563eb"
+                              : "1px solid #dbe3ef",
 
-                                background:
-                                  ativo
-                                    ? "#eff6ff"
-                                    : "white",
+                            background:
+                              ativo
+                                ? "#eff6ff"
+                                : "white",
 
-                                boxShadow:
-                                  ativo
-                                    ? "0 3px 10px rgba(37,99,235,0.18)"
-                                    : "0 2px 5px rgba(15,23,42,0.08)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  ...nivelCircle,
+                            boxShadow: ativo
+                              ? "0 3px 10px rgba(37, 99, 235, 0.18)"
+                              : "0 2px 5px rgba(15, 23, 42, 0.08)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              ...nivelCircle,
 
-                                  background:
-                                    ativo
-                                      ? "#2563eb"
-                                      : "#e5e7eb",
+                              background:
+                                ativo
+                                  ? "#2563eb"
+                                  : "#e5e7eb",
 
-                                  color:
-                                    ativo
-                                      ? "white"
-                                      : "#374151",
-                                }}
-                              >
-                                {codigo}
-                              </div>
-                            </div>
-                          );
-                        }
-                      )}
-                    </div>
+                              color: ativo
+                                ? "white"
+                                : "#374151",
+                            }}
+                          >
+                            {codigo}
+                          </div>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
 
                     <div
                       style={

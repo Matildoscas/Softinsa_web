@@ -605,18 +605,26 @@ function BadgeCard({ badge, onConsultar }) {
 
   return (
     <article
+      onClick={onConsultar}
       style={{
         ...badgeCard,
+        cursor: "pointer",
         background: especial ? "#fff3cd" : "white",
-        border: especial ? "1px solid #f59e0b" : "1px solid #e5e7eb",
+        border: especial ? "2px solid #f59e0b" : "1px solid #e5e7eb",
+        boxShadow: especial
+          ? "0 0 0 3px rgba(245, 158, 11, 0.12)"
+          : "none",
+        transition: "transform 0.15s ease, box-shadow 0.15s ease",
       }}
     >
+      {/* 1. Service Line no topo (como gostas na Versão 1) */}
       <div style={serviceLineTexto}>
         Service Line:{" "}
         <span style={serviceLineLink}>{badge.nome_serviceline}</span>
       </div>
 
       <div style={badgeConteudo}>
+        {/* 2. Caixa da Imagem com as cores vibrantes da Versão 1 */}
         <div
           style={{
             ...badgeImagemBox,
@@ -638,43 +646,74 @@ function BadgeCard({ badge, onConsultar }) {
           )}
         </div>
 
-        <div style={badgeInfo}>
-          <div style={badgeNome}>{badge.nome_badge}</div>
+        {/* 3. Informações Centrais */}
+        <div style={{ ...badgeInfo, flex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: "4px",
+            }}
+          >
+            <div style={badgeNome}>{badge.nome_badge}</div>
+            
+            {/* Pill de Especial ao lado do nome (da Versão 2) */}
+            {especial && (
+              <span
+                style={{
+                  background: "#ff8a00",
+                  color: "white",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                }}
+              >
+                Especial
+              </span>
+            )}
+          </div>
 
           <div style={badgeDescricao}>{badge.descricao_badge_modelo}</div>
 
-          <div style={areasTexto}>Área: {badge.nome_areas}</div>
+          {badge.nome_areas && (
+            <div style={areasTexto}>Área: {badge.nome_areas}</div>
+          )}
 
-          <DebugBadgePanel badge={badge} />
-
-          <span
-            style={{
-              ...nivelBadge,
-              background: especial ? "#ff8a00" : "#eff6ff",
-              color: especial ? "white" : "#2563eb",
-            }}
-          >
-            {especial ? "Especial" : badge.nome_nivel}
-          </span>
-        </div>
-
-        <div style={badgeActions}>
-          <div style={pontosBox}>
-            <div style={pontosLabel}>Pontos</div>
-
-            <div
+          {/* Nível do Badge (apenas se não for especial, para evitar duplicados) */}
+          {badge.nome_nivel && !especial && (
+            <span
               style={{
-                ...pontosValor,
-                background: especial ? "#facc15" : "#eff6ff",
+                ...nivelBadge,
+                background: "#eff6ff",
+                color: "#2563eb",
+                marginTop: "6px",
+                display: "inline-block",
               }}
             >
-              {badge.pontos}
-            </div>
-          </div>
+              {badge.nome_nivel}
+            </span>
+          )}
 
-          <button type="button" onClick={onConsultar} style={consultarButton}>
-            Consultar
-          </button>
+          {/* Painel de Debug (Versão 1) mantido para ajudar no desenvolvimento */}
+          <DebugBadgePanel badge={badge} />
+        </div>
+
+        {/* 4. Caixa de Pontuação à Direita */}
+        <div style={pontosBox}>
+          <div style={pontosLabel}>Pontos</div>
+          <div
+            style={{
+              ...pontosValor,
+              background: especial ? "#facc15" : "#eff6ff",
+              color: especial ? "#78350f" : "#2563eb",
+            }}
+          >
+            {badge.pontos}
+          </div>
         </div>
       </div>
     </article>
