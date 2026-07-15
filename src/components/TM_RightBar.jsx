@@ -118,7 +118,7 @@ function RightSidebarTM() {
           .sort((a, b) => {
             const dataA = new Date(a.data_envio || a.DATA_ENVIO || 0).getTime();
             const dataB = new Date(b.data_envio || b.DATA_ENVIO || 0).getTime();
-            return dataA - dataB;
+            return dataB - dataA;
           })
           .slice(0, 5)
       );

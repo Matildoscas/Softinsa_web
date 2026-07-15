@@ -139,7 +139,7 @@ const NotificationPopover =
                       0
                   ).getTime();
 
-                return dataA - dataB;
+                return dataB - dataA;
               })
               .slice(0, 5);
 
