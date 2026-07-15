@@ -150,6 +150,8 @@ function BadgePublicoIndividualPage() {
     useNavigate();
   const location =
     useLocation();
+  const softinsaSiteUrl =
+    "https://www.softinsa.pt";
 
   const {
     userId,
@@ -562,6 +564,30 @@ function BadgePublicoIndividualPage() {
                   Sem requisitos disponíveis.
                 </p>
               )}
+            </InfoCard>
+
+            <InfoCard
+              title="Competências da Softinsa"
+              icon={<BiLinkExternal />}
+            >
+              <p style={paragraph}>
+                Consulta no site da Softinsa mais informação sobre as competências e áreas associadas a este badge.
+              </p>
+
+              <Button
+                type="button"
+                onClick={() =>
+                  window.open(
+                    softinsaSiteUrl,
+                    "_blank",
+                    "noopener,noreferrer"
+                  )
+                }
+                style={primaryButton}
+              >
+                <BiLinkExternal size={17} />
+                Abrir www.softinsa.pt
+              </Button>
             </InfoCard>
           </div>
 
