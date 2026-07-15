@@ -120,8 +120,7 @@ function normalizarLinks(links) {
   return links
     .map((link) => {
       if (
-        typeof link ===
-        "string"
+        typeof link === "string"
       ) {
         return link;
       }
@@ -155,12 +154,12 @@ function normalizarRequisito(
       requisito.descricao ||
       "Sem descrição.",
 
-    links:
-      normalizarLinks(
-        requisito.links
-      ),
+    links: normalizarLinks(
+      requisito.links
+    ),
   };
 }
+
 
 function normalizarBadge(badge) {
   return {
@@ -677,9 +676,7 @@ function RequisitoCard({
   abertoInicial,
 }) {
   const [aberto, setAberto] =
-    useState(
-      abertoInicial
-    );
+    useState(abertoInicial);
 
   return (
     <article style={requisitoCard}>
@@ -693,32 +690,16 @@ function RequisitoCard({
         }
         style={requisitoHeader}
       >
-        <div
-          style={
-            requisitoHeaderText
-          }
-        >
-          <span
-            style={
-              requisitoCodigo
-            }
-          >
+        <div style={requisitoHeaderText}>
+          <span style={requisitoCodigo}>
             {requisito.codigo}
           </span>
 
-          <span
-            style={
-              requisitoSeparador
-            }
-          >
+          <span style={requisitoSeparador}>
             —
           </span>
 
-          <span
-            style={
-              requisitoTitulo
-            }
-          >
+          <span style={requisitoTitulo}>
             {requisito.titulo}
           </span>
         </div>
@@ -738,21 +719,13 @@ function RequisitoCard({
 
       {aberto && (
         <div style={requisitoBody}>
-          <p
-            style={
-              requisitoDescricao
-            }
-          >
+          <p style={requisitoDescricao}>
             {requisito.descricao}
           </p>
 
           {requisito.links.length >
             0 && (
-            <div
-              style={
-                linksContainer
-              }
-            >
+            <div style={linksContainer}>
               {requisito.links.map(
                 (url, index) => (
                   <a
@@ -760,9 +733,7 @@ function RequisitoCard({
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    style={
-                      linkRequisito
-                    }
+                    style={linkRequisito}
                   >
                     <BiLinkExternal
                       size={15}
