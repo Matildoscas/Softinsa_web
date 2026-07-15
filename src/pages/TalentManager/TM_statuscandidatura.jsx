@@ -129,6 +129,83 @@ function candidaturaEstaRejeitada(item) {
   );
 }
 
+function candidaturaEstaFinalizada(item) {
+  if (candidaturaEstaCancelada(item)) {
+    return true;
+  }
+
+  return candidaturaEstaObtida(item);
+}
+
+function candidaturaEstaObtida(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("APROV") &&
+    (
+      estado.includes("FINAL") ||
+      fase.includes("HISTORICO") ||
+      fase.includes("FINALIZ") ||
+      fase.includes("CONCLUID")
+    )
+  );
+}
+
+function candidaturaEstaConcluida(item) {
+  return candidaturaEstaFinalizada(item);
+}
+
+function candidaturaEstaCancelada(item) {
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("CANCEL") ||
+    fase.includes("CANCEL")
+  );
+}
+
+function candidaturaEstaRejeitada(item) {
+  if (candidaturaEstaCancelada(item) || candidaturaEstaObtida(item)) {
+    return false;
+  }
+
+  if (candidaturaTemRejeicaoEmEvidencias(item)) {
+    return true;
+  }
+
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
+    fase.includes("REJEIT") ||
+    fase.includes("RECUS")
+  );
+}
+
+function candidaturaEstaAprovada(item) {
+  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
+}
+
+function obterMotivoCancelamento(status) {
+  return String(
+    status?.motivo_cancelamento ||
+      status?.motivo_estado_final ||
+      ""
+  ).trim();
+}
+
+function candidaturaEstaEmProcesso(item) {
+  return !candidaturaEstaFinalizada(item);
+}
+
+function candidaturaMostravelNoStatus(item) {
+  return !candidaturaEstaRejeitada(item);
+}
+
 // Componente do Chip de Estado
 function EstadoChip({ titulo, valor }) {
   const chip = chipEstado(valor);
@@ -191,6 +268,8 @@ function StatusCandidaturasTM() {
   
   const [modoLista, setModoLista] = useState("EM_PROCESSO");
   const [ordenarPor, setOrdenarPor] = useState("data_desc"); 
+
+  const [subModoConcluidos, setSubModoConcluidos] = useState("TODAS");
 
   const [pesquisa, setPesquisa] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -372,6 +451,43 @@ function StatusCandidaturasTM() {
               Finalizadas ({lista.filter(candidaturaEstaFinalizada).length})
             </button>
           </div>
+
+          {modoLista === "CONCLUIDOS" && (
+            <div style={subTabsBox}>
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("TODAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "TODAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Todas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaConcluida).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("APROVADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "APROVADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Aprovadas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaAprovada).length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("CANCELADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Canceladas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaCancelada).length})
+              </button>
+            </div>
+          )}
 
           <div style={pesquisaBox}>
             <BiSearch size={16} color="#64748b" />
@@ -656,6 +772,19 @@ const estadoRequisitoTitulo = {
   fontWeight: 700,
   color: "#64748b",
   textTransform: "uppercase",
+};
+
+const subTabsBox = {
+  display: "flex",
+  gap: 8,
+  marginBottom: 12,
+  flexWrap: "wrap",
+};
+
+const subTabBtnAtivo = {
+  border: "1px solid #0ea5e9",
+  background: "#e0f2fe",
+  color: "#0369a1",
 };
 
 export default StatusCandidaturasTM;

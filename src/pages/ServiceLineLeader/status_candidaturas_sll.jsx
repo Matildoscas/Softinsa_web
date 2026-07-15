@@ -278,6 +278,7 @@ export default function StatusCandidaturasSll() {
   const [detalhe, setDetalhe] = useState(null);
   const [modoLista, setModoLista] = useState("EM_PROCESSO");
   const [subModoConcluidos, setSubModoConcluidos] = useState("TODAS");
+  
   const [ordenarPor, setOrdenarPor] = useState("data_desc"); 
 
   const [pesquisa, setPesquisa] = useState("");
