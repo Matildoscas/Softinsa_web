@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { 
   BiArrowBack,
+  BiSort,
   BiBadge, 
   BiEnvelope, 
   BiRefresh, 
   BiSearch, 
   BiUserCircle, 
-  BiSort, 
   BiInfoCircle 
 } from "react-icons/bi";
 import { useNavigate, useLocation } from "react-router-dom";
