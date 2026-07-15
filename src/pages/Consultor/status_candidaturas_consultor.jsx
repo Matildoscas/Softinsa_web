@@ -286,6 +286,171 @@ function LinhaTimeline({ label, data }) {
   );
 }
 
+function obterEtapaCandidatura(candidatura) {
+  const estado = normalizarEstado(
+    candidatura?.estado_geral ||
+      candidatura?.estado_final ||
+      candidatura?.estado_candidatura_pedido
+  );
+
+  const fase = normalizarEstado(candidatura?.fase_geral);
+
+  if (
+    estado.includes("REJEIT") ||
+    estado.includes("RECUS") ||
+    estado.includes("APROV") ||
+    fase.includes("CONCLUID") ||
+    fase.includes("HISTORICO")
+  ) {
+    return 4;
+  }
+
+  if (
+    fase.includes("SLL") ||
+    estado.includes("EM_VALIDACAO_SLL") ||
+    estado.includes("AGUARDA_VALIDACAO_SLL") ||
+    estado.includes("AGUARDANDO_SLL")
+  ) {
+    return 3;
+  }
+
+  if (
+    fase.includes("TM") ||
+    estado.includes("EM_VALIDACAO_TM") ||
+    estado.includes("AGUARDA_VALIDACAO_TM") ||
+    estado.includes("AGUARDANDO_TM")
+  ) {
+    return 2;
+  }
+
+  return 1;
+}
+
+function obterEstadoFinalCandidatura(candidatura) {
+  const estado = normalizarEstado(
+    candidatura?.estado_geral || candidatura?.estado_final
+  );
+
+  if (estado.includes("REJEIT") || estado.includes("RECUS")) {
+    return "REJEITADA";
+  }
+
+  if (estado.includes("APROV")) {
+    return "APROVADA";
+  }
+
+  return "EM_PROCESSO";
+}
+
+function StepperCandidatura({ candidatura }) {
+  const etapaAtiva = obterEtapaCandidatura(candidatura);
+  const resultadoFinal = obterEstadoFinalCandidatura(candidatura);
+
+  const passos = [
+    {
+      titulo: "Candidatura iniciada",
+      descricao: "O consultor submeteu a candidatura.",
+      cor: "#2563eb",
+    },
+    {
+      titulo: "TM a avaliar",
+      descricao: "Talent Manager a analisar evidências.",
+      cor: "#2563eb",
+    },
+    {
+      titulo: "SLL a avaliar",
+      descricao: "Service Line Leader em validação final.",
+      cor: "#2563eb",
+    },
+    {
+      titulo: resultadoFinal === "REJEITADA" ? "Rejeitada" : "Concluída",
+      descricao:
+        resultadoFinal === "REJEITADA"
+          ? "A candidatura foi rejeitada e pode ser reaberta na página do badge."
+          : "A candidatura foi aprovada e terminou o percurso.",
+      cor: resultadoFinal === "REJEITADA" ? "#dc2626" : "#16a34a",
+    },
+  ];
+
+  return (
+    <div style={stepperWrap}>
+      {passos.map((passo, index) => {
+        const passoNumero = index + 1;
+        const ativo = etapaAtiva === passoNumero;
+        const concluido = etapaAtiva > passoNumero || (passoNumero === 4 && resultadoFinal !== "EM_PROCESSO");
+        const finalRejeitado = passoNumero === 4 && resultadoFinal === "REJEITADA";
+
+        return (
+          <div key={passo.titulo} style={stepperItem}>
+            <div style={stepperTop}>
+              <div
+                style={{
+                  ...stepperBolinha,
+                  background: finalRejeitado
+                    ? "#fee2e2"
+                    : concluido
+                      ? passo.cor
+                      : ativo
+                        ? passo.cor
+                        : "#e5e7eb",
+                  color: finalRejeitado
+                    ? "#991b1b"
+                    : concluido || ativo
+                      ? "white"
+                      : "#94a3b8",
+                  borderColor: finalRejeitado
+                    ? "#fecaca"
+                    : concluido || ativo
+                      ? passo.cor
+                      : "#d1d5db",
+                }}
+              >
+                {passoNumero}
+              </div>
+
+              {passoNumero < passos.length && (
+                <div
+                  style={{
+                    ...stepperLinha,
+                    background:
+                      etapaAtiva > passoNumero || resultadoFinal !== "EM_PROCESSO"
+                        ? passo.cor
+                        : "#e5e7eb",
+                  }}
+                />
+              )}
+            </div>
+
+            <div style={stepperTextoBox}>
+              <div
+                style={{
+                  ...stepperTitulo,
+                  color: activeColor(etapaAtiva, passoNumero, passo.cor, resultadoFinal),
+                }}
+              >
+                {passo.titulo}
+              </div>
+              <div style={stepperDescricao}>{passo.descricao}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function activeColor(etapaAtiva, passoNumero, cor, resultadoFinal) {
+  if (passoNumero === 4 && resultadoFinal === "REJEITADA") {
+    return "#b91c1c";
+  }
+
+  if (etapaAtiva >= passoNumero) {
+    return cor;
+  }
+
+  return "#475569";
+}
+
 export default function StatusCandidaturasConsultor() {
   const navigate = useNavigate();
 
@@ -587,15 +752,7 @@ export default function StatusCandidaturasConsultor() {
                     <div style={estadoPrincipalWrapper}>
                       <EstadoPrincipalChip titulo="Estado geral" valor={estadoVisivelDetalhe} />
                     </div>
-                    <div style={estadoGridFases}>
-                      <EstadoChip titulo="Pedido" valor={detalhe.candidatura?.estado_candidatura_pedido} />
-                      <EstadoChip titulo="Avaliação do Talent Manager" valor={detalhe.candidatura?.estado_candidaturatm} />
-                      <EstadoChip titulo="Avaliação do Service Line Leader" valor={detalhe.candidatura?.estado_candidaturasll} />
-                    </div>
-                    <div style={estadoRodapeGrid}>
-                      <EstadoChip titulo="Etapa" valor={faseVisivelDetalhe} />
-                      <EstadoChip titulo="Resultado concluído" valor={detalhe.candidatura?.estado_final} />
-                    </div>
+                    <StepperCandidatura candidatura={detalhe.candidatura} />
 
                     {mostrarAcoesRejeicao && (
                       <div style={rejeicaoBox}>
@@ -927,6 +1084,62 @@ const estadoTitulo = {
   marginBottom: 6,
   fontWeight: 700,
   textTransform: "uppercase",
+};
+
+const stepperWrap = {
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: 12,
+  marginTop: 6,
+  marginBottom: 6,
+};
+
+const stepperItem = {
+  minWidth: 0,
+};
+
+const stepperTop = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  marginBottom: 10,
+};
+
+const stepperBolinha = {
+  width: 28,
+  height: 28,
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 12,
+  fontWeight: 800,
+  border: "2px solid transparent",
+  flexShrink: 0,
+  transition: "all 0.2s ease",
+};
+
+const stepperLinha = {
+  flex: 1,
+  height: 3,
+  borderRadius: 999,
+  background: "#e5e7eb",
+};
+
+const stepperTextoBox = {
+  paddingRight: 8,
+};
+
+const stepperTitulo = {
+  fontSize: 13,
+  fontWeight: 800,
+  marginBottom: 4,
+};
+
+const stepperDescricao = {
+  fontSize: 11,
+  color: "#64748b",
+  lineHeight: 1.45,
 };
 
 const timelineLinha = {
