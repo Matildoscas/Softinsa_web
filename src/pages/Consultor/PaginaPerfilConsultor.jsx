@@ -640,7 +640,7 @@ function PaginaPerfil() {
             <Button
               variant="light"
               onClick={() =>
-                navigate("/galeria-badges?aba=minha")
+                navigate("/minha-galeria-publica")
               }
               className="
                 d-flex
