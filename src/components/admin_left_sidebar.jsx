@@ -100,16 +100,18 @@ function AdminLeftSidebar() {
           />
 
           <SubLink
+            to="/admin/badges"
+            label="Gestão de Badges"
+            icon={<BiBadge size={15} />}
+          />
+
+          <SubLink
             to="/admin/areas"
             label="Gestão de Areas"
             icon={<BiGrid size={15} />}
           />
 
-          <SubLink
-            to="/admin/badges"
-            label="Gestão de Badges"
-            icon={<BiBadge size={15} />}
-          />
+          
 
           <SubLink
             to="/admin/pedidos-badges"
