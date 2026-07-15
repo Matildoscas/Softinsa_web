@@ -99,45 +99,19 @@ function estadoEtapaRequisito(requisito, chaveEstado) {
   return "PENDENTE";
 }
 
-function candidaturaEstaFinalizada(item) {
-  if (candidaturaEstaCancelada(item)) {
-    return true;
-  }
-
-  return candidaturaEstaObtida(item);
-}
-
-function candidaturaEstaObtida(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
-
-  return (
-    estado.includes("APROV") &&
-    (
-      estado.includes("FINAL") ||
-      fase.includes("HISTORICO") ||
-      fase.includes("FINALIZ") ||
-      fase.includes("CONCLUID")
-    )
-  );
-}
-
-function candidaturaEstaConcluida(item) {
-  return candidaturaEstaFinalizada(item);
-}
-
 function candidaturaEstaCancelada(item) {
   const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
   const fase = normalizarEstado(item?.fase_geral);
 
   return (
     estado.includes("CANCEL") ||
+    estado.includes("DESIST") ||
     fase.includes("CANCEL")
   );
 }
 
 function candidaturaEstaRejeitada(item) {
-  if (candidaturaEstaCancelada(item) || candidaturaEstaObtida(item)) {
+  if (candidaturaEstaCancelada(item)) {
     return false;
   }
 
@@ -157,7 +131,39 @@ function candidaturaEstaRejeitada(item) {
 }
 
 function candidaturaEstaAprovada(item) {
-  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
+  if (candidaturaEstaCancelada(item) || candidaturaEstaRejeitada(item)) {
+    return false;
+  }
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  return estado.includes("APROV");
+}
+
+// CORREÇÃO: Uma candidatura está concluída se o estado final foi gravado (fase FECHADA/HISTÓRICO), cancelada ou rejeitada
+function candidaturaEstaConcluida(item) {
+  const fase = normalizarEstado(item?.fase_geral);
+  return (
+    fase === "FECHADA" ||
+    fase === "HISTORICO" ||
+    candidaturaEstaCancelada(item) ||
+    candidaturaEstaRejeitada(item) ||
+    candidaturaEstaAprovada(item)
+  );
+}
+
+function candidaturaEstaEmProcesso(item) {
+  return !candidaturaEstaConcluida(item);
+}
+
+// CORREÇÃO: Permitir ver todas as candidaturas da Service Line na vista geral
+function candidaturaMostravelNoStatus(item) {
+  return true;
+}
+
+function candidaturaTemRejeicaoEmEvidencias(item) {
+  return (
+    Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
+    Number(item?.evidencias_rejeitadas_sll || 0) > 0
+  );
 }
 
 function obterMotivoCancelamento(status) {
@@ -168,26 +174,10 @@ function obterMotivoCancelamento(status) {
   ).trim();
 }
 
-function candidaturaEstaEmProcesso(item) {
-  return !candidaturaEstaFinalizada(item);
-}
-
-function candidaturaMostravelNoStatus(item) {
-  return !candidaturaEstaRejeitada(item);
-}
-
-function candidaturaTemRejeicaoEmEvidencias(item) {
-  return (
-    Number(item?.evidencias_rejeitadas_tm || 0) > 0 ||
-    Number(item?.evidencias_rejeitadas_sll || 0) > 0
-  );
-}
-
 function estadoGeralVisivel(item) {
   if (candidaturaEstaRejeitada(item)) {
     return "REJEITADA";
   }
-
   return item?.estado_geral || item?.estado_final || "-";
 }
 
@@ -195,7 +185,6 @@ function faseGeralVisivel(item) {
   if (candidaturaEstaRejeitada(item)) {
     return "REJEITADA";
   }
-
   return item?.fase_geral || "-";
 }
 
@@ -278,7 +267,7 @@ export default function StatusCandidaturasSll() {
   const [detalhe, setDetalhe] = useState(null);
   const [modoLista, setModoLista] = useState("EM_PROCESSO");
   const [subModoConcluidos, setSubModoConcluidos] = useState("TODAS");
-  
+
   const [ordenarPor, setOrdenarPor] = useState("data_desc"); 
 
   const [pesquisa, setPesquisa] = useState("");
@@ -355,6 +344,7 @@ export default function StatusCandidaturasSll() {
     }
   }, [selecionada]);
 
+  // CORREÇÃO: Separação correta dos modos (Em Processo vs Concluídos)
   const listaPorModo = useMemo(() => {
     const listaVisivel = lista.filter(candidaturaMostravelNoStatus);
 
@@ -387,21 +377,40 @@ export default function StatusCandidaturasSll() {
     }
   }, [listaPorModo, selecionada]);
 
+  // CORREÇÃO: Aplicação real de filtros de texto e ordenação selecionada pelo utilizador
   const listaFiltrada = useMemo(() => {
     const termo = pesquisa.trim().toLowerCase();
 
-    if (!termo) {
-      return listaPorModo;
+    let resultado = listaPorModo;
+
+    if (termo) {
+      resultado = listaPorModo.filter((item) =>
+        String(item.nome_completo || "").toLowerCase().includes(termo) ||
+        String(item.email || "").toLowerCase().includes(termo) ||
+        String(item.nome_badge || "").toLowerCase().includes(termo) ||
+        String(item.estado_geral || "").toLowerCase().includes(termo) ||
+        String(item.fase_geral || "").toLowerCase().includes(termo)
+      );
     }
 
-    return listaPorModo.filter((item) =>
-      String(item.nome_completo || "").toLowerCase().includes(termo) ||
-      String(item.email || "").toLowerCase().includes(termo) ||
-      String(item.nome_badge || "").toLowerCase().includes(termo) ||
-      String(item.estado_geral || "").toLowerCase().includes(termo) ||
-      String(item.fase_geral || "").toLowerCase().includes(termo)
-    );
-  }, [listaPorModo, pesquisa]);
+    // Ordenação dos elementos
+    return [...resultado].sort((a, b) => {
+      if (ordenarPor === "data_desc") {
+        const dataA = new Date(a.data_submissao || a.data_submisao || 0);
+        const dataB = new Date(b.data_submissao || b.data_submisao || 0);
+        return dataB - dataA;
+      }
+      if (ordenarPor === "data_asc") {
+        const dataA = new Date(a.data_submissao || a.data_submisao || 0);
+        const dataB = new Date(b.data_submissao || b.data_submisao || 0);
+        return dataA - dataB;
+      }
+      if (ordenarPor === "nome_az") {
+        return String(a.nome_completo || "").localeCompare(String(b.nome_completo || ""));
+      }
+      return 0;
+    });
+  }, [listaPorModo, pesquisa, ordenarPor]);
 
   return (
     <div style={pagina}>
@@ -426,20 +435,20 @@ export default function StatusCandidaturasSll() {
           </div>
 
           <div style={filtroEscopoBarra}>
-                      <div style={filtroGrupo}>
-                        <BiSort size={16} color="#475569" />
-                        <span style={filtroTextoLabel}>Ordenar por:</span>
-                        <select 
-                          value={ordenarPor} 
-                          onChange={(e) => setOrdenarPor(e.target.value)} 
-                          style={selectEstilo}
-                        >
-                          <option value="data_desc">Mais Recentes (Data Submissão)</option>
-                          <option value="data_asc">Mais Antigas (Data Submissão)</option>
-                          <option value="nome_az">Nome do Consultor (A-Z)</option>
-                        </select>
-                      </div>
-                    </div>
+            <div style={filtroGrupo}>
+              <BiSort size={16} color="#475569" />
+              <span style={filtroTextoLabel}>Ordenar por:</span>
+              <select 
+                value={ordenarPor} 
+                onChange={(e) => setOrdenarPor(e.target.value)} 
+                style={selectEstilo}
+              >
+                <option value="data_desc">Mais Recentes (Data Submissão)</option>
+                <option value="data_asc">Mais Antigas (Data Submissão)</option>
+                <option value="nome_az">Nome do Consultor (A-Z)</option>
+              </select>
+            </div>
+          </div>
 
           <div style={tabsBox}>
             <button
@@ -667,376 +676,58 @@ export default function StatusCandidaturasSll() {
   );
 }
 
-const pagina = {
-  minHeight: "100vh",
-  background: "#f3f4f6",
-  display: "flex",
-  flexDirection: "column",
-};
-
-const corpo = {
-  display: "flex",
-  flex: 1,
-  overflow: "hidden",
-};
-
-const conteudo = {
-  flex: 1,
-  minWidth: 0,
-  overflowY: "auto",
-  padding: "22px 30px 40px",
-};
-
-const topoBarra = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const voltarBtn = {
-  border: "none",
-  background: "transparent",
-  color: "#2563eb",
-  cursor: "pointer",
-  padding: 0,
-  fontSize: 14,
-};
-
-const refreshBtn = {
-  border: "1px solid #cbd5e1",
-  background: "white",
-  color: "#1f2937",
-  padding: "8px 12px",
-  borderRadius: 9,
-  cursor: "pointer",
-  display: "inline-flex",
-  gap: 7,
-  alignItems: "center",
-  fontSize: 13,
-};
-
-const titulo = {
-  margin: "10px 0 4px",
-  fontSize: 22,
-  fontWeight: 800,
-  color: "#111827",
-};
-
-const subtitulo = {
-  color: "#64748b",
-  marginBottom: 14,
-};
-
-const tabsBox = {
-  display: "flex",
-  gap: 8,
-  marginBottom: 12,
-};
-
-const subTabsBox = {
-  display: "flex",
-  gap: 8,
-  marginBottom: 12,
-  flexWrap: "wrap",
-};
-
-const tabBtn = {
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#334155",
-  padding: "7px 11px",
-  borderRadius: 999,
-  fontSize: 12,
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const tabBtnAtivo = {
-  border: "1px solid #3b82f6",
-  background: "#eff6ff",
-  color: "#1d4ed8",
-};
-
-const subTabBtn = {
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#334155",
-  padding: "6px 10px",
-  borderRadius: 999,
-  fontSize: 11,
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const subTabBtnAtivo = {
-  border: "1px solid #0ea5e9",
-  background: "#e0f2fe",
-  color: "#0369a1",
-};
-
-const pesquisaBox = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  background: "white",
-  border: "1px solid #dbe3ef",
-  borderRadius: 10,
-  padding: "0 12px",
-  height: 44,
-  marginBottom: 16,
-};
-
-const pesquisaInput = {
-  flex: 1,
-  border: "none",
-  outline: "none",
-  background: "transparent",
-  fontSize: 13,
-};
-
-const erroBox = {
-  border: "1px solid #fecaca",
-  background: "#fef2f2",
-  color: "#b91c1c",
-  borderRadius: 10,
-  padding: "10px 12px",
-  fontSize: 13,
-  marginBottom: 14,
-};
-
-const motivoCancelamentoBox = {
-  border: "1px solid #fbcfe8",
-  background: "#fff1f2",
-  color: "#831843",
-  borderRadius: 10,
-  padding: "10px 12px",
-  marginBottom: 10,
-};
-
-const motivoCancelamentoTitulo = {
-  fontSize: 12,
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: 0.2,
-  marginBottom: 4,
-};
-
-const motivoCancelamentoTexto = {
-  fontSize: 13,
-  lineHeight: 1.45,
-  whiteSpace: "pre-wrap",
-};
-
-const gridPrincipal = {
-  display: "grid",
-  gridTemplateColumns: "minmax(360px, 0.9fr) minmax(460px, 1.1fr)",
-  gap: 14,
-};
-
-const listaPanel = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 12,
-};
-
-const detalhePanel = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 12,
-};
-
-const panelTitulo = {
-  fontSize: 14,
-  fontWeight: 700,
-  color: "#111827",
-  marginBottom: 10,
-};
-
-const mensagemBox = {
-  background: "#f8fafc",
-  border: "1px dashed #cbd5e1",
-  color: "#64748b",
-  borderRadius: 10,
-  padding: 16,
-  fontSize: 13,
-};
-
-const listaCards = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 10,
-};
-
-const cardBotao = {
-  textAlign: "left",
-  borderRadius: 11,
-  padding: 10,
-  cursor: "pointer",
-};
-
-const linhaTopoCard = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 8,
-};
-
-const nomeLinha = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  fontSize: 13,
-  fontWeight: 700,
-  color: "#1f2937",
-};
-
-const badgeLinha = {
-  marginTop: 7,
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  color: "#2563eb",
-  fontSize: 12,
-  fontWeight: 600,
-};
-
-const emailLinha = {
-  marginTop: 6,
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  color: "#475569",
-  fontSize: 12,
-};
-
-const metaLinha = {
-  marginTop: 6,
-  fontSize: 12,
-  color: "#334155",
-};
-
-const estadoChip = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: 999,
-  fontSize: 11,
-  fontWeight: 700,
-  padding: "4px 10px",
-  whiteSpace: "nowrap",
-};
-
-const secaoDetalhe = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 10,
-  padding: 10,
-  marginBottom: 10,
-};
-
-const secaoTitulo = {
-  fontSize: 13,
-  fontWeight: 700,
-  color: "#111827",
-  marginBottom: 8,
-};
-
-const estadoPrincipalWrapper = {
-  marginBottom: 10,
-};
-
-const estadoGridFases = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(120px, 1fr))",
-  gap: 8,
-  marginBottom: 8,
-};
-
-const estadoRodapeGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(140px, 1fr))",
-  gap: 8,
-};
-
-const estadoBloco = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 9,
-  padding: 8,
-  background: "#f8fafc",
-};
-
-const estadoTitulo = {
-  fontSize: 11,
-  color: "#64748b",
-  marginBottom: 6,
-  fontWeight: 700,
-  textTransform: "uppercase",
-};
-
-const timelineLinha = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 8,
-  padding: "6px 0",
-  borderBottom: "1px dashed #e2e8f0",
-};
-
-const timelineLabel = {
-  fontSize: 12,
-  color: "#334155",
-  fontWeight: 600,
-};
-
-const timelineValor = {
-  fontSize: 12,
-  color: "#0f172a",
-};
-
-const requisitosLista = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 7,
-};
-
-const requisitoLinha = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 8,
-  border: "1px solid #e5e7eb",
-  borderRadius: 9,
-  padding: "7px 9px",
-};
-
-const requisitoEstadosLinha = {
-  display: "flex",
-  gap: 10,
-  flexWrap: "wrap",
-  justifyContent: "flex-end",
-};
-
-const estadoRequisitoBloco = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-end",
-  gap: 4,
-};
-
-const estadoRequisitoTitulo = {
-  fontSize: 10,
-  fontWeight: 700,
-  color: "#64748b",
-  textTransform: "uppercase",
-};
-
-const requisitoNome = {
-  fontSize: 12,
-  color: "#1f2937",
-  fontWeight: 600,
-};
-
+// Estilos mantidos intactos conforme código fornecido
+const pagina = { minHeight: "100vh", background: "#f3f4f6", display: "flex", flexDirection: "column" };
+const corpo = { display: "flex", flex: 1, overflow: "hidden" };
+const conteudo = { flex: 1, minWidth: 0, overflowY: "auto", padding: "22px 30px 40px" };
+const topoBarra = { display: "flex", justifyContent: "space-between", alignItems: "center" };
+const voltarBtn = { border: "none", background: "transparent", color: "#2563eb", cursor: "pointer", padding: 0, fontSize: 14 };
+const refreshBtn = { border: "1px solid #cbd5e1", background: "white", color: "#1f2937", padding: "8px 12px", borderRadius: 9, cursor: "pointer", display: "inline-flex", gap: 7, alignItems: "center", fontSize: 13 };
+const titulo = { margin: "10px 0 4px", fontSize: 22, fontWeight: 800, color: "#111827" };
+const subtitulo = { color: "#64748b", marginBottom: 14 };
+const tabsBox = { display: "flex", gap: 8, marginBottom: 12 };
+const subTabsBox = { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" };
+const tabBtn = { border: "1px solid #d1d5db", background: "#ffffff", color: "#334155", padding: "7px 11px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer" };
+const tabBtnAtivo = { border: "1px solid #3b82f6", background: "#eff6ff", color: "#1d4ed8" };
+const subTabBtn = { border: "1px solid #d1d5db", background: "#ffffff", color: "#334155", padding: "6px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer" };
+const subTabBtnAtivo = { border: "1px solid #0ea5e9", background: "#e0f2fe", color: "#0369a1" };
+const pesquisaBox = { display: "flex", alignItems: "center", gap: 8, background: "white", border: "1px solid #dbe3ef", borderRadius: 10, padding: "0 12px", height: 44, marginBottom: 16 };
+const pesquisaInput = { flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 13 };
+const erroBox = { border: "1px solid #fecaca", background: "#fef2f2", color: "#b91c1c", borderRadius: 10, padding: "10px 12px", fontSize: 13, marginBottom: 14 };
+const motivoCancelamentoBox = { border: "1px solid #fbcfe8", background: "#fff1f2", color: "#831843", borderRadius: 10, padding: "10px 12px", marginBottom: 10 };
+const motivoCancelamentoTitulo = { fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.2, marginBottom: 4 };
+const motivoCancelamentoTexto = { fontSize: 13, lineHeight: 1.45, whiteSpace: "pre-wrap" };
+const gridPrincipal = { display: "grid", gridTemplateColumns: "minmax(360px, 0.9fr) minmax(460px, 1.1fr)", gap: 14 };
+const listaPanel = { background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 };
+const detalhePanel = { background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 };
+const panelTitulo = { fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 10 };
+const mensagemBox = { background: "#f8fafc", border: "1px dashed #cbd5e1", color: "#64748b", borderRadius: 10, padding: 16, fontSize: 13 };
+const listaCards = { display: "flex", flexDirection: "column", gap: 10 };
+const cardBotao = { textAlign: "left", borderRadius: 11, padding: 10, cursor: "pointer" };
+const linhaTopoCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 };
+const nomeLinha = { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#1f2937" };
+const badgeLinha = { marginTop: 7, display: "inline-flex", alignItems: "center", gap: 6, color: "#2563eb", fontSize: 12, fontWeight: 600 };
+const emailLinha = { marginTop: 6, display: "inline-flex", alignItems: "center", gap: 6, color: "#475569", fontSize: 12 };
+const metaLinha = { marginTop: 6, fontSize: 12, color: "#334155" };
+const estadoChip = { display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 999, fontSize: 11, fontWeight: 700, padding: "4px 10px", whiteSpace: "nowrap" };
+const secaoDetalhe = { border: "1px solid #e5e7eb", borderRadius: 10, padding: 10, marginBottom: 10 };
+const secaoTitulo = { fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 8 };
+const estadoPrincipalWrapper = { marginBottom: 10 };
+const estadoGridFases = { display: "grid", gridTemplateColumns: "repeat(3, minmax(120px, 1fr))", gap: 8, marginBottom: 8 };
+const estadoRodapeGrid = { display: "grid", gridTemplateColumns: "repeat(2, minmax(140px, 1fr))", gap: 8 };
+const estadoBloco = { border: "1px solid #e5e7eb", borderRadius: 9, padding: 8, background: "#f8fafc" };
+const estadoTitulo = { fontSize: 11, color: "#64748b", marginBottom: 6, fontWeight: 700, textTransform: "uppercase" };
+const timelineLinha = { display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderBottom: "1px dashed #e2e8f0" };
+const timelineLabel = { fontSize: 12, color: "#334155", fontWeight: 600 };
+const timelineValor = { fontSize: 12, color: "#0f172a" };
+const requisitosLista = { display: "flex", flexDirection: "column", gap: 7 };
+const requisitoLinha = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, border: "1px solid #e5e7eb", borderRadius: 9, padding: "7px 9px" };
+const requisitoEstadosLinha = { display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" };
+const estadoRequisitoBloco = { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 };
+const estadoRequisitoTitulo = { fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase" };
+const requisitoNome = { fontSize: 12, color: "#1f2937", fontWeight: 600 };
 const filtroEscopoBarra = { display: "flex", gap: 24, background: "white", border: "1px solid #dbe3ef", borderRadius: 10, padding: "10px 14px", marginBottom: 12, alignItems: "center", flexWrap: "wrap" };
 const filtroGrupo = { display: "flex", alignItems: "center", gap: 8 };
 const filtroTextoLabel = { fontSize: 13, fontWeight: 600, color: "#475569" };
 const selectEstilo = { padding: "6px 10px", borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 13, color: "#1f2937", outline: "none", background: "#f8fafc", cursor: "pointer" };
+
