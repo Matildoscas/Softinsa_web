@@ -278,6 +278,7 @@ export default function StatusCandidaturasSll() {
   const [detalhe, setDetalhe] = useState(null);
   const [modoLista, setModoLista] = useState("EM_PROCESSO");
   const [subModoConcluidos, setSubModoConcluidos] = useState("TODAS");
+  const [ordenarPor, setOrdenarPor] = useState("data_desc"); 
 
   const [pesquisa, setPesquisa] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -422,6 +423,22 @@ export default function StatusCandidaturasSll() {
           <div style={subtitulo}>
             Service Line: <strong>{serviceLine?.nome_serviceline || "Service Line"}</strong>
           </div>
+
+          <div style={filtroEscopoBarra}>
+                      <div style={filtroGrupo}>
+                        <BiSort size={16} color="#475569" />
+                        <span style={filtroTextoLabel}>Ordenar por:</span>
+                        <select 
+                          value={ordenarPor} 
+                          onChange={(e) => setOrdenarPor(e.target.value)} 
+                          style={selectEstilo}
+                        >
+                          <option value="data_desc">Mais Recentes (Data Submissão)</option>
+                          <option value="data_asc">Mais Antigas (Data Submissão)</option>
+                          <option value="nome_az">Nome do Consultor (A-Z)</option>
+                        </select>
+                      </div>
+                    </div>
 
           <div style={tabsBox}>
             <button
@@ -1017,3 +1034,8 @@ const requisitoNome = {
   color: "#1f2937",
   fontWeight: 600,
 };
+
+const filtroEscopoBarra = { display: "flex", gap: 24, background: "white", border: "1px solid #dbe3ef", borderRadius: 10, padding: "10px 14px", marginBottom: 12, alignItems: "center", flexWrap: "wrap" };
+const filtroGrupo = { display: "flex", alignItems: "center", gap: 8 };
+const filtroTextoLabel = { fontSize: 13, fontWeight: 600, color: "#475569" };
+const selectEstilo = { padding: "6px 10px", borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 13, color: "#1f2937", outline: "none", background: "#f8fafc", cursor: "pointer" };

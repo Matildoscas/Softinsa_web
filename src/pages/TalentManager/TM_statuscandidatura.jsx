@@ -430,6 +430,10 @@ function StatusCandidaturasTM() {
                         <div style={metaLinha}>
                           Fase: <strong>{item.fase_geral}</strong>
                         </div>
+
+                        <div style={metaLinha}>
+                          Evidências TM/SLL: <strong>{item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>{item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
+                        </div>
                       </button>
                     );
                   })}
