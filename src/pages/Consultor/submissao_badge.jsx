@@ -98,6 +98,31 @@ function mensagemErroCandidatura(err, fallback) {
   return message || fallback;
 }
 
+function normalizarEstadoEvidencia(evidencia) {
+  return String(
+    evidencia?.estado_evidencia_sll ||
+      evidencia?.estado_evidencia_tm ||
+      evidencia?.estado_evidencia ||
+      "PENDENTE"
+  )
+    .trim()
+    .toUpperCase();
+}
+
+function evidenciaRejeitada(evidencia) {
+  const estado = normalizarEstadoEvidencia(evidencia);
+  return estado.startsWith("REJEIT") || estado.startsWith("RECUS");
+}
+
+function obterMotivoRejeicaoEvidencia(evidencia) {
+  return String(
+    evidencia?.motivo_rejeicao ||
+      evidencia?.comentario_sll ||
+      evidencia?.comentario_tm ||
+      ""
+  ).trim();
+}
+
 function SubmeterEvidenciasPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1232,6 +1257,38 @@ function RequisitoUploadRow({
                     <div style={{ fontSize: 11, color: "#6b7280" }}>
                       Guardado em {new Date(evidencia.data_submissao).toLocaleString("pt-PT")}
                     </div>
+                    <div style={{ marginTop: 6 }}>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          background: evidenciaRejeitada(evidencia) ? "#fee2e2" : "#e0f2fe",
+                          color: evidenciaRejeitada(evidencia) ? "#991b1b" : "#1e3a8a",
+                          border: evidenciaRejeitada(evidencia)
+                            ? "1px solid #fecaca"
+                            : "1px solid #bfdbfe",
+                        }}
+                      >
+                        {normalizarEstadoEvidencia(evidencia)}
+                      </span>
+                    </div>
+                    {evidenciaRejeitada(evidencia) && obterMotivoRejeicaoEvidencia(evidencia) && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          fontSize: 12,
+                          color: "#7f1d1d",
+                          background: "#fee2e2",
+                          border: "1px solid #fecaca",
+                          borderRadius: 8,
+                          padding: "8px 10px",
+                        }}
+                      >
+                        <strong>Motivo da rejeição:</strong> {obterMotivoRejeicaoEvidencia(evidencia)}
+                      </div>
+                    )}
                   </div>
 
                   {evidencia.caminho_ficheiro && (

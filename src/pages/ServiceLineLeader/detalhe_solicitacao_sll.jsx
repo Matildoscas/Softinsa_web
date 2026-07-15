@@ -516,6 +516,18 @@ function normalizarResposta(dados) {
         dados.estado_candidaturasll ||
         null,
 
+      comentarios_tm:
+        candidatura.comentarios_tm ||
+        candidaturaSll.comentarios_tm ||
+        dados.comentarios_tm ||
+        "",
+
+      comentarios_sll:
+        candidatura.comentarios_sll ||
+        candidaturaSll.comentarios_sll ||
+        dados.comentarios_sll ||
+        "",
+
       estado:
         candidatura.estado_candidatura_pedido ||
         candidatura.estado ||
@@ -1426,12 +1438,18 @@ async function rejeitarCandidatura() {
       return;
     }
 
+    const motivoGlobalJaGuardado = String(
+      dados?.candidatura?.comentarios_sll ||
+      ""
+    ).trim();
+
     if (
       temRejeicoesPendentes &&
-      !motivoRejeicao.trim()
+      !motivoRejeicao.trim() &&
+      !motivoGlobalJaGuardado
     ) {
       setErroGuardarDecisoes(
-        "Indica o motivo da rejeição antes de confirmar."
+        "Indica o motivo da rejeição antes de confirmar (ou mantém o motivo geral já guardado na candidatura)."
       );
       return;
     }
@@ -1453,7 +1471,7 @@ async function rejeitarCandidatura() {
             estado,
             motivo:
               estado === "REJEITADO"
-                ? motivoRejeicao.trim()
+                ? motivoRejeicao.trim() || undefined
                 : undefined,
           }
         );
@@ -2264,6 +2282,19 @@ function RequisitoCard({
                   const estadoEv = obterEstadoVisual(
                     ev.estado_evidencia
                   );
+                  const motivoRejeicaoEvidencia =
+                    String(
+                      ev.motivo_rejeicao ||
+                        ev.comentario_sll ||
+                        ev.comentario_tm ||
+                        ""
+                    ).trim();
+                  const evidenciaEstaRejeitada =
+                    estadoEhRejeitado(
+                      ev.estado_evidencia_sll ||
+                        ev.estado_evidencia_tm ||
+                        ev.estado_evidencia
+                    );
                   const decisaoLocal =
                     decisoesPendentes[chave];
                   const estadoSllPersistido =
@@ -2276,53 +2307,73 @@ function RequisitoCard({
                       <div style={evidenciaEsquerda}>
                         <BiFile size={16} color="#64748b" />
 
-                        <span style={evidenciaNome}>
-                          {ev.nome_ficheiro || "Documento"}
-                        </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={evidenciaNome}>
+                              {ev.nome_ficheiro || "Documento"}
+                            </span>
 
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            padding: "2px 9px",
-                            borderRadius: 20,
-                            background: estadoEv.background,
-                            color: estadoEv.color,
-                            border: `1px solid ${estadoEv.border}`,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {estadoEv.label}
-                        </span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                padding: "2px 9px",
+                                borderRadius: 20,
+                                background: estadoEv.background,
+                                color: estadoEv.color,
+                                border: `1px solid ${estadoEv.border}`,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {estadoEv.label}
+                            </span>
 
-                        {decisaoLocal && (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              padding: "2px 9px",
-                              borderRadius: 20,
-                              background:
-                                decisaoLocal === "APROVADO"
-                                  ? "#dcfce7"
-                                  : "#fee2e2",
-                              color:
-                                decisaoLocal === "APROVADO"
-                                  ? "#15803d"
-                                  : "#dc2626",
-                              border:
-                                decisaoLocal === "APROVADO"
-                                  ? "1px solid #bbf7d0"
-                                  : "1px solid #fecaca",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            →{" "}
-                            {decisaoLocal === "APROVADO"
-                              ? "Aprovar"
-                              : "Rejeitar"}
-                          </span>
-                        )}
+                            {decisaoLocal && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  padding: "2px 9px",
+                                  borderRadius: 20,
+                                  background:
+                                    decisaoLocal === "APROVADO"
+                                      ? "#dcfce7"
+                                      : "#fee2e2",
+                                  color:
+                                    decisaoLocal === "APROVADO"
+                                      ? "#15803d"
+                                      : "#dc2626",
+                                  border:
+                                    decisaoLocal === "APROVADO"
+                                      ? "1px solid #bbf7d0"
+                                      : "1px solid #fecaca",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                →{" "}
+                                {decisaoLocal === "APROVADO"
+                                  ? "Aprovar"
+                                  : "Rejeitar"}
+                              </span>
+                            )}
+                          </div>
+
+                          {evidenciaEstaRejeitada && motivoRejeicaoEvidencia && (
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#7f1d1d",
+                                background: "#fee2e2",
+                                border: "1px solid #fecaca",
+                                borderRadius: 8,
+                                padding: "7px 10px",
+                                maxWidth: 560,
+                              }}
+                            >
+                              <strong>Motivo da rejeição:</strong> {motivoRejeicaoEvidencia}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div style={evidenciaDireita}>
