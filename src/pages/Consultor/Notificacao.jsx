@@ -28,7 +28,6 @@ import {
   emitirAtualizacaoNotificacoes,
   formatarTituloNotificacao,
   notificacaoNaoLida,
-  ordenarNotificacoesRecentes,
   EVENTO_NOTIFICACOES_ATUALIZADAS,
 } from "../../utils/notificacoesUtils.js";
 
@@ -93,9 +92,25 @@ function NotificacaoPage() {
               : [];
 
           setNotificacoes(
-            ordenarNotificacoesRecentes(
-              data
-            )
+            [...data]
+              .sort((a, b) => {
+                const dataA =
+                  new Date(
+                    a.data_envio ||
+                      a.DATA_ENVIO ||
+                      0
+                  ).getTime();
+
+                const dataB =
+                  new Date(
+                    b.data_envio ||
+                      b.DATA_ENVIO ||
+                      0
+                  ).getTime();
+
+                return dataA - dataB;
+              })
+              .slice(0, 5)
           );
         } catch (err) {
           console.error(

@@ -24,9 +24,7 @@ import {
   EVENTO_NOTIFICACOES_ATUALIZADAS,
   emitirAtualizacaoNotificacoes,
   formatarTituloNotificacao,
-  obterIdNotificacao,
   notificacaoNaoLida,
-  ordenarNotificacoesRecentes,
 } from "../utils/notificacoesUtils.js";
 
 const NotificationPopover =
@@ -124,21 +122,38 @@ const NotificationPopover =
               ? response.data
               : [];
 
-          const naoLidas =
-            ordenarNotificacoesRecentes(
-              data
-            )
-              .filter(
-                notificacaoNaoLida
-              )
+          const listaVisivel =
+            [...data]
+              .sort((a, b) => {
+                const dataA =
+                  new Date(
+                    a.data_envio ||
+                      a.DATA_ENVIO ||
+                      0
+                  ).getTime();
+
+                const dataB =
+                  new Date(
+                    b.data_envio ||
+                      b.DATA_ENVIO ||
+                      0
+                  ).getTime();
+
+                return dataA - dataB;
+              })
               .slice(0, 5);
 
+          const totalNaoLidas =
+            data.filter(
+              notificacaoNaoLida
+            ).length;
+
           setNotifications(
-            naoLidas
+            listaVisivel
           );
 
           if (
-            naoLidas.length > 0
+            totalNaoLidas > 0
           ) {
             try {
               await api.patch(
@@ -147,18 +162,16 @@ const NotificationPopover =
 
               setNotifications(
                 (anteriores) =>
-                  anteriores.filter(
-                    (item) =>
-                      notificacaoNaoLida(item) &&
-                      !naoLidas.some(
-                        (naoLida) =>
-                          String(
-                            obterIdNotificacao(naoLida)
-                          ) ===
-                          String(
-                            obterIdNotificacao(item)
-                          )
-                      )
+                  anteriores.map(
+                    (item) => ({
+                      ...item,
+                      lida: true,
+                      lido: true,
+                      estado_leitura:
+                        "LIDA",
+                      estado_notificacao:
+                        "LIDA",
+                    })
                   )
               );
 
