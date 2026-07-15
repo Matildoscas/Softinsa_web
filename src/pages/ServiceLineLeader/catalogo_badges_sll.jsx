@@ -6,7 +6,7 @@ import {
 
 import {
   BiArrowBack,
-  Bisort,
+  BiSort,
   BiSearch,
   BiFilterAlt,
   BiSortAlt2,
