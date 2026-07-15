@@ -112,7 +112,7 @@ function obterRotasUtilizador(user) {
       inicio: "/admin",
       perfil: "/admin/perfil",
       definicoes: "/admin/definicoes",
-      notificacoes: "/admin/notificacoes",
+      notificacoes: "/admin/notificacoespage",
     };
   }
 
