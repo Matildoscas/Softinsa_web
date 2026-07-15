@@ -187,6 +187,16 @@ function normalizarBadge(badge) {
       badge.nome_serviceline ||
       "Service Line",
 
+    pontos: Number(
+      badge.pontos || 0
+    ),
+
+    numero_requisitos:
+      Number(
+        badge.numero_requisitos ||
+          0
+      ),
+
     debug: badge.debug || null,
 
     requisitos: Array.isArray(
@@ -318,6 +328,12 @@ function InformacaoBadgeSll() {
   const codigoNivel =
     obterCodigoNivel(badge);
 
+  const badgeEspecial =
+    String(
+      badge?.tipo_badge || ""
+    ).toUpperCase() ===
+    "ESPECIAL";
+
   return (
     <div style={pagina}>
       <Header />
@@ -390,6 +406,46 @@ function InformacaoBadgeSll() {
 
                 <div style={areaTexto}>
                   {badge.nome_area}
+                </div>
+
+                <div
+                  style={informacoesHero}
+                >
+                  <span
+                    style={infoHeroBadge}
+                  >
+                    {badge.pontos} pontos
+                  </span>
+
+                  <span
+                    style={infoHeroBadge}
+                  >
+                    {
+                      badge
+                        .numero_requisitos
+                    }{" "}
+                    requisitos
+                  </span>
+
+                  <span
+                    style={{
+                      ...infoHeroBadge,
+
+                      background:
+                        badgeEspecial
+                          ? "#ff8a00"
+                          : "#eff6ff",
+
+                      color:
+                        badgeEspecial
+                          ? "white"
+                          : "#2563eb",
+                    }}
+                  >
+                    {badgeEspecial
+                      ? "Especial"
+                      : badge.nome_nivel}
+                  </span>
                 </div>
               </section>
 
@@ -858,6 +914,28 @@ const erroBox = {
 const semDados = {
   color: "#64748b",
   fontSize: 13,
+};
+
+const informacoesHero = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 9,
+  flexWrap: "wrap",
+  marginTop: 14,
+};
+
+const infoHeroBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 29,
+  borderRadius: 999,
+  padding: "5px 12px",
+  background: "#f1f5f9",
+  color: "#475569",
+  fontSize: 11,
+  fontWeight: 600,
 };
 
 export default InformacaoBadgeSll;

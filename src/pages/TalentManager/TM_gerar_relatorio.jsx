@@ -258,38 +258,6 @@ function GerarRelatorioTm() {
     }
   }
 
-  async function enviarParaSll() {
-    if (!relatorio) {
-      return;
-    }
-
-    const utilizador = obterUtilizadorGuardado();
-
-    const idUtilizador =
-      utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
-
-    try {
-      setIsSending(true);
-      setErro("");
-      setMensagem("");
-
-      const response = await api.post(`/tm/${idUtilizador}/relatorios/enviar`, {
-        relatorio,
-      });
-
-      setMensagem(
-        response.data?.message || "Relatório enviado ao Service Line Leader.",
-      );
-    } catch (err) {
-      console.error("Erro ao enviar relatório:", err);
-
-      setErro(
-        err.response?.data?.error || "Não foi possível enviar o relatório.",
-      );
-    } finally {
-      setIsSending(false);
-    }
-  }
 
   async function gerarPdf() {
     if (!relatorio || !pdfRef.current) {
@@ -503,17 +471,6 @@ function GerarRelatorioTm() {
                   </div>
 
                   <div style={acoesPreview}>
-                    <button
-                      type="button"
-                      onClick={enviarParaSll}
-                      disabled={isSending}
-                      style={enviarButton}
-                    >
-                      <BiSend size={17} />
-
-                      {isSending ? "A enviar..." : "Enviar para SLL"}
-                    </button>
-
                     <button
                       type="button"
                       onClick={gerarPdf}
