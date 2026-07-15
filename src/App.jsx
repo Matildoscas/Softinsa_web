@@ -49,7 +49,6 @@ import BadgePublicoIndividualPage from './pages/Galeria_Pública/BadgePublicoInd
 import GaleriaBadgesPage from './pages/Galeria_Pública/GaleriaBadges.jsx';
 import VerificarCertificadoPage from './pages/Galeria_Pública/VerificarCertificado.jsx';
 import MicrositeProjeto from './pages/MicrositeProjeto/MicrositeProjeto.jsx';
-import MobileAppMinisite from './pages/MicrositeProjeto/MobileAppMinisite.jsx';
 
 import AtivarContaPage from './pages/Login/ativar_conta.jsx';
 import AreaPage from './pages/Login/AreaRegister.jsx';
@@ -138,7 +137,7 @@ function App() {
   return (
     <Router>
       {shouldBlockMobileWeb ? (
-        <MobileAppMinisite />
+        <MicrositeProjeto mobileBlocked />
       ) : (
       <Routes>
         

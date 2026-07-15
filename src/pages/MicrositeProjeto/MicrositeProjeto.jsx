@@ -185,7 +185,42 @@ const requisitosMobile = [
   "Push de SLA ultrapassados",
 ];
 
-function MicrositeProjeto() {
+function MicrositeProjeto({ mobileBlocked = false }) {
+  const installUrlDefault = import.meta.env.VITE_APP_INSTALL_URL || "";
+  const installUrlAndroid = import.meta.env.VITE_APP_INSTALL_URL_ANDROID || "";
+  const installUrlIos = import.meta.env.VITE_APP_INSTALL_URL_IOS || "";
+  const appDeepLink = import.meta.env.VITE_APP_DEEP_LINK || "";
+
+  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isAndroid = /Android/i.test(userAgent);
+  const isIos = /iPhone|iPad|iPod/i.test(userAgent);
+
+  const installUrl =
+    (isAndroid && installUrlAndroid) ||
+    (isIos && installUrlIos) ||
+    installUrlDefault;
+
+  const hasInstallUrl = Boolean(installUrl);
+  const hasDeepLink = Boolean(appDeepLink);
+
+  const handleInstallClick = () => {
+    if (!hasInstallUrl) {
+      window.alert("URL de instalação ainda não foi configurada.");
+      return;
+    }
+
+    window.location.href = installUrl;
+  };
+
+  const handleOpenAppClick = () => {
+    if (!hasDeepLink) {
+      window.alert("Deep link da app ainda não foi configurado.");
+      return;
+    }
+
+    window.location.href = appDeepLink;
+  };
+
   return (
     <main className="microsite">
       <header className="microsite-navbar">
@@ -202,15 +237,43 @@ function MicrositeProjeto() {
         </nav>
 
         <div className="microsite-nav-actions">
-          <Link to="/galeria-badges" className="btn-secundario">
-            Galeria pública
-          </Link>
+          {mobileBlocked ? (
+            <>
+              {hasDeepLink && (
+                <button type="button" className="btn-secundario" onClick={handleOpenAppClick}>
+                  Abrir app
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-primario"
+                onClick={handleInstallClick}
+                disabled={!hasInstallUrl}
+              >
+                {hasInstallUrl ? "Download da app" : "Download em breve"}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/galeria-badges" className="btn-secundario">
+                Galeria pública
+              </Link>
 
-          <Link to="/login" className="btn-primario">
-            Entrar
-          </Link>
+              <Link to="/login" className="btn-primario">
+                Entrar
+              </Link>
+            </>
+          )}
         </div>
       </header>
+
+      {mobileBlocked && (
+        <section className="mobile-block-banner">
+          <p>
+            O acesso web está bloqueado em telemóvel. Para continuar, instala a app oficial.
+          </p>
+        </section>
+      )}
 
       <section className="hero-section">
         <div className="hero-content">
@@ -629,9 +692,20 @@ function MicrositeProjeto() {
             </p>
           </div>
 
-          <Link to="/login" className="btn-cta">
-            Aceder à plataforma
-          </Link>
+          {mobileBlocked ? (
+            <button
+              type="button"
+              className="btn-cta"
+              onClick={handleInstallClick}
+              disabled={!hasInstallUrl}
+            >
+              {hasInstallUrl ? "Instalar app" : "Instalação em breve"}
+            </button>
+          ) : (
+            <Link to="/login" className="btn-cta">
+              Aceder à plataforma
+            </Link>
+          )}
         </div>
       </section>
     </main>

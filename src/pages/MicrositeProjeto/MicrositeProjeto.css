@@ -89,6 +89,29 @@
   color: #1d4ed8;
 }
 
+.btn-primario:disabled,
+.btn-cta:disabled {
+  background: #94a3b8;
+  color: white;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.mobile-block-banner {
+  padding: 14px 7vw;
+  background: #fff7ed;
+  border-bottom: 1px solid #fed7aa;
+}
+
+.mobile-block-banner p {
+  margin: 0;
+  color: #9a3412;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .hero-section {
   display: grid;
   grid-template-columns: 1.08fr 0.92fr;
