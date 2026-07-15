@@ -425,7 +425,7 @@ function StatusCandidaturasTM() {
             </button>
           </div>
 
-          {modoLista === "CONCLUIDOS" && (
+          {modoLista === "FINALIZADAS" && (
             <div style={subTabsBox}>
               <button
                 type="button"
