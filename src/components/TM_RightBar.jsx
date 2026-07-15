@@ -113,7 +113,15 @@ function RightSidebarTM() {
   // 📡 3. Procura as Notificações Reais (Passando a config)
   const fetchNotificacoes = api.get(`/notificacoes/${userId}`, config)
     .then(res => {
-      setNotifications(Array.isArray(res.data) ? res.data : []);
+      setNotifications(
+        (Array.isArray(res.data) ? res.data : [])
+          .sort((a, b) => {
+            const dataA = new Date(a.data_envio || a.DATA_ENVIO || 0).getTime();
+            const dataB = new Date(b.data_envio || b.DATA_ENVIO || 0).getTime();
+            return dataA - dataB;
+          })
+          .slice(0, 5)
+      );
     })
     .catch(err => console.error("Erro ao carregar notificações do TM:", err));
 
@@ -168,8 +176,8 @@ function RightSidebarTM() {
         </div>
         
         {notifications.length > 0 ? (
-          // Mostra apenas as 4 notificações mais recentes da BD para não sobrecarregar o design
-          notifications.slice(0, 4).map((n, i) => (
+          // Mostra as 5 notificações mais antigas para manter consistência no produto
+          notifications.map((n, i) => (
             <div 
                 key={i} 
                 style={{ 

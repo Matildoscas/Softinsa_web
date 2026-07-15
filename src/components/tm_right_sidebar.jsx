@@ -94,9 +94,27 @@ function TmRightSidebar() {
 
     if (resultados[2].status === "fulfilled") {
       setNotifications(
-        Array.isArray(resultados[2].value.data)
+        (Array.isArray(resultados[2].value.data)
           ? resultados[2].value.data
-          : []
+          : [])
+          .sort((a, b) => {
+            const dataA =
+              new Date(
+                a.data_envio ||
+                  a.DATA_ENVIO ||
+                  0
+              ).getTime();
+
+            const dataB =
+              new Date(
+                b.data_envio ||
+                  b.DATA_ENVIO ||
+                  0
+              ).getTime();
+
+            return dataA - dataB;
+          })
+          .slice(0, 5)
       );
     } else {
       console.error(
@@ -138,7 +156,7 @@ function TmRightSidebar() {
         </div>
 
         {notifications.length > 0 ? (
-          notifications.slice(0, 4).map((notificacao, index) => (
+          notifications.map((notificacao, index) => (
             <NotificationCard
               key={
                 notificacao.id_notificacoes ||

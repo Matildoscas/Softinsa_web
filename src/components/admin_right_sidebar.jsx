@@ -28,7 +28,27 @@ function AdminRightSidebar() {
     api
       .get(`/notificacoes/${userId}`)
       .then((res) => {
-        setNotifications(Array.isArray(res.data) ? res.data : []);
+        setNotifications(
+          (Array.isArray(res.data) ? res.data : [])
+            .sort((a, b) => {
+              const dataA =
+                new Date(
+                  a.data_envio ||
+                    a.DATA_ENVIO ||
+                    0
+                ).getTime();
+
+              const dataB =
+                new Date(
+                  b.data_envio ||
+                    b.DATA_ENVIO ||
+                    0
+                ).getTime();
+
+              return dataA - dataB;
+            })
+            .slice(0, 5)
+        );
       })
       .catch((err) => {
         console.error("Erro ao carregar notificações do admin:", err);
@@ -53,7 +73,7 @@ function AdminRightSidebar() {
       <div style={sectionTitle}>Notificações</div>
 
       {notifications.length > 0 ? (
-        notifications.slice(0, 3).map((n, i) => (
+        notifications.map((n, i) => (
           <NotificationCard key={n.id_notificacao || n.id || i} n={n} />
         ))
       ) : (

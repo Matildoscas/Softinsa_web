@@ -80,9 +80,27 @@ function SllRightSidebar() {
     ]).then(([notificacoesRes, topRes]) => {
       if (notificacoesRes.status === "fulfilled") {
         setNotificacoes(
-          Array.isArray(notificacoesRes.value.data)
+          (Array.isArray(notificacoesRes.value.data)
             ? notificacoesRes.value.data
-            : []
+            : [])
+            .sort((a, b) => {
+              const dataA =
+                new Date(
+                  a.data_envio ||
+                    a.DATA_ENVIO ||
+                    0
+                ).getTime();
+
+              const dataB =
+                new Date(
+                  b.data_envio ||
+                    b.DATA_ENVIO ||
+                    0
+                ).getTime();
+
+              return dataA - dataB;
+            })
+            .slice(0, 5)
         );
       } else {
         const status = Number(
@@ -127,7 +145,6 @@ function SllRightSidebar() {
 
       {notificacoes.length > 0 ? (
         notificacoes
-          .slice(0, 3)
           .map((notificacao, index) => (
             <NotificationCard
               key={

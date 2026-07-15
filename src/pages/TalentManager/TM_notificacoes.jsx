@@ -5,6 +5,9 @@ import Header from "../../components/TM_Header.jsx";
 import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";
+import {
+  emitirAtualizacaoNotificacoes,
+} from "../../utils/notificacoesUtils.js";
 
 /* =========================================================
    UTILIZADOR AUTENTICADO
@@ -56,6 +59,7 @@ function NotificacoesTm() {
   const [erro, setErro] = useState("");
 
   const [isLimparLoading, setIsLimparLoading] = useState(false);
+  const [isMarcarTodasLoading, setIsMarcarTodasLoading] = useState(false);
   const [marcandoLidasIds, setMarcandoLidasIds] = useState([]);
   
   // 🎯 NOVO ESTADO PARA O POP-UP PERSONALIZADO
@@ -91,7 +95,15 @@ function NotificacoesTm() {
       setIsLoading(true);
       setErro("");
       const response = await api.get(`/notificacoes/${idUtilizador}`);
-      setNotificacoes(Array.isArray(response.data) ? response.data : []);
+      setNotificacoes(
+        (Array.isArray(response.data) ? response.data : [])
+          .sort((a, b) => {
+            const dataA = new Date(a.data_envio || a.DATA_ENVIO || 0).getTime();
+            const dataB = new Date(b.data_envio || b.DATA_ENVIO || 0).getTime();
+            return dataA - dataB;
+          })
+          .slice(0, 5)
+      );
     } catch (err) {
       console.error("Erro ao carregar notificações do TM:", err);
       setNotificacoes([]);
@@ -114,11 +126,19 @@ function NotificacoesTm() {
         prev.map((notif) => {
           const currentId = notif.id_notificacoes || notif.id_notificacao || notif.id;
           if (currentId === idNotificacao) {
-            return { ...notif, estado_notificacao: "Lida" };
+            return {
+              ...notif,
+              lida: true,
+              lido: true,
+              estado_leitura: "LIDA",
+              estado_notificacao: "LIDA",
+            };
           }
           return notif;
         })
       );
+
+      emitirAtualizacaoNotificacoes();
     } catch (err) {
       console.error(err.response?.data);
       console.error(err);
@@ -126,6 +146,43 @@ function NotificacoesTm() {
       setMarcandoLidasIds((prev) => prev.filter((id) => id !== idNotificacao));
     }
   }
+
+  async function lidarMarcarTodasComoLidas() {
+    const idUtilizador = obterIdLogado();
+    if (!idUtilizador) return;
+
+    try {
+      setIsMarcarTodasLoading(true);
+      await api.patch(`/notificacoes/utilizador/${idUtilizador}/lidas`);
+
+      setNotificacoes((prev) =>
+        prev.map((notif) => ({
+          ...notif,
+          lida: true,
+          lido: true,
+          estado_leitura: "LIDA",
+          estado_notificacao: "LIDA",
+        }))
+      );
+
+      emitirAtualizacaoNotificacoes();
+    } catch (err) {
+      console.error("Erro ao marcar todas como lidas (TM):", err);
+      setErro("Não foi possível marcar todas as notificações como lidas.");
+    } finally {
+      setIsMarcarTodasLoading(false);
+    }
+  }
+
+  const totalNaoLidas = notificacoes.filter((n) => {
+    const estado = String(
+      n.estado_notificacao ||
+      n.estado_leitura ||
+      (n.lida === true || n.lido === true ? "LIDA" : "NAO_LIDA")
+    ).trim().toUpperCase();
+
+    return !["LIDA", "LIDO", "READ", "TRUE", "1"].includes(estado);
+  }).length;
 
   // 🎯 AÇÃO DO POP-UP: Executa a limpeza real após a confirmação no Modal
   async function lidarLimparTodas() {
@@ -169,19 +226,35 @@ function NotificacoesTm() {
             </div>
 
             {notificacoes.length > 0 && (
-              <button 
-                type="button" 
-                onClick={() => setMostrarModal(true)} // 🎯 Abre o pop-up customizado em vez do confirm nativo
-                disabled={isLimparLoading}
-                style={{
-                  ...limparTudoBtn,
-                  opacity: isLimparLoading ? 0.6 : 1,
-                  cursor: isLimparLoading ? "not-allowed" : "pointer",
-                }}
-              >
-                <BiTrash size={16} />
-                {isLimparLoading ? "A limpar..." : "Limpar Notificações"}
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={lidarMarcarTodasComoLidas}
+                  disabled={isMarcarTodasLoading || totalNaoLidas === 0}
+                  style={{
+                    ...marcarTodasBtn,
+                    opacity: isMarcarTodasLoading || totalNaoLidas === 0 ? 0.6 : 1,
+                    cursor: isMarcarTodasLoading || totalNaoLidas === 0 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <BiCheckDouble size={16} />
+                  {isMarcarTodasLoading ? "A marcar..." : "Marcar todas como lidas"}
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={() => setMostrarModal(true)} // 🎯 Abre o pop-up customizado em vez do confirm nativo
+                  disabled={isLimparLoading}
+                  style={{
+                    ...limparTudoBtn,
+                    opacity: isLimparLoading ? 0.6 : 1,
+                    cursor: isLimparLoading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <BiTrash size={16} />
+                  {isLimparLoading ? "A limpar..." : "Limpar Notificações"}
+                </button>
+              </div>
             )}
           </div>
 
@@ -256,7 +329,8 @@ function NotificationCard({ notificacao, idNotificacao, onMarcarLida, isMarking 
   const estado = notificacao.estado_notificacao || "Enviada";
   const data = notificacao.data_envio || notificacao.data_criacao || notificacao.created_at || null;
 
-  const estaLida = estado.toLowerCase() === "lida";
+  const estadoNormalizado = String(estado || "").trim().toUpperCase();
+  const estaLida = ["LIDA", "LIDO", "READ", "TRUE", "1"].includes(estadoNormalizado);
 
   return (
     <article style={{ ...card, opacity: estaLida ? 0.65 : 1 }}>
@@ -335,6 +409,21 @@ const limparTudoBtn = {
   background: "#fee2e2",
   color: "#dc2626",
   border: "1px solid #fca5a5",
+  padding: "8px 14px",
+  borderRadius: 8,
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  transition: "background 0.2s",
+};
+
+const marcarTodasBtn = {
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  border: "1px solid #bfdbfe",
   padding: "8px 14px",
   borderRadius: 8,
   fontSize: 12,

@@ -21,9 +21,9 @@ import api from "../services/api.js";
 
 import {
   EVENTO_NOTIFICACOES_ATUALIZADAS,
+  emitirAtualizacaoNotificacoes,
   formatarTituloNotificacao,
   notificacaoNaoLida,
-  ordenarNotificacoesRecentes,
 } from "../utils/notificacoesUtils.js";
 
 const NotificationPopover =
@@ -113,18 +113,65 @@ const NotificationPopover =
               ? response.data
               : [];
 
-          const naoLidas =
-            ordenarNotificacoesRecentes(
-              data
-            )
-              .filter(
-                notificacaoNaoLida
-              )
+          const listaVisivel =
+            [...data]
+              .sort((a, b) => {
+                const dataA =
+                  new Date(
+                    a.data_envio ||
+                      a.DATA_ENVIO ||
+                      0
+                  ).getTime();
+
+                const dataB =
+                  new Date(
+                    b.data_envio ||
+                      b.DATA_ENVIO ||
+                      0
+                  ).getTime();
+
+                return dataA - dataB;
+              })
               .slice(0, 5);
 
+          const totalNaoLidas =
+            data.filter(
+              notificacaoNaoLida
+            ).length;
+
           setNotifications(
-            naoLidas
+            listaVisivel
           );
+
+          if (totalNaoLidas > 0) {
+            try {
+              await api.patch(
+                `/notificacoes/utilizador/${userId}/lidas`
+              );
+
+              setNotifications(
+                (anteriores) =>
+                  anteriores.map(
+                    (item) => ({
+                      ...item,
+                      lida: true,
+                      lido: true,
+                      estado_leitura:
+                        "LIDA",
+                      estado_notificacao:
+                        "LIDA",
+                    })
+                  )
+              );
+
+              emitirAtualizacaoNotificacoes();
+            } catch (erroMarcarTodas) {
+              console.error(
+                "Erro ao marcar notificações como lidas ao abrir popover TM:",
+                erroMarcarTodas
+              );
+            }
+          }
         } catch (err) {
           console.error(
             "Erro ao carregar notificações do popover:",
@@ -328,7 +375,7 @@ const NotificationPopover =
                   type="button"
                   onClick={() =>
                     navigate(
-                      '/tm/notificacoes'
+                      rotaNotificacoes
                     )
                   }
                   style={
