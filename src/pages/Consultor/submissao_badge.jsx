@@ -900,6 +900,21 @@ function SubmeterEvidenciasPage() {
               LinkedIn à publicação.
             </div>
 
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: 10,
+                padding: 12,
+                marginBottom: 12,
+                fontSize: 12,
+                color: "#475569",
+                lineHeight: 1.55,
+              }}
+            >
+              <strong style={{ color: "#111827" }}>RGPD / Privacidade:</strong> os dados usados nesta publicação destinam-se apenas à divulgação do badge aprovado e à associação opcional do teu perfil LinkedIn. Podes retirar esta autorização a qualquer momento nas definições do badge.
+            </div>
+
             <Form.Check
               type="checkbox"
               id="autoriza-publicacao-badge"

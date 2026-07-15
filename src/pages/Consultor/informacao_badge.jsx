@@ -1855,6 +1855,21 @@ const copiarAssinatura =
 
       <div
         style={{
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          borderRadius: 10,
+          padding: 12,
+          marginBottom: 10,
+          fontSize: 12,
+          color: "#475569",
+          lineHeight: 1.55,
+        }}
+      >
+        <strong style={{ color: "#111827" }}>RGPD / Privacidade:</strong> os dados usados nesta publicação destinam-se apenas à divulgação pública do badge e à associação opcional do teu perfil LinkedIn. Podes retirar esta autorização nas definições do badge.
+      </div>
+
+      <div
+        style={{
           display: "flex",
           gap: 10,
           flexWrap: "wrap",
