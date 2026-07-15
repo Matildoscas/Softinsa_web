@@ -7,6 +7,8 @@ import {
   BiX,
   BiBell,
   BiSearch,
+  BiChevronLeft,
+  BiChevronRight,
 } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 
@@ -20,6 +22,9 @@ import AdminLeftSidebar from "../../components/admin_left_sidebar.jsx";
 import AdminRightSidebar from "../../components/admin_right_sidebar.jsx";
 import logoImg from "../../assets/logo.png";
 
+const PREFIXO_AVISO_ADMIN =
+  "AVISO_ADMIN:";
+
 const TITULOS_NOTIFICACAO = {
   MARCO_PRIMEIRO_BADGE: "Primeiro badge conquistado",
   BADGE_APROVADO: "Badge aprovado",
@@ -31,6 +36,8 @@ const TITULOS_NOTIFICACAO = {
   BADGE_REJEITADO: "Badge rejeitado",
   BADGE_RETIFICACAO: "Pedido em retificação",
 };
+
+const ROWS_PER_PAGE = 6;
 
 function normalizarEstado(estado) {
   const e = String(estado || "").trim().toUpperCase();
@@ -65,14 +72,28 @@ function normalizarAviso(a) {
     a.tipo_notificacao ||
     a.TIPO_NOTIFICACAO ||
     a.titulo ||
-    "Aviso";
+    "";
+
+  const tituloSemPrefixo =
+    String(tipoOriginal)
+      .replace(
+        /^AVISO_ADMIN:/i,
+        ""
+      )
+      .trim();
 
   return {
-    id: a.id_notificacoes || a.ID_NOTIFICACOES || a.id || "",
+    id:
+      a.id_notificacoes ||
+      a.ID_NOTIFICACOES ||
+      a.id ||
+      "",
 
     tipo_original: tipoOriginal,
 
-    titulo: formatarTituloNotificacao(tipoOriginal),
+    titulo:
+      tituloSemPrefixo ||
+      "Aviso",
 
     conteudo:
       a.conteudo ||
@@ -96,9 +117,12 @@ function normalizarAviso(a) {
         0
     ),
 
-    destinatarios: Array.isArray(a.destinatarios)
-      ? a.destinatarios
-      : [],
+    destinatarios:
+      Array.isArray(
+        a.destinatarios
+      )
+        ? a.destinatarios
+        : [],
   };
 }
 
@@ -183,11 +207,22 @@ function AvisoModal({
     }
 
     onSave({
-      tipo_notificacao: form.titulo.trim(),
-      conteudo: form.conteudo.trim(),
-      estado_notificacao: form.estado,
-      enviar_todos: form.enviarTodos,
-      destinatarios: form.destinatarios.map(Number),
+      tipo_notificacao:
+        `${PREFIXO_AVISO_ADMIN}${form.titulo.trim()}`,
+
+      conteudo:
+        form.conteudo.trim(),
+
+      estado_notificacao:
+        form.estado,
+
+      enviar_todos:
+        form.enviarTodos,
+
+      destinatarios:
+        form.destinatarios.map(
+          Number
+        ),
     });
   }
 
@@ -520,6 +555,10 @@ function InformacoesAvisos() {
 
   const [modal, setModal] = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
+  const [
+    paginaAtual,
+    setPaginaAtual,
+  ] = useState(1);
 
   useEffect(() => {
     carregarDados();
@@ -556,7 +595,27 @@ function InformacoesAvisos() {
               ? usersData.data
               : [];
 
-      setAvisos(listaAvisos.map(normalizarAviso));
+      const avisosAdministrativos =
+        listaAvisos.filter(
+          (aviso) => {
+            const tipo =
+              aviso.tipo_notificacao ||
+              aviso.TIPO_NOTIFICACAO ||
+              "";
+
+            return String(tipo)
+              .toUpperCase()
+              .startsWith(
+                PREFIXO_AVISO_ADMIN
+              );
+          }
+        );
+
+      setAvisos(
+        avisosAdministrativos.map(
+          normalizarAviso
+        )
+      );
       setUtilizadores(listaUsers.map(normalizarUtilizador));
     } catch (err) {
       console.error("Erro ao carregar avisos:", err);
@@ -572,17 +631,114 @@ function InformacoesAvisos() {
     }
   }
 
-  const filtrados = avisos.filter((a) => {
-    const t = pesquisa.toLowerCase();
+  const filtrados =
+    avisos.filter((aviso) => {
+      const textoPesquisa =
+        pesquisa
+          .trim()
+          .toLowerCase();
 
-    return (
-      a.titulo.toLowerCase().includes(t) ||
-      a.conteudo.toLowerCase().includes(t)
-    );
+      if (!textoPesquisa) {
+        return true;
+      }
+
+      return (
+        aviso.titulo
+          .toLowerCase()
+          .includes(textoPesquisa) ||
+        aviso.conteudo
+          .toLowerCase()
+          .includes(textoPesquisa)
+      );
+    });
+
+  const avisosOrdenados = [
+    ...filtrados,
+  ].sort((a, b) => {
+    /*
+    * Os ativos aparecem primeiro.
+    */
+    if (a.estado !== b.estado) {
+      return a.estado === "ATIVO"
+        ? -1
+        : 1;
+    }
+
+    /*
+    * Dentro do mesmo estado,
+    * aparecem primeiro os mais recentes.
+    */
+    const dataA =
+      a.data_envio
+        ? new Date(
+            a.data_envio
+          ).getTime()
+        : 0;
+
+    const dataB =
+      b.data_envio
+        ? new Date(
+            b.data_envio
+          ).getTime()
+        : 0;
+
+    return dataB - dataA;
   });
 
-  const ativos = filtrados.filter((a) => a.estado === "ATIVO");
-  const inativos = filtrados.filter((a) => a.estado === "INATIVO");
+  const ativos =
+    avisosOrdenados.filter(
+      (aviso) =>
+        aviso.estado === "ATIVO"
+    );
+
+  const inativos =
+    avisosOrdenados.filter(
+      (aviso) =>
+        aviso.estado === "INATIVO"
+    );
+
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(
+      avisosOrdenados.length /
+        ROWS_PER_PAGE
+    )
+  );
+
+  const avisosPagina =
+    avisosOrdenados.slice(
+      (paginaAtual - 1) *
+        ROWS_PER_PAGE,
+
+      paginaAtual *
+        ROWS_PER_PAGE
+    );
+
+  const ativosPagina =
+    avisosPagina.filter(
+      (aviso) =>
+        aviso.estado === "ATIVO"
+    );
+
+  const inativosPagina =
+    avisosPagina.filter(
+      (aviso) =>
+        aviso.estado === "INATIVO"
+    );
+
+  useEffect(() => {
+    if (
+      paginaAtual >
+      totalPaginas
+    ) {
+      setPaginaAtual(
+        totalPaginas
+      );
+    }
+  }, [
+    paginaAtual,
+    totalPaginas,
+  ]);
 
   async function guardarAviso(dados) {
     try {
@@ -815,7 +971,13 @@ function InformacoesAvisos() {
 
               <input
                 value={pesquisa}
-                onChange={(e) => setPesquisa(e.target.value)}
+                onChange={(e) => {
+                  setPesquisa(
+                    e.target.value
+                  );
+
+                  setPaginaAtual(1);
+                }}
                 placeholder="Pesquisar avisos..."
                 style={searchInput}
               />
@@ -837,41 +999,163 @@ function InformacoesAvisos() {
             <div style={loadingBox}>A carregar avisos...</div>
           ) : (
             <>
-              <h5 style={sectionTitle}>Avisos ativos</h5>
+              {avisosPagina.length === 0 ? (
+                  <div style={emptyBox}>
+                    Nenhum aviso encontrado.
+                  </div>
+                ) : (
+                  <>
+                    {ativosPagina.length > 0 && (
+                      <>
+                        <h5 style={sectionTitle}>
+                          Avisos ativos
+                          <span style={sectionCount}>
+                            {ativos.length}
+                          </span>
+                        </h5>
 
-              {ativos.length > 0 ? (
-                <div style={gridCards}>
-                  {ativos.map((aviso) => (
-                    <AvisoCard
-                      key={aviso.id}
-                      aviso={aviso}
-                      onEditar={(a) => setModal({ mode: "editar", aviso: a })}
-                      onEliminar={setModalEliminar}
-                      onToggleStatus={toggleStatus}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div style={emptyBox}>Não existem avisos ativos.</div>
-              )}
+                        <div style={gridCards}>
+                          {ativosPagina.map(
+                            (aviso) => (
+                              <AvisoCard
+                                key={aviso.id}
+                                aviso={aviso}
+                                onEditar={(a) =>
+                                  setModal({
+                                    mode: "editar",
+                                    aviso: a,
+                                  })
+                                }
+                                onEliminar={
+                                  setModalEliminar
+                                }
+                                onToggleStatus={
+                                  toggleStatus
+                                }
+                              />
+                            )
+                          )}
+                        </div>
+                      </>
+                    )}
 
-              <h5 style={sectionTitle}>Avisos inativos</h5>
+                    {inativosPagina.length > 0 && (
+                      <>
+                        <h5 style={sectionTitle}>
+                          Avisos inativos
+                          <span style={sectionCount}>
+                            {inativos.length}
+                          </span>
+                        </h5>
 
-              {inativos.length > 0 ? (
-                <div style={gridCards}>
-                  {inativos.map((aviso) => (
-                    <AvisoCard
-                      key={aviso.id}
-                      aviso={aviso}
-                      onEditar={(a) => setModal({ mode: "editar", aviso: a })}
-                      onEliminar={setModalEliminar}
-                      onToggleStatus={toggleStatus}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div style={emptyBox}>Não existem avisos inativos.</div>
-              )}
+                        <div style={gridCards}>
+                          {inativosPagina.map(
+                            (aviso) => (
+                              <AvisoCard
+                                key={aviso.id}
+                                aviso={aviso}
+                                onEditar={(a) =>
+                                  setModal({
+                                    mode: "editar",
+                                    aviso: a,
+                                  })
+                                }
+                                onEliminar={
+                                  setModalEliminar
+                                }
+                                onToggleStatus={
+                                  toggleStatus
+                                }
+                              />
+                            )
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    <div style={paginationBox}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPaginaAtual(
+                            (pagina) =>
+                              Math.max(
+                                1,
+                                pagina - 1
+                              )
+                          )
+                        }
+                        disabled={
+                          paginaAtual === 1
+                        }
+                        style={pagBtn(
+                          false,
+                          paginaAtual === 1
+                        )}
+                      >
+                        <BiChevronLeft
+                          size={16}
+                        />
+                      </button>
+
+                      {Array.from(
+                        {
+                          length:
+                            totalPaginas,
+                        },
+                        (_, index) =>
+                          index + 1
+                      ).map((pagina) => (
+                        <button
+                          type="button"
+                          key={pagina}
+                          onClick={() =>
+                            setPaginaAtual(
+                              pagina
+                            )
+                          }
+                          style={pagBtn(
+                            pagina ===
+                              paginaAtual
+                          )}
+                        >
+                          {pagina}
+                        </button>
+                      ))}
+
+                      <span style={paginationText}>
+                        {paginaAtual}/
+                        {totalPaginas}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPaginaAtual(
+                            (pagina) =>
+                              Math.min(
+                                totalPaginas,
+                                pagina + 1
+                              )
+                          )
+                        }
+                        disabled={
+                          paginaAtual ===
+                          totalPaginas
+                        }
+                        style={pagBtn(
+                          false,
+                          paginaAtual ===
+                            totalPaginas
+                        )}
+                      >
+                        <BiChevronRight
+                          size={16}
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
             </>
           )}
         </div>
@@ -1216,6 +1500,82 @@ const modalTitle = {
   margin: "0 0 8px",
   textAlign: "center",
 };
+
+const sectionCount = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 25,
+  height: 25,
+  marginLeft: 9,
+  padding: "0 7px",
+  borderRadius: 999,
+  background: "#eff6ff",
+  color: "#2563eb",
+  fontSize: 12,
+  fontWeight: 800,
+  verticalAlign: "middle",
+};
+
+const paginationBox = {
+  display: "flex",
+  justifyContent: "flex-end",
+  alignItems: "center",
+  gap: 6,
+  padding: "12px 16px",
+  marginTop: 4,
+  marginBottom: 20,
+  background: "white",
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+};
+
+const paginationText = {
+  fontSize: 12,
+  color: "#9ca3af",
+  margin: "0 4px",
+};
+
+const pagBtn = (
+  active,
+  disabled = false
+) => ({
+  width: 30,
+  height: 30,
+  borderRadius: 6,
+
+  border: active
+    ? "none"
+    : "1px solid #e5e7eb",
+
+  background: active
+    ? "#2563eb"
+    : "white",
+
+  color: active
+    ? "white"
+    : disabled
+      ? "#cbd5e1"
+      : "#374151",
+
+  fontWeight: active
+    ? 700
+    : 400,
+
+  fontSize: 13,
+
+  cursor: disabled
+    ? "not-allowed"
+    : "pointer",
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  opacity: disabled
+    ? 0.5
+    : 1,
+});
 
 const modalText = {
   fontSize: 14,
