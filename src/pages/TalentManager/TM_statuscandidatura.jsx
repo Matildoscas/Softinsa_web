@@ -662,6 +662,17 @@ const erroBox = { border: "1px solid #fecaca", background: "#fef2f2", color: "#b
 const gridPrincipal = { display: "grid", gridTemplateColumns: "minmax(360px, 0.9fr) minmax(460px, 1.1fr)", gap: 14 };
 const listaPanel = { background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 };
 
+const subTabBtn = {
+  border: "1px solid #d1d5db",
+  background: "#ffffff",
+  color: "#334155",
+  padding: "6px 10px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
 const detalhePanel = { 
   background: "white", 
   border: "1px solid #e5e7eb", 
