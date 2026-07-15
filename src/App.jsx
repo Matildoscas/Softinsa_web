@@ -55,6 +55,7 @@ import AreaPage from './pages/Login/AreaRegister.jsx';
 import ConfirmarEmailPage from './pages/Login/confirmar_email.jsx';
 import LoginPage from './pages/Login/Login.jsx';
 import RegisterPage from './pages/Login/Register.jsx';
+import RGPDPublico from './pages/Publico/RGPDPublico.jsx';
 
 import CatalogoBadgesSll from './pages/ServiceLineLeader/catalogo_badges_sll.jsx';
 import DashboardSll from './pages/ServiceLineLeader/dashboard_sll.jsx';
@@ -153,6 +154,7 @@ function App() {
         <Route path="/register-area" element={<AreaPage />} />
         <Route path="/confirmar-email" element={<ConfirmarEmailPage />}/>
         <Route path="/ativar-conta" element={<AtivarContaPage />}/>
+        <Route path="/rgpd" element={<RGPDPublico />} />
 
         // Rotas Consultor
         <Route path="/pag_consultor" element={<DashboardConsultor />} />
