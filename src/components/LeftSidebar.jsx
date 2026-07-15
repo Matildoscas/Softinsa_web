@@ -4,10 +4,13 @@ import {
 } from "react";
 
 import {
+  BiBell,
   BiChevronDown,
   BiChevronRight,
+  BiCog,
   BiGlobe,
   BiGrid,
+  BiLineChart,
   BiMedal,
   BiTargetLock,
   BiUser,
@@ -33,9 +36,12 @@ function LeftSidebar() {
   const rotasBadges = [
     "/catalogo-badges",
     "/progresso-badges",
+    "/progresso",
     "/meus_badges",
     "/badge-detalhe",
     "/historico_badges",
+    "/submeter-evidencias",
+    "/certificado",
     "/configurar-assinatura",
   ];
 
@@ -135,6 +141,24 @@ function LeftSidebar() {
         end
       />
 
+      <SidebarItem
+        to="/progresso"
+        icon={<BiLineChart size={17} />}
+        label="Progresso"
+      />
+
+      <SidebarItem
+        to="/notificacoes"
+        icon={<BiBell size={18} />}
+        label="Notificações"
+      />
+
+      <SidebarItem
+        to="/lembretes"
+        icon={<BiTimeFive size={18} />}
+        label="Lembretes"
+      />
+
       {/* Perfil */}
       <SidebarItem
         to="/perfil_consultor"
@@ -222,12 +246,24 @@ function LeftSidebar() {
           />
 
           <SidebarItem
+            to="/historico_badges"
+            label="Histórico de Badges"
+            nested
+          />
+
+          <SidebarItem
             to="/configurar-assinatura"
             label="Template de Assinatura"
             nested
           />
         </div>
       )}
+
+      <SidebarItem
+        to="/definicoes"
+        icon={<BiCog size={18} />}
+        label="Definições"
+      />
 
        <SidebarItem
         to="/softinsa"
