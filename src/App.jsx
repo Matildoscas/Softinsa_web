@@ -38,6 +38,7 @@ import HistoricoBadgesPage from './pages/Consultor/historico_badges.jsx';
 import IntegracaoSoftinsaPage from './pages/Consultor/integracao_softinsa.jsx';
 import LembretePage from './pages/Consultor/Lembretes.jsx';
 import MeusBadgesPage from './pages/Consultor/meus_badges.jsx';
+import MinhaGaleriaPublicaPage from './pages/Consultor/MinhaGaleriaPublica.jsx';
 import NotificacaoPage from './pages/Consultor/Notificacao.jsx';
 import PaginaPerfil from './pages/Consultor/PaginaPerfilConsultor.jsx';
 import ProgressoPage from './pages/Consultor/progresso_consultor.jsx';
@@ -167,6 +168,7 @@ function App() {
         <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
         <Route path="/historico_badges" element={<HistoricoBadgesPage />} />
         <Route path="/meus_badges" element={<MeusBadgesPage />} />
+        <Route path="/minha-galeria-publica" element={<MinhaGaleriaPublicaPage />} />
         <Route path="/badge-detalhe/:id" element={<BadgeDetailPage />} />
         <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
         <Route path="/certificado/:id" element={<CertificadoPage />} />

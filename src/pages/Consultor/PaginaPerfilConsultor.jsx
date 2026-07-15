@@ -636,6 +636,26 @@ function PaginaPerfil() {
               <BiBook size={18} />
               Histórico de Badges
             </Button>
+
+            <Button
+              variant="light"
+              onClick={() =>
+                navigate("/minha-galeria-publica")
+              }
+              className="
+                d-flex
+                align-items-center
+                justify-content-center
+                gap-2
+              "
+              style={{
+                ...navigationButtonStyle,
+                minWidth: 220,
+              }}
+            >
+              <BiMenu size={18} />
+              Minha Galeria Publica
+            </Button>
           </div>
 
           <BadgeSection
