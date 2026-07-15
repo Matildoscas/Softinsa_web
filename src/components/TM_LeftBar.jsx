@@ -64,7 +64,7 @@ function LeftSidebarTM() {
   }, [location.pathname]);
 
   return (
-    <aside className="app-left-sidebar" style={sidebarStyle}>
+    <aside style={sidebarStyle}>
       {/* Bloco Superior: Perfil + Navegação */}
       <div>
         {/* Bloco de Perfil Dinâmico (Versão 1) */}

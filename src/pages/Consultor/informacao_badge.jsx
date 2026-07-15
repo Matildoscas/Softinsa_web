@@ -217,11 +217,6 @@ function BadgeDetailPage() {
     setConsentimentoLoading,
   ] = useState(false);
 
-  const [
-    badgePublicoDisponivel,
-    setBadgePublicoDisponivel,
-  ] = useState(false);
-
   const removerDuplicadosComRequisitos = (lista) => {
     const mapa = new Map();
 
@@ -1229,11 +1224,7 @@ const partilharLinkedin =
 
     if (
       !userId ||
-      !idBadge ||
-      !conquistado ||
-      !consentimento?.aceite ||
-      !consentimento?.pode_publicar ||
-      !badgePublicoDisponivel
+      !idBadge
     ) {
       return "";
     }
@@ -1271,71 +1262,25 @@ const copiarLinkPublico =
 
 const abrirBadgePublico =
   () => {
-    const urlPublica =
-      obterUrlPublicaBadge();
+    const userId =
+      obterUserId();
 
-    if (!urlPublica) {
-      alert(
-        "Este badge ainda não está disponível publicamente."
-      );
+    const idBadge =
+      badge?.id ||
+      badge?.id_badge_modelo ||
+      id;
 
+    if (
+      !userId ||
+      !idBadge
+    ) {
       return;
     }
 
-    window.open(
-      urlPublica,
-      "_blank",
-      "noopener,noreferrer"
+    navigate(
+      `/badges/${userId}/${idBadge}`
     );
   };
-
-useEffect(() => {
-  let ativo = true;
-
-  const validarBadgePublicoDisponivel = async () => {
-    const userId = obterUserId();
-    const idBadge = badge?.id || badge?.id_badge_modelo || id;
-
-    const podePublicar =
-      conquistado &&
-      consentimento?.aceite &&
-      consentimento?.pode_publicar;
-
-    if (!podePublicar || !userId || !idBadge) {
-      if (ativo) {
-        setBadgePublicoDisponivel(false);
-      }
-      return;
-    }
-
-    try {
-      await api.get(
-        `/certificados/publico/badge/${userId}/${idBadge}`
-      );
-
-      if (ativo) {
-        setBadgePublicoDisponivel(true);
-      }
-    } catch {
-      if (ativo) {
-        setBadgePublicoDisponivel(false);
-      }
-    }
-  };
-
-  validarBadgePublicoDisponivel();
-
-  return () => {
-    ativo = false;
-  };
-}, [
-  id,
-  badge?.id,
-  badge?.id_badge_modelo,
-  conquistado,
-  consentimento?.aceite,
-  consentimento?.pode_publicar,
-]);
 
 const obterDadosAssinatura =
   () => {
@@ -1603,13 +1548,10 @@ const gerarAssinaturaHtml =
 const abrirModalAssinatura =
   async () => {
     if (
-      !conquistado ||
-      !consentimento?.aceite ||
-      !consentimento?.pode_publicar ||
-      !badgePublicoDisponivel
+      !consentimento?.pode_publicar
     ) {
       alert(
-        "Para usares este badge na assinatura, o badge tem de estar conquistado e público. Autoriza a publicação e volta a tentar."
+        "Para usares este badge numa assinatura de email, tens de autorizar primeiro a publicação pública deste badge."
       );
 
       return;
@@ -1994,7 +1936,7 @@ const copiarAssinatura =
       </div>
     </div>
 
-    {conquistado && consentimento?.aceite && consentimento?.pode_publicar && badgePublicoDisponivel && (
+    {consentimento?.pode_publicar && (
       <div style={publicLinkBox}>
         <div
           style={{

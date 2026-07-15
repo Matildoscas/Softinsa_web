@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Navbar, Nav, Dropdown, OverlayTrigger, Modal, Button } from 'react-bootstrap';
-import { BiLogOut, BiUser, BiBell, BiUserCircle, BiCog, BiStar, BiMenu, BiX } from 'react-icons/bi'; // 🚀 Alterado BiSparkles para BiStar
+import { BiLogOut, BiUser, BiBell, BiUserCircle, BiCog, BiStar } from 'react-icons/bi'; // 🚀 Alterado BiSparkles para BiStar
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import NotificationPopover from './TM_Notificacions'; // Mantido o import da V1
 import logoImg from '../assets/logo.png';
@@ -35,7 +35,6 @@ function Header() {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Carregar os dados do utilizador do localStorage (Mantido da V1)
   useEffect(() => {
@@ -53,18 +52,6 @@ function Header() {
   const userId = user?.id_utilizador || user?.ID_UTILIZADOR || user?.id || null;
   const { totalNaoLidas } = useNotificacoesRealtime(userId);
   const rotas = obterRotasUtilizador(user);
-
-  useEffect(() => {
-    document.body.classList.toggle("mobile-sidebar-open", mobileMenuOpen);
-
-    return () => {
-      document.body.classList.remove("mobile-sidebar-open");
-    };
-  }, [mobileMenuOpen]);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
 
   // Função para Terminar Sessão melhorada com limpeza de Analytics da V2
   const handleLogout = async () => {
@@ -90,14 +77,6 @@ function Header() {
     handleLogout();
   };
 
-  const alternarMenuMobile = () => {
-    setMobileMenuOpen((aberto) => !aberto);
-  };
-
-  const fecharMenuMobile = () => {
-    setMobileMenuOpen(false);
-  };
-
   // Função para gerar uma saudação baseada nas horas
   const obterSaudacao = () => {
     const hora = new Date().getHours();
@@ -116,25 +95,15 @@ function Header() {
 
   return (
     <div>
-      <div className="app-mobile-overlay" onClick={fecharMenuMobile} aria-hidden="true" />
-
-      <Navbar bg="white" className="app-topbar border-bottom px-4 py-0" style={{ height: '60px' }}>
-        <button
-          type="button"
-          className="app-menu-toggle"
-          aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
-          onClick={alternarMenuMobile}
-        >
-          {mobileMenuOpen ? <BiX size={18} /> : <BiMenu size={18} />}
-        </button>
+      <Navbar bg="white" className="border-bottom px-4 py-0" style={{ height: '60px' }}>
         
         {/* LOGÓTIPO */}
-        <Navbar.Brand as={Link} to={rotaDashboard} style={{ display: 'flex', alignItems: 'center' }} onClick={fecharMenuMobile}>
+        <Navbar.Brand as={Link} to={rotaDashboard} style={{ display: 'flex', alignItems: 'center' }}>
           <img src={logoImg} alt="Softinsa" style={{ height: '38px' }} />
         </Navbar.Brand>
 
         {/* MENSAGEM DE BOAS-VINDAS ELEGANTE */}
-        <div className="app-topbar-search" style={{ 
+        <div style={{ 
           marginLeft: '32px', 
           display: 'flex', 
           alignItems: 'center', 
@@ -158,7 +127,7 @@ function Header() {
         </div>
 
         {/* ZONA DIREITA */}
-        <Nav className="app-topbar-actions ms-auto align-items-center gap-3">
+        <Nav className="ms-auto align-items-center gap-3">
           
           {/* SINO DE NOTIFICAÇÕES COM BADGE REALTIME */}
           <OverlayTrigger 

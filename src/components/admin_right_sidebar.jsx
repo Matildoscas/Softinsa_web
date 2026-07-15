@@ -69,7 +69,7 @@ function AdminRightSidebar() {
   }
 
   return (
-    <div className="app-right-sidebar" style={containerStyle}>
+    <div style={containerStyle}>
       <div style={sectionTitle}>Notificações</div>
 
       {notifications.length > 0 ? (

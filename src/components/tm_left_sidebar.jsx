@@ -74,7 +74,7 @@ function TmLeftSidebar() {
   }, [location.pathname]);
 
   return (
-    <aside className="app-left-sidebar" style={container}>
+    <aside style={container}>
       <div style={profileBox}>
         <BiUserCircle
           size={25}

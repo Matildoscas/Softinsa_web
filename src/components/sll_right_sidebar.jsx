@@ -140,7 +140,7 @@ function SllRightSidebar() {
   }, []);
 
   return (
-    <aside className="app-right-sidebar" style={container}>
+    <aside style={container}>
       <div style={sectionTitle}>Notificações</div>
 
       {notificacoes.length > 0 ? (

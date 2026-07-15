@@ -11,22 +11,18 @@ import {
   BiBell,
   BiCog,
   BiLogOut,
-  BiMenu,
   BiSearch,
   BiUser,
   BiUserCircle,
-  BiX,
 } from "react-icons/bi";
 
 import {
-  useEffect,
   useState,
 } from "react";
 
 import {
   Link,
   useNavigate,
-  useLocation,
 } from "react-router-dom";
 
 import useNotificacoesRealtime from
@@ -133,17 +129,9 @@ function Header() {
   const navigate =
     useNavigate();
 
-  const location =
-    useLocation();
-
   const [
     showLogoutModal,
     setShowLogoutModal,
-  ] = useState(false);
-
-  const [
-    mobileMenuOpen,
-    setMobileMenuOpen,
   ] = useState(false);
 
   const user =
@@ -193,68 +181,18 @@ function Header() {
     await handleLogout();
   };
 
-  useEffect(() => {
-    document.body.classList.toggle(
-      "mobile-sidebar-open",
-      mobileMenuOpen
-    );
-
-    return () => {
-      document.body.classList.remove(
-        "mobile-sidebar-open"
-      );
-    };
-  }, [mobileMenuOpen]);
-
-  const alternarMenuMobile = () => {
-    setMobileMenuOpen((aberto) => !aberto);
-  };
-
-  const fecharMenuMobile = () => {
-    setMobileMenuOpen(false);
-  };
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
   return (
-    <>
-    <div
-      className="app-mobile-overlay"
-      onClick={fecharMenuMobile}
-      aria-hidden="true"
-    />
-
     <Navbar
       bg="white"
-      className="app-topbar border-bottom px-4 py-0"
+      className="border-bottom px-4 py-0"
       style={{
         height: "52px",
         flexShrink: 0,
       }}
     >
-      <button
-        type="button"
-        className="app-menu-toggle"
-        aria-label={
-          mobileMenuOpen
-            ? "Fechar menu"
-            : "Abrir menu"
-        }
-        onClick={alternarMenuMobile}
-      >
-        {mobileMenuOpen ? (
-          <BiX size={18} />
-        ) : (
-          <BiMenu size={18} />
-        )}
-      </button>
-
       <Navbar.Brand
         as={Link}
         to={rotas.inicio}
-        onClick={fecharMenuMobile}
       >
         <img
           src={logoImg}
@@ -265,7 +203,7 @@ function Header() {
         />
       </Navbar.Brand>
 
-      <div className="app-topbar-search" style={searchContainer}>
+      <div style={searchContainer}>
         <BiSearch
           size={20}
           style={searchIcon}
@@ -286,7 +224,7 @@ function Header() {
         />
       </div>
 
-      <Nav className="app-topbar-actions ms-auto align-items-center gap-2">
+      <Nav className="ms-auto align-items-center gap-2">
         <OverlayTrigger
           trigger="click"
           placement="bottom-end"
@@ -421,7 +359,6 @@ function Header() {
         </Modal.Footer>
       </Modal>
     </Navbar>
-    </>
   );
 }
 

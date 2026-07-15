@@ -38,7 +38,7 @@ function AdminLeftSidebar() {
   }, []);
 
   return (
-    <div className="app-left-sidebar" style={container}>
+    <div style={container}>
       <div style={profileBox}>
         <BiUserCircle size={26} color="#6b7280" />
         <span style={profileName}>{adminName}</span>
