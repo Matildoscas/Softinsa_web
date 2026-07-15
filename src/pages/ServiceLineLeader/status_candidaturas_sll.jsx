@@ -402,14 +402,14 @@ export default function StatusCandidaturasSll() {
   }, [listaPorModo, pesquisa]);
 
   return (
-    <div style={pagina}>
+    <div className="sll-status-page" style={pagina}>
       <Header />
 
-      <div style={corpo}>
+      <div className="sll-status-body" style={corpo}>
         <SllLeftSidebar />
 
-        <main style={conteudo}>
-          <div style={topoBarra}>
+        <main className="sll-status-main" style={conteudo}>
+          <div className="sll-status-top" style={topoBarra}>
             <button type="button" onClick={() => navigate("/sll")} style={voltarBtn}>Voltar</button>
 
             <button type="button" onClick={atualizarPagina} style={refreshBtn}>
@@ -423,7 +423,7 @@ export default function StatusCandidaturasSll() {
             Service Line: <strong>{serviceLine?.nome_serviceline || "Service Line"}</strong>
           </div>
 
-          <div style={tabsBox}>
+          <div className="sll-status-tabs" style={tabsBox}>
             <button
               type="button"
               onClick={() => {
@@ -452,7 +452,7 @@ export default function StatusCandidaturasSll() {
           </div>
 
           {modoLista === "CONCLUIDOS" && (
-            <div style={subTabsBox}>
+            <div className="sll-status-subtabs" style={subTabsBox}>
               <button
                 type="button"
                 onClick={() => setSubModoConcluidos("TODAS")}
@@ -488,7 +488,7 @@ export default function StatusCandidaturasSll() {
             </div>
           )}
 
-          <div style={pesquisaBox}>
+          <div className="sll-status-search" style={pesquisaBox}>
             <BiSearch size={16} color="#64748b" />
             <input
               value={pesquisa}
@@ -500,7 +500,7 @@ export default function StatusCandidaturasSll() {
 
           {erro && <div style={erroBox}>{erro}</div>}
 
-          <div style={gridPrincipal}>
+          <div className="sll-status-grid" style={gridPrincipal}>
             <section style={listaPanel}>
               <div style={panelTitulo}>Vista Geral ({listaFiltrada.length})</div>
 
@@ -513,7 +513,7 @@ export default function StatusCandidaturasSll() {
                     : "Não existem candidaturas em processo para mostrar."}
                 </div>
               ) : (
-                <div style={listaCards}>
+                <div className="sll-status-list" style={listaCards}>
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
                     const estadoVisivel = estadoGeralVisivel(item);

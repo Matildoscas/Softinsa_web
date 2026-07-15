@@ -438,7 +438,6 @@ function GestaoContas() {
         5: { cellWidth: 16 },
         6: { cellWidth: 22 },
         7: { cellWidth: 16 },
-        6: { cellWidth: 2218 },
       },
       margin: { top: 36, left: 14, right: 14 },
     });
@@ -505,6 +504,7 @@ function GestaoContas() {
 
   return (
     <div
+      className="admin-contas-page"
       style={{
         backgroundColor: "#f0f2f5",
         minHeight: "100vh",
@@ -515,6 +515,7 @@ function GestaoContas() {
       <Header />
 
       <div
+        className="admin-contas-body"
         style={{
           display: "flex",
           flex: 1,
@@ -524,6 +525,7 @@ function GestaoContas() {
         <AdminLeftSidebar />
 
         <div
+          className="admin-contas-main"
           style={{
             flex: 1,
             overflowY: "auto",
@@ -550,6 +552,7 @@ function GestaoContas() {
           </button>
 
           <div
+            className="admin-contas-top"
             style={{
               display: "flex",
               alignItems: "flex-start",
@@ -576,6 +579,7 @@ function GestaoContas() {
             </div>
 
             <div
+              className="admin-contas-filters"
               style={{
                 display: "flex",
                 gap: 10,
@@ -684,6 +688,7 @@ function GestaoContas() {
           </div>
 
           <div
+            className="admin-contas-table-card"
             style={{
               background: "white",
               borderRadius: 12,
@@ -706,6 +711,7 @@ function GestaoContas() {
               <>
 
               <div
+                className="admin-contas-table-wrap"
                 style={{
                   width: "100%",
                   overflowX: "auto",
@@ -824,7 +830,7 @@ function GestaoContas() {
                         </td>
 
                         <td style={tdStyle}>
-                          <div style={{ display: "flex", gap: 8 }}>
+                          <div className="admin-contas-row-actions" style={{ display: "flex", gap: 8 }}>
                             <button
                               onClick={() => handleEditar(c.id)}
                               style={iconButtonEdit}

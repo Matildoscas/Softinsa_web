@@ -22,7 +22,7 @@ function SllLeftSidebar() {
     useState(true);
 
   return (
-    <aside style={container}>
+    <aside className="app-left-sidebar" style={container}>
       <div style={profileBox}>
         <BiUserCircle size={25} color="#6b7280" />
 

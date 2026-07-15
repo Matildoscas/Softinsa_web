@@ -129,7 +129,7 @@ function TmRightSidebar() {
   }
 
   return (
-    <aside style={container}>
+    <aside className="app-right-sidebar" style={container}>
       <div>
         <div style={sectionTitle}>
           Painel Operacional

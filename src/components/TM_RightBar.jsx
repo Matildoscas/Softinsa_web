@@ -146,7 +146,7 @@ function RightSidebarTM() {
   };
 
   return (
-    <div style={containerStyle}>
+    <div className="app-right-sidebar" style={containerStyle}>
       
       {/* 📊 SEÇÃO 1: MÉTRICAS OPERACIONAIS DO POSTGRESQL */}
       <div>

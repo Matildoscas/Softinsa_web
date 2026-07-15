@@ -611,14 +611,14 @@ export default function StatusCandidaturasConsultor() {
   const motivoRejeicao = extrairMotivoRejeicao(detalhe);
 
   return (
-    <div style={pagina}>
+    <div className="consultor-status-page" style={pagina}>
       <Header />
 
-      <div style={corpo}>
+      <div className="consultor-status-body" style={corpo}>
         <LeftSidebar />
 
-        <main style={conteudo}>
-          <div style={topoBarra}>
+        <main className="consultor-status-main" style={conteudo}>
+          <div className="consultor-status-top" style={topoBarra}>
             <button type="button" onClick={() => navigate("/pag_consultor")} style={voltarBtn}>
               Voltar
             </button>
@@ -632,7 +632,7 @@ export default function StatusCandidaturasConsultor() {
           <h1 style={titulo}>Progresso das Candidaturas</h1>
           <div style={subtitulo}>Acompanha, passo a passo, em que fase está cada candidatura aos teus badges.</div>
 
-          <div style={tabsBox}>
+          <div className="consultor-status-tabs" style={tabsBox}>
             <button
               type="button"
               onClick={() => setModoLista("EM_PROCESSO")}
@@ -656,7 +656,7 @@ export default function StatusCandidaturasConsultor() {
             </button>
           </div>
 
-          <div style={pesquisaBox}>
+          <div className="consultor-status-search" style={pesquisaBox}>
             <BiSearch size={16} color="#64748b" />
             <input
               value={pesquisa}
@@ -668,7 +668,7 @@ export default function StatusCandidaturasConsultor() {
 
           {erro && <div style={erroBox}>{erro}</div>}
 
-          <div style={gridPrincipal}>
+          <div className="consultor-status-grid" style={gridPrincipal}>
             <section style={listaPanel}>
               <div style={panelTitulo}>Vista Geral ({listaFiltrada.length})</div>
 
@@ -681,7 +681,7 @@ export default function StatusCandidaturasConsultor() {
                     : "Não existem candidaturas em processo para mostrar."}
                 </div>
               ) : (
-                <div style={listaCards}>
+                <div className="consultor-status-list" style={listaCards}>
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
                     const estadoVisivel = estadoGeralVisivel(item);

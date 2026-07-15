@@ -653,13 +653,13 @@ function SolicitacoesBadgesSll() {
   }
 
   return (
-    <div style={pagina}>
+    <div className="sll-solicitacoes-page" style={pagina}>
       <Header />
 
-      <div style={corpo}>
+      <div className="sll-solicitacoes-body" style={corpo}>
         <SllLeftSidebar />
 
-        <main style={conteudo}>
+        <main className="sll-solicitacoes-main" style={conteudo}>
           {/* Zona fixa no topo */}
 
           <div style={cabecalhoFixo}>
@@ -678,6 +678,7 @@ function SolicitacoesBadgesSll() {
             </button>
 
             <div
+              className="sll-solicitacoes-top-row"
               style={tituloAcoesRow}
             >
               <div>
@@ -707,7 +708,7 @@ function SolicitacoesBadgesSll() {
                 </div>
               </div>
 
-              <div style={acoesTopo}>
+              <div className="sll-solicitacoes-top-actions" style={acoesTopo}>
                 <button
                   type="button"
                   onClick={
@@ -736,7 +737,7 @@ function SolicitacoesBadgesSll() {
 
           {/* Filtros */}
 
-          <div style={filtrosContainer}>
+          <div className="sll-solicitacoes-filters" style={filtrosContainer}>
             <div style={filtroCampo}>
               <label style={filtroLabel}>
                 <BiFilterAlt
@@ -852,7 +853,7 @@ function SolicitacoesBadgesSll() {
             </div>
           ) : solicitacoesFiltradas.length > 0 ? (
             <>
-              <div style={lista}>
+              <div className="sll-solicitacoes-list" style={lista}>
                 {solicitacoesPaginaAtual.map(
                   (solicitacao) => (
                     <SolicitacaoCard
@@ -928,8 +929,8 @@ function SolicitacaoCard({
   onDetalhes,
 }) {
   return (
-    <article style={card}>
-      <div style={cardPrincipal}>
+    <article className="sll-solicitacao-card" style={card}>
+      <div className="sll-solicitacao-principal" style={cardPrincipal}>
         <div style={avatar}>
           <BiUserCircle
             size={48}
@@ -965,7 +966,7 @@ function SolicitacaoCard({
         </div>
       </div>
 
-      <div style={cardRodape}>
+      <div className="sll-solicitacao-footer" style={cardRodape}>
         <div style={badgePedido}>
           <BiBadge
             size={17}

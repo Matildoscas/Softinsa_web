@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Spinner, Form } from "react-bootstrap";
 import { HiOutlineArrowLeft } from "react-icons/hi";
 import { 
@@ -24,6 +24,7 @@ import api from "../../services/api.js";
 
 function SolicitacaoBadges() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Estado que armazena as linhas vindas da tabela 'candidatura_pedido'
   const [candidaturas, setCandidaturas] = useState([]);
@@ -82,15 +83,15 @@ function SolicitacaoBadges() {
     });
 
   return (
-    <div style={pageLayout}>
+    <div className="tm-solicitacoes-page" style={pageLayout}>
       {/* Barra Lateral do Gestor */}
       <TmLeftSidebar />
 
-      <div style={mainContentWrapper}>
+      <div className="tm-solicitacoes-main" style={mainContentWrapper}>
         <Header />
 
-        <div style={bodyWrapper}>
-          <main style={centerContent}>
+        <div className="tm-solicitacoes-body" style={bodyWrapper}>
+          <main className="tm-solicitacoes-center" style={centerContent}>
             
             {/* Botão Voltar */}
             <button type="button" onClick={lidarComVoltar} style={voltarButton}>
@@ -108,7 +109,7 @@ function SolicitacaoBadges() {
             </div>
 
             {/* BARRA DE FILTROS RECONFIGURADA */}
-            <div style={filterBar}>
+            <div className="tm-solicitacoes-filters" style={filterBar}>
               
               {/* Filtro por Estado de Avaliação */}
               <div style={filterGroup}>
@@ -158,7 +159,7 @@ function SolicitacaoBadges() {
                 Nenhum pedido de candidatura corresponde aos filtros selecionados.
               </div>
             ) : (
-              <div style={listContainer}>
+              <div className="tm-solicitacoes-list" style={listContainer}>
                 {candidaturasProcessadas.map((pedido) => {
                   const idPedido = pedido.id_candidatura_pedido || pedido.id;
                   
@@ -174,7 +175,7 @@ function SolicitacaoBadges() {
             )}
 
             {/* Atalhos de Rodapé */}
-            <div style={bottomLinks}>
+            <div className="tm-solicitacoes-bottom-links" style={bottomLinks}>
               <div style={linkItem}>
                 <BiTimeFive size={16} /> Ver Badges com expiração próxima
               </div>
@@ -210,9 +211,9 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
     : Number(pedido.progresso || 0);
 
   return (
-    <div style={cardStyle}>
+    <div className="tm-solicitacao-card" style={cardStyle}>
       {/* Coluna 1: Dados do Candidato */}
-      <div style={userSection}>
+      <div className="tm-solicitacao-user" style={userSection}>
         <div style={avatarCircle}>
           <BiUserCircle size={38} color="#64748B" />
         </div>
@@ -223,7 +224,7 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
       </div>
 
       {/* Coluna 2: Informação do Badge e Progresso de Evidências */}
-      <div style={infoSection}>
+      <div className="tm-solicitacao-info" style={infoSection}>
         <div style={badgeHeader}>
           <span style={{ fontSize: "22px" }}>🏅</span>
           <div>
@@ -252,7 +253,7 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
       </div>
 
       {/* Coluna 3: Ações e Estado Visual */}
-      <div style={actionSection}>
+      <div className="tm-solicitacao-action" style={actionSection}>
         <span
           style={{
             ...statusTag,

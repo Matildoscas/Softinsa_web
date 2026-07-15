@@ -85,6 +85,7 @@ function LeftSidebar() {
 
   return (
     <aside
+      className="app-left-sidebar"
       style={{
         width: 250,
         minWidth: 250,

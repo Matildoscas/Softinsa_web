@@ -315,14 +315,14 @@ function StatusCandidaturasTM() {
   }, [listaPorModo, pesquisa, ordenarPor]);
 
   return (
-    <div style={pagina}>
+    <div className="tm-status-page" style={pagina}>
       <Header />
 
-      <div style={corpo}>
+      <div className="tm-status-body" style={corpo}>
         <TmLeftSidebar />
 
-        <main style={conteudo}>
-          <div style={topoBarra}>
+        <main className="tm-status-main" style={conteudo}>
+          <div className="tm-status-top" style={topoBarra}>
             <button type="button" onClick={lidarComVoltar} style={voltarButton}>
               <BiArrowBack size={18} />
               {textoVoltar}
@@ -338,7 +338,7 @@ function StatusCandidaturasTM() {
           </div>
 
           {/* Mantida apenas a ordenação, removido o select de Escopo */}
-          <div style={filtroEscopoBarra}>
+          <div className="tm-status-order-bar" style={filtroEscopoBarra}>
             <div style={filtroGrupo}>
               <BiSort size={16} color="#475569" />
               <span style={filtroTextoLabel}>Ordenar por:</span>
@@ -355,7 +355,7 @@ function StatusCandidaturasTM() {
           </div>
 
           {/* Abas Recuperadas com Sucesso */}
-          <div style={tabsBox}>
+          <div className="tm-status-tabs" style={tabsBox}>
             <button
               type="button"
               onClick={() => setModoLista("EM_PROCESSO")}
@@ -372,7 +372,7 @@ function StatusCandidaturasTM() {
             </button>
           </div>
 
-          <div style={pesquisaBox}>
+          <div className="tm-status-search" style={pesquisaBox}>
             <BiSearch size={16} color="#64748b" />
             <input
               value={pesquisa}
@@ -384,7 +384,7 @@ function StatusCandidaturasTM() {
 
           {erro && <div style={erroBox}>{erro}</div>}
 
-          <div style={gridPrincipal}>
+          <div className="tm-status-grid" style={gridPrincipal}>
             <section style={listaPanel}>
               <div style={panelTitulo}>Vista Geral ({listaFiltrada.length})</div>
 
@@ -393,7 +393,7 @@ function StatusCandidaturasTM() {
               ) : listaFiltrada.length === 0 ? (
                 <div style={mensagemBox}>Não existem dados para mostrar.</div>
               ) : (
-                <div style={listaCards}>
+                <div className="tm-status-list" style={listaCards}>
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
                     const geral = chipEstado(item.estado_geral);

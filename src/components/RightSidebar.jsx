@@ -421,7 +421,7 @@ function RightSidebar() {
 
   if (showBadges) {
     return (
-      <div style={containerStyle}>
+      <div className="app-right-sidebar" style={containerStyle}>
         <div
           style={{
             fontSize:
@@ -508,7 +508,7 @@ function RightSidebar() {
   }
 
   return (
-    <div style={containerStyle}>
+    <div className="app-right-sidebar" style={containerStyle}>
       <div
         style={{
           fontSize:
