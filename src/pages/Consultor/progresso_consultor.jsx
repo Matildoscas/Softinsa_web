@@ -275,6 +275,12 @@ function ProgressoPage() {
         total_badges_comuns: 0,
         total_badges_especiais: 0,
     });
+    const [badgeFaltaLearningPathStats, setBadgeFaltaLearningPathStats] = useState({
+      badges_comuns_falta: 0,
+      badges_especiais_falta: 0,
+      total_badges_comuns: 0,
+      total_badges_especiais: 0,
+    });
     const [loading, setLoading] = useState(true);
 
     const removerDuplicados = (lista) => {
@@ -311,6 +317,9 @@ function ProgressoPage() {
     const isComum = (badge) => {
     return !isEspecial(badge);
     };
+
+    const normalizarNumero = (valor) =>
+      Number(valor || 0);
 
     const [
     marcos,
@@ -423,6 +432,47 @@ function ProgressoPage() {
                 ? learningRes.data
                 : [];
 
+            const resumoFaltasLearningPath = learningPaths.reduce(
+              (acc, lp) => {
+                const totalComuns = normalizarNumero(
+                  lp.total_badges_comuns
+                );
+
+                const comunsConquistados = normalizarNumero(
+                  lp.badges_comuns_conquistados
+                );
+
+                const totalEspeciais = normalizarNumero(
+                  lp.total_badges_especiais
+                );
+
+                const especiaisConquistados = normalizarNumero(
+                  lp.badges_especiais_conquistados
+                );
+
+                acc.total_badges_comuns += totalComuns;
+                acc.total_badges_especiais += totalEspeciais;
+
+                acc.badges_comuns_falta += Math.max(
+                  totalComuns - comunsConquistados,
+                  0
+                );
+
+                acc.badges_especiais_falta += Math.max(
+                  totalEspeciais - especiaisConquistados,
+                  0
+                );
+
+                return acc;
+              },
+              {
+                badges_comuns_falta: 0,
+                badges_especiais_falta: 0,
+                total_badges_comuns: 0,
+                total_badges_especiais: 0,
+              }
+            );
+
             const todosRaw = Array.isArray(todosRes.data)
                 ? todosRes.data
                 : [];
@@ -512,6 +562,7 @@ function ProgressoPage() {
 
             setBadgesProgresso(learningPaths);
             setBadgesConquistados(ranking);
+            setBadgeFaltaLearningPathStats(resumoFaltasLearningPath);
 
             setStats({
                 total_badges: Number(dashboardRes.data.total_badges || 0),
@@ -682,19 +733,48 @@ function ProgressoPage() {
                         </ProgressoSection>
 
                     {/* Seção: Badges com Progresso */}
-                    <ProgressoSection title="Progressos dos Badges" sub="Resumo das tuas conquistas">
+                    <ProgressoSection title="Progressos dos Badges" sub="Badges que faltam concluir nas Learning Paths">
                         <div className="d-flex gap-4 flex-wrap mt-1">
                             <BadgeCircle
-                                conquistados={badgeStats.badges_comuns_conquistados}
-                                total={badgeStats.total_badges_comuns}
-                                label="Badges comuns"
+                          conquistados={badgeFaltaLearningPathStats.badges_comuns_falta}
+                          total={badgeFaltaLearningPathStats.total_badges_comuns}
+                          label="Badges comuns em falta"
                             />
                             <BadgeCircle
-                                conquistados={badgeStats.badges_especiais_conquistados}
-                                total={badgeStats.total_badges_especiais}
-                                label="Badges especiais"
+                          conquistados={badgeFaltaLearningPathStats.badges_especiais_falta}
+                          total={badgeFaltaLearningPathStats.total_badges_especiais}
+                          label="Badges especiais em falta"
                             />
                         </div>
+                    </ProgressoSection>
+
+                    {/* Ranking de Conquistas */}
+                    <ProgressoSection
+                      title="Ranking de conquistas"
+                      sub={`${badgesConquistados.length} badge(s) conquistado(s)`}
+                    >
+                      {badgesConquistados.length > 0 ? (
+                        badgesConquistados.map((b, i) => (
+                          <RankingCard
+                            key={
+                              b.id ||
+                              b.id_badge_modelo ||
+                              i
+                            }
+                            badge={b}
+                            nome={
+                              b.nome ||
+                              b.nome_badge ||
+                              "Badge"
+                            }
+                            dataAtribuicao={
+                              b.data_atribuicao
+                            }
+                            />
+                        ))
+                        ) : (
+                        <p className="text-muted small">Ainda não há conquistas registadas.</p>
+                      )}
                     </ProgressoSection>
 
                     <ProgressoSection
@@ -707,36 +787,6 @@ function ProgressoPage() {
                     <TimelineMarcos
                         marcos={ultimosMarcos}
                     />
-                    </ProgressoSection>
-
- 
-                    {/* Ranking de Conquistas */}
-                    <ProgressoSection
-                        title="Ranking de conquistas"
-                        sub={`${badgesConquistados.length} badge(s) conquistado(s)`}
-                    >
-                        {badgesConquistados.length > 0 ? (
-                            badgesConquistados.map((b, i) => (
-                                <RankingCard
-                                    key={
-                                        b.id ||
-                                        b.id_badge_modelo ||
-                                        i
-                                    }
-                                    badge={b}
-                                    nome={
-                                        b.nome ||
-                                        b.nome_badge ||
-                                        "Badge"
-                                    }
-                                    dataAtribuicao={
-                                        b.data_atribuicao
-                                    }
-                                    />
-                            ))
-                            ) : (
-                            <p className="text-muted small">Ainda não há conquistas registadas.</p>
-                        )}
                     </ProgressoSection>
 
                 </div>
