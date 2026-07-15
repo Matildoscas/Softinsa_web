@@ -101,7 +101,7 @@ function AdminLeftSidebar() {
 
           <SubLink
             to="/admin/badges"
-            label="Gestão de Bad"
+            label="Gestão de Badges"
             icon={<BiBadge size={15} />}
           />
 
