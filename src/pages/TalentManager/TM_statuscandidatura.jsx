@@ -165,25 +165,7 @@ function candidaturaEstaCancelada(item) {
   );
 }
 
-function candidaturaEstaRejeitada(item) {
-  if (candidaturaEstaCancelada(item) || candidaturaEstaObtida(item)) {
-    return false;
-  }
 
-  if (candidaturaTemRejeicaoEmEvidencias(item)) {
-    return true;
-  }
-
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
-
-  return (
-    estado.includes("REJEIT") ||
-    estado.includes("RECUS") ||
-    fase.includes("REJEIT") ||
-    fase.includes("RECUS")
-  );
-}
 
 function candidaturaEstaAprovada(item) {
   return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
