@@ -48,7 +48,20 @@ function DefinicoesConsultorPage() {
     }
 
     const userData = JSON.parse(storedUser);
-    const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+    const userId =
+      userData.id_utilizador ||
+      userData.ID_UTILIZADOR ||
+      userData.id;
+
+      if (!userId) {
+        localStorage.clear();
+
+        navigate("/login", {
+          replace: true,
+        });
+
+        return;
+      }
 
     setUser(userData);
     setNome(userData.nome_completo || userData.nome || "");
@@ -99,7 +112,11 @@ function DefinicoesConsultorPage() {
   }, [navigate]);
 
   const getUserId = () => {
-    return user?.id_utilizador || user?.ID_UTILIZADOR;
+    return (
+      user?.id_utilizador ||
+      user?.ID_UTILIZADOR ||
+      user?.id
+    );
   };
 
   const atualizarLocalStorage = (utilizadorAtualizado) => {
@@ -108,7 +125,10 @@ function DefinicoesConsultorPage() {
       id_utilizador:
         utilizadorAtualizado.id_utilizador ||
         utilizadorAtualizado.ID_UTILIZADOR ||
-        user.id_utilizador,
+        utilizadorAtualizado.id ||
+        user?.id_utilizador ||
+        user?.ID_UTILIZADOR ||
+        user?.id,
       email:
         utilizadorAtualizado.email ||
         utilizadorAtualizado.EMAIL ||
@@ -217,11 +237,19 @@ function DefinicoesConsultorPage() {
       setUser(userAtualizado);
       setFotoFile(null);
 
-      setFotoPreview(
-        fotoPerfilAtualizada
-          ? buildUploadUrl(fotoPerfilAtualizada)
-          : fotoPreview
-      );
+      if (fotoPerfilAtualizada) {
+        const urlFoto =
+          buildUploadUrl(
+            fotoPerfilAtualizada
+          );
+
+        const separador =
+          urlFoto.includes("?") ? "&" : "?";
+
+        setFotoPreview(
+          `${urlFoto}${separador}v=${Date.now()}`
+        );
+      }
 
       alert("Foto de perfil atualizada com sucesso.");
     } catch (err) {
