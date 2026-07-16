@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import ProtectedRoute
+  from "./components/ProtectedRoute.jsx";
 
 import './App.css';
 
@@ -158,99 +160,147 @@ function App() {
         <Route path="/ativar-conta" element={<AtivarContaPage />}/>
         <Route path="/rgpd" element={<RGPDPublico />} />
 
-        // Rotas Consultor
-        <Route path="/pag_consultor" element={<DashboardConsultor />} />
-        <Route path="/perfil_consultor" element={<PaginaPerfil />} />
-        <Route path="/notificacoes" element={<NotificacaoPage />} />
-        <Route path="/desafios" element={<DesafiosConsultorPage />} />
-        <Route path="/lembretes" element={<LembretePage />} />
-        <Route path="/progresso" element={<ProgressoPage />} />
-        <Route path="/progresso-badges" element={<ProgressoPage />} />
-        <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
-        <Route path="/historico_badges" element={<HistoricoBadgesPage />} />
-        <Route path="/meus_badges" element={<MeusBadgesPage />} />
-        <Route path="/minha-galeria-publica" element={<MinhaGaleriaPublicaPage />} />
-        <Route path="/badge-detalhe/:id" element={<BadgeDetailPage />} />
-        <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
-        <Route path="/certificado/:id" element={<CertificadoPage />} />
-        <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
-        <Route path="/configurar-assinatura" element={<ConfiguracaoAssinaturaPage />} />
-        <Route path="/softinsa" element={<IntegracaoSoftinsaPage />} />
-        <Route path="/status-candidaturas" element={<StatusCandidaturasConsultorPage />} />
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "Consultor",
+              ]}
+            />
+          }
+        >
+
+            // Rotas Consultor
+            <Route path="/pag_consultor" element={<DashboardConsultor />} />
+            <Route path="/perfil_consultor" element={<PaginaPerfil />} />
+            <Route path="/notificacoes" element={<NotificacaoPage />} />
+            <Route path="/desafios" element={<DesafiosConsultorPage />} />
+            <Route path="/lembretes" element={<LembretePage />} />
+            <Route path="/progresso" element={<ProgressoPage />} />
+            <Route path="/progresso-badges" element={<ProgressoPage />} />
+            <Route path="/catalogo-badges" element={<CatalogoBadgesPage />} />
+            <Route path="/historico_badges" element={<HistoricoBadgesPage />} />
+            <Route path="/meus_badges" element={<MeusBadgesPage />} />
+            <Route path="/minha-galeria-publica" element={<MinhaGaleriaPublicaPage />} />
+            <Route path="/badge-detalhe/:id" element={<BadgeDetailPage />} />
+            <Route path="/submeter-evidencias/:id" element={<SubmeterEvidenciasPage />} />
+            <Route path="/certificado/:id" element={<CertificadoPage />} />
+            <Route path="/definicoes" element={<DefinicoesConsultorPage />} />
+            <Route path="/configurar-assinatura" element={<ConfiguracaoAssinaturaPage />} />
+            <Route path="/softinsa" element={<IntegracaoSoftinsaPage />} />
+            <Route path="/status-candidaturas" element={<StatusCandidaturasConsultorPage />} />
+
+        </Route>
+
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "Administrador",
+              ]}
+            />
+          }
+        >
         
-        // Rotas Admin
-        <Route path="/admin" element={<DashboardAdmin />} />
-        <Route path="/admin/contas" element={<GestaoContas />} />
-        <Route path="/admin/contas" element={<GestaoContas />} />
-        <Route path="/admin/contas/novo" element={<CriarConta />} />
-        <Route path="/admin/contas/editar/:id" element={<EditarConta />} />
-        <Route path="/admin/service-lines" element={<GestaoServiceLines />} />
-        <Route path="/admin/service-lines/nova" element={<CriarServiceLine />} />
-        <Route path="/admin/service-lines/editar/:id" element={<EditarServiceLine />} />
-        <Route path="/admin/areas" element={<GestaoAreas />} />
-        <Route path="/admin/areas/nova" element={<CriarArea />} />
-        <Route path="/admin/areas/editar/:id" element={<EditarArea />} />
-        <Route path="/admin/niveis/:idNivel/requisitos" element={<GestaoRequisitos />} />
-        <Route path="/admin/learning-paths" element={<GestaoLearningPaths />} />
-        <Route path="/admin/learning-paths/novo" element={<CriarLearningPath />} />
-        <Route path="/admin/learning-paths/editar/:id" element={<EditarLearningPath />} />
-        <Route path="/admin/avisos" element={<InformacoesAvisos />} />
-        <Route path="/admin/rgpd" element={<PoliticasRGPD />} />
-        <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
-        <Route path="/admin/badges" element={<GestaoBadges />} />
-        <Route path="/admin/badges/novo" element={<CriarBadge />} />
-        <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
-        <Route path="/admin/pedidos-badges" element={<GestaoPedidosBadges />}/>
-        <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
-        <Route path="/admin/perfil" element={<PerfilAdminPage />} />
-        <Route path="/admin/definicoes" element={<DefinicoesAdminPage />} />
-        <Route path="/admin/notificacoespage" element={<NotificacaoAdminPage />}/>
+            // Rotas Admin
+            <Route path="/admin" element={<DashboardAdmin />} />
+            <Route path="/admin/contas" element={<GestaoContas />} />
+            <Route path="/admin/contas" element={<GestaoContas />} />
+            <Route path="/admin/contas/novo" element={<CriarConta />} />
+            <Route path="/admin/contas/editar/:id" element={<EditarConta />} />
+            <Route path="/admin/service-lines" element={<GestaoServiceLines />} />
+            <Route path="/admin/service-lines/nova" element={<CriarServiceLine />} />
+            <Route path="/admin/service-lines/editar/:id" element={<EditarServiceLine />} />
+            <Route path="/admin/areas" element={<GestaoAreas />} />
+            <Route path="/admin/areas/nova" element={<CriarArea />} />
+            <Route path="/admin/areas/editar/:id" element={<EditarArea />} />
+            <Route path="/admin/niveis/:idNivel/requisitos" element={<GestaoRequisitos />} />
+            <Route path="/admin/learning-paths" element={<GestaoLearningPaths />} />
+            <Route path="/admin/learning-paths/novo" element={<CriarLearningPath />} />
+            <Route path="/admin/learning-paths/editar/:id" element={<EditarLearningPath />} />
+            <Route path="/admin/avisos" element={<InformacoesAvisos />} />
+            <Route path="/admin/rgpd" element={<PoliticasRGPD />} />
+            <Route path="/admin/notificacoes" element={<ConfigurarNotificacoes />} />
+            <Route path="/admin/badges" element={<GestaoBadges />} />
+            <Route path="/admin/badges/novo" element={<CriarBadge />} />
+            <Route path="/admin/badges/editar/:id" element={<EditarBadge />} />
+            <Route path="/admin/pedidos-badges" element={<GestaoPedidosBadges />}/>
+            <Route path="/admin/sla" element={<ConfiguracaoSLA />}/>
+            <Route path="/admin/perfil" element={<PerfilAdminPage />} />
+            <Route path="/admin/definicoes" element={<DefinicoesAdminPage />} />
+            <Route path="/admin/notificacoespage" element={<NotificacaoAdminPage />}/>
 
-        // Rotas Service Line Leader
-        <Route path="/sll" element={<DashboardSll />} />
-        <Route path="/sll/badges" element={<CatalogoBadgesSll />} />
-        <Route path="/sll/badges/:id" element={<InformacaoBadgeSll />}/>
-        <Route path="/sll/solicitacoes" element={<SolicitacoesBadgesSll />} />
-        <Route path="/sll/solicitacoes/:idCandidatura" element={<DetalheSolicitacaoSll />}/>
-        <Route path="/sll/ranking" element={<RankingBadgesSll />} />
-        <Route path="/sll/historico-candidaturas" element={<HistoricoCandidaturasSll />}/>
-        <Route path="/sll/certificados" element={<GerarCertificadoSll />} />
-        <Route path="/sll/relatorios" element={<GerarRelatorioSll />} />
-        <Route path="/sll/consultores" element={<ListaConsultoresSll />}/>
-        <Route path="/sll/consultores/:idConsultor" element={<InformacaoConsultorSll />}/>
-        <Route path="/sll/perfil" element={<PerfilSllPage />}/>
-        <Route path="/sll/definicoes" element={<DefinicoesSllPage />}/>
-        <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
-        <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSllPage />}/>
+        </Route>
 
-        {/* Rotas para o Talent Manager */}
-        <Route path="/tm" element={<TM_DashBoard />} />
-        <Route path="/tm/CatalogoBadgesCaga" element={<TM_catalogo_badges />} />
-        <Route path="/tm/Solicitacoes" element={<TM_Solicitacoes />} />
-        <Route path="/tm/avaliacao/:id" element={<TM_AvaliacaoSolicitacao />} />
-        <Route path="/tm/avaliacao-solicitacao/:id" element={<TM_AvaliacaoSolicitacao />} />
-        <Route path="/tm/HistoricoCandidaturas" element={<TM_HistoricoCandidaturas />} />
-        <Route path="/tm/detalhes-historico/:id" element={<TM_DetalhesHistorico />} />
-        <Route path="/tm/perfilCaga" element={<TM_Perfil />} />
-        <Route path="/tm/definicoes" element={<TM_Definicoes />} />
-        <Route path="/tm/consultores" element={<TM_Consultor />} />
-        <Route path="/tm/status-candidaturas" element={<TM_statuscandidatura />} />
-        <Route path="/tm/badges" element={<TM_catalogo_badges />} />
-        <Route path="/tm/badges/:idBadge" element={<TM_informacao_badge />} />
-        <Route path="/tm/solicitacoesCaga" element={<TM_Solicitacoes />} />
-        <Route path="/tm/solicitacoes23/:idCandidatura" element={<TM_AvaliacaoSolicitacao />} />
-        <Route path="/tm/consultores/:idConsultor" element={<TM_informacao_consultor />} />
-        <Route path="/tm/historico" element={<TM_HistoricoCandidaturas />} />
-        <Route path="/tm/historico/:idHistorico" element={<TM_DetalhesHistorico />} />
-        <Route path="/tm/expiracao" element={<TM_badges_expiracao />} />
-        <Route path="/tm/expiracao/:idBadgeAtribuido" element={<TM_detalhe_expiracao_badge />} />
-        <Route path="/tm/relatorios" element={<TM_gerar_relatorio />} />
-        <Route path="/tm/consultorescaga" element={<TM_Consultor />} />
-        <Route path="/tm/notificacoes" element={<TM_notificacoes />} />
-        <Route path="/tm/definicoescaga" element={<TM_Definicoes />} />
-        <Route path="/tm/perfil" element={<TM_Perfil />} />
-        <Route path="/tm/certificados" element={<TM_gerar_certificado />} />
-        <Route path="/tm/desafios/novo" element={<TM_criar_desafio />} />
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "Service Line Leader",
+              ]}
+            />
+          }
+        >
+
+            // Rotas Service Line Leader
+            <Route path="/sll" element={<DashboardSll />} />
+            <Route path="/sll/badges" element={<CatalogoBadgesSll />} />
+            <Route path="/sll/badges/:id" element={<InformacaoBadgeSll />}/>
+            <Route path="/sll/solicitacoes" element={<SolicitacoesBadgesSll />} />
+            <Route path="/sll/solicitacoes/:idCandidatura" element={<DetalheSolicitacaoSll />}/>
+            <Route path="/sll/ranking" element={<RankingBadgesSll />} />
+            <Route path="/sll/historico-candidaturas" element={<HistoricoCandidaturasSll />}/>
+            <Route path="/sll/certificados" element={<GerarCertificadoSll />} />
+            <Route path="/sll/relatorios" element={<GerarRelatorioSll />} />
+            <Route path="/sll/consultores" element={<ListaConsultoresSll />}/>
+            <Route path="/sll/consultores/:idConsultor" element={<InformacaoConsultorSll />}/>
+            <Route path="/sll/perfil" element={<PerfilSllPage />}/>
+            <Route path="/sll/definicoes" element={<DefinicoesSllPage />}/>
+            <Route path="/sll/notificacoes" element={<NotificacoesSllPage />}/>
+            <Route path="/sll/status-candidaturas" element={<StatusCandidaturasSllPage />}/>
+
+        </Route>
+
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "Talent Manager",
+              ]}
+            />
+          }
+        >
+
+            {/* Rotas para o Talent Manager */}
+            <Route path="/tm" element={<TM_DashBoard />} />
+            <Route path="/tm/CatalogoBadgesCaga" element={<TM_catalogo_badges />} />
+            <Route path="/tm/Solicitacoes" element={<TM_Solicitacoes />} />
+            <Route path="/tm/avaliacao/:id" element={<TM_AvaliacaoSolicitacao />} />
+            <Route path="/tm/avaliacao-solicitacao/:id" element={<TM_AvaliacaoSolicitacao />} />
+            <Route path="/tm/HistoricoCandidaturas" element={<TM_HistoricoCandidaturas />} />
+            <Route path="/tm/detalhes-historico/:id" element={<TM_DetalhesHistorico />} />
+            <Route path="/tm/perfilCaga" element={<TM_Perfil />} />
+            <Route path="/tm/definicoes" element={<TM_Definicoes />} />
+            <Route path="/tm/consultores" element={<TM_Consultor />} />
+            <Route path="/tm/status-candidaturas" element={<TM_statuscandidatura />} />
+            <Route path="/tm/badges" element={<TM_catalogo_badges />} />
+            <Route path="/tm/badges/:idBadge" element={<TM_informacao_badge />} />
+            <Route path="/tm/solicitacoesCaga" element={<TM_Solicitacoes />} />
+            <Route path="/tm/solicitacoes23/:idCandidatura" element={<TM_AvaliacaoSolicitacao />} />
+            <Route path="/tm/consultores/:idConsultor" element={<TM_informacao_consultor />} />
+            <Route path="/tm/historico" element={<TM_HistoricoCandidaturas />} />
+            <Route path="/tm/historico/:idHistorico" element={<TM_DetalhesHistorico />} />
+            <Route path="/tm/expiracao" element={<TM_badges_expiracao />} />
+            <Route path="/tm/expiracao/:idBadgeAtribuido" element={<TM_detalhe_expiracao_badge />} />
+            <Route path="/tm/relatorios" element={<TM_gerar_relatorio />} />
+            <Route path="/tm/consultorescaga" element={<TM_Consultor />} />
+            <Route path="/tm/notificacoes" element={<TM_notificacoes />} />
+            <Route path="/tm/definicoescaga" element={<TM_Definicoes />} />
+            <Route path="/tm/perfil" element={<TM_Perfil />} />
+            <Route path="/tm/certificados" element={<TM_gerar_certificado />} />
+            <Route path="/tm/desafios/novo" element={<TM_criar_desafio />} />
+
+        </Route>
 
       </Routes>
       )}
