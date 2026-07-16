@@ -203,6 +203,10 @@ const container = {
   borderRight: "1px solid #e5e7eb",
   padding: "14px 0",
   flexShrink: 0,
+  alignSelf: "flex-start",
+  position: "sticky",
+  top: 0,
+  height: "100vh",
   overflowY: "auto",
 };
 

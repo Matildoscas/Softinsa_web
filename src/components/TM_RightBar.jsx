@@ -137,12 +137,16 @@ function RightSidebarTM() {
     borderLeft: '1px solid #e9ecef', 
     padding: '24px 16px', 
     flexShrink: 0, 
+    alignSelf: 'flex-start',
+    position: 'sticky',
+    top: 0,
+    height: '100vh',
     overflowY: 'auto', 
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
     fontFamily: 'system-ui, sans-serif',
-    minHeight: 'calc(100vh - 52px)' // Compensa exatamente a altura do teu Header
+    minHeight: '100vh'
   };
 
   return (

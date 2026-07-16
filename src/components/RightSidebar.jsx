@@ -412,6 +412,18 @@ function RightSidebar() {
     flexShrink:
       0,
 
+    alignSelf:
+      "flex-start",
+
+    position:
+      "sticky",
+
+    top:
+      0,
+
+    height:
+      "100vh",
+
     overflowY:
       "auto",
 
