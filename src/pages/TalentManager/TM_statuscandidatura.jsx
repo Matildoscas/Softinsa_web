@@ -177,6 +177,24 @@ function candidaturaMostravelNoStatus(item) {
   return !candidaturaEstaRejeitada(item);
 }
 
+function normalizarContagem(valor) {
+  const numero = Number(valor);
+
+  if (!Number.isFinite(numero) || numero < 0) {
+    return 0;
+  }
+
+  return numero;
+}
+
+function obterResumoEvidencias(item) {
+  const total = normalizarContagem(item?.total_evidencias);
+  const tm = normalizarContagem(item?.evidencias_decididas_tm);
+  const sll = normalizarContagem(item?.evidencias_decididas_sll);
+
+  return { total, tm, sll };
+}
+
 // Componente do Chip de Estado
 function EstadoChip({ titulo, valor }) {
   const chip = chipEstado(valor);
@@ -262,7 +280,7 @@ function StatusCandidaturasTM() {
       setErro("");
 
       // Enviamos fixo 'GLOBAL' para a API retornar sempre todas as candidaturas existentes
-      const response = await api.get(`/candidaturas/tm/${idUtilizador}/status-candidaturas`, { 
+      const response = await api.get(`/tm/${idUtilizador}/status-candidaturas`, {
         params: { scope: "GLOBAL" } 
       });
 
@@ -485,6 +503,7 @@ function StatusCandidaturasTM() {
                   {listaFiltrada.map((item) => {
                     const ativa = selecionada === item.id_candidatura_pedido;
                     const geral = chipEstado(item.estado_geral);
+                    const evidencias = obterResumoEvidencias(item);
 
                     return (
                       <button
@@ -520,7 +539,7 @@ function StatusCandidaturasTM() {
                         </div>
 
                         <div style={metaLinha}>
-                          Evidências TM/SLL: <strong>{item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>{item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
+                          Evidências TM/SLL: <strong>{evidencias.tm}/{evidencias.total}</strong> · <strong>{evidencias.sll}/{evidencias.total}</strong>
                         </div>
                       </button>
                     );
