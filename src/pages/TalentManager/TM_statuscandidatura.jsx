@@ -96,22 +96,7 @@ function chipEstado(estado) {
   return { label: estado || "-", bg: "#e5e7eb", color: "#475569", border: "#cbd5e1" };
 }
 
-function candidaturaEstaFinalizada(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
-
-  return (
-    estado.includes("APROV") ||
-    estado.includes("REJEIT") ||
-    estado.includes("RECUS") ||
-    estado.includes("CANCEL") ||
-    fase.includes("HISTOR") ||
-    fase.includes("CONCLUID") ||
-    fase.includes("FECHADA") ||
-    fase.includes("CANCEL")
-  );
-}
-
+// HELPER 1: Determina se uma candidatura é REJEITADA de forma prioritária e inequívoca
 function candidaturaEstaRejeitada(item) {
   const estado = normalizarEstado(item?.estado_geral || item?.estado_final || item?.estado_candidatura_pedido);
   const fase = normalizarEstado(item?.fase_geral);
@@ -126,41 +111,37 @@ function candidaturaEstaRejeitada(item) {
   );
 }
 
-function candidaturaEstaObtida(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
-  const fase = normalizarEstado(item?.fase_geral);
-
-  return (
-    estado.includes("APROV") &&
-    (
-      estado.includes("FINAL") ||
-      fase.includes("HISTORICO") ||
-      fase.includes("FINALIZ") ||
-      fase.includes("CONCLUID")
-    )
-  );
-}
-
-function candidaturaEstaConcluida(item) {
-  return candidaturaEstaFinalizada(item);
-}
-
+// HELPER 2: Se foi cancelada/desistida e NÃO é rejeitada
 function candidaturaEstaCancelada(item) {
-  const estado = normalizarEstado(item?.estado_geral || item?.estado_final);
+  if (candidaturaEstaRejeitada(item)) return false;
+
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final || item?.estado_candidatura_pedido);
+  const fase = normalizarEstado(item?.fase_geral);
+
+  return estado.includes("CANCEL") || estado.includes("DESIST") || fase.includes("CANCEL");
+}
+
+// HELPER 3: Se foi aprovada e não está cancelada nem rejeitada
+function candidaturaEstaAprovada(item) {
+  if (candidaturaEstaRejeitada(item) || candidaturaEstaCancelada(item)) return false;
+
+  const estado = normalizarEstado(item?.estado_geral || item?.estado_final || item?.estado_candidatura_pedido);
   const fase = normalizarEstado(item?.fase_geral);
 
   return (
-    estado.includes("CANCEL") ||
-    fase.includes("CANCEL")
+    estado.includes("APROV") ||
+    estado.includes("VALID") ||
+    fase.includes("FECHADA")
   );
 }
 
-function candidaturaEstaAprovada(item) {
-  return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
-}
-
-function candidaturaMostravelNoStatus(item) {
-  return !candidaturaEstaRejeitada(item);
+// HELPER 4: Uma candidatura está finalizada se encaixar em QUALQUER um dos três estados acima
+function candidaturaEstaFinalizada(item) {
+  return (
+    candidaturaEstaAprovada(item) ||
+    candidaturaEstaRejeitada(item) ||
+    candidaturaEstaCancelada(item)
+  );
 }
 
 function normalizarContagem(valor) {
@@ -339,26 +320,25 @@ function StatusCandidaturasTM() {
     }
   }, [selecionada, carregarDetalhe]);
 
-  // FIX 1: Agora filtra as finalizadas de acordo com o subModoConcluidos selecionado!
   const listaPorModo = useMemo(() => {
-    if (modoLista === "FINALIZADAS") {
-      const finalizadas = lista.filter(candidaturaEstaFinalizada);
+  if (modoLista === "FINALIZADAS") {
+    const finalizadas = lista.filter(candidaturaEstaFinalizada);
 
-      if (subModoConcluidos === "APROVADAS") {
-        return finalizadas.filter(candidaturaEstaAprovada);
-      }
-      if (subModoConcluidos === "CANCELADAS") {
-        return finalizadas.filter(candidaturaEstaCancelada);
-      }
-      if (subModoConcluidos === "REJEITADAS") {
-        return finalizadas.filter(candidaturaEstaRejeitada);
-      }
-      // "TODAS" -> Mostra todas exceto as rejeitadas (conforme regra do teu helper original)
-      return finalizadas.filter(candidaturaMostravelNoStatus);
+    if (subModoConcluidos === "APROVADAS") {
+      return finalizadas.filter(candidaturaEstaAprovada);
     }
+    if (subModoConcluidos === "CANCELADAS") {
+      return finalizadas.filter(candidaturaEstaCancelada);
+    }
+    if (subModoConcluidos === "REJEITADAS") {
+      return finalizadas.filter(candidaturaEstaRejeitada);
+    }
+    return finalizadas;
+  }
 
-    return lista.filter((item) => !candidaturaEstaFinalizada(item));
-  }, [lista, modoLista, subModoConcluidos]);
+  // Em Processo
+  return lista.filter((item) => !candidaturaEstaFinalizada(item));
+}, [lista, modoLista, subModoConcluidos]);
 
   const listaFiltrada = useMemo(() => {
     const termo = pesquisa.trim().toLowerCase();
@@ -462,53 +442,52 @@ function StatusCandidaturasTM() {
           </div>
 
           {modoLista === "FINALIZADAS" && (
-            <div style={subTabsBox}>
-              <button
-                type="button"
-                onClick={() => setSubModoConcluidos("TODAS")}
-                style={{
-                  ...subTabBtn,
-                  ...(subModoConcluidos === "TODAS" ? subTabBtnAtivo : null),
-                }}
-              >
-                Todas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaConcluida).length})
-              </button>
+  <div style={subTabsBox}>
+    <button
+      type="button"
+      onClick={() => setSubModoConcluidos("TODAS")}
+      style={{
+        ...subTabBtn,
+        ...(subModoConcluidos === "TODAS" ? subTabBtnAtivo : null),
+      }}
+    >
+      Todas ({lista.filter(candidaturaEstaFinalizada).length})
+    </button>
 
-              <button
-                type="button"
-                onClick={() => setSubModoConcluidos("APROVADAS")}
-                style={{
-                  ...subTabBtn,
-                  ...(subModoConcluidos === "APROVADAS" ? subTabBtnAtivo : null),
-                }}
-              >
-                Aprovadas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaAprovada).length})
-              </button>
+    <button
+      type="button"
+      onClick={() => setSubModoConcluidos("APROVADAS")}
+      style={{
+        ...subTabBtn,
+        ...(subModoConcluidos === "APROVADAS" ? subTabBtnAtivo : null),
+      }}
+    >
+      Aprovadas ({lista.filter(candidaturaEstaAprovada).length})
+    </button>
 
-              <button
-                type="button"
-                onClick={() => setSubModoConcluidos("CANCELADAS")}
-                style={{
-                  ...subTabBtn,
-                  ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
-                }}
-              >
-                Canceladas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaCancelada).length})
-              </button>
+    <button
+      type="button"
+      onClick={() => setSubModoConcluidos("CANCELADAS")}
+      style={{
+        ...subTabBtn,
+        ...(subModoConcluidos === "CANCELADAS" ? subTabBtnAtivo : null),
+      }}
+    >
+      Canceladas ({lista.filter(candidaturaEstaCancelada).length})
+    </button>
 
-              {/* FIX 3: Adicionada a aba de Rejeitadas para não deixar estes dados perdidos no limbo */}
-              <button
-                type="button"
-                onClick={() => setSubModoConcluidos("REJEITADAS")}
-                style={{
-                  ...subTabBtn,
-                  ...(subModoConcluidos === "REJEITADAS" ? subTabBtnAtivo : null),
-                }}
-              >
-                Rejeitadas ({lista.filter(candidaturaEstaRejeitada).length})
-              </button>
-            </div>
-          )}
+    <button
+      type="button"
+      onClick={() => setSubModoConcluidos("REJEITADAS")}
+      style={{
+        ...subTabBtn,
+        ...(subModoConcluidos === "REJEITADAS" ? subTabBtnAtivo : null),
+      }}
+    >
+      Rejeitadas ({lista.filter(candidaturaEstaRejeitada).length})
+    </button>
+  </div>
+)}
 
           <div style={pesquisaBox}>
             <BiSearch size={16} color="#64748b" />
