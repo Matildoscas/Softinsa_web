@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { 
   BiArrowBack,
   BiSort,
@@ -155,22 +155,8 @@ function candidaturaEstaCancelada(item) {
   );
 }
 
-
-
 function candidaturaEstaAprovada(item) {
   return candidaturaEstaObtida(item) && !candidaturaEstaRejeitada(item) && !candidaturaEstaCancelada(item);
-}
-
-function obterMotivoCancelamento(status) {
-  return String(
-    status?.motivo_cancelamento ||
-      status?.motivo_estado_final ||
-      ""
-  ).trim();
-}
-
-function candidaturaEstaEmProcesso(item) {
-  return !candidaturaEstaFinalizada(item);
 }
 
 function candidaturaMostravelNoStatus(item) {
@@ -179,11 +165,9 @@ function candidaturaMostravelNoStatus(item) {
 
 function normalizarContagem(valor) {
   const numero = Number(valor);
-
   if (!Number.isFinite(numero) || numero < 0) {
     return 0;
   }
-
   return numero;
 }
 
@@ -245,6 +229,27 @@ function EstadoRequisitoChip({ titulo, valor }) {
   );
 }
 
+function EstadoPrincipalChip({ titulo, valor }) {
+  const chip = chipEstado(valor);
+
+  return (
+    <div
+      style={{
+        ...estadoBloco,
+        padding: 16,
+        minHeight: 86,
+        background: chip.bg,
+        border: `1px solid ${chip.border}`,
+      }}
+    >
+      <div style={estadoTitulo}>{titulo}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: chip.color }}>
+        {chip.label}
+      </div>
+    </div>
+  );
+}
+
 // Componente Principal
 function StatusCandidaturasTM() {
   const navigate = useNavigate();
@@ -268,7 +273,8 @@ function StatusCandidaturasTM() {
   const utilizador = obterUtilizadorGuardado();
   const idUtilizador = utilizador?.id_utilizador || utilizador?.ID_UTILIZADOR || utilizador?.id;
 
-  async function carregarLista() {
+  // Envolvido em useCallback para evitar loops de renderização
+  const carregarLista = useCallback(async () => {
     if (!idUtilizador) {
       setErro("Não foi possível identificar o Talent Manager.");
       setIsLoading(false);
@@ -279,7 +285,6 @@ function StatusCandidaturasTM() {
       setIsLoading(true);
       setErro("");
 
-      // Enviamos fixo 'GLOBAL' para a API retornar sempre todas as candidaturas existentes
       const response = await api.get(`/tm/${idUtilizador}/status-candidaturas`, {
         params: { scope: "GLOBAL" } 
       });
@@ -293,9 +298,10 @@ function StatusCandidaturasTM() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [idUtilizador]);
 
-  async function carregarDetalhe(idCandidatura) {
+  // Envolvido em useCallback para estabilizar a dependência no useEffect
+  const carregarDetalhe = useCallback(async (idCandidatura) => {
     if (!idUtilizador || !idCandidatura) {
       setDetalhe(null);
       return;
@@ -311,7 +317,7 @@ function StatusCandidaturasTM() {
     } finally {
       setIsLoadingDetalhe(false);
     }
-  }
+  }, [idUtilizador]);
 
   const textoVoltar = location.state?.textoVoltar || "Voltar atrás";
 
@@ -325,45 +331,47 @@ function StatusCandidaturasTM() {
 
   useEffect(() => {
     carregarLista();
-  }, []);
+  }, [carregarLista]);
 
   useEffect(() => {
     if (selecionada) {
       carregarDetalhe(selecionada);
     }
-  }, [selecionada]);
+  }, [selecionada, carregarDetalhe]);
 
+  // FIX 1: Agora filtra as finalizadas de acordo com o subModoConcluidos selecionado!
   const listaPorModo = useMemo(() => {
-  if (modoLista === "FINALIZADAS") {
-    return lista.filter(candidaturaEstaFinalizada);
-  }
+    if (modoLista === "FINALIZADAS") {
+      const finalizadas = lista.filter(candidaturaEstaFinalizada);
 
-  return lista.filter((item) => !candidaturaEstaFinalizada(item));
-}, [lista, modoLista]);
+      if (subModoConcluidos === "APROVADAS") {
+        return finalizadas.filter(candidaturaEstaAprovada);
+      }
+      if (subModoConcluidos === "CANCELADAS") {
+        return finalizadas.filter(candidaturaEstaCancelada);
+      }
+      if (subModoConcluidos === "REJEITADAS") {
+        return finalizadas.filter(candidaturaEstaRejeitada);
+      }
+      // "TODAS" -> Mostra todas exceto as rejeitadas (conforme regra do teu helper original)
+      return finalizadas.filter(candidaturaMostravelNoStatus);
+    }
 
-  useEffect(() => {
-    if (listaPorModo.length === 0) {
-      setSelecionada(null);
-      setDetalhe(null);
-      return;
-    }
-    if (!listaPorModo.some((item) => item.id_candidatura_pedido === selecionada)) {
-      setSelecionada(listaPorModo[0].id_candidatura_pedido);
-    }
-  }, [listaPorModo, selecionada]);
+    return lista.filter((item) => !candidaturaEstaFinalizada(item));
+  }, [lista, modoLista, subModoConcluidos]);
 
   const listaFiltrada = useMemo(() => {
     const termo = pesquisa.trim().toLowerCase();
     let resultado = listaPorModo;
 
     if (termo) {
-    resultado = resultado.filter((item) =>
-    String(item.nome_completo || item.nome_consultor || "").toLowerCase().includes(termo) ||
-    String(item.email || item.email_consultor || "").toLowerCase().includes(termo) ||
-    String(item.nome_badge || "").toLowerCase().includes(termo) ||
-    String(item.estado_geral || item.estado_candidatura_pedido || "").toLowerCase().includes(termo)
-  );
-}
+      resultado = resultado.filter((item) =>
+        String(item.nome_completo || item.nome_consultor || "").toLowerCase().includes(termo) ||
+        String(item.email || item.email_consultor || "").toLowerCase().includes(termo) ||
+        String(item.nome_badge || "").toLowerCase().includes(termo) ||
+        String(item.estado_geral || item.estado_candidatura_pedido || "").toLowerCase().includes(termo)
+      );
+    }
 
     return [...resultado].sort((a, b) => {
       if (ordenarPor === "nome_az") {
@@ -382,6 +390,20 @@ function StatusCandidaturasTM() {
       return 0;
     });
   }, [listaPorModo, pesquisa, ordenarPor]);
+
+  // FIX 2: Sincronização inteligente com a lista visível (listaFiltrada) em vez da lista crua
+  useEffect(() => {
+    if (listaFiltrada.length === 0) {
+      setSelecionada(null);
+      setDetalhe(null);
+      return;
+    }
+    // Se o item atualmente selecionado já não pertence à lista que está a ser mostrada (ex: filtrado pela pesquisa),
+    // selecionamos automaticamente o primeiro da lista filtrada.
+    if (!listaFiltrada.some((item) => item.id_candidatura_pedido === selecionada)) {
+      setSelecionada(listaFiltrada[0].id_candidatura_pedido);
+    }
+  }, [listaFiltrada, selecionada]);
 
   return (
     <div style={pagina}>
@@ -406,7 +428,6 @@ function StatusCandidaturasTM() {
             Talent Manager: <strong>{talentManager?.nome_completo || "Talent Manager"}</strong> 
           </div>
 
-          {/* Mantida apenas a ordenação, removido o select de Escopo */}
           <div style={filtroEscopoBarra}>
             <div style={filtroGrupo}>
               <BiSort size={16} color="#475569" />
@@ -423,7 +444,6 @@ function StatusCandidaturasTM() {
             </div>
           </div>
 
-          {/* Abas Recuperadas com Sucesso */}
           <div style={tabsBox}>
             <button
               type="button"
@@ -474,6 +494,18 @@ function StatusCandidaturasTM() {
                 }}
               >
                 Canceladas ({lista.filter(candidaturaMostravelNoStatus).filter(candidaturaEstaCancelada).length})
+              </button>
+
+              {/* FIX 3: Adicionada a aba de Rejeitadas para não deixar estes dados perdidos no limbo */}
+              <button
+                type="button"
+                onClick={() => setSubModoConcluidos("REJEITADAS")}
+                style={{
+                  ...subTabBtn,
+                  ...(subModoConcluidos === "REJEITADAS" ? subTabBtnAtivo : null),
+                }}
+              >
+                Rejeitadas ({lista.filter(candidaturaEstaRejeitada).length})
               </button>
             </div>
           )}
@@ -625,28 +657,7 @@ function StatusCandidaturasTM() {
   );
 }
 
-function EstadoPrincipalChip({ titulo, valor }) {
-  const chip = chipEstado(valor);
-
-  return (
-    <div
-      style={{
-        ...estadoBloco,
-        padding: 16,
-        minHeight: 86,
-        background: chip.bg,
-        border: `1px solid ${chip.border}`,
-      }}
-    >
-      <div style={estadoTitulo}>{titulo}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: chip.color }}>
-        {chip.label}
-      </div>
-    </div>
-  );
-}
-
-// Estilos
+// Estilos (Inalterados, exceto a importação no topo)
 const pagina = { minHeight: "100vh", background: "#f3f4f6", display: "flex", flexDirection: "column" };
 const corpo = { display: "flex", flex: 1, overflow: "hidden" };
 const conteudo = { flex: 1, minWidth: 0, overflowY: "auto", padding: "22px 30px 40px" };
