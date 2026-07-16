@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Form, Button, InputGroup, Alert, Spinner, Modal } from "react-bootstrap";
+import { Container, Row, Col, Card, Form, Button, InputGroup, Alert, Spinner } from "react-bootstrap";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api"; // Importa a instância do Axios configurada anteriormente
@@ -394,8 +394,9 @@ function LoginPage() {
                 </Alert>
               )}
 
-              {error && <Alert variant="danger">{error}</Alert>}
+              {error && !showRecuperacao && <Alert variant="danger">{error}</Alert>}
 
+              {!showRecuperacao ? (
               <Form onSubmit={handleLogin}>
                 <Form.Group className="mb-3">
                   <InputGroup>
@@ -508,150 +509,166 @@ function LoginPage() {
                   Conhecer o site
                 </Button>
               </Form>
+              ) : (
+                <>
+                  <div className="text-center mb-4">
+                    <h4 style={{ color: "#1d61ff", fontWeight: 700 }}>Recuperar password</h4>
+                    <p className="text-muted mb-0">Insira os dados para recuperar o acesso.</p>
+                  </div>
+
+                  {recuperacaoError && (
+                    <Alert variant="danger">{recuperacaoError}</Alert>
+                  )}
+
+                  {recuperacaoInfo && (
+                    <Alert variant="success">{recuperacaoInfo}</Alert>
+                  )}
+
+                  {passoRecuperacao === "email" && (
+                    <>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Email</Form.Label>
+                        <Form.Control
+                          type="email"
+                          placeholder="Insira o email da conta"
+                          value={recuperacaoEmail}
+                          onChange={(e) => setRecuperacaoEmail(e.target.value)}
+                          disabled={recuperacaoLoading}
+                        />
+                      </Form.Group>
+
+                      <Button
+                        type="button"
+                        className="w-100"
+                        onClick={pedirCodigoRecuperacao}
+                        disabled={recuperacaoLoading}
+                      >
+                        {recuperacaoLoading ? "A enviar..." : "Enviar código"}
+                      </Button>
+                    </>
+                  )}
+
+                  {passoRecuperacao === "codigo" && (
+                    <>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Código de 6 dígitos</Form.Label>
+                        <Form.Control
+                          type="text"
+                          placeholder="000000"
+                          value={recuperacaoCodigo}
+                          onChange={(e) => setRecuperacaoCodigo(e.target.value)}
+                          disabled={recuperacaoLoading}
+                        />
+                      </Form.Group>
+
+                      <div className="d-flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline-secondary"
+                          className="w-50"
+                          onClick={() => setPassoRecuperacao("email")}
+                          disabled={recuperacaoLoading}
+                        >
+                          Voltar
+                        </Button>
+
+                        <Button
+                          type="button"
+                          className="w-50"
+                          onClick={validarCodigoRecuperacao}
+                          disabled={recuperacaoLoading}
+                        >
+                          {recuperacaoLoading ? "A validar..." : "Validar código"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+
+                  {passoRecuperacao === "password" && (
+                    <>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Nova password</Form.Label>
+                        <InputGroup>
+                          <Form.Control
+                            type={showRecuperacaoPassword ? "text" : "password"}
+                            placeholder="Nova password"
+                            value={recuperacaoNovaPassword}
+                            onChange={(e) => setRecuperacaoNovaPassword(e.target.value)}
+                            disabled={recuperacaoLoading}
+                          />
+                          <InputGroup.Text
+                            style={{ cursor: recuperacaoLoading ? "not-allowed" : "pointer" }}
+                            onClick={() =>
+                              !recuperacaoLoading &&
+                              setShowRecuperacaoPassword((prev) => !prev)
+                            }
+                          >
+                            {showRecuperacaoPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </InputGroup.Text>
+                        </InputGroup>
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Confirmar nova password</Form.Label>
+                        <Form.Control
+                          type={showRecuperacaoPassword ? "text" : "password"}
+                          placeholder="Confirmar nova password"
+                          value={recuperacaoConfirmarPassword}
+                          onChange={(e) => setRecuperacaoConfirmarPassword(e.target.value)}
+                          disabled={recuperacaoLoading}
+                        />
+                      </Form.Group>
+
+                      <Button
+                        type="button"
+                        className="w-100"
+                        onClick={redefinirPassword}
+                        disabled={recuperacaoLoading}
+                      >
+                        {recuperacaoLoading ? "A guardar..." : "Guardar nova password"}
+                      </Button>
+                    </>
+                  )}
+
+                  {passoRecuperacao === "sucesso" && (
+                    <Button
+                      type="button"
+                      className="w-100"
+                      onClick={() => {
+                        setShowRecuperacao(false);
+                        setPassoRecuperacao("email");
+                        setRecuperacaoCodigo("");
+                        setRecuperacaoNovaPassword("");
+                        setRecuperacaoConfirmarPassword("");
+                        setRecuperacaoError("");
+                        setRecuperacaoInfo("");
+                      }}
+                    >
+                      Ir para login
+                    </Button>
+                  )}
+
+                  {passoRecuperacao !== "sucesso" && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="w-100 mt-3"
+                      onClick={() => {
+                        setShowRecuperacao(false);
+                        setRecuperacaoError("");
+                        setRecuperacaoInfo("");
+                      }}
+                      disabled={recuperacaoLoading}
+                    >
+                      Voltar ao login
+                    </Button>
+                  )}
+                </>
+              )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
-
-      <Modal
-        show={showRecuperacao}
-        onHide={() => setShowRecuperacao(false)}
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Recuperar password</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          {recuperacaoError && (
-            <Alert variant="danger">{recuperacaoError}</Alert>
-          )}
-
-          {recuperacaoInfo && (
-            <Alert variant="success">{recuperacaoInfo}</Alert>
-          )}
-
-          {passoRecuperacao === "email" && (
-            <>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  placeholder="Insira o email da conta"
-                  value={recuperacaoEmail}
-                  onChange={(e) => setRecuperacaoEmail(e.target.value)}
-                  disabled={recuperacaoLoading}
-                />
-              </Form.Group>
-
-              <Button
-                type="button"
-                className="w-100"
-                onClick={pedirCodigoRecuperacao}
-                disabled={recuperacaoLoading}
-              >
-                {recuperacaoLoading ? "A enviar..." : "Enviar código"}
-              </Button>
-            </>
-          )}
-
-          {passoRecuperacao === "codigo" && (
-            <>
-              <Form.Group className="mb-3">
-                <Form.Label>Código de 6 dígitos</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="000000"
-                  value={recuperacaoCodigo}
-                  onChange={(e) => setRecuperacaoCodigo(e.target.value)}
-                  disabled={recuperacaoLoading}
-                />
-              </Form.Group>
-
-              <div className="d-flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline-secondary"
-                  className="w-50"
-                  onClick={() => setPassoRecuperacao("email")}
-                  disabled={recuperacaoLoading}
-                >
-                  Voltar
-                </Button>
-
-                <Button
-                  type="button"
-                  className="w-50"
-                  onClick={validarCodigoRecuperacao}
-                  disabled={recuperacaoLoading}
-                >
-                  {recuperacaoLoading ? "A validar..." : "Validar código"}
-                </Button>
-              </div>
-            </>
-          )}
-
-          {passoRecuperacao === "password" && (
-            <>
-              <Form.Group className="mb-3">
-                <Form.Label>Nova password</Form.Label>
-                <InputGroup>
-                  <Form.Control
-                    type={showRecuperacaoPassword ? "text" : "password"}
-                    placeholder="Nova password"
-                    value={recuperacaoNovaPassword}
-                    onChange={(e) => setRecuperacaoNovaPassword(e.target.value)}
-                    disabled={recuperacaoLoading}
-                  />
-                  <InputGroup.Text
-                    style={{ cursor: recuperacaoLoading ? "not-allowed" : "pointer" }}
-                    onClick={() =>
-                      !recuperacaoLoading &&
-                      setShowRecuperacaoPassword((prev) => !prev)
-                    }
-                  >
-                    {showRecuperacaoPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </InputGroup.Text>
-                </InputGroup>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Confirmar nova password</Form.Label>
-                <Form.Control
-                  type={showRecuperacaoPassword ? "text" : "password"}
-                  placeholder="Confirmar nova password"
-                  value={recuperacaoConfirmarPassword}
-                  onChange={(e) => setRecuperacaoConfirmarPassword(e.target.value)}
-                  disabled={recuperacaoLoading}
-                />
-              </Form.Group>
-
-              <Button
-                type="button"
-                className="w-100"
-                onClick={redefinirPassword}
-                disabled={recuperacaoLoading}
-              >
-                {recuperacaoLoading ? "A guardar..." : "Guardar nova password"}
-              </Button>
-            </>
-          )}
-
-          {passoRecuperacao === "sucesso" && (
-            <Button
-              type="button"
-              className="w-100"
-              onClick={() => {
-                setShowRecuperacao(false);
-                setRecuperacaoError("");
-                setRecuperacaoInfo("");
-              }}
-            >
-              Fechar
-            </Button>
-          )}
-        </Modal.Body>
-      </Modal>
     </Container>
   );
 }
