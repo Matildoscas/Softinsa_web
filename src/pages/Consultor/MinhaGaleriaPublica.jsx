@@ -72,7 +72,7 @@ function MinhaGaleriaPublicaPage() {
     >
       <Header />
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div style={{ display: "flex", flex: 1 }}>
         <LeftSidebar />
 
         <main style={{ flex: 1, overflowY: "auto", padding: 20 }}>

@@ -636,7 +636,7 @@ function ProgressoPage() {
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
 
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flex: 1 }}>
                 <LeftSidebar />
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>

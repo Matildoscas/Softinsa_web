@@ -412,7 +412,7 @@ function DefinicoesConsultorPage() {
     >
       <Header />
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div style={{ display: "flex", flex: 1 }}>
         <LeftSidebar />
 
         <main style={mainStyle}>
