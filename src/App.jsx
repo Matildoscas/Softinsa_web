@@ -4,7 +4,7 @@ import ProtectedRoute
   from "./components/ProtectedRoute.jsx";
 
 import './App.css';
-import "./styles/responsive.css";
+import "./style/responsive.css";
 
 import ConfiguracaoSLA from './pages/Admin/config_sla.jsx';
 import ConfigurarNotificacoes from './pages/Admin/config_notificacao.jsx';
