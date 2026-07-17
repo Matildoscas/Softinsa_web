@@ -989,9 +989,7 @@ const isEmAvaliacao = [
     ? Math.round((evidenciasAvalia / totalEvidencias) * 100)
     : 0;
 
-    console.log(dados);
-    console.log("Imagem:", dados.imagem);
-    console.log("Imagem Badge:", dados.imagem_badge);
+    console.log(JSON.stringify(dados, null, 2));
 
   return (
     <div style={styles.card}>
@@ -1377,6 +1375,8 @@ const historicoButton = {
   boxShadow:
     "0 2px 5px rgba(15, 23, 42, 0.14)",
 };
+
+const badgeHeader = { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px" };
 
 const styles = {
   card: {
