@@ -36,6 +36,9 @@ import {
   limparUtilizadorAnalytics,
 } from "../services/firebaseAnalytics";
 
+import MobileMenuButton
+  from "./MobileMenuButton.jsx";
+
 function obterUtilizadorGuardado() {
   const storedUser =
     localStorage.getItem("user");
@@ -143,6 +146,58 @@ function Header() {
     user?.id ||
     null;
 
+  const tipoUtilizador =
+    String(
+      user?.tipo_utilizador ||
+        user?.TIPO_UTILIZADOR ||
+        user?.cargo ||
+        user?.CARGO ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const isAdmin =
+    tipoUtilizador.includes("admin") ||
+    tipoUtilizador.includes(
+      "administrador"
+    );
+
+  const isConsultor =
+    tipoUtilizador.includes(
+      "consultor"
+    );
+
+  const isSll =
+    tipoUtilizador.includes(
+      "service line leader"
+    ) ||
+    tipoUtilizador.includes(
+      "servicelineleader"
+    ) ||
+    tipoUtilizador.includes(
+      "service_line_leader"
+    ) ||
+    tipoUtilizador === "sll";
+
+  const isTm =
+    tipoUtilizador.includes(
+      "talent manager"
+    ) ||
+    tipoUtilizador.includes(
+      "talentmanager"
+    ) ||
+    tipoUtilizador.includes(
+      "talent_manager"
+    ) ||
+    tipoUtilizador === "tm";
+
+  const mostrarMenuLateral =
+    isAdmin ||
+    isConsultor ||
+    isSll ||
+    isTm;
+
   const {
     totalNaoLidas,
   } = useNotificacoesRealtime(
@@ -182,17 +237,27 @@ function Header() {
   };
 
   return (
-    <Navbar
+    /*<Navbar
       bg="white"
       className="border-bottom px-4 py-0"
       style={{
         height: "52px",
         flexShrink: 0,
       }}
+    >*/
+    <header
+      className="app-header"
+      style={headerStyle}
     >
+
+      {mostrarMenuLateral && (
+        <MobileMenuButton />
+      )}
+
       <Navbar.Brand
         as={Link}
         to={rotas.inicio}
+        className="app-header-logo"
       >
         <img
           src={logoImg}
@@ -203,7 +268,10 @@ function Header() {
         />
       </Navbar.Brand>
 
-      <div style={searchContainer}>
+      <div
+        className="app-header-search"
+        style={searchContainer}
+      >
         <BiSearch
           size={20}
           style={searchIcon}
@@ -224,7 +292,7 @@ function Header() {
         />
       </div>
 
-      <Nav className="ms-auto align-items-center gap-2">
+      <Nav className="app-header-actions ms-auto align-items-center gap-2">
         <OverlayTrigger
           trigger="click"
           placement="bottom-end"
@@ -358,7 +426,7 @@ function Header() {
           </Button>
         </Modal.Footer>
       </Modal>
-    </Navbar>
+    </header>
   );
 }
 
@@ -462,6 +530,18 @@ const profileCircle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+};
+
+const headerStyle = {
+  width: "100%",
+  height: 52,
+  flexShrink: 0,
+  background: "white",
+  borderBottom: "1px solid #e5e7eb",
+  display: "flex",
+  alignItems: "center",
+  padding: "0 24px",
+  position: "relative",
 };
 
 export default Header;

@@ -298,10 +298,16 @@ function PaginaPrincipalSll() {
     <div style={page}>
       <Header />
 
-      <div style={body}>
+      <div
+        className="sll-layout-body"
+        style={body}
+      >
         <SllLeftSidebar />
 
-        <main style={main}>
+        <main
+          className="sll-dashboard-main"
+          style={main}
+        >
           {erro && (
             <div style={errorBox}>{erro}</div>
           )}
@@ -312,13 +318,19 @@ function PaginaPrincipalSll() {
             </div>
           ) : (
             <>
-              <section style={welcomeCard}>
+              <section
+                className="sll-welcome-card"
+                style={welcomeCard}
+              >
                 <div>
                   <h2 style={welcomeTitle}>
                     Bom dia, {resumo.nome_completo}!
                   </h2>
 
-                  <div style={welcomeStats}>
+                  <div
+                    className="sll-welcome-stats"
+                    style={welcomeStats}
+                  >
                     <WelcomeItem
                       icon={
                         <BiUserCircle size={20} />
@@ -338,7 +350,10 @@ function PaginaPrincipalSll() {
                 <WelcomeProfilePhoto user={sllUser} size={68} />
               </section>
 
-              <section style={statsRow}>
+              <section
+                className="sll-stats-grid"
+                style={statsRow}
+              >
                 <SmallStatCard
                     icon={<BiUserCircle size={28} />}
                   value={resumo.consultores_ativos}
@@ -358,8 +373,14 @@ function PaginaPrincipalSll() {
                 />
                 </section>
 
-              <section style={chartCard}>
-                <div style={chartHeader}>
+              <section
+                className="sll-chart-panel"
+                style={chartCard}
+              >
+                <div
+                  className="sll-chart-header"
+                  style={chartHeader}
+                >
                   <ChartTabs
                     active={activeTab}
                     onChange={setActiveTab}
@@ -379,11 +400,22 @@ function PaginaPrincipalSll() {
                 </div>
 
                 {grafico.length > 0 ? (
-                  <ResponsiveContainer
-                    width="100%"
-                    height={250}
-                  >
-                    <LineChart data={grafico}>
+                  <div className="sll-chart-box">
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      minWidth={1}
+                      debounce={50}
+                    >
+                      <LineChart
+                        data={grafico}
+                        margin={{
+                          top: 10,
+                          right: 12,
+                          left: -12,
+                          bottom: 0,
+                        }}
+                      >
                       <XAxis
                         dataKey="mes"
                         axisLine={false}
@@ -411,6 +443,7 @@ function PaginaPrincipalSll() {
                         stroke="#111827"
                         strokeWidth={2}
                         dot={false}
+                        isAnimationActive={false}
                       />
 
                       <Line
@@ -420,9 +453,11 @@ function PaginaPrincipalSll() {
                         strokeWidth={2}
                         strokeDasharray="4 3"
                         dot={false}
+                        isAnimationActive={false}
                       />
                     </LineChart>
                   </ResponsiveContainer>
+                  </div>
                 ) : (
                   <div style={emptyChart}>
                     Sem dados disponíveis para o
@@ -431,9 +466,15 @@ function PaginaPrincipalSll() {
                 )}
               </section>
 
-              <section style={peopleSection}>
+              <section
+                className="sll-people-section"
+                style={peopleSection}
+              >
                 <div style={peopleColumn}>
-                  <div style={peopleHeader}>
+                  <div
+                    className="sll-people-header"
+                    style={peopleHeader}
+                  >
                     <div>
                       <h3 style={sectionTitle}>
                         Os seus Consultores
@@ -534,8 +575,14 @@ function ConsultorCard({
   onVerPerfil,
 }) {
   return (
-    <article style={consultorCard}>
-      <div style={consultorMain}>
+    <article
+      className="sll-consultor-card"
+      style={consultorCard}
+    >
+      <div
+        className="sll-consultor-main"
+        style={consultorMain}
+      >
         <div style={consultorAvatar}>
           <BiUserCircle
             size={42}
@@ -561,7 +608,10 @@ function ConsultorCard({
         </div>
       </div>
 
-      <div style={consultorFooter}>
+      <div
+        className="sll-consultor-footer"
+        style={consultorFooter}
+      >
         <div style={badgeCount}>
           <BiAward size={15} />
           {Number(
@@ -588,7 +638,10 @@ function SmallStatCard({
   label,
 }) {
   return (
-    <div style={smallStatCard}>
+    <div
+      className="sll-stat-card"
+      style={smallStatCard}
+    >
       <div style={smallStatIcon}>{icon}</div>
 
       <div style={smallStatContent}>
@@ -676,14 +729,34 @@ const page = {
 const body = {
   display: "flex",
   flex: 1,
-  overflow: "hidden",
+
+  minWidth: 0,
+
+  alignItems:
+    "stretch",
+
+  background:
+    "white",
 };
 
 const main = {
   flex: 1,
+
+  width: "100%",
+  maxWidth: "100%",
   minWidth: 0,
-  padding: "22px 30px",
-  overflowY: "auto",
+
+  padding:
+    "22px 30px",
+
+  overflowY:
+    "auto",
+
+  overflowX:
+    "hidden",
+
+  background:
+    "#f3f4f6",
 };
 
 const welcomeCard = {

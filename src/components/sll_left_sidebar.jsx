@@ -22,8 +22,14 @@ function SllLeftSidebar() {
     useState(true);
 
   return (
-    <aside style={container}>
-      <div style={profileBox}>
+    <aside
+      className="app-left-sidebar sll-left-sidebar"
+      style={container}
+    >
+      <div
+        className="sll-sidebar-profile"
+        style={profileBox}
+      >
         <BiUserCircle size={25} color="#6b7280" />
 
         <span style={profileName}>Service Line Leader</span>
@@ -121,7 +127,7 @@ function MainLink({
           ? "1px solid #9ca3af"
           : "1px solid transparent",
 
-        borderRadius: isActive ? 9 : 0,
+        borderRadius: 10,
         background: isActive
           ? "#f9fafb"
           : "transparent",
@@ -190,6 +196,12 @@ function SubLink({ to, label }) {
         background: isActive
           ? "#eff6ff"
           : "transparent",
+
+        margin:
+          "2px 12px",
+
+        borderRadius:
+          10,
       })}
     >
       {label}
@@ -199,15 +211,31 @@ function SubLink({ to, label }) {
 
 const container = {
   width: 250,
+  minWidth: 250,
+
   background: "white",
-  borderRight: "1px solid #e5e7eb",
-  padding: "14px 0",
+
+  borderRight:
+    "1px solid #e5e7eb",
+
+  padding:
+    "14px 0",
+
   flexShrink: 0,
-  alignSelf: "flex-start",
-  position: "sticky",
-  top: 0,
-  height: "100vh",
+
+  /*
+   * Permite que a barra branca acompanhe
+   * toda a altura do conteúdo.
+   */
+  alignSelf: "stretch",
+
+  position: "relative",
+
+  height: "auto",
+  minHeight: "100%",
+
   overflowY: "auto",
+  overflowX: "hidden",
 };
 
 const profileBox = {
@@ -272,9 +300,15 @@ const submenu = {
 
 const subLink = {
   display: "block",
-  padding: "7px 24px 7px 64px",
-  fontSize: 13,
-  textDecoration: "none",
+
+  padding:
+    "8px 14px 8px 52px",
+
+  fontSize:
+    13,
+
+  textDecoration:
+    "none",
 };
 
 export default SllLeftSidebar;

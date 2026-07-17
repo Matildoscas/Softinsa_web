@@ -38,8 +38,14 @@ function AdminLeftSidebar() {
   }, []);
 
   return (
-    <div style={container}>
-      <div style={profileBox}>
+    <aside
+      className="app-left-sidebar admin-left-sidebar"
+      style={container}
+    >
+      <div
+        className="admin-sidebar-profile"
+        style={profileBox}
+      >
         <BiUserCircle size={26} color="#6b7280" />
         <span style={profileName}>{adminName}</span>
       </div>
@@ -143,7 +149,7 @@ function AdminLeftSidebar() {
         icon={<BiTimeFive size={16} />}
         label="Configuração de SLA"
       />
-    </div>
+    </aside>
   );
 }
 
@@ -158,7 +164,7 @@ function AdminLink({ to, icon, label, end = false }) {
         border: isActive ? "1px solid #111827" : "1px solid transparent",
         borderRadius: isActive ? 10 : 0,
         color: "#111827",
-        margin: isActive ? "0 14px 6px" : "0 14px 6px",
+        margin: isActive ? "2px 12px 6px" : "2px 12px 6px",
         padding: "8px 12px",
       })}
     >
@@ -177,6 +183,8 @@ function SubLink({ to, icon, label }) {
         color: isActive ? "#2563eb" : "#111827",
         fontWeight: isActive ? 600 : 400,
         backgroundColor: isActive ? "#eff6ff" : "transparent",
+        margin: "2px 12px",
+        borderRadius: 10,
       })}
     >
       {icon}
@@ -191,10 +199,16 @@ const container = {
   borderRight: "1px solid #e5e7eb",
   padding: "14px 0",
   flexShrink: 0,
-  alignSelf: "flex-start",
-  position: "sticky",
-  top: 0,
-  height: "100vh",
+
+  /*
+   * Permite que a sidebar acompanhe toda
+   * a altura do conteúdo central.
+   */
+  alignSelf: "stretch",
+  position: "relative",
+  height: "auto",
+  minHeight: "100%",
+
   overflowY: "auto",
 };
 

@@ -69,7 +69,10 @@ function AdminRightSidebar() {
   }
 
   return (
-    <div style={containerStyle}>
+    <aside
+      className="admin-right-sidebar"
+      style={containerStyle}
+    >
       <div style={sectionTitle}>Notificações</div>
 
       {notifications.length > 0 ? (
@@ -103,11 +106,11 @@ function AdminRightSidebar() {
       )}
 
       <div style={{ textAlign: "center", marginTop: 10 }}>
-        <a href="/admin/utilizadores" style={viewAllLink}>
+        <a href="/admin/contas" style={viewAllLink}>
           <BiGrid size={14} /> Ver Todos
         </a>
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -287,10 +290,16 @@ const containerStyle = {
   borderLeft: "1px solid #e5e7eb",
   padding: 16,
   flexShrink: 0,
-  alignSelf: "flex-start",
-  position: "sticky",
-  top: 0,
-  height: "100vh",
+
+  /*
+   * A barra branca acompanha toda
+   * a altura da página.
+   */
+  alignSelf: "stretch",
+  position: "relative",
+  height: "auto",
+  minHeight: "100%",
+
   overflowY: "auto",
   textAlign: "left",
 };

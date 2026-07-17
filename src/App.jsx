@@ -4,6 +4,7 @@ import ProtectedRoute
   from "./components/ProtectedRoute.jsx";
 
 import './App.css';
+import "./style/responsive.css";
 
 import ConfiguracaoSLA from './pages/Admin/config_sla.jsx';
 import ConfigurarNotificacoes from './pages/Admin/config_notificacao.jsx';
@@ -96,7 +97,7 @@ import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';
 import TM_Solicitacoes from './pages/TalentManager/TM_Solicitacoes.jsx';
 import TM_statuscandidatura from './pages/TalentManager/TM_statuscandidatura.jsx';
 
-function useMobileWebBlock() {
+/*function useMobileWebBlock() {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
 
@@ -134,16 +135,16 @@ function useMobileWebBlock() {
   }, []);
 
   return isMobile;
-}
+}*/
 
 function App() {
-  const shouldBlockMobileWeb = useMobileWebBlock();
+  //const shouldBlockMobileWeb = useMobileWebBlock();
 
   return (
     <Router>
-      {shouldBlockMobileWeb ? (
+      {/*{shouldBlockMobileWeb ? (
         <MicrositeProjeto mobileBlocked />
-      ) : (
+      ) : (*/}
       <Routes>
         
         // Rotas públicas
@@ -204,7 +205,6 @@ function App() {
         
             // Rotas Admin
             <Route path="/admin" element={<DashboardAdmin />} />
-            <Route path="/admin/contas" element={<GestaoContas />} />
             <Route path="/admin/contas" element={<GestaoContas />} />
             <Route path="/admin/contas/novo" element={<CriarConta />} />
             <Route path="/admin/contas/editar/:id" element={<EditarConta />} />
@@ -303,7 +303,6 @@ function App() {
         </Route>
 
       </Routes>
-      )}
     </Router>
   );
 }

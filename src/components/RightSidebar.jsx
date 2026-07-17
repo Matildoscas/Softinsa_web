@@ -397,43 +397,24 @@ function RightSidebar() {
   ]);
 
   const containerStyle = {
-    width:
-      250,
+    width: 280,
+    background: "white",
+    borderLeft: "1px solid #e5e7eb",
+    padding: 16,
+    flexShrink: 0,
 
-    background:
-      "white",
+    alignSelf: "stretch",
+    position: "relative",
+    height: "auto",
+    minHeight: "100%",
 
-    borderLeft:
-      "1px solid #e5e7eb",
-
-    padding:
-      16,
-
-    flexShrink:
-      0,
-
-    alignSelf:
-      "flex-start",
-
-    position:
-      "sticky",
-
-    top:
-      0,
-
-    height:
-      "100vh",
-
-    overflowY:
-      "auto",
-
-    textAlign:
-      "left",
+    overflowY: "auto",
+    textAlign: "left",
   };
 
   if (showBadges) {
     return (
-      <div style={containerStyle}>
+      <aside className="app-right-sidebar consultor-right-sidebar" style={containerStyle}>
         <div
           style={{
             fontSize:
@@ -515,12 +496,15 @@ function RightSidebar() {
             Ver todos
           </Link>
         </div>
-      </div>
+      </aside>
     );
   }
 
   return (
-    <div style={containerStyle}>
+    <aside
+      className="app-right-sidebar consultor-right-sidebar"
+      style={containerStyle}
+    >
       <div
         style={{
           fontSize:
@@ -723,7 +707,7 @@ function RightSidebar() {
           Ver todas
         </Link>
       </div>
-    </div>
+    </aside>
   );
 }
 

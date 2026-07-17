@@ -20,7 +20,7 @@ import {
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import Header from "../../components/TM_Header.jsx";
+import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";

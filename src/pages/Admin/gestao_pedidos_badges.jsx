@@ -698,9 +698,12 @@ function PedidoCard({ pedido, onVerDetalhe }) {
   const styleEstado = estadoStyle(pedido.estado_global);
 
   return (
-    <div style={pedidoCard}>
-      <div style={pedidoCardTop}>
-        <div style={{ flex: 1 }}>
+    <div
+      className="pedido-card"
+      style={pedidoCard}
+    >
+      <div className="pedido-card-layout">
+        <div className="pedido-card-content">
           <div style={pedidoTitleRow}>
             <span
               style={{
@@ -725,7 +728,7 @@ function PedidoCard({ pedido, onVerDetalhe }) {
             {" "}em {formatarData(pedido.data_submisao)}
           </div>
 
-          <div style={metaGrid}>
+          <div className="pedido-card-meta">
             <InfoLine label="Service Line" value={pedido.nome_serviceline} />
             <InfoLine label="Área" value={pedido.nome_area} />
             <InfoLine label="Nível" value={pedido.nome_nivel} />
@@ -733,11 +736,11 @@ function PedidoCard({ pedido, onVerDetalhe }) {
           </div>
         </div>
 
-        <div style={rightColumn}>
+        <div className="pedido-card-right">
           <InfoLine label="Talent Manager" value={pedido.nome_tm} alignRight />
           <InfoLine label="Service Line Leader" value={pedido.nome_sll} alignRight />
 
-          <div style={reqStats}>
+          <div className="pedido-card-stats">
             <span style={statOk}>{pedido.requisitos_aprovados} aprov.</span>
             <span style={statBad}>{pedido.requisitos_rejeitados} rej.</span>
             <span style={statWarn}>{pedido.requisitos_pendentes} pend.</span>
@@ -757,11 +760,26 @@ function PedidoCard({ pedido, onVerDetalhe }) {
   );
 }
 
-function InfoLine({ label, value, alignRight = false }) {
+function InfoLine({
+  label,
+  value,
+  alignRight = false,
+}) {
   return (
-    <div style={{ textAlign: alignRight ? "right" : "left" }}>
-      <div style={smallLabel}>{label}</div>
-      <div style={smallValue}>{value || "—"}</div>
+    <div
+      className={
+        alignRight
+          ? "pedido-info pedido-info-right"
+          : "pedido-info"
+      }
+    >
+      <div style={smallLabel}>
+        {label}
+      </div>
+
+      <div style={smallValue}>
+        {value || "—"}
+      </div>
     </div>
   );
 }
@@ -1104,13 +1122,6 @@ const pedidoCard = {
   padding: "20px 24px",
 };
 
-const pedidoCardTop = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 20,
-  alignItems: "flex-start",
-};
-
 const pedidoTitleRow = {
   display: "flex",
   alignItems: "center",
@@ -1131,21 +1142,6 @@ const pedidoDescription = {
   color: "#6b7280",
   lineHeight: 1.6,
   marginBottom: 14,
-};
-
-const metaGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(120px, 1fr))",
-  gap: 14,
-};
-
-const rightColumn = {
-  width: 260,
-  flexShrink: 0,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-end",
-  gap: 10,
 };
 
 const statusPill = {
@@ -1173,13 +1169,6 @@ const smallValue = {
   fontSize: 13,
   color: "#111827",
   fontWeight: 600,
-};
-
-const reqStats = {
-  display: "flex",
-  gap: 6,
-  flexWrap: "wrap",
-  justifyContent: "flex-end",
 };
 
 const statOk = {

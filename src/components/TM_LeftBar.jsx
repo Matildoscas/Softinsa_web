@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import {
+  NavLink,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { buildUploadUrl } from "../services/api.js";
 import {
   BiGrid,
@@ -20,6 +24,7 @@ function LeftSidebarTM() {
   const [consultoresAberto, setConsultoresAberto] = useState(
     location.pathname.startsWith("/tm/consultores")
   );
+  const navigate = useNavigate();
 
   const handleBadgesToggle = () => {
   // 1. Alterna o estado para abrir/fechar o submenu
@@ -64,11 +69,17 @@ function LeftSidebarTM() {
   }, [location.pathname]);
 
   return (
-    <aside style={sidebarStyle}>
+    <aside
+      className="app-left-sidebar tm-left-sidebar"
+      style={sidebarStyle}
+    >
       {/* Bloco Superior: Perfil + Navegação */}
       <div>
         {/* Bloco de Perfil Dinâmico (Versão 1) */}
-        <div style={profileBoxStyle}>
+        <div
+          className="tm-sidebar-profile"
+          style={profileBoxStyle}
+        >
           <div style={avatarWrapperStyle}>
             {user?.foto_perfil ? (
               <img
@@ -160,7 +171,7 @@ function MainLink({ to, icon, label, end = false }) {
       style={({ isActive }) => ({
         ...mainLinkStyle,
         border: isActive ? "1px solid #dee2e6" : "1px solid transparent",
-        borderRadius: isActive ? "9px" : "0px",
+        borderRadius: "10px",
         background: isActive ? "#e9ecef" : "transparent",
         fontWeight: isActive ? "600" : "400",
         color: isActive ? "#0d6efd" : "#111827",
@@ -212,7 +223,7 @@ function SubLink({ to, label }) {
         color: isActive ? "#2563eb" : "#495057",
         fontWeight: isActive ? "600" : "400",
         background: isActive ? "#eff6ff" : "transparent",
-        borderRadius: isActive ? "8px" : "0px",
+        borderRadius: "10px",
       })}
     >
       {label}
@@ -225,21 +236,39 @@ function SubLink({ to, label }) {
 ========================================================= */
 
 const sidebarStyle = {
-  width: "260px",
-  backgroundColor: "#f8f9fa",
-  minHeight: "100vh",
+  width: 260,
+  minWidth: 260,
+
+  backgroundColor: "white",
+
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
+
   padding: "24px 16px",
-  borderRight: "1px solid #e9ecef",
-  fontFamily: "system-ui, sans-serif",
+
+  borderRight:
+    "1px solid #e5e7eb",
+
+  fontFamily:
+    "system-ui, sans-serif",
+
   flexShrink: 0,
-  alignSelf: "flex-start",
-  position: "sticky",
-  top: 0,
-  height: "100vh",
+
+  /*
+   * Permite que a barra branca acompanhe
+   * toda a altura do conteúdo central.
+   */
+  alignSelf: "stretch",
+
+  position: "relative",
+
+  height: "auto",
+  minHeight: "100%",
+
   overflowY: "auto",
+  overflowX: "hidden",
+
   boxSizing: "border-box",
 };
 
@@ -340,7 +369,7 @@ const submenuStyle = {
 const subLinkStyle = {
   display: "block",
   padding: "8px 16px 8px 38px",
-  margin: "2px 4px",
+  margin: "2px 8px",
   fontSize: "13px",
   textDecoration: "none",
   transition: "all 0.15s ease",

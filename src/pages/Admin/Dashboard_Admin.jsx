@@ -481,19 +481,28 @@ function PaginaPrincipalAdmin() {
       <Header />
 
       <div
+        className="admin-layout-body"
         style={{
           display: "flex",
           flex: 1,
-          overflow: "hidden",
+          minWidth: 0,
+          alignItems: "stretch",
+          background: "white",
         }}
       >
         <AdminLeftSidebar />
 
-        <div
+        <main
+          className="admin-dashboard-main"
           style={{
             flex: 1,
+            width: "100%",
+            maxWidth: "100%",
+            minWidth: 0,
             overflowY: "auto",
+            overflowX: "hidden",
             padding: 20,
+            background: "#f0f2f5",
           }}
         >
           {/* Welcome Card */}
@@ -506,10 +515,12 @@ function PaginaPrincipalAdmin() {
           >
             <Card.Body className="p-4 text-white">
               <div
+                className="dashboard-welcome-row"
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  gap: 16,
                 }}
               >
                 <div>
@@ -562,9 +573,10 @@ function PaginaPrincipalAdmin() {
 
           {/* Stat Cards */}
           <div
+            className="dashboard-stat-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
               gap: 16,
               marginBottom: 24,
             }}
@@ -593,15 +605,17 @@ function PaginaPrincipalAdmin() {
 
           {/* Charts Row */}
           <div
+            className="dashboard-chart-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "1.5fr 1fr",
+              gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 1fr)",
               gap: 16,
               marginBottom: 24,
             }}
           >
             {/* Line Chart */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -610,10 +624,12 @@ function PaginaPrincipalAdmin() {
               }}
             >
               <div
+                className="dashboard-chart-header"
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  gap: 12,
                   marginBottom: 14,
                 }}
               >
@@ -674,45 +690,70 @@ function PaginaPrincipalAdmin() {
                 </div>
               </div>
 
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={lineChartData}>
-                  <XAxis
-                    dataKey="mes"
-                    tick={{ fontSize: 11, fill: "#9ca3af" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
+              <div className="dashboard-chart-box">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  minWidth={1}
+                  debounce={50}
+                >
+                  <LineChart
+                    data={lineChartData}
+                    margin={{
+                      top: 10,
+                      right: 12,
+                      left: -12,
+                      bottom: 0,
+                    }}
+                  >
+                    <XAxis
+                      dataKey="mes"
+                      tick={{
+                        fontSize: 11,
+                        fill: "#9ca3af",
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
 
-                  <YAxis
-                    tick={{ fontSize: 11, fill: "#9ca3af" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
+                    <YAxis
+                      tick={{
+                        fontSize: 11,
+                        fill: "#9ca3af",
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
 
-                  <Tooltip />
+                    <Tooltip />
 
-                  <Line
-                    type="monotone"
-                    dataKey={chartKeys.esteAno}
-                    stroke="#2563eb"
-                    strokeWidth={2}
-                    dot={false}
-                  />
+                    <Line
+                      type="monotone"
+                      dataKey={chartKeys.esteAno}
+                      stroke="#2563eb"
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
 
-                  <Line
-                    type="monotone"
-                    dataKey={chartKeys.anoPassado}
-                    stroke="#d1d5db"
-                    strokeWidth={2}
-                    dot={false}
-                    strokeDasharray="4 2"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+                    <Line
+                      type="monotone"
+                      dataKey={chartKeys.anoPassado}
+                      stroke="#d1d5db"
+                      strokeWidth={2}
+                      dot={false}
+                      strokeDasharray="4 2"
+                      isAnimationActive={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Pie Chart */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -731,29 +772,42 @@ function PaginaPrincipalAdmin() {
                 Atividade dos Consultores
               </div>
 
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    dataKey="value"
-                    startAngle={90}
-                    endAngle={-270}
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell
-                        key={index}
-                        fill={PIE_COLORS[index]}
-                      />
-                    ))}
-                  </Pie>
+              <div className="dashboard-chart-box dashboard-chart-box-pie">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  minWidth={1}
+                  debounce={50}
+                >
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="52%"
+                      outerRadius="76%"
+                      dataKey="value"
+                      startAngle={90}
+                      endAngle={-270}
+                      paddingAngle={1}
+                      isAnimationActive={false}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell
+                          key={`${entry.name}-${index}`}
+                          fill={PIE_COLORS[index]}
+                        />
+                      ))}
+                    </Pie>
 
-                  <Tooltip formatter={(v) => `${v}%`} />
-                </PieChart>
-              </ResponsiveContainer>
+                    <Tooltip
+                      formatter={(value) =>
+                        `${Number(value || 0).toFixed(1)}%`
+                      }
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
               <div
                 style={{
@@ -806,14 +860,16 @@ function PaginaPrincipalAdmin() {
 
           {/* Bottom Row */}
           <div
+            className="dashboard-two-column-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 16,
             }}
           >
             {/* Bar Chart */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -832,8 +888,23 @@ function PaginaPrincipalAdmin() {
                 Total de consultores em cada área
               </div>
 
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={barChartData} barSize={36}>
+              <div className="dashboard-chart-box">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  minWidth={1}
+                  debounce={50}
+                >
+                  <BarChart
+                    data={barChartData}
+                    barSize={36}
+                    margin={{
+                      top: 10,
+                      right: 8,
+                      left: -12,
+                      bottom: 0,
+                    }}
+                  >
                   <XAxis
                     dataKey="area"
                     tick={{ fontSize: 11, fill: "#9ca3af" }}
@@ -860,7 +931,7 @@ function PaginaPrincipalAdmin() {
                     }}
                   />
 
-                  <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="total" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                     {barChartData.map((item, i) => (
                       <Cell
                         key={item.areaCompleta || item.area}
@@ -870,10 +941,12 @@ function PaginaPrincipalAdmin() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Area breakdown */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -962,14 +1035,16 @@ function PaginaPrincipalAdmin() {
             </div>
           </div>
           <div
+            className="dashboard-two-column-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 16,
               marginTop: 24,
             }}
           >
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -988,7 +1063,13 @@ function PaginaPrincipalAdmin() {
                 Badges por Learning Path
               </div>
 
-              <ResponsiveContainer width="100%" height={240}>
+              <div className="dashboard-chart-box dashboard-chart-box-large">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={1}
+                debounce={50}
+              >
                 <BarChart
                   data={badgesPorLearningPath}
                   barSize={34}
@@ -1025,6 +1106,7 @@ function PaginaPrincipalAdmin() {
                   <Bar
                     dataKey="total_badges"
                     radius={[4, 4, 0, 0]}
+                    isAnimationActive={false}
                   >
                     {badgesPorLearningPath.map((item, index) => (
                       <Cell
@@ -1035,9 +1117,11 @@ function PaginaPrincipalAdmin() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             </div>
 
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -1140,7 +1224,7 @@ function PaginaPrincipalAdmin() {
               </div>
             </div>
           </div>
-        </div>
+        </main>
 
         <AdminRightSidebar />
       </div>

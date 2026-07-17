@@ -140,7 +140,10 @@ function SllRightSidebar() {
   }, []);
 
   return (
-    <aside style={container}>
+    <aside
+      className="app-right-sidebar sll-right-sidebar"
+      style={container}
+    >
       <div style={sectionTitle}>Notificações</div>
 
       {notificacoes.length > 0 ? (
@@ -402,15 +405,30 @@ function formatarTempo(data) {
 
 const container = {
   width: 300,
+  minWidth: 300,
+
   background: "white",
-  borderLeft: "1px solid #e5e7eb",
+
+  borderLeft:
+    "1px solid #e5e7eb",
+
   padding: 18,
+
   flexShrink: 0,
-  alignSelf: "flex-start",
-  position: "sticky",
-  top: 0,
-  height: "100vh",
+
+  /*
+   * A sidebar acompanha toda
+   * a altura da página.
+   */
+  alignSelf: "stretch",
+
+  position: "relative",
+
+  height: "auto",
+  minHeight: "100%",
+
   overflowY: "auto",
+  overflowX: "hidden",
 };
 
 const sectionTitle = {
