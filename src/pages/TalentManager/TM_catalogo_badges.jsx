@@ -271,6 +271,12 @@ function CatalogoBadgesTm() {
     Math.ceil(badgesFiltrados.length / BADGES_POR_PAGINA)
   );
 
+  useEffect(() => {
+    setPaginaAtual((paginaAnterior) =>
+      Math.min(Math.max(1, paginaAnterior), totalPaginas)
+    );
+  }, [totalPaginas]);
+
   // Recorta a lista para mostrar apenas os badges da página atual
   const badgesPaginados = useMemo(() => {
     const inicio = (paginaAtual - 1) * BADGES_POR_PAGINA;
