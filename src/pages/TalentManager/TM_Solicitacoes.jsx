@@ -25,12 +25,11 @@ import api from "../../services/api.js";
 function SolicitacaoBadges() {
   const navigate = useNavigate();
 
-  // Estado que armazena as linhas vindas da tabela 'candidatura_pedido'
   const [candidaturas, setCandidaturas] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Estados dos Filtros
-  const [filtroAmbito, setFiltroAmbito] = useState("MinhaArea"); // 🎯 NOVO FILTRO: "MinhaArea" ou "Todos"
+  const [filtroAmbito, setFiltroAmbito] = useState("MinhaArea"); 
   const [pesquisa, setPesquisa] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("Todos");
 
@@ -175,7 +174,7 @@ function SolicitacaoBadges() {
 
             {/* Atalhos de Rodapé */}
             <div style={bottomLinks}>
-              <div style={linkItem}>
+              <div style={linkItem} onClick={() => navigate("/tm/expiracao")}>
                 <BiTimeFive size={16} /> Ver Badges com expiração próxima
               </div>
               <div style={linkItem} onClick={() => navigate("/tm/HistoricoCandidaturas")}>
@@ -192,13 +191,17 @@ function SolicitacaoBadges() {
   );
 }
 
-// COMPONENTE ISOLADO PARA CADA LINHA DA TABELA candidatura_pedido
 function CandidaturaPedidoRow({ pedido, onClick }) {
   const consultorNome = pedido.nome_consultor || pedido.nome_utilizador || "Consultor";
   const consultorEmail = pedido.email_consultor || pedido.email || "";
   const badgeNome = pedido.nome_badge || pedido.nome || "Badge Especificado";
   const areaNome = pedido.nome_area || pedido.service_line || pedido.area || "";
   const diasPassados = pedido.dias_passados || 0;
+
+  const imagemPath = pedido.imagem_badge || pedido.badge_imagem || pedido.imagem;
+  const badgeImagemUrl = imagemPath
+    ? (imagemPath.startsWith("http") ? imagemPath : `https://softinsa-api.onrender.com${imagemPath}`)
+    : null;
   
   const estado = pedido.estado_validacao || pedido.estado || "Por avaliar";
   const isEmAvaliacao = estado === "Em avaliação";
@@ -225,7 +228,21 @@ function CandidaturaPedidoRow({ pedido, onClick }) {
       {/* Coluna 2: Informação do Badge e Progresso de Evidências */}
       <div style={infoSection}>
         <div style={badgeHeader}>
-          <span style={{ fontSize: "22px" }}>🏅</span>
+          {/* Contentor para garantir que o ícone ou a imagem ocupam o mesmo espaço */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "38px" }}>
+            {badgeImagemUrl ? (
+              <img
+                src={badgeImagemUrl}
+                alt={badgeNome}
+                style={badgeImgStyle} /* <--- Agora passamos o objeto de estilos correto! */
+              />
+            ) : (
+              <BiMedal
+                size={34}
+                color={especial ? "#ffffff" : "#2563eb"} /* <--- Recebe "especial" via props com segurança */
+              />
+            )}
+          </div>
           <div>
             <div style={badgeTitle}>
               {badgeNome}               
@@ -340,5 +357,19 @@ const voltarButton = {
   fontSize: 14,
   cursor: "pointer",
 };
+
+const badgeImagem = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  borderRadius: "50%",
+};
+
+const badgeImgStyle = {
+    width: "34px",
+    height: "34px",
+    objectFit: "contain",
+    borderRadius: "4px"
+  };
 
 export default SolicitacaoBadges;
