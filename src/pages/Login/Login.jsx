@@ -506,7 +506,7 @@ function LoginPage() {
                   disabled={loading}
                   onClick={() => navigate("/microsite")}
                 >
-                  Conhecer o site
+                  Conhecer o site (Microsite)
                 </Button>
               </Form>
               ) : (
