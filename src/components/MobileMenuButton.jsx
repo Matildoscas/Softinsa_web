@@ -12,6 +12,10 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import {
+  createPortal,
+} from "react-dom";
+
 function MobileMenuButton() {
   const [aberto, setAberto] =
     useState(false);
@@ -20,7 +24,7 @@ function MobileMenuButton() {
     useLocation();
 
   /*
-   * Fecha a sidebar automaticamente
+   * Fecha automaticamente a sidebar
    * quando o utilizador muda de página.
    */
   useEffect(() => {
@@ -28,8 +32,8 @@ function MobileMenuButton() {
   }, [location.pathname]);
 
   /*
-   * Controla a classe global utilizada
-   * pelo CSS para mostrar a sidebar.
+   * Adiciona ao body a classe usada pelo CSS
+   * para apresentar ou esconder a sidebar.
    */
   useEffect(() => {
     document.body.classList.toggle(
@@ -49,6 +53,22 @@ function MobileMenuButton() {
     };
   }, [aberto]);
 
+  const overlay =
+    aberto &&
+    typeof document !== "undefined"
+      ? createPortal(
+          <button
+            type="button"
+            className="mobile-menu-overlay"
+            onClick={() =>
+              setAberto(false)
+            }
+            aria-label="Fechar menu lateral"
+          />,
+          document.body
+        )
+      : null;
+
   return (
     <>
       <button
@@ -56,7 +76,8 @@ function MobileMenuButton() {
         className="mobile-menu-button"
         onClick={() =>
           setAberto(
-            (anterior) => !anterior
+            (estadoAnterior) =>
+              !estadoAnterior
           )
         }
         aria-label={
@@ -67,22 +88,13 @@ function MobileMenuButton() {
         aria-expanded={aberto}
       >
         {aberto ? (
-          <BiX size={25} />
+          <BiX size={27} />
         ) : (
           <BiMenu size={25} />
         )}
       </button>
 
-      {aberto && (
-        <button
-          type="button"
-          className="mobile-menu-overlay"
-          onClick={() =>
-            setAberto(false)
-          }
-          aria-label="Fechar menu lateral"
-        />
-      )}
+      {overlay}
     </>
   );
 }
