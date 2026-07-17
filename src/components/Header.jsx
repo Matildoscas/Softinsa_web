@@ -88,12 +88,6 @@ function obterRotasUtilizador(user) {
       "administrador"
     );
 
-  const isConsultor =
-    tipoUtilizador.includes("consultor");
-
-  const mostrarMenuLateral =
-    isAdmin || isConsultor;
-
     if (isTm) {
       return {
         inicio: "/tm",
@@ -168,6 +162,14 @@ function Header() {
     tipoUtilizador.includes(
       "administrador"
     );
+
+  const isConsultor =
+    tipoUtilizador.includes(
+      "consultor"
+    );
+
+  const mostrarMenuLateral =
+    isAdmin || isConsultor;
 
   const {
     totalNaoLidas,
