@@ -876,7 +876,7 @@ function SolicitacoesBadgesSll() {
                         solicitacao.id_candidatura_pedido
                       }
                       dados={solicitacao}
-                      role = "tm"
+                      role = "sll"
                       onClick={() =>
                         navigate(
                           `/sll/solicitacoes/${solicitacao.id_candidatura_pedido}${
@@ -947,7 +947,7 @@ function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
   // 2. Tempo/Data de Submissão
   const tempoTexto = dados.dias_passados !== undefined 
     ? `Submetido há ${dados.dias_passados} dias`
-    : `Solicitado em ${dados.data_rececao_sll || dados.data_submissao || ""}`;
+    : `Solicitado em ${formatarData(dados.data_rececao_sll || dados.data_submissao || "")}`;
 
   // 3. Informações do Badge
   const badgeNome = dados.nome_badge || dados.nome || "Badge Especificado";

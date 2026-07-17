@@ -226,6 +226,8 @@ function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
     ? Math.round((evidenciasAvalia / totalEvidencias) * 100)
     : Number(dados.progresso || 0);
 
+    console.log(JSON.stringify(dados, null, 2));
+
   return (
     <div style={styles.card}>
       
