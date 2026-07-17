@@ -951,7 +951,7 @@ function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
 
   // 3. Informações do Badge
   const badgeNome = dados.nome_badge || dados.nome || "Badge Especificado";
-  const areaNome = dados.nome_area || dados.service_line || dados.area || "";
+  const areaNome = dados.nome_serviceline || dados.nome_area || dados.service_line || dados.area || "";
   const nivel = dados.codigo_nivel || null;
 
   // 4. Tratamento da Imagem do Badge
@@ -988,6 +988,10 @@ const isEmAvaliacao = [
   const percentagemProgresso = totalEvidencias > 0 
     ? Math.round((evidenciasAvalia / totalEvidencias) * 100)
     : 0;
+
+    console.log(dados);
+    console.log("Imagem:", dados.imagem);
+    console.log("Imagem Badge:", dados.imagem_badge);
 
   return (
     <div style={styles.card}>
@@ -1231,7 +1235,7 @@ const inputFiltro = {
 };
 
 const lista = {
-  maxWidth: 900,
+  maxWidth: "100%",
   margin: "0 auto",
   display: "flex",
   flexDirection: "column",

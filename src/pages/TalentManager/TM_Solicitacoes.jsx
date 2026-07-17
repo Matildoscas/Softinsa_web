@@ -205,7 +205,7 @@ function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
 
   // 3. Informações do Badge
   const badgeNome = dados.nome_badge || dados.nome || "Badge Especificado";
-  const areaNome = dados.nome_area || dados.service_line || dados.area || "";
+  const areaNome = dados.nome_serviceline || dados.nome_area || dados.service_line || dados.area || "";
   const nivel = dados.codigo_nivel || null;
 
   // 4. Tratamento da Imagem do Badge (com o domínio do Render se necessário)
@@ -257,10 +257,16 @@ function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
           <div>
             <div style={styles.badgeTitle}>
               {badgeNome}
-              {nivel && <span style={styles.nivelBadge}>Nível {nivel}</span>}
             </div>
-            {areaNome && <div style={styles.serviceLine}>{areaNome}</div>}
+              <div style={styles.serviceLine}>
+                {areaNome}
+              </div>
           </div>
+            {nivel && (
+              <span style={styles.nivelBadge}>
+                Nível {nivel}
+              </span>
+            )}
         </div>
 
         {/* Só mostra a barra de progresso se houver dados de evidências (comum no TM) */}
@@ -340,7 +346,7 @@ const userName = { fontSize: "14px", fontWeight: "700", color: "#111827" };
 const userEmail = { fontSize: "11px", color: "#6b7280", wordBreak: "break-all" };
 
 const infoSection = { flex: 1, display: "flex", flexDirection: "column", gap: "12px" };
-const badgeHeader = { display: "flex", gap: "12px", alignItems: "center" };
+const badgeHeader = { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px" };
 const badgeTitle = { fontSize: "15px", fontWeight: "600", color: "#2563EB" };
 const serviceLine = { fontSize: "12px", color: "#4b5563" };
 
