@@ -90,8 +90,9 @@ export default function ConfiguracaoAssinaturaPage() {
     return id ? `softinsa_email_signature_template_${id}` : "softinsa_email_signature_template";
   }, [user]);
 
+  // ATUALIZADO: Agora carrega os teus dados assincronamente a partir do teu novo controller do Backend
   useEffect(() => {
-    function carregarDados() {
+    async function carregarDados() {
       try {
         setLoading(true);
         const storedUser = localStorage.getItem("user");
@@ -108,7 +109,16 @@ export default function ConfiguracaoAssinaturaPage() {
         }
 
         setUser(userData);
-        setBadges([]);
+
+        // Chamada real à API utilizando o endpoint do teu router: /api/badges/conquistados/:id
+        try {
+          const resposta = await api.get(`/badges/conquistados/${userId}`);
+          const badgesTratados = removerDuplicados(resposta.data);
+          setBadges(badgesTratados);
+        } catch (apiErr) {
+          console.error("Erro ao ir buscar os badges à API:", apiErr);
+          setBadges([]);
+        }
 
         const guardada = localStorage.getItem(`softinsa_email_signature_template_${userId}`);
         let configInicial = CONFIG_PADRAO;
@@ -120,8 +130,9 @@ export default function ConfiguracaoAssinaturaPage() {
         setConfig(configInicial);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     carregarDados();
   }, [navigate]);
@@ -134,9 +145,11 @@ export default function ConfiguracaoAssinaturaPage() {
     };
   }, [user]);
 
+  // ATUALIZADO: Filtra o badge correspondente que está guardado no teu estado de configurações
   const badgesSelecionados = useMemo(() => {
-    return [];
-  }, []);
+    if (!config.badgePrincipalId) return [];
+    return badges.filter((b) => String(obterIdBadge(b)) === String(config.badgePrincipalId));
+  }, [badges, config.badgePrincipalId]);
 
   const atualizarConfig = (campo, valor) => {
     setConfig((anterior) => ({ ...anterior, [campo]: valor }));
@@ -154,6 +167,14 @@ export default function ConfiguracaoAssinaturaPage() {
     if (config.mostrarNome) lines.push(dadosAssinatura.nome);
     if (config.mostrarCargo) lines.push(dadosAssinatura.cargo);
     if (config.mostrarEmail && dadosAssinatura.email) lines.push(dadosAssinatura.email);
+    
+    // Opcional: Adiciona o nome do Badge e link de validação ao texto simples caso configurado
+    if (config.mostrarLinkBadge && badgesSelecionados.length > 0) {
+      badgesSelecionados.forEach(badge => {
+        lines.push(`Badge: ${badge.nome} - ${obterUrlBadge(badge)}`);
+      });
+    }
+
     return lines.filter(Boolean).join("\n");
   };
 
@@ -252,6 +273,37 @@ export default function ConfiguracaoAssinaturaPage() {
                   </div>
                 </Card.Body>
               </Card>
+
+              {/* INCLUÍDO: Seleção Dinâmica do Badge Conquistado */}
+              {badges.length > 0 && (
+                <Card className="border-0" style={{ ...card, marginTop: 20 }}>
+                  <Card.Body>
+                    <h5 style={sectionTitle}>Escolha o seu Badge Conquistado</h5>
+                    <select
+                      value={config.badgePrincipalId}
+                      onChange={(e) => atualizarConfig("badgePrincipalId", e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        border: "1px solid #e5e7eb",
+                        backgroundColor: "#f8fafc",
+                        fontSize: "13px",
+                        color: "#374151",
+                        outline: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      <option value="">-- Selecione um Badge para a Assinatura --</option>
+                      {badges.map((badge) => (
+                        <option key={obterIdBadge(badge)} value={obterIdBadge(badge)}>
+                          {badge.nome} ({badge.nome_nivel || "Sem Nível"})
+                        </option>
+                      ))}
+                    </select>
+                  </Card.Body>
+                </Card>
+              )}
             </div>
 
             {/* Coluna Direita (Ações e Textarea) */}
