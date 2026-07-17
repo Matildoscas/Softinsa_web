@@ -12,6 +12,7 @@ import {
   ExternalLink,
   FileText,
   Globe2,
+  Download,
   Layers3,
   MailCheck,
   Network,
@@ -326,20 +327,25 @@ function MicrositeProjeto({ mobileBlocked = false }) {
             <a href="#workflow" className="btn-hero-secondary">
               Ver workflow
             </a>
-              <div className="mobile-download-actions">
-                  <a
-                    href="/downloads/softinsa-badges.apk"
-                    download="softinsa-badges.apk"
-                    className="btn-hero-primary"
-                  >
-                    <Smartphone size={18} />
-                    Descarregar APK
-                  </a>
-
-                  <span>
-                    Disponível para dispositivos Android
-                  </span>
-                </div>
+            {hasInstallUrl ? (
+              <a
+                href={installUrl}
+                download="softinsa-badges.apk"
+                className="btn-hero-download"
+              >
+                <Download size={18} />
+                Descarregar APK
+              </a>
+            ) : (
+              <button
+                type="button"
+                className="btn-hero-download"
+                disabled
+              >
+                <Download size={18} />
+                APK indisponível
+              </button>
+            )}
           </div>
 
           <div className="hero-stats">
