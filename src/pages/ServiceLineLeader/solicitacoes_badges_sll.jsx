@@ -940,23 +940,22 @@ function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
   const areaNome = dados.nome_area || dados.service_line || dados.area || "";
   const nivel = dados.codigo_nivel || null;
 
-  // 4. Tratamento da Imagem do Badge (com o domínio do Render se necessário)
+  // 4. Tratamento da Imagem do Badge
   const imagemPath = dados.imagem_badge || dados.badge_imagem || dados.imagem;
   const badgeImagemUrl = imagemPath
     ? (imagemPath.startsWith("http") ? imagemPath : `https://softinsa-api.onrender.com${imagemPath}`)
     : null;
 
-  // 5. Estado e Progresso (Mecanismo do TM)
+  // 5. Estado e Progresso (Mecanismo do TM) - CÓDIGO ATUALIZADO AQUI
   const estado = dados.estado_validacao || dados.estado_candidatura_pedido || dados.estado || "Por avaliar";
   const isEmAvaliacao = estado === "Em avaliação" || estado === "EM_AVALIACAO";
 
-  const totalEvidencias = Number(dados.total_evidencias || 0);
-  const evidenciasAvalia = Number(dados.evidencias_avaliadas || 0);
-  const temProgresso = totalEvidencias > 0 || dados.progresso !== undefined;
-  
+  const totalEvidencias = Number(dados.total_requisitos || dados.total_evidencias || 0);
+  const evidenciasAvalia = Number(dados.requisitos_avaliados || dados.evidencias_avaliadas || 0);
+  const temProgresso = totalEvidencias > 0;
   const percentagemProgresso = totalEvidencias > 0 
     ? Math.round((evidenciasAvalia / totalEvidencias) * 100)
-    : Number(dados.progresso || 0);
+    : 0;
 
   return (
     <div style={styles.card}>
