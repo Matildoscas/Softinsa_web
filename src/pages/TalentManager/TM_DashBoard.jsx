@@ -7,7 +7,8 @@ import {
 } from "react-icons/bi";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Cell 
+  Tooltip, ResponsiveContainer, Cell,
+  LineChart, Line
 } from "recharts"; 
 
 // Componentes Globais
@@ -111,6 +112,9 @@ function DashboardTMUnificado() {
   const [resumo, setResumo] = useState({});
   const [consultores, setConsultores] = useState([]);
   const [consultoresPorArea, setConsultoresPorArea] = useState([]);
+  const [badgesPorDatas, setBadgesPorDatas] = useState([]);
+  const [badgesPorLearningPath, setBadgesPorLearningPath] = useState([]);
+  const [badgesPorNivelLearningPath, setBadgesPorNivelLearningPath] = useState([]);
   const [tmUser, setTmUser] = useState(null);
 
   // Extração inteligente de Áreas e Service Lines únicas (baseado nos dados vindos do gráfico)
@@ -157,26 +161,39 @@ function DashboardTMUnificado() {
         valor: Number(dados.total_badges || 0),
         label: "Total Badges Atribuídos",
       },
-      {
-        tipo: "METRICA_DATAS",
-        valor: Number(dados.badges_por_datas || 0),
-        label: "Badges por Datas",
-      },
-      {
-        tipo: "METRICA_PATHS",
-        valor: Number(dados.badges_por_learning_paths || 0),
-        label: "Badges por Learning Paths",
-      },
-      {
-        tipo: "METRICA_NIVEIS",
-        valor: Number(dados.badges_por_niveis || 0),
-        label: "Badges por Níveis LP",
-      },
     ],
   };
 };
 
   const configuracao = obterConfiguracaoDashboard( resumo);
+
+  const badgesPorLearningPathGrafico = useMemo(
+    () =>
+      badgesPorLearningPath
+        .map((item) => ({
+          ...item,
+          nome_curto: abreviarTexto(
+            item.nome_learningpaths,
+            16
+          ),
+        }))
+        .slice(0, 8),
+    [badgesPorLearningPath]
+  );
+
+  const badgesPorNivelGrafico = useMemo(
+    () =>
+      badgesPorNivelLearningPath
+        .map((item) => ({
+          ...item,
+          rotulo: abreviarTexto(
+            `${item.nome_nivel} - ${item.nome_learningpaths}`,
+            24
+          ),
+        }))
+        .slice(0, 10),
+    [badgesPorNivelLearningPath]
+  );
 
   // Carregamento Inicial do Dashboard (Resumo e Dados Gráfico)
   async function carregarDashboard() {
@@ -197,6 +214,9 @@ function DashboardTMUnificado() {
       const resultados = await Promise.allSettled([
         api.get(`/dashboard/tm/${userId}/resumo`),
         api.get(`/dashboard/tm/${userId}/consultores-por-area`),
+        api.get(`/dashboard/tm/${userId}/badges-por-datas`),
+        api.get(`/dashboard/tm/${userId}/badges-por-learningpath`),
+        api.get(`/dashboard/tm/${userId}/badges-por-nivel-learningpath`),
       ]);
 
       // Processamento do Resumo
@@ -229,6 +249,30 @@ function DashboardTMUnificado() {
       } else {
         console.error("Erro ao carregar dados do gráfico:", graficoResultado.reason);
         setConsultoresPorArea([]);
+      }
+
+      const badgesDatasResultado = resultados[2];
+      if (badgesDatasResultado.status === "fulfilled") {
+        setBadgesPorDatas(Array.isArray(badgesDatasResultado.value.data) ? badgesDatasResultado.value.data : []);
+      } else {
+        console.error("Erro ao carregar badges por datas:", badgesDatasResultado.reason);
+        setBadgesPorDatas([]);
+      }
+
+      const badgesLpResultado = resultados[3];
+      if (badgesLpResultado.status === "fulfilled") {
+        setBadgesPorLearningPath(Array.isArray(badgesLpResultado.value.data) ? badgesLpResultado.value.data : []);
+      } else {
+        console.error("Erro ao carregar badges por Learning Path:", badgesLpResultado.reason);
+        setBadgesPorLearningPath([]);
+      }
+
+      const badgesNivelResultado = resultados[4];
+      if (badgesNivelResultado.status === "fulfilled") {
+        setBadgesPorNivelLearningPath(Array.isArray(badgesNivelResultado.value.data) ? badgesNivelResultado.value.data : []);
+      } else {
+        console.error("Erro ao carregar badges por nível de Learning Path:", badgesNivelResultado.reason);
+        setBadgesPorNivelLearningPath([]);
       }
 
     } catch (err) {
@@ -527,6 +571,86 @@ function DashboardTMUnificado() {
                   <div style={emptyChart}>Sem dados disponíveis para o gráfico.</div>
                 )}
               </section>
+
+              <section style={analyticsGrid}>
+                <div style={metricChartCard}>
+                  <div style={metricChartHeader}>
+                    <h3 style={metricChartTitle}>Badges por Datas</h3>
+                    <div style={metricChartSubtitle}>Comparação entre este ano e o ano passado</div>
+                  </div>
+
+                  {badgesPorDatas.length > 0 ? (
+                    <div style={metricChartBody}>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={1} debounce={50}>
+                        <LineChart data={badgesPorDatas} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="mes" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                          <Tooltip content={<MetricDateTooltip />} />
+                          <Line type="monotone" dataKey="badges_este_ano" stroke="#2563eb" strokeWidth={2} dot={false} isAnimationActive={false} />
+                          <Line type="monotone" dataKey="badges_ano_passado" stroke="#94a3b8" strokeWidth={2} dot={false} strokeDasharray="4 2" isAnimationActive={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div style={emptyChart}>Sem dados disponíveis para o gráfico.</div>
+                  )}
+                </div>
+
+                <div style={metricChartCard}>
+                  <div style={metricChartHeader}>
+                    <h3 style={metricChartTitle}>Badges por Learning Paths</h3>
+                    <div style={metricChartSubtitle}>Distribuição de badges por Learning Path</div>
+                  </div>
+
+                  {badgesPorLearningPathGrafico.length > 0 ? (
+                    <div style={metricChartBody}>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={1} debounce={50}>
+                        <BarChart data={badgesPorLearningPathGrafico} barSize={30}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="nome_curto" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={0} height={54} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                          <Tooltip content={<MetricBarTooltip tituloChave="nome_learningpaths" valorRotulo="badges" />} />
+                          <Bar dataKey="total_badges" radius={[6, 6, 0, 0]} isAnimationActive={false}>
+                            {badgesPorLearningPathGrafico.map((item, index) => (
+                              <Cell key={item.id_learningpaths || index} fill={CORES_GRAFICO[index % CORES_GRAFICO.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div style={emptyChart}>Sem dados disponíveis para o gráfico.</div>
+                  )}
+                </div>
+
+                <div style={metricChartCard}>
+                  <div style={metricChartHeader}>
+                    <h3 style={metricChartTitle}>Badges por Níveis das Learning Paths</h3>
+                    <div style={metricChartSubtitle}>Top combinações de nível e Learning Path</div>
+                  </div>
+
+                  {badgesPorNivelGrafico.length > 0 ? (
+                    <div style={metricChartBody}>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={1} debounce={50}>
+                        <BarChart data={badgesPorNivelGrafico} layout="vertical" margin={{ top: 4, right: 12, left: 8, bottom: 4 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                          <YAxis type="category" dataKey="rotulo" width={140} tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                          <Tooltip content={<MetricBarTooltip tituloChave="rotulo" valorRotulo="badges" />} />
+                          <Bar dataKey="total_badges" radius={[0, 6, 6, 0]} isAnimationActive={false}>
+                            {badgesPorNivelGrafico.map((item, index) => (
+                              <Cell key={`${item.id_nivel}-${item.id_learningpaths}-${index}`} fill={CORES_GRAFICO[index % CORES_GRAFICO.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div style={emptyChart}>Sem dados disponíveis para o gráfico.</div>
+                  )}
+                </div>
+              </section>
             </>
           )}
         </main>
@@ -668,6 +792,45 @@ function AreaTooltip({ active, payload, visao }) {
   );
 }
 
+function MetricDateTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  return (
+    <div style={tooltipBox}>
+      <div style={tooltipTitle}>{label}</div>
+      <div style={tooltipText}>Este ano: {Number(payload[0]?.value || 0)} badges</div>
+      <div style={tooltipText}>Ano passado: {Number(payload[1]?.value || 0)} badges</div>
+    </div>
+  );
+}
+
+function MetricBarTooltip({ active, payload, tituloChave, valorRotulo }) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  const item = payload[0].payload;
+
+  return (
+    <div style={tooltipBox}>
+      <div style={tooltipTitle}>{item?.[tituloChave] || "-"}</div>
+      <div style={tooltipText}>{Number(payload[0]?.value || 0)} {valorRotulo}</div>
+    </div>
+  );
+}
+
+function abreviarTexto(texto, limite = 18) {
+  const valor = String(texto || "").trim();
+
+  if (valor.length <= limite) {
+    return valor || "Sem dados";
+  }
+
+  return `${valor.slice(0, limite - 3)}...`;
+}
+
 const CORES_GRAFICO = ["#9bb8e8", "#64d8cc", "#111111", "#f59e0b", "#8b5cf6"];
 const page = { background: "#f3f4f6", minHeight: "100vh", display: "flex", flexDirection: "column" };
 const body = {
@@ -744,6 +907,39 @@ const statSecondary = { marginTop: 4, fontSize: 12 };
 const statContent = { flex: 1, minWidth: 0 };
 const chartCard = { background: "white", borderRadius: 14, padding: "20px", marginTop: 18, minHeight: 290 };
 const chartTitle = { margin: "0 0 16px", fontSize: 13, fontWeight: 700, color: "#111827" };
+const analyticsGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+  gap: 18,
+  marginTop: 18,
+};
+const metricChartCard = {
+  background: "white",
+  borderRadius: 14,
+  padding: "18px 18px 14px",
+  border: "1px solid #e5e7eb",
+  minHeight: 320,
+  display: "flex",
+  flexDirection: "column",
+};
+const metricChartHeader = {
+  marginBottom: 12,
+};
+const metricChartTitle = {
+  margin: 0,
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#111827",
+};
+const metricChartSubtitle = {
+  marginTop: 4,
+  fontSize: 12,
+  color: "#64748b",
+};
+const metricChartBody = {
+  flex: 1,
+  minHeight: 240,
+};
 const chartLayout = {
   display: "grid",
 
