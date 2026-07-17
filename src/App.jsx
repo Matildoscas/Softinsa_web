@@ -206,7 +206,6 @@ function App() {
             // Rotas Admin
             <Route path="/admin" element={<DashboardAdmin />} />
             <Route path="/admin/contas" element={<GestaoContas />} />
-            <Route path="/admin/contas" element={<GestaoContas />} />
             <Route path="/admin/contas/novo" element={<CriarConta />} />
             <Route path="/admin/contas/editar/:id" element={<EditarConta />} />
             <Route path="/admin/service-lines" element={<GestaoServiceLines />} />
