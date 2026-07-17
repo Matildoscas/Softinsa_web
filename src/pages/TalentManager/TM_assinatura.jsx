@@ -252,6 +252,7 @@ export default function ConfiguracaoAssinaturaPage() {
                   </div>
                 </Card.Body>
               </Card>
+              </div>
 
               {/* Opções de Checkbox */}
               <Card className="border-0" style={card}>
@@ -277,36 +278,41 @@ export default function ConfiguracaoAssinaturaPage() {
                 </Card.Body>
               </Card>
 
-              {/* INCLUÍDO: Seleção Dinâmica do Badge Conquistado */}
-              <Card className="border-0" style={{ ...card, marginTop: 20 }}>
-                <Card.Body>
-                  <h5 style={sectionTitle}>Escolha o seu Badge Conquistado</h5>
+                {/* Seleção Dinâmica do Badge Conquistado */}
+                <Card className="border-0" style={{ ...card, marginTop: 20 }}>
+                  <Card.Body>
+                    <h5 style={sectionTitle}>Escolha o seu Badge Conquistado</h5>
 
-                  <select
-                    value={config.badgePrincipalId}
-                    onChange={(e) => atualizarConfig("badgePrincipalId", e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: "1px solid #e5e7eb",
-                      backgroundColor: "#f8fafc",
-                      fontSize: "13px",
-                      color: "#374151",
-                      outline: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <option value="">-- Selecione um Badge para a Assinatura --</option>
-                    {badges.map((badge) => (
-                      <option key={obterIdBadge(badge)} value={obterIdBadge(badge)}>
-                        {badge.nome} ({badge.nome_nivel || "Sem Nível"})
+                    <select
+                      value={config.badgePrincipalId}
+                      onChange={(e) => atualizarConfig("badgePrincipalId", e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        border: "1px solid #e5e7eb",
+                        backgroundColor: "#f8fafc",
+                        fontSize: "13px",
+                        color: "#374151",
+                        outline: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="">
+                        -- Selecione um Badge para a Assinatura --
                       </option>
-                    ))}
-                  </select>
-                </Card.Body>
-              </Card>
-            </div>
+                  
+                      {badges.map((badge) => (
+                        <option
+                          key={obterIdBadge(badge)}
+                          value={obterIdBadge(badge)}
+                        >
+                          {badge.nome} ({badge.nome_nivel || "Sem Nível"})
+                        </option>
+                      ))}
+                    </select>
+                  </Card.Body>
+                </Card>
 
             {/* Coluna Direita (Ações e Textarea) */}
             <aside style={rightColumn}>
