@@ -103,7 +103,7 @@ function AdminRightSidebar() {
       )}
 
       <div style={{ textAlign: "center", marginTop: 10 }}>
-        <a href="/admin/utilizadores" style={viewAllLink}>
+        <a href="/admin/contas" style={viewAllLink}>
           <BiGrid size={14} /> Ver Todos
         </a>
       </div>
