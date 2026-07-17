@@ -191,110 +191,121 @@ function SolicitacaoBadges() {
   );
 }
 
-function CandidaturaPedidoRow({ pedido, onClick }) {
-  const consultorNome = pedido.nome_consultor || pedido.nome_utilizador || "Consultor";
-  const consultorEmail = pedido.email_consultor || pedido.email || "";
-  const badgeNome = pedido.nome_badge || pedido.nome || "Badge Especificado";
-  const areaNome = pedido.nome_area || pedido.service_line || pedido.area || "";
-  const diasPassados = pedido.dias_passados || 0;
+function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
+  // 1. Normalização dos dados do Consultor (Funciona para TM e SLL)
+  const nome = dados.nome_consultor || dados.nome_utilizador || dados.nome_completo || "Consultor";
+  const email = dados.email_consultor || dados.email || "";
+  
+  // 2. Tempo/Data de Submissão
+  const tempoTexto = dados.dias_passados !== undefined 
+    ? `Submetido há ${dados.dias_passados} dias`
+    : `Solicitado em ${dados.data_rececao_sll || dados.data_submissao || ""}`;
 
-  const imagemPath = pedido.imagem_badge || pedido.badge_imagem || pedido.imagem;
+  // 3. Informações do Badge
+  const badgeNome = dados.nome_badge || dados.nome || "Badge Especificado";
+  const areaNome = dados.nome_area || dados.service_line || dados.area || "";
+  const nivel = dados.codigo_nivel || null;
+
+  // 4. Tratamento da Imagem do Badge (com o domínio do Render se necessário)
+  const imagemPath = dados.imagem_badge || dados.badge_imagem || dados.imagem;
   const badgeImagemUrl = imagemPath
     ? (imagemPath.startsWith("http") ? imagemPath : `https://softinsa-api.onrender.com${imagemPath}`)
     : null;
-  
-  const estado = pedido.estado_validacao || pedido.estado || "Por avaliar";
-  const isEmAvaliacao = estado === "Em avaliação";
 
-  const totalEvidencias = Number(pedido.total_evidencias || 0);
-  const evidenciasAvalia = Number(pedido.evidencias_avaliadas || 0);
+  // 5. Estado e Progresso (Mecanismo do TM)
+  const estado = dados.estado_validacao || dados.estado_candidatura_pedido || dados.estado || "Por avaliar";
+  const isEmAvaliacao = estado === "Em avaliação" || estado === "EM_AVALIACAO";
+
+  const totalEvidencias = Number(dados.total_evidencias || 0);
+  const evidenciasAvalia = Number(dados.evidencias_avaliadas || 0);
+  const temProgresso = totalEvidencias > 0 || dados.progresso !== undefined;
+  
   const percentagemProgresso = totalEvidencias > 0 
     ? Math.round((evidenciasAvalia / totalEvidencias) * 100)
-    : Number(pedido.progresso || 0);
+    : Number(dados.progresso || 0);
 
   return (
-    <div style={cardStyle}>
-      {/* Coluna 1: Dados do Candidato */}
-      <div style={userSection}>
-        <div style={avatarCircle}>
-          <BiUserCircle size={38} color="#64748B" />
+    <div style={styles.card}>
+      
+      {/* Coluna 1: Perfil do Consultor */}
+      <div style={styles.userSection}>
+        <div style={styles.avatarCircle}>
+          <BiUserCircle size={40} color="#6092bf" />
         </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={userName}>{consultorNome}</div>
-          <div style={userEmail}>{consultorEmail}</div>
+        <div style={styles.userTextGroup}>
+          <div style={styles.userName}>{nome}</div>
+          <div style={styles.userEmail}>
+            <BiEnvelope size={13} style={{ marginRight: "4px" }} />
+            {email}
+          </div>
+          <div style={styles.submissionDate}>{tempoTexto}</div>
         </div>
       </div>
 
-      {/* Coluna 2: Informação do Badge e Progresso de Evidências */}
-      <div style={infoSection}>
-        <div style={badgeHeader}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "38px" }}>
+      {/* Coluna 2: Informação do Badge, Nível e Área */}
+      <div style={styles.infoSection}>
+        <div style={styles.badgeHeader}>
+          <div style={styles.badgeIconWrapper}>
             {badgeImagemUrl ? (
-              <img
-                src={badgeImagemUrl}
-                alt={badgeNome}
-                style={badgeImgStyle} 
-              />
+              <img src={badgeImagemUrl} alt={badgeNome} style={styles.badgeImg} />
             ) : (
-              <BiMedal
-                size={34}
-                color={especial ? "#ffffff" : "#2563eb"} 
-              />
+              <BiMedal size={32} color="#2563EB" />
             )}
           </div>
           <div>
-            <div style={badgeTitle}>
-              {badgeNome}               
+            <div style={styles.badgeTitle}>
+              {badgeNome}
+              {nivel && <span style={styles.nivelBadge}>Nível {nivel}</span>}
             </div>
-            <div style={serviceLine}>{areaNome}</div>
+            {areaNome && <div style={styles.serviceLine}>{areaNome}</div>}
           </div>
         </div>
 
-        <div style={progressContainer}>
-          <div className="d-flex justify-content-between align-items-center mb-1">
-            <span style={progressLabel}>Progresso de Avaliação</span>
-            <span style={{ fontSize: "11px", fontWeight: "600", color: "#2563EB" }}>
-              {percentagemProgresso}%
-            </span>
+        {/* Só mostra a barra de progresso se houver dados de evidências (comum no TM) */}
+        {temProgresso && (
+          <div style={styles.progressContainer}>
+            <div style={styles.progressHeader}>
+              <span style={styles.progressLabel}>Progresso de Avaliação</span>
+              <span style={styles.progressValue}>{percentagemProgresso}%</span>
+            </div>
+            <div style={styles.progressBarBg}>
+              <div style={{ ...styles.progressBarFill, width: `${percentagemProgresso}%` }}></div>
+            </div>
           </div>
-          <div style={progressBarBg}>
-            <div style={{ ...progressBarFill, width: `${percentagemProgresso}%` }}></div>
-          </div>
-          <div style={submissionDate}>
-            {totalEvidencias > 0 && `Evidências: ${evidenciasAvalia}/${totalEvidencias} • `}
-            Submetido há {diasPassados} dias
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Coluna 3: Ações e Estado Visual */}
-      <div style={actionSection}>
-        <span
-          style={{
-            ...statusTag,
+      {/* Coluna 3: Estado, Ferramentas de Debug e Ações */}
+      <div style={styles.actionSection}>
+        <div style={styles.topActions}>
+          <span style={{
+            ...styles.statusTag,
             backgroundColor: isEmAvaliacao ? "#FFedd5" : "#Fce7f3",
             color: isEmAvaliacao ? "#C2410c" : "#Be185d",
-          }}
-        >
-          {estado}
-        </span>
+          }}>
+            {estado}
+          </span>
+          
+          {/* Se o componente Debug do SLL existir nos teus imports, ele renderiza aqui de forma limpa */}
+          {typeof DebugBadgePanel !== "undefined" && (
+            <DebugBadgePanel badge={dados} variant="solicitacao" />
+          )}
+        </div>
         
-        <button 
-          type="button"
-          style={isEmAvaliacao ? btnContinuar : btnAvaliar} 
-          onClick={onClick}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = isEmAvaliacao ? '#2563ebcc' : '#2563EB';
-            e.currentTarget.style.color = '#ffffff';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = isEmAvaliacao ? '#ffffff' : '#2563EB';
-            e.currentTarget.style.color = isEmAvaliacao ? '#2563EB' : '#ffffff';
-          }}
-        >
-          {isEmAvaliacao ? "Continuar Avaliação" : "Avaliar"}
+        <button type="button" style={styles.btnAction} onClick={onClick}>
+          {role === "sll" ? (
+            <>
+              <BiShow size={16} style={{ marginRight: "6px" }} />
+              Ver Detalhes
+            </>
+          ) : isEmAvaliacao ? (
+            "Continuar Avaliação"
+          ) : (
+            "Avaliar"
+          )}
         </button>
       </div>
+
     </div>
   );
 }
@@ -370,5 +381,165 @@ const badgeImgStyle = {
     objectFit: "contain",
     borderRadius: "4px"
   };
+
+const styles = {
+  card: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+    padding: "16px 24px",
+    marginBottom: "16px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+    border: "1px solid #f1f5f9",
+    gap: "24px",
+  },
+  userSection: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+    minWidth: "250px",
+    flex: "1",
+  },
+  avatarCircle: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0f4f8",
+    borderRadius: "50%",
+    padding: "6px",
+  },
+  userTextGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+  },
+  userName: {
+    fontWeight: "600",
+    color: "#1e293b",
+    fontSize: "15px",
+  },
+  userEmail: {
+    display: "flex",
+    alignItems: "center",
+    color: "#64748b",
+    fontSize: "13px",
+  },
+  submissionDate: {
+    fontSize: "12px",
+    color: "#94a3b8",
+    marginTop: "2px",
+  },
+  infoSection: {
+    flex: "2",
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    minWidth: "300px",
+  },
+  badgeHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+  },
+  badgeIconWrapper: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "36px",
+    height: "36px",
+  },
+  badgeImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+  },
+  badgeTitle: {
+    fontWeight: "600",
+    color: "#0f172a",
+    fontSize: "15px",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  nivelBadge: {
+    fontSize: "11px",
+    backgroundColor: "#eff6ff",
+    color: "#1d4ed8",
+    padding: "2px 8px",
+    borderRadius: "20px",
+    fontWeight: "500",
+  },
+  serviceLine: {
+    fontSize: "12px",
+    color: "#64748b",
+  },
+  progressContainer: {
+    width: "100%",
+  },
+  progressHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "12px",
+    marginBottom: "4px",
+  },
+  progressLabel: {
+    color: "#64748b",
+  },
+  progressValue: {
+    fontWeight: "600",
+    color: "#2563eb",
+  },
+  progressBarBg: {
+    width: "100%",
+    height: "6px",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "4px",
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#2563eb",
+    borderRadius: "4px",
+    transition: "width 0.3s ease",
+  },
+  actionSection: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: "12px",
+    minWidth: "180px",
+    flex: "1",
+  },
+  topActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  statusTag: {
+    fontSize: "12px",
+    fontWeight: "500",
+    padding: "4px 10px",
+    borderRadius: "6px",
+    textTransform: "capitalize",
+  },
+  btnAction: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2563EB",
+    color: "#ffffff",
+    border: "none",
+    padding: "8px 16px",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "500",
+    cursor: "pointer",
+    width: "100%",
+    transition: "background 0.2s",
+  }
+};
 
 export default SolicitacaoBadges;
