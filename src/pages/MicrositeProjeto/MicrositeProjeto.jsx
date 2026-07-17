@@ -326,6 +326,20 @@ function MicrositeProjeto({ mobileBlocked = false }) {
             <a href="#workflow" className="btn-hero-secondary">
               Ver workflow
             </a>
+              <div className="mobile-download-actions">
+                  <a
+                    href="/downloads/softinsa-badges.apk"
+                    download="softinsa-badges.apk"
+                    className="btn-hero-primary"
+                  >
+                    <Smartphone size={18} />
+                    Descarregar APK
+                  </a>
+
+                  <span>
+                    Disponível para dispositivos Android
+                  </span>
+                </div>
           </div>
 
           <div className="hero-stats">
