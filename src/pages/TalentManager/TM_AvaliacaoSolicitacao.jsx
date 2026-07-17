@@ -4,10 +4,15 @@ import { Button, Form, Modal } from "react-bootstrap";
 import {
   BiArrowBack,
   BiBadge,
+  BiBriefcase,
+  BiCalendar,
   BiCheckCircle,
   BiChevronDown,
   BiChevronUp,
+  BiEnvelope,
+  BiFile,
   BiLinkExternal,
+  BiMedal,
   BiRefresh,
   BiUserCircle,
   BiXCircle,
@@ -325,6 +330,10 @@ function AvaliacaoSolicitacaoTM() {
 
   const totalRequisitos = requisitos.length;
 
+  const totalComEvidenciaSubmetida = requisitos.filter((requisito) => {
+    return obterEvidenciasRequisito(requisito).length > 0;
+  }).length;
+
   const avaliadosCount = requisitos.filter((requisito) => {
     const estado = obterEstadoRequisito(requisito);
     return estado === "APROVADA" || estado === "REJEITADA";
@@ -345,18 +354,47 @@ function AvaliacaoSolicitacaoTM() {
     const st = normalizarEstadoAvaliacao(estado);
 
     if (st === "PENDENTE") {
-      return { bg: "#fef9c3", text: "#854d0e", label: "PENDENTE" };
+      return { bg: "#fef3c7", text: "#92400e", border: "#fde68a", label: "PENDENTE" };
     }
 
     if (st === "APROVADA") {
-      return { bg: "#dcfce7", text: "#166534", label: "APROVADO POR TM" };
+      return { bg: "#dcfce7", text: "#166534", border: "#bbf7d0", label: "APROVADO POR TM" };
     }
 
     if (st === "REJEITADA") {
-      return { bg: "#fee2e2", text: "#991b1b", label: "REJEITADO" };
+      return { bg: "#fee2e2", text: "#991b1b", border: "#fecaca", label: "REJEITADO" };
     }
 
-    return { bg: "#e2e8f0", text: "#334155", label: "SEM EVIDÊNCIA" };
+    return { bg: "#e2e8f0", text: "#334155", border: "#cbd5e1", label: "SEM EVIDÊNCIA" };
+  };
+
+  const obterEstadoCandidaturaVisual = (estado) => {
+    const valor = String(estado || "").trim().toUpperCase();
+
+    if (valor.includes("REJEIT") || valor.includes("RECUS")) {
+      return {
+        label: "Rejeitada",
+        background: "#fee2e2",
+        color: "#991b1b",
+        border: "#fecaca",
+      };
+    }
+
+    if (valor.includes("APROV") || valor.includes("VALID")) {
+      return {
+        label: "Aprovada",
+        background: "#dcfce7",
+        color: "#166534",
+        border: "#bbf7d0",
+      };
+    }
+
+    return {
+      label: "Aguardar validação do Talent Manager",
+      background: "#dbeafe",
+      color: "#1e3a8a",
+      border: "#bfdbfe",
+    };
   };
 
   const finalizarValidacaoBadge = async () => {
@@ -433,10 +471,11 @@ function AvaliacaoSolicitacaoTM() {
                 </div>
 
                 <div style={perfilDetalhes}>
-                  <InfoPerfil label="Email" value={candidatura.consultor?.email} />
-                  <InfoPerfil label="Data de entrada" value={candidatura.consultor?.dataContratacao} />
-                  <InfoPerfil label="Área do consultor" value={candidatura.consultor?.departamento} />
+                  <InfoPerfil icon={<BiEnvelope size={14} />} label="Email" value={candidatura.consultor?.email} />
+                  <InfoPerfil icon={<BiCalendar size={14} />} label="Data de entrada" value={candidatura.consultor?.dataContratacao} />
+                  <InfoPerfil icon={<BiBriefcase size={14} />} label="Área do consultor" value={candidatura.consultor?.departamento} />
                   <InfoPerfil
+                    icon={<BiMedal size={14} />}
                     label="Badges conquistados"
                     value={`${candidatura.consultor?.badgesConquistados || 0} badges`}
                   />
@@ -480,24 +519,21 @@ function AvaliacaoSolicitacaoTM() {
               <div>
                 <h2 style={tituloRequisitos}>Requisitos e evidências</h2>
                 <div style={subtituloRequisitos}>
-                  {avaliadosCount} de {totalRequisitos} requisitos avaliados
+                  {totalComEvidenciaSubmetida} de {totalRequisitos} requisitos com evidência submetida
                 </div>
               </div>
 
               <div style={estadoLateralBox}>
-                <span
-                  style={{
-                    ...estadoChip,
-                    background: peloMenosUmRejeitado ? "#fee2e2" : "#dbeafe",
-                    color: peloMenosUmRejeitado ? "#991b1b" : "#1e40af",
-                  }}
-                >
-                  {peloMenosUmRejeitado
-                    ? "Com rejeições"
-                    : todosAprovados
-                      ? "Pronto para decisão"
-                      : "Em avaliação"}
-                </span>
+                <EstadoCandidatura
+                  estado={
+                    todosAprovados
+                      ? "APROVADA"
+                      : peloMenosUmRejeitado
+                        ? "REJEITADA"
+                        : "PENDENTE"
+                  }
+                  resolverVisual={obterEstadoCandidaturaVisual}
+                />
               </div>
             </div>
 
@@ -513,7 +549,7 @@ function AvaliacaoSolicitacaoTM() {
                     <button type="button" onClick={() => toggleAccordion(req.id)} style={requisitoHeader}>
                       <div style={requisitoHeaderInfo}>
                         <span style={codigoRequisito}>R{String(req.id).padStart(2, "0")}</span>
-                        <span style={separadorTitulo}>|</span>
+                        <span style={separadorTitulo}> — </span>
                         <span style={tituloRequisito}>{req.titulo}</span>
                       </div>
 
@@ -569,9 +605,26 @@ function AvaliacaoSolicitacaoTM() {
                                     {evidencia.documento && (
                                       <div style={documentoCard}>
                                         <div style={documentoInfo}>
-                                          <div style={documentoIcon}>DOC</div>
+                                          <div style={documentoIcon}>
+                                            <BiFile size={16} />
+                                          </div>
                                           <div style={documentoNome}>{evidencia.documento}</div>
                                         </div>
+
+                                        <span
+                                          style={{
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            padding: "2px 9px",
+                                            borderRadius: 20,
+                                            background: estadoEvidencia === "APROVADA" ? "#dcfce7" : estadoEvidencia === "REJEITADA" ? "#fee2e2" : "#fef3c7",
+                                            color: estadoEvidencia === "APROVADA" ? "#166534" : estadoEvidencia === "REJEITADA" ? "#991b1b" : "#92400e",
+                                            border: estadoEvidencia === "APROVADA" ? "1px solid #bbf7d0" : estadoEvidencia === "REJEITADA" ? "1px solid #fecaca" : "1px solid #fde68a",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          {obterEstiloEstado(estadoEvidencia).label}
+                                        </span>
 
                                         <button
                                           onClick={() => handleVisualizarFicheiro(evidencia.caminhoFicheiro)}
@@ -595,18 +648,16 @@ function AvaliacaoSolicitacaoTM() {
                                       disabled={finalizando || estaAvaliandoEste}
                                       style={{
                                         ...evidenciaMiniBtn,
-                                        background: estadoEvidencia === "APROVADA" ? "#ecfdf5" : "#fff",
-                                        borderColor:
-                                          estadoEvidencia === "APROVADA" ? "#10b981" : "#cbd5e1",
-                                        color:
-                                          estadoEvidencia === "APROVADA" ? "#047857" : "#334155",
+                                        background: estadoEvidencia === "APROVADA" ? "#15803d" : "#fff",
+                                        border: "1px solid #15803d",
+                                        color: estadoEvidencia === "APROVADA" ? "#fff" : "#15803d",
                                         opacity: finalizando || estaAvaliandoEste ? 0.6 : 1,
                                         cursor:
                                           finalizando || estaAvaliandoEste ? "not-allowed" : "pointer",
                                       }}
+                                      title="Aprovar"
                                     >
-                                      <BiCheckCircle size={16} />
-                                      {estaAvaliandoEste ? "A guardar..." : "Aprovar"}
+                                      <BiCheckCircle size={14} />
                                     </button>
 
                                     <button
@@ -619,18 +670,16 @@ function AvaliacaoSolicitacaoTM() {
                                       disabled={finalizando || estaAvaliandoEste}
                                       style={{
                                         ...evidenciaMiniBtn,
-                                        background: estadoEvidencia === "REJEITADA" ? "#fef2f2" : "#fff",
-                                        borderColor:
-                                          estadoEvidencia === "REJEITADA" ? "#ef4444" : "#cbd5e1",
-                                        color:
-                                          estadoEvidencia === "REJEITADA" ? "#b91c1c" : "#334155",
+                                        background: estadoEvidencia === "REJEITADA" ? "#dc2626" : "#fff",
+                                        border: "1px solid #dc2626",
+                                        color: estadoEvidencia === "REJEITADA" ? "#fff" : "#dc2626",
                                         opacity: finalizando || estaAvaliandoEste ? 0.6 : 1,
                                         cursor:
                                           finalizando || estaAvaliandoEste ? "not-allowed" : "pointer",
                                       }}
+                                      title="Rejeitar"
                                     >
-                                      <BiXCircle size={16} />
-                                      Rejeitar
+                                      <BiXCircle size={14} />
                                     </button>
 
                                     {estadoEvidencia !== "PENDENTE" && (
@@ -648,9 +697,9 @@ function AvaliacaoSolicitacaoTM() {
                                           cursor:
                                             finalizando || estaAvaliandoEste ? "not-allowed" : "pointer",
                                         }}
+                                        title="Desfazer"
                                       >
-                                        <BiRefresh size={16} />
-                                        Desfazer
+                                        <BiRefresh size={14} />
                                       </button>
                                     )}
                                   </div>
@@ -778,11 +827,15 @@ function AvaliacaoSolicitacaoTM() {
   );
 }
 
-function InfoPerfil({ label, value }) {
+function InfoPerfil({ icon, label, value }) {
   return (
     <div style={infoPerfil}>
-      <div style={infoPerfilLabel}>{label}</div>
-      <div style={infoPerfilValor}>{value || "-"}</div>
+      <div style={infoPerfilIcon}>{icon}</div>
+
+      <div>
+        <div style={infoPerfilLabel}>{label}</div>
+        <div style={infoPerfilValor}>{value || "-"}</div>
+      </div>
     </div>
   );
 }
@@ -792,6 +845,23 @@ function InfoBloco({ titulo, texto }) {
     <div style={blocoInformacao}>
       <h3 style={blocoTitulo}>{titulo}</h3>
       <p style={textoNormal}>{texto || "-"}</p>
+    </div>
+  );
+}
+
+function EstadoCandidatura({ estado, resolverVisual }) {
+  const visual = resolverVisual(estado);
+
+  return (
+    <div
+      style={{
+        ...estadoCandidatura,
+        background: visual.background,
+        color: visual.color,
+        borderColor: visual.border,
+      }}
+    >
+      {visual.label}
     </div>
   );
 }
@@ -828,6 +898,7 @@ const corpo = {
 
 const conteudo = {
   flex: 1,
+  minWidth: 0,
   overflowY: "auto",
   padding: "22px 30px 60px",
 };
@@ -837,7 +908,7 @@ const conteudoInterno = {
   margin: "0 auto",
   display: "flex",
   flexDirection: "column",
-  gap: 14,
+  gap: 0,
 };
 
 const voltarButton = {
@@ -850,127 +921,125 @@ const voltarButton = {
   padding: 0,
   fontSize: 14,
   cursor: "pointer",
-  marginBottom: 12,
+  marginBottom: 22,
 };
 
 const perfilCard = {
-  background: "#fff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 16,
-  padding: "18px 20px",
-  boxShadow: "0 1px 4px rgba(15, 23, 42, 0.06)",
+  background: "white",
+  border: "1px solid #bfdbfe",
+  borderRadius: 13,
+  padding: "18px 22px",
+  marginBottom: 18,
 };
 
 const cardTitulo = {
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 700,
-  color: "#475569",
-  textTransform: "uppercase",
-  letterSpacing: 0.3,
-  marginBottom: 14,
+  color: "#334155",
+  marginBottom: 16,
 };
 
 const perfilConteudo = {
-  display: "flex",
-  gap: 18,
-  flexWrap: "wrap",
+  display: "grid",
+  gridTemplateColumns: "minmax(230px, 0.7fr) minmax(350px, 1.3fr)",
+  gap: 34,
   alignItems: "center",
 };
 
 const perfilPrincipal = {
-  minWidth: 220,
   display: "flex",
   alignItems: "center",
+  justifyContent: "center",
   gap: 12,
 };
 
 const avatar = {
-  width: 56,
-  height: 56,
+  width: 80,
+  height: 80,
   borderRadius: "50%",
   background: "#eff6ff",
-  border: "1px solid #bfdbfe",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
 };
 
 const nomeConsultor = {
-  fontSize: 18,
-  color: "#0f172a",
-  fontWeight: 800,
-  lineHeight: 1.2,
+  fontSize: 17,
+  fontWeight: 700,
+  color: "#111827",
 };
 
 const cargoBadge = {
-  marginTop: 4,
+  marginTop: 7,
   display: "inline-flex",
-  padding: "4px 10px",
+  padding: "5px 14px",
   borderRadius: 999,
   fontSize: 11,
-  fontWeight: 700,
   color: "#1e40af",
-  background: "#dbeafe",
+  background: "#eff6ff",
 };
 
 const perfilDetalhes = {
-  flex: 1,
-  minWidth: 280,
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: 10,
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 18,
 };
 
 const infoPerfil = {
-  border: "1px solid #e2e8f0",
-  borderRadius: 10,
-  padding: "10px 12px",
-  background: "#fff",
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 9,
+};
+
+const infoPerfilIcon = {
+  color: "#64748b",
+  marginTop: 2,
 };
 
 const infoPerfilLabel = {
-  fontSize: 11,
-  color: "#64748b",
-  fontWeight: 700,
-  marginBottom: 4,
+  fontSize: 10,
+  color: "#94a3b8",
 };
 
 const infoPerfilValor = {
-  fontSize: 13,
-  color: "#0f172a",
+  marginTop: 2,
+  fontSize: 12,
   fontWeight: 600,
+  color: "#334155",
   wordBreak: "break-word",
 };
 
 const acaoSecundariaBtn = {
   marginTop: 12,
-  border: "1px solid #cbd5e1",
+  border: "1px solid #dbe3ef",
   background: "#fff",
   color: "#334155",
-  borderRadius: 10,
-  padding: "8px 12px",
-  fontSize: 12,
-  fontWeight: 700,
+  borderRadius: 8,
+  padding: "6px 12px",
+  fontSize: 11,
+  fontWeight: 600,
   cursor: "pointer",
 };
 
 const badgeCard = {
-  background: "#fff",
-  border: "1px solid #e2e8f0",
-  borderRadius: 16,
-  padding: "16px 18px",
-  display: "flex",
+  background: "white",
+  border: "1px solid #bfdbfe",
+  borderRadius: 13,
+  padding: "18px 22px",
+  marginBottom: 20,
+  display: "grid",
+  gridTemplateColumns: "76px minmax(0, 1fr)",
   alignItems: "center",
-  gap: 14,
-  boxShadow: "0 1px 4px rgba(15, 23, 42, 0.06)",
+  gap: 18,
 };
 
 const badgeImagemBox = {
-  width: 56,
-  height: 56,
-  borderRadius: 12,
+  width: 72,
+  height: 72,
+  borderRadius: "50%",
   background: "#eff6ff",
-  border: "1px solid #bfdbfe",
+  border: "2px solid #dbeafe",
+  overflow: "hidden",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -982,60 +1051,61 @@ const badgeInfo = {
 
 const badgeNome = {
   margin: 0,
-  fontSize: 19,
-  color: "#0f172a",
+  color: "#111827",
+  fontSize: 17,
   fontWeight: 800,
 };
 
 const badgeDescricao = {
-  margin: "6px 0 0",
+  margin: "7px 0 0",
   color: "#475569",
-  fontSize: 13,
+  fontSize: 12,
+  lineHeight: 1.55,
 };
 
 const badgeMeta = {
-  marginTop: 10,
+  marginTop: 12,
   display: "flex",
+  alignItems: "center",
   flexWrap: "wrap",
-  gap: 8,
+  gap: 9,
 };
 
 const metaBadge = {
   display: "inline-flex",
-  padding: "4px 9px",
+  padding: "5px 11px",
   borderRadius: 999,
-  fontSize: 11,
-  fontWeight: 700,
+  fontSize: 10,
   color: "#334155",
   background: "#f1f5f9",
-  border: "1px solid #cbd5e1",
 };
 
 const cabecalhoRequisitos = {
   display: "flex",
+  alignItems: "center",
   justifyContent: "space-between",
-  gap: 12,
-  alignItems: "flex-end",
-  marginTop: 4,
+  gap: 20,
+  marginBottom: 13,
 };
 
 const tituloRequisitos = {
   margin: 0,
-  color: "#0f172a",
-  fontSize: 20,
+  fontSize: 17,
   fontWeight: 800,
+  color: "#111827",
 };
 
 const subtituloRequisitos = {
-  marginTop: 4,
+  marginTop: 3,
+  fontSize: 11,
   color: "#64748b",
-  fontSize: 12,
-  fontWeight: 600,
 };
 
 const estadoLateralBox = {
   display: "flex",
-  alignItems: "center",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  gap: 8,
 };
 
 const estadoChip = {
@@ -1043,6 +1113,16 @@ const estadoChip = {
   borderRadius: 999,
   fontSize: 11,
   fontWeight: 700,
+};
+
+const estadoCandidatura = {
+  display: "flex",
+  alignItems: "center",
+  borderRadius: 999,
+  padding: "7px 13px",
+  fontSize: 11,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
 };
 
 const miniInfoChip = {
@@ -1055,34 +1135,34 @@ const miniInfoChip = {
 };
 
 const requisitoCard = {
-  border: "1px solid #e2e8f0",
-  borderRadius: 14,
-  background: "#fff",
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 12,
   overflow: "hidden",
-  boxShadow: "0 1px 4px rgba(15, 23, 42, 0.04)",
+  marginBottom: 13,
 };
 
 const requisitoHeader = {
   width: "100%",
   border: "none",
-  background: "#f8fafc",
-  padding: "12px 14px",
+  background: "white",
+  padding: "15px 18px",
   display: "flex",
-  justifyContent: "space-between",
   alignItems: "center",
+  justifyContent: "space-between",
+  gap: 18,
+  textAlign: "left",
   cursor: "pointer",
 };
 
 const requisitoHeaderInfo = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
+  minWidth: 0,
 };
 
 const codigoRequisito = {
-  fontSize: 11,
+  fontSize: 13,
   fontWeight: 800,
-  color: "#334155",
+  color: "#111827",
 };
 
 const separadorTitulo = {
@@ -1090,128 +1170,127 @@ const separadorTitulo = {
 };
 
 const tituloRequisito = {
-  fontSize: 14,
-  fontWeight: 700,
-  color: "#0f172a",
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#475569",
 };
 
 const headerDireita = {
   display: "flex",
   alignItems: "center",
-  gap: 6,
+  gap: 12,
+  flexShrink: 0,
 };
 
 const requisitoBody = {
-  padding: "14px",
-  borderTop: "1px solid #e2e8f0",
+  borderTop: "1px solid #e5e7eb",
+  background: "#fafbfc",
+  padding: "16px 18px",
   display: "flex",
   flexDirection: "column",
   gap: 10,
 };
 
 const evidenciaRow = {
-  border: "1px solid #e2e8f0",
-  borderRadius: 12,
-  padding: "10px 12px",
   display: "flex",
+  alignItems: "center",
   justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: 12,
+  gap: 10,
+  padding: "7px 10px",
+  borderRadius: 8,
   background: "#fff",
+  border: "1px solid #e5e7eb",
 };
 
 const evidenciaEsquerda = {
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap",
   flex: 1,
   minWidth: 0,
-  display: "flex",
-  flexDirection: "column",
-  gap: 8,
 };
 
 const evidenciaNome = {
-  fontSize: 13,
-  fontWeight: 800,
-  color: "#0f172a",
+  fontSize: 12,
+  color: "#374151",
+  fontWeight: 500,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  maxWidth: 220,
 };
 
 const evidenciaDireita = {
-  minWidth: 140,
   display: "flex",
-  flexDirection: "column",
-  gap: 8,
+  alignItems: "center",
+  gap: 5,
+  flexShrink: 0,
 };
 
 const evidenciaMiniBtn = {
-  display: "inline-flex",
+  display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: 6,
-  border: "1px solid #cbd5e1",
-  borderRadius: 8,
+  width: 28,
+  height: 28,
+  borderRadius: 6,
+  border: "1px solid #e5e7eb",
   background: "#fff",
-  color: "#334155",
-  fontSize: 12,
-  fontWeight: 700,
-  padding: "8px 10px",
+  color: "#64748b",
+  cursor: "pointer",
+  padding: 0,
 };
 
 const blocoInformacao = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
+  marginBottom: 17,
 };
 
 const blocoTitulo = {
-  margin: 0,
+  margin: "0 0 7px",
   fontSize: 12,
-  color: "#334155",
+  color: "#111827",
   fontWeight: 800,
 };
 
 const textoNormal = {
   margin: 0,
   color: "#475569",
-  fontSize: 13,
-  lineHeight: 1.5,
+  fontSize: 12,
+  lineHeight: 1.6,
 };
 
 const textoVazio = {
   margin: 0,
-  fontSize: 13,
-  color: "#b91c1c",
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: 10,
-  padding: "10px 12px",
+  color: "#94a3b8",
+  fontSize: 12,
 };
 
 const documentoCard = {
+  background: "white",
+  border: "1px solid #dbe3ef",
+  borderRadius: 9,
+  padding: "10px 12px",
   display: "flex",
-  justifyContent: "space-between",
   alignItems: "center",
-  gap: 10,
-  border: "1px solid #e2e8f0",
-  borderRadius: 10,
-  padding: "9px 10px",
-  background: "#f8fafc",
+  justifyContent: "space-between",
+  gap: 14,
 };
 
 const documentoInfo = {
   display: "flex",
   alignItems: "center",
-  gap: 8,
+  gap: 10,
   minWidth: 0,
 };
 
 const documentoIcon = {
-  fontSize: 11,
   color: "#475569",
-  fontWeight: 800,
+  display: "flex",
 };
 
 const documentoNome = {
   fontSize: 12,
-  color: "#0f172a",
+  color: "#334155",
   fontWeight: 700,
   wordBreak: "break-word",
 };
@@ -1220,31 +1299,28 @@ const visualizarButton = {
   border: "none",
   background: "transparent",
   color: "#2563eb",
-  fontWeight: 700,
-  fontSize: 12,
   display: "inline-flex",
   alignItems: "center",
-  gap: 4,
+  gap: 5,
+  fontSize: 11,
   cursor: "pointer",
+  flexShrink: 0,
 };
 
 const mensagemBox = {
-  border: "1px solid #e2e8f0",
+  background: "white",
+  border: "1px solid #e5e7eb",
   borderRadius: 12,
-  background: "#fff",
-  padding: "14px 16px",
+  padding: 40,
+  textAlign: "center",
   color: "#475569",
   fontSize: 14,
 };
 
 const requisitoAvaliacaoBox = {
-  border: "1px solid #dbeafe",
-  borderRadius: 14,
-  background: "#f8fbff",
-  padding: "14px 16px",
-  display: "flex",
-  flexDirection: "column",
-  gap: 10,
+  marginTop: 14,
+  paddingTop: 14,
+  borderTop: "1px solid #e5e7eb",
 };
 
 const erroDecisao = {
@@ -1279,7 +1355,7 @@ const progressoBarra = {
 
 const requisitoAvaliacaoBotoes = {
   display: "flex",
-  justifyContent: "flex-end",
+  gap: 10,
 };
 
 const decisaoBtn = {
