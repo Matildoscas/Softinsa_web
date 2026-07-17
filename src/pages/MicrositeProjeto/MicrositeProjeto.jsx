@@ -186,19 +186,35 @@ const requisitosMobile = [
 ];
 
 function MicrositeProjeto({ mobileBlocked = false }) {
-  const installUrlDefault = import.meta.env.VITE_APP_INSTALL_URL || "";
-  const installUrlAndroid = import.meta.env.VITE_APP_INSTALL_URL_ANDROID || "";
-  const installUrlIos = import.meta.env.VITE_APP_INSTALL_URL_IOS || "";
-  const appDeepLink = import.meta.env.VITE_APP_DEEP_LINK || "";
+  const apkUrl =
+    import.meta.env.VITE_APP_INSTALL_URL_ANDROID ||
+    "/downloads/softinsa-badges.apk";
+
+  const installUrlDefault =
+    import.meta.env.VITE_APP_INSTALL_URL ||
+    apkUrl;
+
+  const installUrlAndroid =
+    import.meta.env.VITE_APP_INSTALL_URL_ANDROID ||
+    apkUrl;
+
+  const installUrlIos =
+    import.meta.env.VITE_APP_INSTALL_URL_IOS ||
+    "";
+
+  const appDeepLink =
+    import.meta.env.VITE_APP_DEEP_LINK ||
+    "";
 
   const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
   const isAndroid = /Android/i.test(userAgent);
   const isIos = /iPhone|iPad|iPod/i.test(userAgent);
 
-  const installUrl =
-    (isAndroid && installUrlAndroid) ||
-    (isIos && installUrlIos) ||
-    installUrlDefault;
+  const installUrl = isIos
+    ? installUrlIos
+    : isAndroid
+      ? installUrlAndroid
+      : installUrlDefault;
 
   const hasInstallUrl = Boolean(installUrl);
   const hasDeepLink = Boolean(appDeepLink);
@@ -244,14 +260,23 @@ function MicrositeProjeto({ mobileBlocked = false }) {
                   Abrir app
                 </button>
               )}
-              <button
-                type="button"
-                className="btn-primario"
-                onClick={handleInstallClick}
-                disabled={!hasInstallUrl}
-              >
-                {hasInstallUrl ? "Download da app" : "Download em breve"}
-              </button>
+              {hasInstallUrl ? (
+                <a
+                  href={installUrl}
+                  download="softinsa-badges.apk"
+                  className="btn-primario"
+                >
+                  Download da app
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-primario"
+                  disabled
+                >
+                  Download em breve
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -583,6 +608,20 @@ function MicrositeProjeto({ mobileBlocked = false }) {
             </p>
 
             <div className="mobile-highlight">
+              <div className="mobile-download-actions">
+                <a
+                  href="/downloads/softinsa-badges.apk"
+                  download="softinsa-badges.apk"
+                  className="btn-hero-primary"
+                >
+                  <Smartphone size={18} />
+                  Descarregar APK
+                </a>
+
+                <span>
+                  Disponível para dispositivos Android
+                </span>
+              </div>
               <Smartphone size={28} />
               <div>
                 <strong>Mobile-first para o consultor</strong>
@@ -692,19 +731,22 @@ function MicrositeProjeto({ mobileBlocked = false }) {
             </p>
           </div>
 
-          {mobileBlocked ? (
+          {hasInstallUrl ? (
+            <a
+              href={installUrl}
+              download="softinsa-badges.apk"
+              className="btn-cta"
+            >
+              Instalar app
+            </a>
+          ) : (
             <button
               type="button"
               className="btn-cta"
-              onClick={handleInstallClick}
-              disabled={!hasInstallUrl}
+              disabled
             >
-              {hasInstallUrl ? "Instalar app" : "Instalação em breve"}
+              Instalação em breve
             </button>
-          ) : (
-            <Link to="/login" className="btn-cta">
-              Aceder à plataforma
-            </Link>
           )}
         </div>
       </section>

@@ -799,3 +799,30 @@
     align-items: flex-start;
   }
 }
+
+.mobile-download-actions {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.mobile-download-actions .btn-hero-primary {
+  gap: 8px;
+  border: 0;
+  cursor: pointer;
+}
+
+.mobile-download-actions span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mobile-minisite-install {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
