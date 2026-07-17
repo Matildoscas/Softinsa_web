@@ -502,6 +502,7 @@ function PaginaPrincipalAdmin() {
             overflowY: "auto",
             overflowX: "hidden",
             padding: 20,
+            background: "#f0f2f5",
           }}
         >
           {/* Welcome Card */}
