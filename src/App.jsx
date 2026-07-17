@@ -137,13 +137,13 @@ function useMobileWebBlock() {
 }
 
 function App() {
-  const shouldBlockMobileWeb = useMobileWebBlock();
+  //const shouldBlockMobileWeb = useMobileWebBlock();
 
   return (
     <Router>
-      {shouldBlockMobileWeb ? (
+      {/*{shouldBlockMobileWeb ? (
         <MicrositeProjeto mobileBlocked />
-      ) : (
+      ) : (*/}
       <Routes>
         
         // Rotas públicas
@@ -303,7 +303,6 @@ function App() {
         </Route>
 
       </Routes>
-      )}
     </Router>
   );
 }
