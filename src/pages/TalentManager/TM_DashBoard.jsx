@@ -134,19 +134,47 @@ function DashboardTMUnificado() {
   }, [consultoresPorArea]);
 
   // Configuração dinâmica baseada no tipo de dados recebido do backend
-  const obterConfiguracaoDashboard = ( dados) => {
-    const totalConsultores = dados.total_consultores || 0;
-    const totalSllAtivos = dados.total_sll_ativos || 0;
+  const obterConfiguracaoDashboard = (dados = {}) => {
+  const totalConsultores = Number(dados.total_consultores || 0);
+  const totalSllAtivos = Number(dados.total_sll_ativos || 0);
 
-    const bases = {
-      descricaoConsultores: `${totalConsultores} Consultores Ativos`,
-      descricaoBadges: `${dados.badges_atribuidos_mes || 0} atribuídos este mês`,
-      descricaoSll: `${totalSllAtivos} Service Lines Ativas`,
-      tituloLista: "Ranking de Consultores",
-      descricaoLista: `Total de ${dados.total_consultores_acompanhados || 0} consultores`,
-      graficoTitulo: "Distribuição de Consultores por Área / Service Line",
-    };
+  return {
+    descricaoConsultores: `${totalConsultores} Consultores Ativos`,
+    descricaoBadges: `${Number(dados.badges_atribuidos_mes || 0)} atribuídos este mês`,
+    descricaoSll: `${totalSllAtivos} Service Lines Ativas`,
+    tituloLista: "Ranking de Consultores",
+    descricaoLista: `Total de ${Number(dados.total_consultores_acompanhados || 0)} consultores`,
+    graficoTitulo: "Distribuição de Consultores por Área / Service Line",
+
+    cards: [
+      {
+        tipo: "CONSULTORES",
+        valor: totalConsultores,
+        label: "Total Consultores",
+      },
+      {
+        tipo: "BADGES",
+        valor: Number(dados.total_badges || 0),
+        label: "Total Badges Atribuídos",
+      },
+      {
+        tipo: "METRICA_DATAS",
+        valor: Number(dados.badges_por_datas || 0),
+        label: "Badges por Datas",
+      },
+      {
+        tipo: "METRICA_PATHS",
+        valor: Number(dados.badges_por_learning_paths || 0),
+        label: "Badges por Learning Paths",
+      },
+      {
+        tipo: "METRICA_NIVEIS",
+        valor: Number(dados.badges_por_niveis || 0),
+        label: "Badges por Níveis LP",
+      },
+    ],
   };
+};
 
   const configuracao = obterConfiguracaoDashboard( resumo);
 
