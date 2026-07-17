@@ -252,6 +252,7 @@ export default function ConfiguracaoAssinaturaPage() {
                   </div>
                 </Card.Body>
               </Card>
+              </div>
 
               {/* Opções de Checkbox */}
               <Card className="border-0" style={card}>
@@ -277,11 +278,11 @@ export default function ConfiguracaoAssinaturaPage() {
                 </Card.Body>
               </Card>
 
-              {/* INCLUÍDO: Seleção Dinâmica do Badge Conquistado */}
+                {/* Seleção Dinâmica do Badge Conquistado */}
                 <Card className="border-0" style={{ ...card, marginTop: 20 }}>
                   <Card.Body>
                     <h5 style={sectionTitle}>Escolha o seu Badge Conquistado</h5>
-                
+
                     <select
                       value={config.badgePrincipalId}
                       onChange={(e) => atualizarConfig("badgePrincipalId", e.target.value)}
@@ -300,7 +301,7 @@ export default function ConfiguracaoAssinaturaPage() {
                       <option value="">
                         -- Selecione um Badge para a Assinatura --
                       </option>
-                    
+                  
                       {badges.map((badge) => (
                         <option
                           key={obterIdBadge(badge)}
@@ -310,20 +311,8 @@ export default function ConfiguracaoAssinaturaPage() {
                         </option>
                       ))}
                     </select>
-                    
                   </Card.Body>
                 </Card>
-                      <option value="">-- Selecione um Badge para a Assinatura --</option>
-                      {badges.map((badge) => (
-                        <option key={obterIdBadge(badge)} value={obterIdBadge(badge)}>
-                          {badge.nome} ({badge.nome_nivel || "Sem Nível"})
-                        </option>
-                      ))}
-                    </select>
-                  </Card.Body>
-                </Card>
-              )}
-            </div>
 
             {/* Coluna Direita (Ações e Textarea) */}
             <aside style={rightColumn}>
