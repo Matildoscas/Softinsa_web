@@ -113,9 +113,7 @@ export default function ConfiguracaoAssinaturaPage() {
         // Chamada real à API utilizando o endpoint do teu router: /api/badges/conquistados/:id
         try {
           const resposta = await api.get(`/badges/conquistados/${userId}`);
-          console.log("Resposta API:", resposta.data);
           const badgesTratados = removerDuplicados(resposta.data);
-          console.log("Badges tratados:", badgesTratados);
           setBadges(badgesTratados);
         } catch (apiErr) {
           console.error("Erro ao ir buscar os badges à API:", apiErr);
@@ -209,6 +207,9 @@ export default function ConfiguracaoAssinaturaPage() {
     return <div style={{ padding: 20 }}>A carregar...</div>;
   }
 
+    console.log("BADGES NO RENDER:", badges);
+    console.log("LENGTH:", badges.length);
+
   return (
     <div style={page}>
       <Header />
@@ -277,35 +278,15 @@ export default function ConfiguracaoAssinaturaPage() {
               </Card>
 
               {/* INCLUÍDO: Seleção Dinâmica do Badge Conquistado */}
-              {badges.length > 0 && (
-                <Card className="border-0" style={{ ...card, marginTop: 20 }}>
-                  <Card.Body>
-                    <h5 style={sectionTitle}>Escolha o seu Badge Conquistado</h5>
-                    <select
-                      value={config.badgePrincipalId}
-                      onChange={(e) => atualizarConfig("badgePrincipalId", e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                        backgroundColor: "#f8fafc",
-                        fontSize: "13px",
-                        color: "#374151",
-                        outline: "none",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <option value="">-- Selecione um Badge para a Assinatura --</option>
-                      {badges.map((badge) => (
-                        <option key={obterIdBadge(badge)} value={obterIdBadge(badge)}>
-                          {badge.nome} ({badge.nome_nivel || "Sem Nível"})
-                        </option>
-                      ))}
-                    </select>
-                  </Card.Body>
-                </Card>
-              )}
+              <Card className="border-0" style={{ ...card, marginTop: 20 }}>
+  <Card.Body>
+    <h5>DEBUG</h5>
+
+    <p>badges.length = {badges.length}</p>
+
+    <pre>{JSON.stringify(badges, null, 2)}</pre>
+  </Card.Body>
+</Card>
             </div>
 
             {/* Coluna Direita (Ações e Textarea) */}
