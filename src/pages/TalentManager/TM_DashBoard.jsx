@@ -186,7 +186,7 @@ function DashboardTMUnificado() {
     }
   };
 
-  const configuracao = obterConfiguracaoDashboard(resumo.tipo_especializacao, resumo);
+  const configuracao = obterConfiguracaoDashboard( resumo);
 
   // Carregamento Inicial do Dashboard (Resumo e Dados Gráfico)
   async function carregarDashboard() {
@@ -216,7 +216,6 @@ function DashboardTMUnificado() {
       const dadosResumo = resumoResultado.value.data || {};
       setResumo({
         nome_completo: dadosResumo.nome_completo || user?.nome_completo || user?.nome || "Talent Manager",
-        tipo_especializacao: dadosResumo.tipo_especializacao || "",
         total_consultores_acompanhados: Number(dadosResumo.total_consultores_acompanhados || 0),
         total_consultores: Number(dadosResumo.total_consultores || 0),
         total_badges: Number(dadosResumo.total_badges || 0),
