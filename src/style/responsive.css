@@ -112,6 +112,12 @@ PORTÁTEIS E TABLETS
   }
 }
 
+@media (max-width: 1450px) {
+  .admin-right-sidebar {
+    display: none !important;
+  }
+}
+
 /*
 ===============================================================================
 TELEMÓVEIS E TABLETS PEQUENOS
@@ -481,5 +487,122 @@ HEADER E SIDEBAR MOBILE
     height: 36px !important;
     max-width: 120px;
     object-fit: contain;
+  }
+}
+
+/*
+===============================================================================
+GESTÃO DE PEDIDOS DE BADGES
+===============================================================================
+*/
+
+.pedido-card-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(210px, 250px);
+  gap: 20px;
+  align-items: start;
+}
+
+.pedido-card-content {
+  min-width: 0;
+}
+
+.pedido-card-meta {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+  gap: 14px;
+}
+
+.pedido-card-right {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.pedido-card-stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pedido-info {
+  min-width: 0;
+  text-align: left;
+}
+
+.pedido-info-right {
+  text-align: right;
+}
+
+/*
+ * Em ecrãs intermédios, a zona de TM/SLL
+ * passa para baixo dos dados do badge.
+ */
+@media (max-width: 1100px) {
+  .pedido-card-layout {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .pedido-card-right {
+    width: 100%;
+    align-items: flex-start;
+
+    border-top:
+      1px solid #e5e7eb;
+
+    padding-top: 14px;
+  }
+
+  .pedido-info-right {
+    text-align: left;
+  }
+
+  .pedido-card-stats {
+    justify-content:
+      flex-start;
+  }
+}
+
+/*
+ * Duas colunas para os dados do badge.
+ */
+@media (max-width: 700px) {
+  .pedido-card-meta {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .pedido-card {
+    padding:
+      16px !important;
+  }
+}
+
+/*
+ * Uma coluna nos telemóveis pequenos.
+ */
+@media (max-width: 450px) {
+  .pedido-card-meta {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .pedido-card-right button {
+    width: 100%;
+    justify-content: center;
   }
 }
