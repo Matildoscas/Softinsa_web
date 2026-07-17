@@ -377,11 +377,13 @@ HEADER E SIDEBAR MOBILE
     width: 42px;
     height: 42px;
 
-    border: none;
+    border:
+      1px solid #d1d5db;
+
     border-radius: 10px;
 
-    background: #1e3a6e;
-    color: white;
+    background: #f3f4f6;
+    color: #4b5563;
 
     align-items: center;
     justify-content: center;
@@ -390,8 +392,22 @@ HEADER E SIDEBAR MOBILE
     cursor: pointer;
 
     box-shadow:
-      0 3px 12px
-      rgba(15, 23, 42, 0.22);
+      0 2px 7px rgba(15, 23, 42, 0.12);
+
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .mobile-menu-button:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    color: #1f2937;
+  }
+
+  .mobile-menu-button:active {
+    background: #d1d5db;
   }
 
   /*
