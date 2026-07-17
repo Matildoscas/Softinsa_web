@@ -1740,3 +1740,96 @@ SIDEBARS DO SLL EM ECRÃS GRANDES
       white !important;
   }
 }
+
+/*
+===============================================================================
+CORREÇÃO DO BOTÃO FECHAR — SIDEBAR MOBILE
+===============================================================================
+*/
+
+@media (max-width: 820px) {
+  /*
+   * O Header fica acima da sidebar.
+   * Assim, o botão hamburger/X nunca é tapado.
+   */
+  .app-header {
+    position: fixed !important;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 1060 !important;
+  }
+
+  /*
+   * O botão fica acima de todos os elementos.
+   */
+  .mobile-menu-button {
+    position: fixed !important;
+
+    top: 11px !important;
+    left: 12px !important;
+
+    z-index: 1070 !important;
+  }
+
+  /*
+   * Fundo escuro abaixo do Header.
+   */
+  .mobile-menu-overlay {
+    position: fixed !important;
+
+    top: 64px !important;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    z-index: 1040 !important;
+  }
+
+  /*
+   * A sidebar começa abaixo do Header.
+   */
+  .app-left-sidebar {
+    position: fixed !important;
+
+    top: 76px !important;
+    bottom: 12px !important;
+    left: 12px !important;
+
+    z-index: 1050 !important;
+
+    width: 280px !important;
+
+    max-width:
+      calc(100vw - 32px) !important;
+
+    height: auto !important;
+
+    max-height:
+      calc(100dvh - 88px) !important;
+
+    border-radius:
+      18px !important;
+  }
+
+  /*
+   * Aspeto do botão quando o menu está aberto.
+   */
+  body.mobile-sidebar-open
+  .mobile-menu-button {
+    background:
+      #f8fafc !important;
+
+    color:
+      #475569 !important;
+
+    border-color:
+      #cbd5e1 !important;
+
+    box-shadow:
+      0 3px 12px
+      rgba(15, 23, 42, 0.15) !important;
+  }
+}
