@@ -1638,6 +1638,68 @@ const badgeCard = {
   marginBottom: 0,
 };
 
+const serviceLineTexto = {
+  fontSize: 12,
+  color: "#475569",
+  padding: "10px 14px 0",
+};
+
+const serviceLineLink = {
+  color: "#2563eb",
+  fontWeight: 700,
+};
+
+const badgeConteudo = {
+  padding: "18px 12px",
+  display: "flex",
+  alignItems: "center",
+  gap: 18,
+};
+
+const badgeInfo = {
+  minWidth: 0,
+};
+
+const areasTexto = {
+  fontSize: 12,
+  color: "#4470AF",
+  marginTop: 3,
+};
+
+const nivelBadge = {
+  display: "inline-flex",
+  marginTop: 8,
+  padding: "4px 10px",
+  borderRadius: 999,
+  background: "#eff6ff",
+  color: "#2563eb",
+  fontSize: 11,
+  fontWeight: 600,
+};
+
+const pontosBox = {
+  border: "1.5px solid #4470AF",
+  borderRadius: 12,
+  padding: "8px 10px",
+  minWidth: 52,
+  textAlign: "center",
+  boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+  background: "white",
+  flexShrink: 0,
+};
+
+const pontosLabel = {
+  fontSize: 10,
+  fontWeight: 600,
+  color: "#111827",
+};
+
+const pontosValor = {
+  fontSize: 17,
+  fontWeight: 700,
+  color: "#111827",
+};
+
 const badgeContent = {
   padding: "18px 12px",
   display: "flex",

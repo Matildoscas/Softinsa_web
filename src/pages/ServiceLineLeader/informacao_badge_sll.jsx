@@ -114,6 +114,36 @@ function normalizarLinks(links) {
     .filter(Boolean);
 }
 
+function normalizarRequisito(
+  requisito,
+  index
+) {
+  return {
+    id:
+      requisito.id_requisitos ||
+      requisito.id ||
+      index + 1,
+
+    codigo:
+      requisito.nome_requisito ||
+      `Requisito ${index + 1}`,
+
+    titulo:
+      requisito.titulo ||
+      requisito.nome_requisito ||
+      "Requisito",
+
+    descricao:
+      requisito.descricao_requisito ||
+      requisito.descricao ||
+      "Sem descrição.",
+
+    links: normalizarLinks(
+      requisito.links
+    ),
+  };
+}
+
 
 
 function normalizarBadge(badge) {
