@@ -503,12 +503,10 @@ function AvaliacaoSolicitacaoTM() {
                   <span style={metaBadge}>{candidatura.badge?.categoria || "Categoria"}</span>
                   <span style={metaBadge}>Solicitado em {candidatura.badge?.dataSolicitacao || "-"}</span>
                 </div>
-              </div>
 
-              <div style={{ marginLeft: "auto" }}>
                 <button
                   onClick={() => navigate(`/tm/badges/${candidatura.badge?.id}`)}
-                  style={acaoSecundariaBtn}
+                  style={badgeDetalhesBtn}
                 >
                   Ver detalhes do badge
                 </button>
@@ -594,13 +592,6 @@ function AvaliacaoSolicitacaoTM() {
                                 <div key={evidencia.idEvidencia || index} style={evidenciaRow}>
                                   <div style={evidenciaEsquerda}>
                                     <div style={evidenciaNome}>Evidência {index + 1}</div>
-
-                                    {evidencia.evidenciaTexto && (
-                                      <InfoBloco
-                                        titulo="Descrição da evidência"
-                                        texto={evidencia.evidenciaTexto}
-                                      />
-                                    )}
 
                                     {evidencia.documento && (
                                       <div style={documentoCard}>
@@ -1071,6 +1062,18 @@ const badgeMeta = {
   gap: 9,
 };
 
+const badgeDetalhesBtn = {
+  marginTop: 10,
+  border: "1px solid #dbe3ef",
+  background: "#fff",
+  color: "#334155",
+  borderRadius: 8,
+  padding: "6px 12px",
+  fontSize: 11,
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
 const metaBadge = {
   display: "inline-flex",
   padding: "5px 11px",
@@ -1342,6 +1345,7 @@ const subtituloProgresso = {
 
 const progressoTrilho = {
   width: "100%",
+  maxWidth: 420,
   backgroundColor: "#e2e8f0",
   borderRadius: 999,
   height: 10,
@@ -1355,6 +1359,7 @@ const progressoBarra = {
 
 const requisitoAvaliacaoBotoes = {
   display: "flex",
+  justifyContent: "flex-end",
   gap: 10,
 };
 
