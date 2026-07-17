@@ -42,7 +42,10 @@ function AdminLeftSidebar() {
       className="app-left-sidebar admin-left-sidebar"
       style={container}
     >
-      <div style={profileBox}>
+      <div
+        className="admin-sidebar-profile"
+        style={profileBox}
+      >
         <BiUserCircle size={26} color="#6b7280" />
         <span style={profileName}>{adminName}</span>
       </div>
@@ -161,7 +164,7 @@ function AdminLink({ to, icon, label, end = false }) {
         border: isActive ? "1px solid #111827" : "1px solid transparent",
         borderRadius: isActive ? 10 : 0,
         color: "#111827",
-        margin: isActive ? "0 14px 6px" : "0 14px 6px",
+        margin: isActive ? "2px 12px 6px" : "2px 12px 6px",
         padding: "8px 12px",
       })}
     >
@@ -180,6 +183,8 @@ function SubLink({ to, icon, label }) {
         color: isActive ? "#2563eb" : "#111827",
         fontWeight: isActive ? 600 : 400,
         backgroundColor: isActive ? "#eff6ff" : "transparent",
+        margin: "2px 12px",
+        borderRadius: 10,
       })}
     >
       {icon}
@@ -199,6 +204,7 @@ const container = {
   top: 0,
   height: "100vh",
   overflowY: "auto",
+  color: "#1f2937",
 };
 
 const profileBox = {
