@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import api, { buildUploadUrl } from '../../services/api.js'; 
 
 // Componentes Estruturais Adaptados ao Contexto do TM
-import Header from "../../components/TM_Header.jsx";
+import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 

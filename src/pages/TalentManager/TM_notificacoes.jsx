@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BiArrowBack, BiBell, BiCheckDouble, BiTrash } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
-import Header from "../../components/TM_Header.jsx";
+import Header from "../../components/Header.jsx";
 import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 import api from "../../services/api.js";

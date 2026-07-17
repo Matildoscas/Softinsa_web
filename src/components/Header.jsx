@@ -180,10 +180,23 @@ function Header() {
     ) ||
     tipoUtilizador === "sll";
 
+  const isTm =
+    tipoUtilizador.includes(
+      "talent manager"
+    ) ||
+    tipoUtilizador.includes(
+      "talentmanager"
+    ) ||
+    tipoUtilizador.includes(
+      "talent_manager"
+    ) ||
+    tipoUtilizador === "tm";
+
   const mostrarMenuLateral =
     isAdmin ||
     isConsultor ||
-    isSll;
+    isSll ||
+    isTm;
 
   const {
     totalNaoLidas,

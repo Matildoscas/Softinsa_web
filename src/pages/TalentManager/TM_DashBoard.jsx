@@ -11,7 +11,7 @@ import {
 } from "recharts"; 
 
 // Componentes Globais
-import Header from "../../components/Header.jsx";
+import Header from "../../components/Header.jsx"; //!!NÃO TROQUES O HEADER POIS ESTE TEM RESPONSIVIDADE (E EM NENHUMA OUTRA PÁGINA TM)!!
 import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
 import TmRightSidebar from "../../components/tm_right_sidebar.jsx";
 
@@ -300,10 +300,16 @@ function DashboardTMUnificado() {
     <div style={page}>
       <Header />
 
-      <div style={body}>
+      <div
+        className="tm-layout-body"
+        style={body}
+      >
         <TmLeftSidebar />
 
-        <main style={main}>
+        <main
+          className="tm-dashboard-main"
+          style={main}
+        >
           {erro && <div style={errorBox}>{erro}</div>}
 
           {isLoading ? (
@@ -311,10 +317,16 @@ function DashboardTMUnificado() {
           ) : (
             <>
               {/* Cartão de Boas-Vindas */}
-              <section style={welcomeCard}>
+              <section
+                className="tm-welcome-card"
+                style={welcomeCard}
+              >
                 <div>
                   <h2 style={welcomeTitle}>{obterSaudacao()}, {resumo.nome_completo}!</h2>
-                  <div style={welcomeStats}>
+                  <div
+                    className="tm-welcome-stats"
+                    style={welcomeStats}
+                  >
                     <WelcomeItem icon={<BiUser size={20} />} label="Consultores" value={configuracao.descricaoConsultores} />
                     <WelcomeItem icon={<BiBadge size={20} />} label="Badges" value={configuracao.descricaoBadges} />
                     <WelcomeItem icon={<BiBriefcase size={20} />} label="Service Lines" value={configuracao.descricaoSll} />
@@ -324,7 +336,10 @@ function DashboardTMUnificado() {
               </section>
 
               {/* Grid de Métricas Expandido e Dinâmico */}
-              <div style={statsRow}>
+              <div
+                className="tm-stats-grid"
+                style={statsRow}
+              >
                 {configuracao.cards.map((card) => (
                   <StatCard
                     key={card.tipo}
@@ -348,19 +363,40 @@ function DashboardTMUnificado() {
               </div>
 
               {/* Secção: Ranking de Consultores com Dropdowns de Filtro */}
-              <section style={consultoresSection}>
-                <div style={peopleHeader}>
+              <section
+                className="tm-consultores-section"
+                style={consultoresSection}
+              >
+                <div
+                  className="tm-people-header"
+                  style={peopleHeader}
+                >
                   <div>
                     <h3 style={areaTitle}>{configuracao.tituloLista}</h3>
                     <div style={areaTotal}>{configuracao.descricaoLista}</div>
                   </div>
 
                   {/* Wrapper para agrupar os dois dropdowns lado a lado */}
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    <Form.Select 
-                      value={areaSelecionada} 
-                      onChange={(e) => setAreaSelecionada(e.target.value)}
-                      style={{ width: "160px", fontSize: "12px" }}
+                  <div
+                    className="tm-ranking-filters"
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Form.Select
+                      className="tm-filter-select"
+                      value={areaSelecionada}
+                      onChange={(e) =>
+                        setAreaSelecionada(
+                          e.target.value
+                        )
+                      }
+                      style={{
+                        width: 160,
+                        fontSize: 12,
+                      }}
                     >
                       <option value="">Todas as Áreas</option>
                       {opcoesFiltros.areas.map(area => (
@@ -368,10 +404,18 @@ function DashboardTMUnificado() {
                       ))}
                     </Form.Select>
 
-                    <Form.Select 
-                      value={slSelecionada} 
-                      onChange={(e) => setSlSelecionada(e.target.value)}
-                      style={{ width: "160px", fontSize: "12px" }}
+                    <Form.Select
+                      className="tm-filter-select"
+                      value={slSelecionada}
+                      onChange={(e) =>
+                        setSlSelecionada(
+                          e.target.value
+                        )
+                      }
+                      style={{
+                        width: 160,
+                        fontSize: 12,
+                      }}
                     >
                       <option value="">Todas as SL</option>
                       {opcoesFiltros.serviceLines.map(sl => (
@@ -380,8 +424,13 @@ function DashboardTMUnificado() {
                     </Form.Select>
 
                     <button
+                      className="tm-view-all-button"
                       type="button"
-                      onClick={() => navigate("/tm/consultores")}
+                      onClick={() =>
+                        navigate(
+                          "/tm/consultores"
+                        )
+                      }
                       style={viewAllButton}
                     >
                       <BiBookOpen size={15} />
@@ -408,11 +457,24 @@ function DashboardTMUnificado() {
               </section>
 
               {/* Secção do Gráfico */}
-              <section style={chartCard}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <section
+                className="tm-chart-panel"
+                style={chartCard}
+              >
+                <div
+                  className="tm-chart-header"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
                   <h3 style={{ ...chartTitle, margin: 0 }}>{configuracao.graficoTitulo}</h3>
                   
                   <Form.Select 
+                    className="tm-chart-select"
                     value={visao} 
                     onChange={(e) => setVisao(e.target.value)} 
                     style={{ width: "180px", fontSize: "12px" }}
@@ -423,9 +485,20 @@ function DashboardTMUnificado() {
                 </div>
 
                 {consultoresPorArea.length > 0 ? (
-                  <div style={chartLayout}>
-                    <div style={chartArea}>
-                      <ResponsiveContainer width="100%" height={245}>
+                  <div
+                    className="tm-chart-layout"
+                    style={chartLayout}
+                  >
+                    <div
+                      className="tm-chart-box"
+                      style={chartArea}
+                    >
+                      <ResponsiveContainer
+                        width="100%"
+                        height="100%"
+                        minWidth={1}
+                        debounce={50}
+                      >
                         <BarChart data={consultoresPorArea} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                           <XAxis 
@@ -436,7 +509,7 @@ function DashboardTMUnificado() {
                           />
                           <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9ca3af" }} />
                           <Tooltip content={<AreaTooltip visao={visao} />} />
-                          <Bar dataKey="total_consultores" radius={[8, 8, 0, 0]} maxBarSize={32}>
+                          <Bar dataKey="total_consultores" radius={[8, 8, 0, 0]} maxBarSize={32} isAnimationActive={false}>
                             {consultoresPorArea.map((item, index) => (
                               <Cell key={item.id_areas || index} fill={CORES_GRAFICO[index % CORES_GRAFICO.length]} />
                             ))}
@@ -445,7 +518,10 @@ function DashboardTMUnificado() {
                       </ResponsiveContainer>
                     </div>
 
-                    <div style={chartLegend}>
+                    <div
+                      className="tm-chart-legend"
+                      style={chartLegend}
+                    >
                       {consultoresPorArea.map((area, index) => (
                         <div key={area.id_areas || index} style={legendRow}>
                           <span style={{ ...legendDot, background: CORES_GRAFICO[index % CORES_GRAFICO.length] }} />
@@ -541,8 +617,14 @@ function ConsultorCard({ consultor, onVerPerfil }) {
   const totalBadges = Number(consultor.total_badges || 0);
 
   return (
-    <article style={consultorCard}>
-      <div style={consultorMain}>
+    <article
+      className="tm-consultor-card"
+      style={consultorCard}
+    >
+      <div
+        className="tm-consultor-main"
+        style={consultorMain}
+      >
         <ConsultorAvatar consultor={consultor} />
         <div style={consultorInfo}>
           <div style={consultorTopLine}>
@@ -552,7 +634,10 @@ function ConsultorCard({ consultor, onVerPerfil }) {
           <div style={consultorArea}>{area}</div>
         </div>
       </div>
-      <div style={consultorFooter}>
+      <div
+        className="tm-consultor-footer"
+        style={consultorFooter}
+      >
         <div style={badgeCount}>
           <BiAward size={15} /> {totalBadges} {totalBadges === 1 ? "badge" : "badges"}
         </div>
@@ -565,7 +650,10 @@ function ConsultorCard({ consultor, onVerPerfil }) {
 // Restante dos estilos e sub-componentes inalterados para manter performance e design original
 function StatCard({ icon, value, label, secondary, secondaryColor }) {
   return (
-    <div style={statCard}>
+    <div
+      className="tm-stat-card"
+      style={statCard}
+    >
       <div style={statIcon}>{icon}</div>
       <div style={statContent}>
         <div style={statValue}>{value}</div>
@@ -593,8 +681,31 @@ function AreaTooltip({ active, payload, visao }) {
 
 const CORES_GRAFICO = ["#9bb8e8", "#64d8cc", "#111111", "#f59e0b", "#8b5cf6"];
 const page = { background: "#f3f4f6", minHeight: "100vh", display: "flex", flexDirection: "column" };
-const body = { display: "flex", flex: 1, overflow: "hidden" };
-const main = { flex: 1, minWidth: 0, padding: "22px 30px 50px", overflowY: "auto" };
+const body = {
+  display: "flex",
+  flex: 1,
+
+  minWidth: 0,
+
+  alignItems: "stretch",
+
+  background: "white",
+};
+const main = {
+  flex: 1,
+
+  width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
+
+  padding:
+    "22px 30px 50px",
+
+  overflowY: "auto",
+  overflowX: "hidden",
+
+  background: "#f3f4f6",
+};
 const welcomeCard = { background: "#1269ed", color: "white", borderRadius: 13, padding: "22px 36px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 8px 18px rgba(37, 99, 235, 0.22)", marginBottom: 18 };
 const welcomeTitle = { fontSize: 18, fontWeight: 500, margin: "0 0 18px" };
 const welcomeStats = { display: "flex", gap: 34, flexWrap: "wrap", alignItems: "center" };
@@ -644,8 +755,27 @@ const statSecondary = { marginTop: 4, fontSize: 12 };
 const statContent = { flex: 1, minWidth: 0 };
 const chartCard = { background: "white", borderRadius: 14, padding: "20px", marginTop: 18, minHeight: 290 };
 const chartTitle = { margin: "0 0 16px", fontSize: 13, fontWeight: 700, color: "#111827" };
-const chartLayout = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 28, alignItems: "center" };
-const chartArea = { minWidth: 0 };
+const chartLayout = {
+  display: "grid",
+
+  gridTemplateColumns:
+    "minmax(0, 1fr) minmax(220px, 340px)",
+
+  gap: 28,
+
+  alignItems: "center",
+
+  minWidth: 0,
+};
+
+const chartArea = {
+  position: "relative",
+
+  width: "100%",
+  minWidth: 1,
+
+  height: 245,
+};
 const chartLegend = { display: "flex", flexDirection: "column", gap: 11 };
 const legendRow = { display: "grid", gridTemplateColumns: "8px minmax(0, 1fr) auto", alignItems: "center", gap: 7 };
 const legendDot = { width: 6, height: 6, borderRadius: "50%" };
