@@ -79,11 +79,6 @@ function normalizarUtilizador(u) {
       u.ID_SERVICELINE ||
       "",
 
-    especializacao_tm:
-      u.especializacao_tm ||
-      u.ESPECIALIZACAO_TM ||
-      "",
-
     departamento:
       u.departamento ||
       u.DEPARTAMENTO ||
@@ -357,7 +352,6 @@ function EditarConta() {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [opcoesFuncao, setOpcoesFuncao] = useState({
-    especializacoes_tm: [],
     servicelines: [],
     areas: [],
   });
@@ -399,11 +393,11 @@ function EditarConta() {
     } finally {
         setIsLoading(false);
     }
-    }
+  }
 
   async function carregarOpcoesFuncao() {
     try {
-      setIsLoadingOpcoes(true);
+      setIsLoading(true);
 
       const res = await api.get(
         `/admin/contas/${id}/funcoes-opcoes`
@@ -415,11 +409,6 @@ function EditarConta() {
         {};
 
       setOpcoesFuncao({
-        especializacoes_tm:
-          Array.isArray(opcoes.especializacoes_tm)
-            ? opcoes.especializacoes_tm
-            : [],
-
         servicelines:
           Array.isArray(opcoes.servicelines)
             ? opcoes.servicelines
@@ -454,7 +443,6 @@ function EditarConta() {
       if (field === "funcao") {
         atualizado.id_areas = "";
         atualizado.id_serviceline = "";
-        atualizado.especializacao_tm = "";
       }
 
       return atualizado;
@@ -466,32 +454,6 @@ function EditarConta() {
 
   function funcaoFoiAlterada() {
     return form?.funcao !== form?.funcao_original;
-  }
-
-  function opcoesEspecializacaoTm() {
-    const disponiveis =
-      opcoesFuncao.especializacoes_tm.filter(
-        (esp) =>
-          esp.disponivel ||
-          esp.pertence_ao_utilizador_atual
-      );
-
-    return [
-      {
-        value: "",
-        label:
-          disponiveis.length > 0
-            ? "Seleciona uma especialização"
-            : "Sem especializações disponíveis",
-        disabled: true,
-      },
-      ...disponiveis.map((esp) => ({
-        value: esp.nome,
-        label: esp.pertence_ao_utilizador_atual
-          ? `${esp.nome} — atual`
-          : esp.nome,
-      })),
-    ];
   }
 
   function opcoesServiceLines() {
@@ -545,14 +507,6 @@ function EditarConta() {
     }
 
     if (
-      form.funcao === "Talent Manager" &&
-      !form.especializacao_tm
-    ) {
-      setErro("Seleciona uma especialização disponível para Talent Manager.");
-      return false;
-    }
-
-    if (
       form.funcao === "Service Line Leader" &&
       !form.id_serviceline
     ) {
@@ -595,11 +549,6 @@ function EditarConta() {
           payload.id_areas = Number(form.id_areas);
         }
 
-        if (form.funcao === "Talent Manager") {
-          payload.especializacao_tm =
-            form.especializacao_tm;
-        }
-
         if (form.funcao === "Service Line Leader") {
           payload.id_serviceline =
             Number(form.id_serviceline);
@@ -630,13 +579,6 @@ function EditarConta() {
     }
   }
 
-  const especializacoesDisponiveis =
-    opcoesFuncao.especializacoes_tm.filter(
-      (esp) =>
-        esp.disponivel ||
-        esp.pertence_ao_utilizador_atual
-    );
-
   const serviceLinesDisponiveis =
     opcoesFuncao.servicelines.filter(
       (sl) =>
@@ -648,10 +590,6 @@ function EditarConta() {
     form &&
     funcaoFoiAlterada() &&
     (
-      (
-        form.funcao === "Talent Manager" &&
-        especializacoesDisponiveis.length === 0
-      ) ||
       (
         form.funcao === "Service Line Leader" &&
         serviceLinesDisponiveis.length === 0
@@ -832,32 +770,6 @@ function EditarConta() {
                     <InfoBoxFuncao
                       titulo="Alteração para Consultor"
                       texto="O utilizador deixa de ocupar vaga de TM/SLL e passa a atuar apenas como consultor."
-                    />
-                  </div>
-                )}
-
-                {form.funcao === "Talent Manager" && funcaoFoiAlterada() && (
-                  <div style={formGrid}>
-                    <SelectField
-                      label="Especialização TM"
-                      value={form.especializacao_tm}
-                      onChange={set("especializacao_tm")}
-                      disabled={
-                        isLoadingOpcoes ||
-                        especializacoesDisponiveis.length === 0
-                      }
-                      options={opcoesEspecializacaoTm()}
-                      helper="Só aparecem especializações livres."
-                    />
-
-                    <InfoBoxFuncao
-                      titulo="Vagas de Talent Manager"
-                      texto={
-                        especializacoesDisponiveis.length === 0
-                          ? "As 3 especializações TM já estão ocupadas. Para promover este utilizador, liberta primeiro uma especialização."
-                          : "Ao guardar, este utilizador passa a ocupar a especialização selecionada."
-                      }
-                      perigo={especializacoesDisponiveis.length === 0}
                     />
                   </div>
                 )}
