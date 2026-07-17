@@ -43,7 +43,7 @@ function removerDuplicados(lista) {
         id: idBadge,
         nome: badge.nome || badge.nome_badge || "Badge",
         descricao: badge.descricao || badge.descricao_badge_modelo || "",
-        imagem_url: badge.imagem_url || badge.imagem || badge.url_imagem || null,
+        imagem: badge.imagem|| badge.imagem || badge.imagem || null,
       });
       return;
     }
@@ -51,7 +51,7 @@ function removerDuplicados(lista) {
       ...existente,
       ...badge,
       nome: existente.nome || badge.nome || badge.nome_badge || "Badge",
-      imagem_url: existente.imagem_url || badge.imagem_url || badge.imagem || badge.url_imagem || null,
+      imagem: existente.imagem || badge.imagem || badge.imagem || badge.imagem || null,
     });
   });
   return Array.from(mapa.values());
@@ -113,7 +113,9 @@ export default function ConfiguracaoAssinaturaPage() {
         // Chamada real à API utilizando o endpoint do teu router: /api/badges/conquistados/:id
         try {
           const resposta = await api.get(`/badges/conquistados/${userId}`);
+          console.log("Resposta API:", resposta.data);
           const badgesTratados = removerDuplicados(resposta.data);
+          console.log("Badges tratados:", badgesTratados);
           setBadges(badgesTratados);
         } catch (apiErr) {
           console.error("Erro ao ir buscar os badges à API:", apiErr);
