@@ -113,9 +113,7 @@ export default function ConfiguracaoAssinaturaPage() {
         // Chamada real à API utilizando o endpoint do teu router: /api/badges/conquistados/:id
         try {
           const resposta = await api.get(`/badges/conquistados/${userId}`);
-          console.log("Resposta API:", resposta.data);
           const badgesTratados = removerDuplicados(resposta.data);
-          console.log("Badges tratados:", badgesTratados);
           setBadges(badgesTratados);
         } catch (apiErr) {
           console.error("Erro ao ir buscar os badges à API:", apiErr);
@@ -209,6 +207,9 @@ export default function ConfiguracaoAssinaturaPage() {
     return <div style={{ padding: 20 }}>A carregar...</div>;
   }
 
+    console.log("BADGES NO RENDER:", badges);
+    console.log("LENGTH:", badges.length);
+
   return (
     <div style={page}>
       <Header />
@@ -277,10 +278,10 @@ export default function ConfiguracaoAssinaturaPage() {
               </Card>
 
               {/* INCLUÍDO: Seleção Dinâmica do Badge Conquistado */}
-              {badges.length > 0 && (
                 <Card className="border-0" style={{ ...card, marginTop: 20 }}>
                   <Card.Body>
                     <h5 style={sectionTitle}>Escolha o seu Badge Conquistado</h5>
+                
                     <select
                       value={config.badgePrincipalId}
                       onChange={(e) => atualizarConfig("badgePrincipalId", e.target.value)}
@@ -293,9 +294,25 @@ export default function ConfiguracaoAssinaturaPage() {
                         fontSize: "13px",
                         color: "#374151",
                         outline: "none",
-                        cursor: "pointer"
+                        cursor: "pointer",
                       }}
                     >
+                      <option value="">
+                        -- Selecione um Badge para a Assinatura --
+                      </option>
+                    
+                      {badges.map((badge) => (
+                        <option
+                          key={obterIdBadge(badge)}
+                          value={obterIdBadge(badge)}
+                        >
+                          {badge.nome} ({badge.nome_nivel || "Sem Nível"})
+                        </option>
+                      ))}
+                    </select>
+                    
+                  </Card.Body>
+                </Card>
                       <option value="">-- Selecione um Badge para a Assinatura --</option>
                       {badges.map((badge) => (
                         <option key={obterIdBadge(badge)} value={obterIdBadge(badge)}>
