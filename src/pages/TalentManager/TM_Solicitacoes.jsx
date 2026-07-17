@@ -12,7 +12,8 @@ import {
   BiSearch, 
   BiUserCircle, 
   BiFilterAlt, 
-  BiSort, 
+  BiSort,
+  BiMedal, 
   BiInfoCircle 
 } from "react-icons/bi";
 

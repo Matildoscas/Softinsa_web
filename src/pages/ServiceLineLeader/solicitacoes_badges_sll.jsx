@@ -15,6 +15,7 @@ import {
   BiShow,
   BiFile,
   BiSpreadsheet,
+  BiMedal,
   BiHistory,
 } from "react-icons/bi";
 
