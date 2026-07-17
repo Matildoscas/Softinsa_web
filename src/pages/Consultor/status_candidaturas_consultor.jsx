@@ -727,6 +727,10 @@ export default function StatusCandidaturasConsultor() {
                           <span>{item.email}</span>
                         </div>
 
+                        <div style={metaLinha}>
+                          ID da candidatura: <strong>#{item.id_candidatura_pedido}</strong>
+                        </div>
+
                         <div style={metaLinha}>Etapa: <strong>{formatarEstadoHumano(faseVisivel)}</strong></div>
                         <div style={metaLinha}>
                           Evidências decididas: <strong>Talent Manager {item.evidencias_decididas_tm}/{item.total_evidencias}</strong> · <strong>Service Line Leader {item.evidencias_decididas_sll}/{item.total_evidencias}</strong>
@@ -749,6 +753,9 @@ export default function StatusCandidaturasConsultor() {
                 <>
                   <div style={secaoDetalhe}>
                     <div style={secaoTitulo}>Estado da candidatura</div>
+                    <div style={metaLinha}>
+                      ID da candidatura: <strong>#{detalhe.candidatura?.id_candidatura_pedido}</strong>
+                    </div>
                     <div style={estadoPrincipalWrapper}>
                       <EstadoPrincipalChip titulo="Estado geral" valor={estadoVisivelDetalhe} />
                     </div>
