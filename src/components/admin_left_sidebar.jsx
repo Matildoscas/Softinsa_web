@@ -38,7 +38,7 @@ function AdminLeftSidebar() {
   }, []);
 
   return (
-    <div style={container}>
+    <aside className="admin-left-sidebar" style={container}>
       <div style={profileBox}>
         <BiUserCircle size={26} color="#6b7280" />
         <span style={profileName}>{adminName}</span>
@@ -143,7 +143,7 @@ function AdminLeftSidebar() {
         icon={<BiTimeFive size={16} />}
         label="Configuração de SLA"
       />
-    </div>
+    </aside>
   );
 }
 

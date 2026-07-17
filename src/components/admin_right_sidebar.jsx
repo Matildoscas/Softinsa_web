@@ -69,7 +69,10 @@ function AdminRightSidebar() {
   }
 
   return (
-    <div style={containerStyle}>
+    <aside
+      className="admin-right-sidebar"
+      style={containerStyle}
+    >
       <div style={sectionTitle}>Notificações</div>
 
       {notifications.length > 0 ? (
@@ -107,7 +110,7 @@ function AdminRightSidebar() {
           <BiGrid size={14} /> Ver Todos
         </a>
       </div>
-    </div>
+    </aside>
   );
 }
 

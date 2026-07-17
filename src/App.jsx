@@ -4,6 +4,8 @@ import ProtectedRoute
   from "./components/ProtectedRoute.jsx";
 
 import './App.css';
+import "./styles/responsive.css";
+import MobileMenuButton from "./components/MobileMenuButton.jsx";
 
 import ConfiguracaoSLA from './pages/Admin/config_sla.jsx';
 import ConfigurarNotificacoes from './pages/Admin/config_notificacao.jsx';
@@ -96,7 +98,7 @@ import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';
 import TM_Solicitacoes from './pages/TalentManager/TM_Solicitacoes.jsx';
 import TM_statuscandidatura from './pages/TalentManager/TM_statuscandidatura.jsx';
 
-function useMobileWebBlock() {
+/*function useMobileWebBlock() {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
 
@@ -134,7 +136,7 @@ function useMobileWebBlock() {
   }, []);
 
   return isMobile;
-}
+}*/
 
 function App() {
   //const shouldBlockMobileWeb = useMobileWebBlock();
@@ -144,6 +146,7 @@ function App() {
       {/*{shouldBlockMobileWeb ? (
         <MicrositeProjeto mobileBlocked />
       ) : (*/}
+      <MobileMenuButton />
       <Routes>
         
         // Rotas públicas

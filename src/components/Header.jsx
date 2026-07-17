@@ -182,13 +182,17 @@ function Header() {
   };
 
   return (
-    <Navbar
+    /*<Navbar
       bg="white"
       className="border-bottom px-4 py-0"
       style={{
         height: "52px",
         flexShrink: 0,
       }}
+    >*/
+    <header
+      className="app-header"
+      style={headerStyle}
     >
       <Navbar.Brand
         as={Link}
@@ -358,7 +362,7 @@ function Header() {
           </Button>
         </Modal.Footer>
       </Modal>
-    </Navbar>
+    </header>
   );
 }
 
