@@ -654,15 +654,35 @@ DASHBOARD DO ADMINISTRADOR
  * Impede que os componentes Recharts
  * ultrapassem o respetivo cartão.
  */
-.dashboard-panel .recharts-responsive-container {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
+.dashboard-panel {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.dashboard-panel .recharts-wrapper,
-.dashboard-panel svg {
-  max-width: 100% !important;
+.dashboard-chart-box {
+  position: relative;
+
+  width: 100%;
+  min-width: 1px;
+  height: 220px;
+}
+
+.dashboard-chart-box-pie {
+  height: 180px;
+}
+
+.dashboard-chart-box-large {
+  height: 240px;
+}
+
+.dashboard-chart-box .recharts-responsive-container {
+  width: 100% !important;
+  height: 100% !important;
+
+  min-width: 1px !important;
+  min-height: 1px !important;
 }
 
 /*
@@ -1020,5 +1040,33 @@ MENU LATERAL MOBILE — ASPETO FLUTUANTE
 
   to {
     opacity: 1;
+  }
+}
+
+@media (max-width: 820px) {
+  .dashboard-chart-box {
+    height: 240px;
+  }
+
+  .dashboard-chart-box-pie {
+    height: 220px;
+  }
+
+  .dashboard-chart-box-large {
+    height: 270px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-chart-box {
+    height: 230px;
+  }
+
+  .dashboard-chart-box-pie {
+    height: 210px;
+  }
+
+  .dashboard-chart-box-large {
+    height: 250px;
   }
 }
