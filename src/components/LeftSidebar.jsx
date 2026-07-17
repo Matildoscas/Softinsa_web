@@ -85,6 +85,7 @@ function LeftSidebar() {
 
   return (
     <aside
+      className="app-left-sidebar consultor-left-sidebar"
       style={{
         width: 250,
         minWidth: 250,
@@ -101,6 +102,7 @@ function LeftSidebar() {
     >
       {/* Utilizador */}
       <div
+        className="consultor-sidebar-profile"
         style={{
           display: "flex",
           alignItems: "center",

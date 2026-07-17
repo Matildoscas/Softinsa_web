@@ -791,19 +791,51 @@ function DashboardConsultor() {
         <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
 
-            <div style={{ display: 'flex', flex: 1 }}>
+            <div
+            className="consultor-layout-body"
+            style={{
+                display: "flex",
+                flex: 1,
+                minWidth: 0,
+                alignItems: "stretch",
+                background: "white",
+            }}
+            >
                 <LeftSidebar />
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                <main
+                    className="consultor-dashboard-main"
+                    style={{
+                    flex: 1,
+                    width: "100%",
+                    maxWidth: "100%",
+                    minWidth: 0,
+
+                    overflowY: "auto",
+                    overflowX: "hidden",
+
+                    padding: 20,
+                    background: "#f0f2f5",
+                    }}
+                >
                     
                     {/* Welcome Card Dinâmico */}
                     <Card className="border-0 mb-3" style={{ background: '#3b6fd4', borderRadius: 12 }}>
-                        <Card.Body className="p-4 d-flex justify-content-between align-items-center text-white">
+                        <Card.Body
+                            className="
+                                consultor-welcome-row
+                                p-4
+                                d-flex
+                                justify-content-between
+                                align-items-center
+                                text-white
+                            "
+                        >
                             <div>
                                 <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
                                     Bom dia, {user?.nome_completo || user?.nome || "Utilizador"}!
                                 </h5>
-                                <div className="d-flex gap-2">
+                                <div className="consultor-welcome-stats d-flex gap-2">
                                     <div style={cardStyleBase}>
                                         <BiMedal size={25}/>
                                         <div>
@@ -941,7 +973,7 @@ function DashboardConsultor() {
                             </p>
                         )}
                     </BadgeSection>
-                </div>
+                </main>
 
                 <RightSidebar />
             </div>
@@ -972,8 +1004,8 @@ const cardStyleBase = {
 
 function BadgeSection({ title, sub, children, onVerTodos }) {
     return (
-        <div className="mb-4">
-            <div className="d-flex justify-content-between align-items-start mb-2">
+        <section className="consultor-section mb-4">
+            <div className="consultor-section-header d-flex justify-content-between align-items-start mb-2">
                 <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{title}</div>
                     <div style={{ fontSize: 12, color: '#6b7280' }}>{sub}</div>
@@ -983,7 +1015,7 @@ function BadgeSection({ title, sub, children, onVerTodos }) {
                 </div>
             </div>
             {children}
-        </div>
+        </section>
     );
 }
 
@@ -1000,23 +1032,32 @@ function BadgeCard({
     onClick 
 }) {
     return (
-        <div 
-            style={{ 
-                background: "white", 
-                border: ganhouBonus
-                    ? "2px solid #d4af37"
-                    : "1px solid #e5e7eb",
-                borderRadius: 12, 
-                marginBottom: 10, 
-                overflow: 'hidden', 
-                cursor: 'pointer',
-                boxShadow: ganhouBonus
-                    ? "0 0 0 3px rgba(212, 175, 55, 0.12)"
-                    : "none"
-            }} 
-            onClick={onClick}
+        <div
+        className="consultor-badge-card"
+        style={{
+            background: "white",
+            border: ganhouBonus
+            ? "2px solid #d4af37"
+            : "1px solid #e5e7eb",
+            borderRadius: 12,
+            marginBottom: 10,
+            overflow: "hidden",
+            cursor: "pointer",
+            boxShadow: ganhouBonus
+            ? "0 0 0 3px rgba(212,175,55,0.12)"
+            : "none",
+        }}
+        onClick={onClick}
         >
-            <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div
+            className="consultor-badge-card-content"
+            style={{
+                padding: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 20,
+            }}
+            >
                 <BadgeImage imageUrl={imageUrl} size={70} />
 
                 <div style={{ flex: 1 }}>

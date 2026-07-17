@@ -88,6 +88,12 @@ function obterRotasUtilizador(user) {
       "administrador"
     );
 
+  const isConsultor =
+    tipoUtilizador.includes("consultor");
+
+  const mostrarMenuLateral =
+    isAdmin || isConsultor;
+
     if (isTm) {
       return {
         inicio: "/tm",
@@ -215,13 +221,14 @@ function Header() {
       style={headerStyle}
     >
 
-      {isAdmin && (
+      {mostrarMenuLateral && (
         <MobileMenuButton />
       )}
 
       <Navbar.Brand
         as={Link}
         to={rotas.inicio}
+        className="app-header-logo"
       >
         <img
           src={logoImg}
