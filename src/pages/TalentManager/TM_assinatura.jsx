@@ -16,7 +16,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Mock/Imports do teu ecossistema (Ajusta conforme o teu projeto)
 import api from "../../services/api.js";
-import BadgeImage, { obterImagemBadge } from "../../components/BadgeImage.jsx";
+import BadgeImage, {
+  obterImagemBadge,
+} from "../../components/badge_image.jsx";
 
 function escaparHtml(valor) {
   return String(valor ?? "")
