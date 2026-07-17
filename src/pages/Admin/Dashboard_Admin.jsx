@@ -489,10 +489,15 @@ function PaginaPrincipalAdmin() {
       >
         <AdminLeftSidebar />
 
-        <div
+        <main
+          className="admin-dashboard-main"
           style={{
             flex: 1,
+            width: "100%",
+            maxWidth: "100%",
+            minWidth: 0,
             overflowY: "auto",
+            overflowX: "hidden",
             padding: 20,
           }}
         >
@@ -506,10 +511,12 @@ function PaginaPrincipalAdmin() {
           >
             <Card.Body className="p-4 text-white">
               <div
+                className="dashboard-welcome-row"
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  gap: 16,
                 }}
               >
                 <div>
@@ -562,9 +569,10 @@ function PaginaPrincipalAdmin() {
 
           {/* Stat Cards */}
           <div
+            className="dashboard-stat-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
               gap: 16,
               marginBottom: 24,
             }}
@@ -593,15 +601,17 @@ function PaginaPrincipalAdmin() {
 
           {/* Charts Row */}
           <div
+            className="dashboard-chart-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "1.5fr 1fr",
+              gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 1fr)",
               gap: 16,
               marginBottom: 24,
             }}
           >
             {/* Line Chart */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -610,10 +620,12 @@ function PaginaPrincipalAdmin() {
               }}
             >
               <div
+                className="dashboard-chart-header"
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  gap: 12,
                   marginBottom: 14,
                 }}
               >
@@ -713,6 +725,7 @@ function PaginaPrincipalAdmin() {
 
             {/* Pie Chart */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -806,14 +819,16 @@ function PaginaPrincipalAdmin() {
 
           {/* Bottom Row */}
           <div
+            className="dashboard-two-column-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 16,
             }}
           >
             {/* Bar Chart */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -874,6 +889,7 @@ function PaginaPrincipalAdmin() {
 
             {/* Area breakdown */}
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -962,14 +978,16 @@ function PaginaPrincipalAdmin() {
             </div>
           </div>
           <div
+            className="dashboard-two-column-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 16,
               marginTop: 24,
             }}
           >
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -1038,6 +1056,7 @@ function PaginaPrincipalAdmin() {
             </div>
 
             <div
+              className="dashboard-panel"
               style={{
                 background: "white",
                 borderRadius: 12,
@@ -1140,7 +1159,7 @@ function PaginaPrincipalAdmin() {
               </div>
             </div>
           </div>
-        </div>
+        </main>
 
         <AdminRightSidebar />
       </div>
