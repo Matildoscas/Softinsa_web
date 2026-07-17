@@ -4,7 +4,9 @@ import { Card, Button } from "react-bootstrap";
 import { BiCopy, BiSave, BiRefresh } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 
-// Ajusta estes imports fictícios conforme a estrutura real do teu projeto Web
+import Header from "../../components/Header.jsx";
+import TmLeftSidebar from "../../components/TM_LeftBar.jsx";
+import TmRightSidebar from "../../components/TM_RightBar.jsx";
 import api from "../../services/api.js";
 
 function escaparHtml(valor) {
@@ -105,7 +107,6 @@ export default function ConfiguracaoAssinaturaPage() {
           return;
         }
 
-        // Simulação ou chamada real à API Web
         setUser(userData);
         setBadges([]);
 
@@ -149,14 +150,13 @@ export default function ConfiguracaoAssinaturaPage() {
   };
 
   const gerarAssinaturaTexto = () => {
-    const linhas = [];
-    if (config.mostrarNome) linhas.push(dadosAssinatura.nome);
-    if (config.mostrarCargo) linhas.push(dadosAssinatura.cargo);
-    if (config.mostrarEmail && dadosAssinatura.email) linhas.push(dadosAssinatura.email);
-    return linhas.filter(Boolean).join("\n");
+    const lines = [];
+    if (config.mostrarNome) lines.push(dadosAssinatura.nome);
+    if (config.mostrarCargo) lines.push(dadosAssinatura.cargo);
+    if (config.mostrarEmail && dadosAssinatura.email) lines.push(dadosAssinatura.email);
+    return lines.filter(Boolean).join("\n");
   };
 
-  // Cópia nativa para a Web usando a Clipboard API do Navegador
   const copiarAssinatura = async () => {
     try {
       const texto = gerarAssinaturaTexto();
@@ -188,7 +188,11 @@ export default function ConfiguracaoAssinaturaPage() {
 
   return (
     <div style={page}>
+      <Header />
+
       <div style={layout}>
+        <TmLeftSidebar />
+
         <main style={main}>
           <button type="button" style={backButton} onClick={() => navigate(-1)}>
             Voltar
@@ -291,6 +295,8 @@ export default function ConfiguracaoAssinaturaPage() {
             </aside>
           </div>
         </main>
+
+        <TmRightSidebar />
       </div>
     </div>
   );
@@ -326,7 +332,6 @@ function CheckOption({ label, checked, onChange }) {
   );
 }
 
-// OS TEUS ESTILOS INLINE ORIGINAIS RESTAURADOS A 100%
 const page = {
   backgroundColor: "#f0f2f5",
   minHeight: "100vh",
