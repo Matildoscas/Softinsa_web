@@ -130,6 +130,20 @@ function normalizarSolicitacao(
       solicitacao.pontos || 0
     ),
 
+    total_requisitos: Number(solicitacao.total_requisitos || 0),
+
+    requisitos_avaliados: Number(solicitacao.requisitos_avaliados || 0),
+
+    dias_passados: solicitacao.dias_passados,
+
+    estado_candidaturasll: solicitacao.estado_candidaturasll,
+
+    estado_validacao: solicitacao.estado_candidaturasll,
+
+    imagem: solicitacao.imagem,
+
+    imagem_badge: solicitacao.imagem_badge,
+
     debug: solicitacao.debug || null,
   };
 }
@@ -946,9 +960,27 @@ function CandidaturaCardUniversal({ dados, onClick, role = "tm" }) {
     ? (imagemPath.startsWith("http") ? imagemPath : `https://softinsa-api.onrender.com${imagemPath}`)
     : null;
 
-  // 5. Estado e Progresso (Mecanismo do TM) - CÓDIGO ATUALIZADO AQUI
-  const estado = dados.estado_validacao || dados.estado_candidatura_pedido || dados.estado || "Por avaliar";
-  const isEmAvaliacao = estado === "Em avaliação" || estado === "EM_AVALIACAO";
+  
+  const estado = dados.estado_candidaturasll || dados.estado_validacao || dados.estado_candidatura_pedido || dados.estado || "Por avaliar";
+  
+  const estadoNormalizado = String(estado)
+    .trim()
+    .toUpperCase();
+
+const isEmAvaliacao = [
+
+    "EM_AVALIACAO",
+    "EM AVALIACAO",
+
+    "EM_VALIDACAO",
+    "EM VALIDACAO",
+
+    "EM_VALIDACAO_SLL",
+    "EM VALIDAÇÃO_SLL",
+
+    "EM_VALIDAÇÃO"
+
+].includes(estadoNormalizado);
 
   const totalEvidencias = Number(dados.total_requisitos || dados.total_evidencias || 0);
   const evidenciasAvalia = Number(dados.requisitos_avaliados || dados.evidencias_avaliadas || 0);
