@@ -168,8 +168,22 @@ function Header() {
       "consultor"
     );
 
+  const isSll =
+    tipoUtilizador.includes(
+      "service line leader"
+    ) ||
+    tipoUtilizador.includes(
+      "servicelineleader"
+    ) ||
+    tipoUtilizador.includes(
+      "service_line_leader"
+    ) ||
+    tipoUtilizador === "sll";
+
   const mostrarMenuLateral =
-    isAdmin || isConsultor;
+    isAdmin ||
+    isConsultor ||
+    isSll;
 
   const {
     totalNaoLidas,
