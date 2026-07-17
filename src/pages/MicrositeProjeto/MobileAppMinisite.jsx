@@ -2,10 +2,25 @@ import { useMemo } from 'react';
 import logoImg from '../../assets/logo.png';
 
 function MobileAppMinisite() {
-  const installUrlDefault = import.meta.env.VITE_APP_INSTALL_URL || '';
-  const installUrlAndroid = import.meta.env.VITE_APP_INSTALL_URL_ANDROID || '';
-  const installUrlIos = import.meta.env.VITE_APP_INSTALL_URL_IOS || '';
-  const appDeepLink = import.meta.env.VITE_APP_DEEP_LINK || '';
+  const apkUrl =
+    import.meta.env.VITE_APP_INSTALL_URL_ANDROID ||
+    "/downloads/softinsa-badges.apk";
+
+  const installUrlDefault =
+    import.meta.env.VITE_APP_INSTALL_URL ||
+    apkUrl;
+
+  const installUrlAndroid =
+    import.meta.env.VITE_APP_INSTALL_URL_ANDROID ||
+    apkUrl;
+
+  const installUrlIos =
+    import.meta.env.VITE_APP_INSTALL_URL_IOS ||
+    "";
+
+  const appDeepLink =
+    import.meta.env.VITE_APP_DEEP_LINK ||
+    "";
 
   const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   const isAndroid = /Android/i.test(userAgent);
@@ -64,14 +79,23 @@ function MobileAppMinisite() {
           ))}
         </ul>
 
-        <button
-          type="button"
-          className="mobile-minisite-install"
-          onClick={handleInstallClick}
-          disabled={!hasInstallUrl}
-        >
-          {hasInstallUrl ? 'Instalar app' : 'Instalacao da app em breve'}
-        </button>
+        {hasInstallUrl ? (
+          <a
+            href={installUrl}
+            download="softinsa-badges.apk"
+            className="mobile-minisite-install"
+          >
+            Descarregar app
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="mobile-minisite-install"
+            disabled
+          >
+            Instalação da app em breve
+          </button>
+        )}
 
         {hasDeepLink && (
           <button type="button" className="mobile-minisite-link" onClick={handleOpenAppClick}>
