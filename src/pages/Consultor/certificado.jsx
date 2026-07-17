@@ -162,6 +162,58 @@ function CertificadoPage() {
             ? certificadosRes.data
             : [];
 
+        console.log(
+          "ID recebido na rota:",
+          id
+        );
+
+        console.table(
+          conquistadosRaw.map(
+            (item) => ({
+              id:
+                item.id,
+
+              id_badge_modelo:
+                item.id_badge_modelo,
+
+              id_badge_atribuido:
+                item.id_badge_atribuido,
+
+              nome:
+                item.nome ||
+                item.nome_badge,
+            })
+          )
+        );
+
+        console.table(
+          certificadosRaw.map(
+            (item) => ({
+              id_candidatura_historico:
+                item
+                  .id_candidatura_historico,
+
+              id_utilizador:
+                item.id_utilizador,
+
+              id_badge_modelo:
+                item.id_badge_modelo,
+
+              nome_badge:
+                item.nome_badge,
+
+              estado_final:
+                item.estado_final,
+
+              codigo_certificado:
+                item.codigo_certificado,
+
+              url_verificacao:
+                item.url_verificacao,
+            })
+          )
+        );
+
         const todos =
           removerDuplicados(todosRaw);
 
@@ -212,11 +264,87 @@ function CertificadoPage() {
         * Este é o identificador que deve ser
         * utilizado para procurar o certificado.
         */
+        const normalizarTexto = (
+          valor
+        ) =>
+          String(valor || "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(
+              /[\u0300-\u036f]/g,
+              ""
+            );
+
+        const nomeBadgeConquistado =
+          badgeConquistado
+            ?.nome_badge ||
+          badgeConquistado?.nome ||
+          "";
+
+        /*
+        * Primeiro tenta encontrar diretamente
+        * pelo id existente na rota.
+        */
+        let certificadoResumo =
+          certificadosRaw.find(
+            (certificado) =>
+              Number(
+                certificado
+                  .id_badge_modelo
+              ) === Number(id)
+          );
+
+        /*
+        * Depois tenta pelo id_badge_modelo
+        * devolvido no badge conquistado.
+        */
+        if (
+          !certificadoResumo &&
+          badgeConquistado
+            ?.id_badge_modelo
+        ) {
+          certificadoResumo =
+            certificadosRaw.find(
+              (certificado) =>
+                Number(
+                  certificado
+                    .id_badge_modelo
+                ) ===
+                Number(
+                  badgeConquistado
+                    .id_badge_modelo
+                )
+            );
+        }
+
+        /*
+        * Último fallback: procura pelo nome.
+        * Isto evita confundir id_badge_atribuido
+        * com id_badge_modelo.
+        */
+        if (
+          !certificadoResumo &&
+          nomeBadgeConquistado
+        ) {
+          certificadoResumo =
+            certificadosRaw.find(
+              (certificado) =>
+                normalizarTexto(
+                  certificado.nome_badge
+                ) ===
+                normalizarTexto(
+                  nomeBadgeConquistado
+                )
+            );
+        }
+
         const idBadgeModelo =
           Number(
+            certificadoResumo
+              ?.id_badge_modelo ||
             badgeConquistado
-              .id_badge_modelo ||
-            badgeConquistado.id ||
+              ?.id_badge_modelo ||
             id
           );
 
@@ -226,19 +354,6 @@ function CertificadoPage() {
               Number(
                 item.id_badge_modelo ||
                 item.id
-              ) === idBadgeModelo
-          );
-
-        /*
-        * O endpoint de certificados disponíveis
-        * devolve o histórico aprovado.
-        */
-        const certificadoResumo =
-          certificadosRaw.find(
-            (certificado) =>
-              Number(
-                certificado
-                  .id_badge_modelo
               ) === idBadgeModelo
           );
 
