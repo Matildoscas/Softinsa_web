@@ -188,8 +188,7 @@ const requisitosMobile = [
 
 function MicrositeProjeto({ mobileBlocked = false }) {
   const apkUrl =
-    import.meta.env.VITE_APP_INSTALL_URL_ANDROID ||
-    "/downloads/softinsa-badges.apk";
+  `${import.meta.env.BASE_URL}downloads/softinsa-badges.apk`;
 
   const installUrlDefault =
     import.meta.env.VITE_APP_INSTALL_URL ||
@@ -329,7 +328,7 @@ function MicrositeProjeto({ mobileBlocked = false }) {
             </a>
             {hasInstallUrl ? (
               <a
-                href={installUrl}
+                href={apkUrl}
                 download="softinsa-badges.apk"
                 className="btn-hero-download"
               >
@@ -630,11 +629,11 @@ function MicrositeProjeto({ mobileBlocked = false }) {
             <div className="mobile-highlight">
               <div className="mobile-download-actions">
                 <a
-                  href="/downloads/softinsa-badges.apk"
+                  href={apkUrl}
                   download="softinsa-badges.apk"
-                  className="btn-hero-primary"
+                  className="btn-hero-download"
                 >
-                  <Smartphone size={18} />
+                  <Download size={18} />
                   Descarregar APK
                 </a>
 

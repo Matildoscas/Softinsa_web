@@ -3,8 +3,7 @@ import logoImg from '../../assets/logo.png';
 
 function MobileAppMinisite() {
   const apkUrl =
-    import.meta.env.VITE_APP_INSTALL_URL_ANDROID ||
-    "/downloads/softinsa-badges.apk";
+  `${import.meta.env.BASE_URL}downloads/softinsa-badges.apk`;
 
   const installUrlDefault =
     import.meta.env.VITE_APP_INSTALL_URL ||
@@ -81,11 +80,12 @@ function MobileAppMinisite() {
 
         {hasInstallUrl ? (
           <a
-            href={installUrl}
+            href={apkUrl}
             download="softinsa-badges.apk"
-            className="mobile-minisite-install"
+            className="btn-hero-download"
           >
-            Descarregar app
+            <Download size={18} />
+            Descarregar APK
           </a>
         ) : (
           <button
