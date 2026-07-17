@@ -1070,3 +1070,37 @@ MENU LATERAL MOBILE — ASPETO FLUTUANTE
     height: 250px;
   }
 }
+
+/*
+===============================================================================
+ALTURA DAS SIDEBARS EM ECRÃS GRANDES
+===============================================================================
+*/
+
+@media (min-width: 821px) {
+  .admin-layout-body {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    min-height: calc(100vh - 52px);
+    background: white;
+  }
+
+  .admin-layout-body > main {
+    min-width: 0;
+    background: #f0f2f5;
+  }
+
+  .admin-layout-body .app-left-sidebar,
+  .admin-layout-body .admin-right-sidebar {
+    align-self: stretch !important;
+
+    position: relative !important;
+    top: auto !important;
+
+    height: auto !important;
+    min-height: 100% !important;
+
+    background: white !important;
+  }
+}

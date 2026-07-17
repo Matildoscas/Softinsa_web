@@ -199,12 +199,17 @@ const container = {
   borderRight: "1px solid #e5e7eb",
   padding: "14px 0",
   flexShrink: 0,
-  alignSelf: "flex-start",
-  position: "sticky",
-  top: 0,
-  height: "100vh",
+
+  /*
+   * Permite que a sidebar acompanhe toda
+   * a altura do conteúdo central.
+   */
+  alignSelf: "stretch",
+  position: "relative",
+  height: "auto",
+  minHeight: "100%",
+
   overflowY: "auto",
-  color: "#1f2937",
 };
 
 const profileBox = {

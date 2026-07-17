@@ -481,10 +481,13 @@ function PaginaPrincipalAdmin() {
       <Header />
 
       <div
+        className="admin-layout-body"
         style={{
           display: "flex",
           flex: 1,
-          overflow: "hidden",
+          minWidth: 0,
+          alignItems: "stretch",
+          background: "white",
         }}
       >
         <AdminLeftSidebar />
