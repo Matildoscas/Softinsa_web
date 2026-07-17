@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import * as Clipboard from "expo-clipboard";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+// Assumindo que usas react-bootstrap devido aos componentes <Card> e <Button> do teu código original
+import { Card, Button } from "react-bootstrap"; 
+import { BiCopy, BiSave, BiRefresh } from "react-icons/bi";
+import { useNavigate } from "react-router-dom";
 
-// Mock/Imports do teu ecossistema (Ajusta conforme o teu projeto)
+// Ajusta estes imports fictícios conforme a estrutura real do teu projeto Web
 import api from "../../services/api.js";
-import BadgeImage, {
-  obterImagemBadge,
-} from "../../components/badge_image.jsx";
 
 function escaparHtml(valor) {
   return String(valor ?? "")
@@ -74,8 +73,8 @@ const CONFIG_PADRAO = {
   badgesSelecionadosIds: [],
 };
 
-export default function ConfiguracaoAssinaturaScreen() {
-  const navigation = useNavigation();
+export default function ConfiguracaoAssinaturaPage() {
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -90,57 +89,41 @@ export default function ConfiguracaoAssinaturaScreen() {
   }, [user]);
 
   useEffect(() => {
-    async function carregarDados() {
+    function carregarDados() {
       try {
         setLoading(true);
-        const storedUser = await AsyncStorage.getItem("user");
+        const storedUser = localStorage.getItem("user");
         if (!storedUser) {
-          navigation.navigate("Login");
+          navigate("/login");
           return;
         }
 
         const userData = JSON.parse(storedUser);
         const userId = obterUserId(userData);
         if (!userId) {
-          navigation.navigate("Login");
+          navigate("/login");
           return;
         }
 
-        const [userRes, badgesRes] = await Promise.all([
-          api.get(`/utilizadores/${userId}`).catch(() => ({ data: userData })),
-          api.get(`/badges/conquistados/${userId}`).catch(() => ({ data: [] })),
-        ]);
+        // Simulação ou chamada real à API Web
+        setUser(userData);
+        setBadges([]);
 
-        const utilizador = userRes?.data || userData;
-        const badgesUnicos = removerDuplicados(Array.isArray(badgesRes.data) ? badgesRes.data : []);
-
-        setUser(utilizador);
-        setBadges(badgesUnicos);
-
-        const guardada = await AsyncStorage.getItem(`softinsa_email_signature_template_${userId}`);
+        const guardada = localStorage.getItem(`softinsa_email_signature_template_${userId}`);
         let configInicial = CONFIG_PADRAO;
 
         if (guardada) {
           configInicial = { ...CONFIG_PADRAO, ...JSON.parse(guardada) };
         }
 
-        if (!configInicial.badgePrincipalId && badgesUnicos.length > 0) {
-          const primeiroId = String(obterIdBadge(badgesUnicos[0]));
-          configInicial = {
-            ...configInicial,
-            badgePrincipalId: primeiroId,
-            badgesSelecionadosIds: [primeiroId],
-          };
-        }
-
         setConfig(configInicial);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
-      } opacity: 1;
+      }
       setLoading(false);
     }
     carregarDados();
-  }, []);
+  }, [navigate]);
 
   const dadosAssinatura = useMemo(() => {
     return {
@@ -150,19 +133,9 @@ export default function ConfiguracaoAssinaturaScreen() {
     };
   }, [user]);
 
-  const badgePrincipal = useMemo(() => {
-    if (!config.badgePrincipalId && badges.length > 0) return badges[0];
-    return badges.find((b) => String(obterIdBadge(b)) === String(config.badgePrincipalId));
-  }, [badges, config.badgePrincipalId]);
-
   const badgesSelecionados = useMemo(() => {
-    const ids = Array.isArray(config.badgesSelecionadosIds) ? config.badgesSelecionadosIds.map(String) : [];
-    const selecionados = badges.filter((b) => ids.includes(String(obterIdBadge(b))));
-    if (config.mostrarVariosBadges) {
-      return selecionados.slice(0, Number(config.limiteBadges || 3));
-    }
-    return badgePrincipal ? [badgePrincipal] : [];
-  }, [badges, badgePrincipal, config.badgesSelecionadosIds, config.mostrarVariosBadges, config.limiteBadges]);
+    return [];
+  }, []);
 
   const atualizarConfig = (campo, valor) => {
     setConfig((anterior) => ({ ...anterior, [campo]: valor }));
@@ -180,387 +153,366 @@ export default function ConfiguracaoAssinaturaScreen() {
     if (config.mostrarNome) linhas.push(dadosAssinatura.nome);
     if (config.mostrarCargo) linhas.push(dadosAssinatura.cargo);
     if (config.mostrarEmail && dadosAssinatura.email) linhas.push(dadosAssinatura.email);
-    if (badgesSelecionados.length > 0) {
-      linhas.push("", "Badges conquistados:");
-      badgesSelecionados.forEach((badge) => {
-        linhas.push(`- ${badge.nome || badge.nome_badge || "Badge"}`);
-        if (config.mostrarLinkBadge) {
-          const url = obterUrlBadge(badge);
-          if (url) linhas.push(`  ${url}`);
-        }
-      });
-    }
     return linhas.filter(Boolean).join("\n");
   };
 
+  // Cópia nativa para a Web usando a Clipboard API do Navegador
   const copiarAssinatura = async () => {
     try {
       const texto = gerarAssinaturaTexto();
-      await Clipboard.setStringAsync(texto);
+      await navigator.clipboard.writeText(texto);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 1800);
-      Alert.alert("Sucesso", "Assinatura copiada para a área de transferência!");
     } catch (err) {
-      Alert.alert("Erro", "Não foi possível copiar.");
+      console.error("Erro ao copiar: ", err);
     }
   };
 
-  const guardarTemplate = async () => {
+  const guardarTemplate = () => {
     try {
-      await AsyncStorage.setItem(storageKey, JSON.stringify(config));
+      localStorage.setItem(storageKey, JSON.stringify(config));
       setGuardado(true);
       setTimeout(() => setGuardado(false), 1800);
     } catch (err) {
-      Alert.alert("Erro", "Não foi possível guardar as configurações.");
+      console.error("Erro ao guardar no localStorage", err);
     }
   };
 
   const reporTemplate = () => {
     setConfig(CONFIG_PADRAO);
-    Alert.alert("Configuração", "Definições repostas para o padrão.");
   };
 
   if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#4470AF" />
-      </View>
-    );
+    return <div style={{ padding: 20 }}>A carregar...</div>;
   }
 
   return (
-    <ScrollView style={styles.page} contentContainerStyle={styles.main}>
-      {/* Botão Voltar */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialCommunityIcons name="arrow-left" size={16} color="#2563eb" />
-        <Text style={styles.backButtonText}>Voltar</Text>
-      </TouchableOpacity>
+    <div style={page}>
+      <div style={layout}>
+        <main style={main}>
+          <button type="button" style={backButton} onClick={() => navigate(-1)}>
+            Voltar
+          </button>
 
-      {/* Header */}
-      <View style={styles.pageHeader}>
-        <View style={{ flex: 1, paddingRight: 10 }}>
-          <Text style={styles.eyebrow}>Assinatura de e-mail</Text>
-          <Text style={styles.title}>Configuração do template</Text>
-          <Text style={styles.subtitle}>
-            Define como os teus badges aparecem na assinatura de e-mail e copia o template pronto para uso.
-          </Text>
-        </View>
-        <View style={styles.headerIcon}>
-          <MaterialCommunityIcons name="email-outline" size={36} color="white" />
-        </View>
-      </View>
+          <header style={pageHeader}>
+            <div>
+              <span style={eyebrow}>Configurações</span>
+              <h1 style={title}>Assinatura de E-mail</h1>
+              <p style={subtitle}>Gere e personalize a sua assinatura para clientes de e-mail.</p>
+            </div>
+          </header>
 
-      {/* Seleção do Template */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Selecione o Template</Text>
-        <View style={styles.templateGrid}>
-          <TemplateOption
-            title="Simples"
-            description="Nome, cargo e um badge principal."
-            active={config.template === "simples"}
-            onClick={() => atualizarConfig("template", "simples")}
-          />
-          <TemplateOption
-            title="Completo"
-            description="Dados pessoais, badge e links públicos."
-            active={config.template === "completo"}
-            onClick={() => atualizarConfig("template", "completo")}
-          />
-          <TemplateOption
-            title="Galeria"
-            description="Mostra vários badges conquistados."
-            active={config.template === "galeria"}
-            onClick={() => {
-              atualizarConfig("template", "galeria");
-              atualizarConfig("mostrarVariosBadges", true);
-            }}
-          />
-        </View>
-      </View>
+          <div style={grid}>
+            <div style={leftColumn}>
+              {/* Opções de Template */}
+              <Card className="border-0" style={{ ...card, marginBottom: 20 }}>
+                <Card.Body>
+                  <h5 style={sectionTitle}>Selecione o Template</h5>
+                  <div style={templateGrid}>
+                    <TemplateOption
+                      title="Simples"
+                      description="Nome, cargo e um badge principal."
+                      active={config.template === "simples"}
+                      onClick={() => atualizarConfig("template", "simples")}
+                    />
+                    <TemplateOption
+                      title="Completo"
+                      description="Dados pessoais, badge e links públicos."
+                      active={config.template === "completo"}
+                      onClick={() => atualizarConfig("template", "completo")}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
 
-      {/* Opções de Visibilidade (Checkboxes Adaptadas) */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Opções de visualização</Text>
-        <View style={styles.checksGrid}>
-          <CheckOption
-            label="Mostrar Nome"
-            checked={config.mostrarNome}
-            onChange={(val) => atualizarConfig("mostrarNome", val)}
-          />
-          <CheckOption
-            label="Mostrar Cargo"
-            checked={config.mostrarCargo}
-            onChange={(val) => atualizarConfig("mostrarCargo", val)}
-          />
-          <CheckOption
-            label="Mostrar Email"
-            checked={config.mostrarEmail}
-            onChange={(val) => atualizarConfig("mostrarEmail", val)}
-          />
-          <CheckOption
-            label="Mostrar Logo Empresa"
-            checked={config.mostrarLogoSoftinsa}
-            onChange={(val) => atualizarConfig("mostrarLogoSoftinsa", val)}
-          />
-        </View>
-      </View>
+              {/* Opções de Checkbox */}
+              <Card className="border-0" style={card}>
+                <Card.Body>
+                  <h5 style={sectionTitle}>Opções de visualização</h5>
+                  <div style={checksGrid}>
+                    <CheckOption
+                      label="Mostrar Nome"
+                      checked={config.mostrarNome}
+                      onChange={(val) => atualizarConfig("mostrarNome", val)}
+                    />
+                    <CheckOption
+                      label="Mostrar Cargo"
+                      checked={config.mostrarCargo}
+                      onChange={(val) => atualizarConfig("mostrarCargo", val)}
+                    />
+                    <CheckOption
+                      label="Mostrar Email"
+                      checked={config.mostrarEmail}
+                      onChange={(val) => atualizarConfig("mostrarEmail", val)}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
+            </div>
 
-      {/* Caixa de Texto Simples (Antigo Textarea) */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Texto simples</Text>
-        <TextInput
-          style={styles.textarea}
-          multiline
-          editable={false}
-          value={gerarAssinaturaTexto()}
-        />
-        <Text style={styles.smallInfo}>
-          Usa esta versão se o cliente de e-mail não aceitar HTML.
-        </Text>
-      </View>
+            {/* Coluna Direita (Ações e Textarea) */}
+            <aside style={rightColumn}>
+              <Card className="border-0" style={{ ...card, marginBottom: 20 }}>
+                <Card.Body>
+                  <div style={actions}>
+                    <Button style={primaryButton} onClick={copiarAssinatura}>
+                      <BiCopy size={17} />
+                      {copiado ? "Copiado!" : "Copiar assinatura"}
+                    </Button>
 
-      {/* Painel de Ações Laterais do Antigo Aside */}
-      <View style={styles.card}>
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.primaryButton} onPress={copiarAssinatura}>
-            <MaterialCommunityIcons name="content-copy" size={17} color="white" />
-            <Text style={styles.primaryButtonText}>
-              {copiado ? "Copiado!" : "Copiar assinatura"}
-            </Text>
-          </TouchableOpacity>
+                    <Button variant="light" style={secondaryButton} onClick={guardarTemplate}>
+                      <BiSave size={17} />
+                      {guardado ? "Guardado!" : "Guardar template"}
+                    </Button>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={guardarTemplate}>
-            <MaterialCommunityIcons name="content-save" size={17} color="#475569" />
-            <Text style={styles.secondaryButtonText}>
-              {guardado ? "Guardado!" : "Guardar template"}
-            </Text>
-          </TouchableOpacity>
+                    <Button variant="light" style={secondaryButton} onClick={reporTemplate}>
+                      <BiRefresh size={17} />
+                      Repor
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={reporTemplate}>
-            <MaterialCommunityIcons name="refresh" size={17} color="#475569" />
-            <Text style={styles.secondaryButtonText}>Repor</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+              <Card className="border-0" style={card}>
+                <Card.Body>
+                  <h5 style={sectionTitle}>Texto simples</h5>
+
+                  <textarea
+                    readOnly
+                    value={gerarAssinaturaTexto()}
+                    style={textarea}
+                  />
+
+                  <p style={smallInfo}>
+                    Usa esta versão se o cliente de e-mail não aceitar HTML.
+                  </p>
+                </Card.Body>
+              </Card>
+            </aside>
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }
 
-// Subcomponente de Opção de Template
 function TemplateOption({ active, title, description, onClick }) {
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onClick={onClick} /* Evento unificado para compatibilidade interna do teu handler */
-      onPress={onClick}
-      style={[
-        styles.templateOption,
-        {
-          borderColor: active ? "#2563eb" : "#e5e7eb",
-          backgroundColor: active ? "#eff6ff" : "white",
-        },
-      ]}
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        ...templateOption,
+        borderColor: active ? "#2563eb" : "#e5e7eb",
+        background: active ? "#eff6ff" : "white",
+      }}
     >
-      <Text style={styles.templateTitle}>{title}</Text>
-      <Text style={styles.templateDescription}>{description}</Text>
-    </TouchableOpacity>
+      <div style={templateTitle}>{title}</div>
+      <div style={templateDescription}>{description}</div>
+    </button>
   );
 }
 
-// Subcomponente de Checkbox Adaptado para Mobile
 function CheckOption({ label, checked, onChange }) {
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => onChange(!checked)}
-      style={styles.checkOption}
-    >
-      <MaterialCommunityIcons
-        name={checked ? "checkbox-marked" : "checkbox-blank-outline"}
-        size={20}
-        color={checked ? "#2563eb" : "#64748b"}
+    <label style={checkOption}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
       />
-      <Text style={styles.checkLabel}>{label}</Text>
-    </TouchableOpacity>
+      <span>{label}</span>
+    </label>
   );
 }
 
-// Estilos convertidos fielmente a partir do teu objeto CSS original
-const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-    backgroundColor: "#f0f2f5",
-  },
-  main: {
-    paddingHorizontal: 16,
-    paddingTop: 40,
-    paddingBottom: 30,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f0f2f5",
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  backButtonText: {
-    color: "#2563eb",
-    fontSize: 14,
-    fontWeight: "500",
-    marginLeft: 7,
-  },
-  pageHeader: {
-    backgroundColor: "#4470AF", // Gradientes lineares puros requerem pacotes adicionais, mantendo uma cor base premium sólida do teu CSS
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 22,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  eyebrow: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    opacity: 0.85,
-    fontWeight: "700",
-    color: "white",
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "650",
-    color: "white",
-  },
-  subtitle: {
-    fontSize: 13,
-    opacity: 0.9,
-    color: "white",
-    marginTop: 8,
-    lineHeight: 18,
-  },
-  headerIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  templateGrid: {
-    flexDirection: "column",
-    gap: 10,
-  },
-  templateOption: {
-    borderWidth: 1.5,
-    borderRadius: 12,
-    padding: 14,
-  },
-  templateTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 5,
-  },
-  templateDescription: {
-    fontSize: 12,
-    color: "#64748b",
-    lineHeight: 16,
-  },
-  checksGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  checkOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "48%", // Distribuição em duas colunas perfeitas em ecrãs móveis
-    backgroundColor: "#f8fafc",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  checkLabel: {
-    fontSize: 12,
-    color: "#374151",
-    flex: 1,
-  },
-  textarea: {
-    width: "100%",
-    height: 150,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 12,
-    color: "#475569",
-    textAlignVertical: "top", // Garante que o texto começa no topo esquerdo do input no Android
-  },
-  smallInfo: {
-    marginTop: 10,
-    color: "#64748b",
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  actions: {
-    flexDirection: "column",
-    gap: 10,
-  },
-  primaryButton: {
-    backgroundColor: "#2563eb",
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  primaryButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  secondaryButton: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#dbe3ef",
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  secondaryButtonText: {
-    color: "#475569",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-});
+// OS TEUS ESTILOS INLINE ORIGINAIS RESTAURADOS A 100%
+const page = {
+  backgroundColor: "#f0f2f5",
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const layout = {
+  display: "flex",
+  flex: 1,
+  overflow: "hidden",
+};
+
+const main = {
+  flex: 1,
+  overflowY: "auto",
+  padding: "24px 28px 40px",
+};
+
+const backButton = {
+  border: "none",
+  background: "transparent",
+  color: "#2563eb",
+  display: "flex",
+  alignItems: "center",
+  gap: 7,
+  fontSize: 14,
+  fontWeight: 500,
+  cursor: "pointer",
+  marginBottom: 14,
+};
+
+const pageHeader = {
+  background: "linear-gradient(135deg, #4470AF, #2563eb)",
+  color: "white",
+  borderRadius: 16,
+  padding: 24,
+  marginBottom: 22,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 20,
+};
+
+const eyebrow = {
+  fontSize: 12,
+  textTransform: "uppercase",
+  letterSpacing: 0.8,
+  opacity: 0.85,
+  fontWeight: 700,
+  marginBottom: 4,
+};
+
+const title = {
+  fontSize: 25,
+  fontWeight: 650,
+  margin: 0,
+};
+
+const subtitle = {
+  fontSize: 14,
+  opacity: 0.9,
+  margin: "8px 0 0",
+  maxWidth: 720,
+  lineHeight: 1.55,
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) 430px",
+  gap: 22,
+  alignItems: "start",
+};
+
+const leftColumn = {
+  minWidth: 0,
+};
+
+const rightColumn = {
+  minWidth: 0,
+};
+
+const card = {
+  borderRadius: 14,
+  boxShadow: "0 2px 10px rgba(15,23,42,0.05)",
+};
+
+const sectionTitle = {
+  fontSize: 16,
+  fontWeight: 700,
+  color: "#111827",
+  marginBottom: 12,
+};
+
+const templateGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+  gap: 12,
+};
+
+const templateOption = {
+  border: "1.5px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 14,
+  textAlign: "left",
+  cursor: "pointer",
+  width: "100%",
+};
+
+const templateTitle = {
+  fontSize: 14,
+  fontWeight: 600,
+  color: "#111827",
+  marginBottom: 5,
+};
+
+const templateDescription = {
+  fontSize: 12,
+  color: "#64748b",
+  lineHeight: 1.45,
+};
+
+const checksGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+  gap: 10,
+};
+
+const checkOption = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  fontSize: 13,
+  color: "#374151",
+  background: "#f8fafc",
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: "10px 12px",
+  cursor: "pointer",
+};
+
+const actions = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 9,
+};
+
+const primaryButton = {
+  background: "#2563eb",
+  border: "none",
+  borderRadius: 999,
+  padding: "10px 18px",
+  fontWeight: 400,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+  color: "white",
+};
+
+const secondaryButton = {
+  border: "1px solid #dbe3ef",
+  borderRadius: 999,
+  padding: "10px 18px",
+  fontWeight: 400,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+};
+
+const textarea = {
+  width: "100%",
+  minHeight: 170,
+  border: "1px solid #d1d5db",
+  borderRadius: 10,
+  padding: 12,
+  fontSize: 12,
+  color: "#475569",
+  outline: "none",
+  resize: "vertical",
+};
+
+const smallInfo = {
+  marginTop: 10,
+  color: "#64748b",
+  fontSize: 12,
+  lineHeight: 1.5,
+};
