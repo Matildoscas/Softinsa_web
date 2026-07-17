@@ -148,12 +148,6 @@ function LeftSidebar() {
       />
 
       <SidebarItem
-        to="/progresso"
-        icon={<BiLineChart size={17} />}
-        label="Progresso"
-      />
-
-      <SidebarItem
         to="/notificacoes"
         icon={<BiBell size={18} />}
         label="Notificações"
