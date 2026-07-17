@@ -70,111 +70,283 @@ function CertificadoPage() {
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const carregarCertificado = async () => {
+      const storedUser =
+        localStorage.getItem("user");
 
-    if (!storedUser) {
-      navigate("/login", { replace: true });
-      return;
-    }
+      if (!storedUser) {
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
 
-    const userData = JSON.parse(storedUser);
-    const userId = userData.id_utilizador || userData.ID_UTILIZADOR;
+        return;
+      }
 
-    setUser(userData);
-    setLoading(true);
+      let userData;
 
-    Promise.all([
-      api.get("/badges/todos"),
-      api.get(`/badges/conquistados/${userId}`),
-      api.get(`/certificados/disponiveis/${userId}`),
-    ])
-        .then(([
+      try {
+        userData =
+          JSON.parse(storedUser);
+      } catch (error) {
+        console.error(
+          "Dados do utilizador inválidos:",
+          error
+        );
+
+        localStorage.removeItem("user");
+
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      const userId =
+        userData.id_utilizador ||
+        userData.ID_UTILIZADOR;
+
+      if (!userId) {
+        console.error(
+          "O utilizador guardado não possui id_utilizador."
+        );
+
+        setBadge(null);
+        setLoading(false);
+
+        return;
+      }
+
+      setUser(userData);
+      setLoading(true);
+
+      try {
+        const [
           todosRes,
           conquistadosRes,
           certificadosRes,
-        ]) => {
-          const todosRaw =
-            Array.isArray(todosRes.data)
-              ? todosRes.data
-              : [];
+        ] = await Promise.all([
+          api.get("/badges/todos"),
 
-          const conquistadosRaw =
-            Array.isArray(conquistadosRes.data)
-              ? conquistadosRes.data
-              : [];
+          api.get(
+            `/badges/conquistados/${userId}`
+          ),
 
-          const certificadosRaw =
-            Array.isArray(certificadosRes.data)
-              ? certificadosRes.data
-              : [];
+          api.get(
+            `/certificados/disponiveis/${userId}`
+          ),
+        ]);
 
-          const todos =
-            removerDuplicados(todosRaw);
+        const todosRaw =
+          Array.isArray(todosRes.data)
+            ? todosRes.data
+            : [];
 
-          const conquistados =
-            removerDuplicados(conquistadosRaw);
+        const conquistadosRaw =
+          Array.isArray(
+            conquistadosRes.data
+          )
+            ? conquistadosRes.data
+            : [];
 
-          const badgeConquistado =
-            conquistados.find(
-              (b) =>
-                Number(
-                  b.id ||
-                  b.id_badge_modelo
-                ) === Number(id)
+        const certificadosRaw =
+          Array.isArray(
+            certificadosRes.data
+          )
+            ? certificadosRes.data
+            : [];
+
+        const todos =
+          removerDuplicados(todosRaw);
+
+        const conquistados =
+          removerDuplicados(
+            conquistadosRaw
+          );
+
+        /*
+        * O parâmetro da rota pode corresponder
+        * ao id do modelo ou ao id apresentado
+        * pelo endpoint de badges conquistados.
+        */
+        const badgeConquistado =
+          conquistados.find((item) => {
+            const identificadores = [
+              item.id,
+              item.id_badge_modelo,
+              item.id_badge_atribuido,
+            ]
+              .filter(
+                (valor) =>
+                  valor !== null &&
+                  valor !== undefined
+              )
+              .map(Number);
+
+            return identificadores.includes(
+              Number(id)
+            );
+          });
+
+        if (!badgeConquistado) {
+          console.warn(
+            "Badge conquistado não encontrado:",
+            {
+              idRota: id,
+              conquistados,
+            }
+          );
+
+          setBadge(null);
+
+          return;
+        }
+
+        /*
+        * Este é o identificador que deve ser
+        * utilizado para procurar o certificado.
+        */
+        const idBadgeModelo =
+          Number(
+            badgeConquistado
+              .id_badge_modelo ||
+            badgeConquistado.id ||
+            id
+          );
+
+        const badgeCatalogo =
+          todos.find(
+            (item) =>
+              Number(
+                item.id_badge_modelo ||
+                item.id
+              ) === idBadgeModelo
+          );
+
+        /*
+        * O endpoint de certificados disponíveis
+        * devolve o histórico aprovado.
+        */
+        const certificadoResumo =
+          certificadosRaw.find(
+            (certificado) =>
+              Number(
+                certificado
+                  .id_badge_modelo
+              ) === idBadgeModelo
+          );
+
+        let certificadoDetalhado =
+          certificadoResumo || {};
+
+        /*
+        * Aqui é feita a chamada que faltava.
+        * Este endpoint devolve:
+        *
+        * - codigo_certificado
+        * - codigo_verificacao
+        * - url_verificacao
+        * - url_certificado
+        * - data_emissao
+        */
+        if (
+          certificadoResumo
+            ?.id_candidatura_historico
+        ) {
+          const detalheRes =
+            await api.get(
+              `/certificados/${
+                certificadoResumo
+                  .id_candidatura_historico
+              }/${userId}`
             );
 
-          if (!badgeConquistado) {
-            setBadge(null);
-            return;
-          }
+          /*
+          * Aceita tanto uma resposta direta
+          * como uma resposta dentro de
+          * detalheRes.data.certificado.
+          */
+          certificadoDetalhado =
+            detalheRes.data
+              ?.certificado ||
+            detalheRes.data ||
+            certificadoResumo;
+        } else {
+          console.warn(
+            "O badge está conquistado, mas não foi encontrado um histórico aprovado para o certificado.",
+            {
+              idBadgeModelo,
+              certificadosRaw,
+            }
+          );
+        }
 
-          const badgeCatalogo =
-            todos.find(
-              (b) =>
-                Number(
-                  b.id ||
-                  b.id_badge_modelo
-                ) ===
-                Number(
-                  badgeConquistado.id ||
-                  badgeConquistado.id_badge_modelo
-                )
-            );
+        const badgeFinal = {
+          ...(badgeCatalogo || {}),
+          ...badgeConquistado,
+          ...(certificadoResumo || {}),
+          ...(certificadoDetalhado || {}),
 
-          const certificadoEncontrado =
-            certificadosRaw.find(
-              (cert) =>
-                Number(
-                  cert.id_badge_modelo
-                ) === Number(id)
-            );
+          id_badge_modelo:
+            idBadgeModelo,
 
-          const badgeFinal = {
-            ...badgeCatalogo,
-            ...badgeConquistado,
-            ...certificadoEncontrado,
+          nome_area:
+            certificadoDetalhado
+              ?.nome_area ||
+            certificadoResumo
+              ?.nome_area ||
+            badgeConquistado
+              ?.nome_area ||
+            badgeCatalogo
+              ?.nome_area ||
+            badgeCatalogo
+              ?.nome_areas ||
+            badgeCatalogo?.area ||
+            "Área não definida",
+        };
 
-            nome_area:
-              certificadoEncontrado?.nome_area ||
-              badgeConquistado.nome_area ||
-              badgeCatalogo?.nome_area ||
-              badgeCatalogo?.nome_areas ||
-              badgeCatalogo?.area ||
-              "Área não definida",
-          };
+        console.log(
+          "Certificado final carregado:",
+          badgeFinal
+        );
 
-          setBadge(badgeFinal);
-        })
-        .catch((err) => {
-            console.error("Erro ao carregar certificado:", err);
-            console.error("STATUS:", err.response?.status);
-            console.error("BODY:", err.response?.data);
-        })
-        .finally(() => setLoading(false));
+        setBadge(badgeFinal);
+      } catch (err) {
+        console.error(
+          "Erro ao carregar certificado:",
+          err
+        );
+
+        console.error(
+          "STATUS:",
+          err.response?.status
+        );
+
+        console.error(
+          "BODY:",
+          err.response?.data
+        );
+
+        setBadge(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarCertificado();
   }, [id, navigate]);
 
   const getNomeUtilizador = () => {
     return (
+      badge?.nome_utilizador ||
+      badge?.nome_completo ||
+      badge?.nome_consultor ||
       user?.nome_completo ||
       user?.nome ||
       user?.NOME_COMPLETO ||
@@ -183,11 +355,19 @@ function CertificadoPage() {
   };
 
   const getCargo = () => {
-    return user?.cargo || "Consultor/a";
+    return (
+      badge?.cargo ||
+      user?.cargo ||
+      "Consultor/a"
+    );
   };
 
   const getArea = () => {
-    return badge?.nome_area || badge?.area || "Área não definida";
+    return (
+      badge?.nome_area ||
+      badge?.area ||
+      "Área não definida"
+    );
   };
 
   const getNomeBadge = () => {
@@ -284,22 +464,60 @@ function CertificadoPage() {
   };
 
   const getDataEmissao = () => {
-    const data = badge?.data_atribuicao || badge?.data_emissao;
+    const data =
+      badge?.data_emissao ||
+      badge?.data_entrada_historico ||
+      badge?.data_atribuicao ||
+      null;
 
     if (!data) {
-      return new Date().toLocaleDateString("pt-PT");
+      return "Data indisponível";
     }
 
-    return new Date(data).toLocaleDateString("pt-PT");
+    const dataConvertida =
+      new Date(data);
+
+    if (
+      Number.isNaN(
+        dataConvertida.getTime()
+      )
+    ) {
+      return "Data indisponível";
+    }
+
+    return dataConvertida
+      .toLocaleDateString(
+        "pt-PT"
+      );
   };
 
   const getCodigoVerificacao = () => {
+    /*
+    * Primeiro utiliza o valor já construído
+    * e validado pelo backend.
+    */
+    const codigoBackend =
+      badge?.codigo_certificado ||
+      badge?.codigo_verificacao;
+
+    if (codigoBackend) {
+      return String(
+        codigoBackend
+      ).trim();
+    }
+
+    /*
+    * Fallback apenas para compatibilidade
+    * com respostas antigas da API.
+    */
     const userId =
+      badge?.id_utilizador ||
       user?.id_utilizador ||
       user?.ID_UTILIZADOR;
 
     const idHistorico =
-      badge?.id_candidatura_historico;
+      badge
+        ?.id_candidatura_historico;
 
     if (
       !userId ||
@@ -312,6 +530,44 @@ function CertificadoPage() {
   };
 
   const getUrlVerificacao = () => {
+    const urlBackend =
+      badge?.url_verificacao ||
+      badge?.url_certificado ||
+      badge?.caminho_verificacao ||
+      "";
+
+    if (urlBackend) {
+      const urlTexto =
+        String(urlBackend).trim();
+
+      /*
+      * Se o backend já devolveu um URL
+      * completo, utiliza-o diretamente.
+      */
+      if (
+        /^https?:\/\//i.test(
+          urlTexto
+        )
+      ) {
+        return urlTexto;
+      }
+
+      /*
+      * Caso seja um caminho relativo,
+      * junta-o ao domínio atual.
+      */
+      const caminho =
+        urlTexto.startsWith("/")
+          ? urlTexto
+          : `/${urlTexto}`;
+
+      return `${window.location.origin}${caminho}`;
+    }
+
+    /*
+    * Fallback para versões antigas
+    * da API.
+    */
     const codigo =
       getCodigoVerificacao();
 
@@ -319,7 +575,11 @@ function CertificadoPage() {
       return "";
     }
 
-    return `${window.location.origin}/verificar/${codigo}`;
+    return `${
+      window.location.origin
+    }/verificar/${
+      encodeURIComponent(codigo)
+    }`;
   };
 
   const pontosCertificado =
@@ -393,32 +653,42 @@ function CertificadoPage() {
   }
 
   const handleCopiarLinkVerificacao =
-  async () => {
-    const url =
-      getUrlVerificacao();
+    async () => {
+      if (!urlVerificacao) {
+        alert(
+          "Link de verificação indisponível."
+        );
 
-    if (!url) {
-      alert(
-        "Link de verificação indisponível."
-      );
+        return;
+      }
 
-      return;
-    }
+      try {
+        await navigator
+          .clipboard
+          .writeText(
+            urlVerificacao
+          );
 
-    try {
-      await navigator
-        .clipboard
-        .writeText(url);
+        alert(
+          "Link de verificação copiado."
+        );
+      } catch (error) {
+        console.error(
+          "Erro ao copiar link:",
+          error
+        );
 
-      alert(
-        "Link de verificação copiado."
-      );
-    } catch {
-      alert(
-        "Não foi possível copiar o link."
-      );
-    }
-  };
+        alert(
+          "Não foi possível copiar o link."
+        );
+      }
+    };
+
+  const codigoVerificacao =
+    getCodigoVerificacao();
+
+  const urlVerificacao =
+    getUrlVerificacao();
 
   return (
     <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -485,21 +755,30 @@ function CertificadoPage() {
             <div style={{ height: 10 }} />
 
             <div style={certMeta}>
-              Código único de Verificação: {getCodigoVerificacao()}
+              Código único de Verificação:{" "}
+
+              <strong>
+                {codigoVerificacao ||
+                  "Indisponível"}
+              </strong>
             </div>
 
             <div style={{ height: 10 }} />
 
             <div style={certMeta}>
               URL de Verificação:{" "}
-              {getUrlVerificacao() ? (
+
+              {urlVerificacao ? (
                 <a
-                  href={getUrlVerificacao()}
+                  href={urlVerificacao}
                   target="_blank"
-                  rel="noreferrer"
-                  style={{ color: "#4470AF" }}
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#4470AF",
+                    overflowWrap: "anywhere",
+                  }}
                 >
-                  {getUrlVerificacao()}
+                  {urlVerificacao}
                 </a>
               ) : (
                 "Indisponível"
