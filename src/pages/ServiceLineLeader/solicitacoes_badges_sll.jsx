@@ -862,7 +862,7 @@ function SolicitacoesBadgesSll() {
                         solicitacao.id_candidatura_pedido
                       }
                       dados={solicitacao}
-                      role = "sll"
+                      role = "tm"
                       onClick={() =>
                         navigate(
                           `/sll/solicitacoes/${solicitacao.id_candidatura_pedido}${
