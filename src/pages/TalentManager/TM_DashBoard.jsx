@@ -134,7 +134,7 @@ function DashboardTMUnificado() {
   }, [consultoresPorArea]);
 
   // Configuração dinâmica baseada no tipo de dados recebido do backend
-  const obterConfiguracaoDashboard = (tipo, dados) => {
+  const obterConfiguracaoDashboard = ( dados) => {
     const totalConsultores = dados.total_consultores || 0;
     const totalSllAtivos = dados.total_sll_ativos || 0;
 
@@ -146,44 +146,6 @@ function DashboardTMUnificado() {
       descricaoLista: `Total de ${dados.total_consultores_acompanhados || 0} consultores`,
       graficoTitulo: "Distribuição de Consultores por Área / Service Line",
     };
-
-    switch (tipo?.toUpperCase()) {
-      case "RECRUTAMENTO":
-        return {
-          ...bases,
-          cards: [
-            { tipo: "CANDIDATURAS", valor: dados.candidaturas_ativas, label: "Candidaturas Ativas" },
-            { tipo: "NOVOS", valor: dados.novos_consultores_mes, label: "Novos Consultores este mês" },
-          ],
-        };
-      case "DESENVOLVIMENTO":
-        return {
-          ...bases,
-          cards: [
-            { tipo: "RENOVACOES", valor: dados.renovacoes_ativas, label: "Renovações Ativas" },
-            { tipo: "CONSULTORES", valor: totalConsultores, label: "Total Consultores" },
-          ],
-        };
-      case "RH_BADGES":
-        return {
-          ...bases,
-          cards: [
-            { tipo: "EXPIRADOS", valor: dados.badges_expirados, label: "Badges Expirados" },
-            { tipo: "BADGES", valor: dados.total_badges, label: "Total Badges" },
-          ],
-        };
-      default:
-        return {
-          ...bases,
-          cards: [
-            { tipo: "CONSULTORES", valor: totalConsultores, label: "Total Consultores" },
-            { tipo: "BADGES", valor: dados.total_badges, label: "Total Badges Atribuídos" },
-            { tipo: "METRICA_DATAS", valor: dados.badges_por_datas || 0, label: "Badges por Datas" },
-            { tipo: "METRICA_PATHS", valor: dados.badges_por_learning_paths || 0, label: "Badges por Learning Paths" },
-            { tipo: "METRICA_NIVEIS", valor: dados.badges_por_niveis || 0, label: "Badges por Níveis LP" },
-          ],
-        };
-    }
   };
 
   const configuracao = obterConfiguracaoDashboard( resumo);
