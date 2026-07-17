@@ -501,7 +501,10 @@ function RightSidebar() {
   }
 
   return (
-    <div style={containerStyle}>
+    <aside
+      className="app-right-sidebar consultor-right-sidebar"
+      style={containerStyle}
+    >
       <div
         style={{
           fontSize:
@@ -704,7 +707,7 @@ function RightSidebar() {
           Ver todas
         </Link>
       </div>
-    </div>
+    </aside>
   );
 }
 
