@@ -38,7 +38,10 @@ function AdminLeftSidebar() {
   }, []);
 
   return (
-    <aside className="admin-left-sidebar" style={container}>
+    <aside
+      className="app-left-sidebar admin-left-sidebar"
+      style={container}
+    >
       <div style={profileBox}>
         <BiUserCircle size={26} color="#6b7280" />
         <span style={profileName}>{adminName}</span>

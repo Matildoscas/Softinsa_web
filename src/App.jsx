@@ -5,7 +5,6 @@ import ProtectedRoute
 
 import './App.css';
 import "./styles/responsive.css";
-import MobileMenuButton from "./components/MobileMenuButton.jsx";
 
 import ConfiguracaoSLA from './pages/Admin/config_sla.jsx';
 import ConfigurarNotificacoes from './pages/Admin/config_notificacao.jsx';
@@ -146,7 +145,6 @@ function App() {
       {/*{shouldBlockMobileWeb ? (
         <MicrositeProjeto mobileBlocked />
       ) : (*/}
-      <MobileMenuButton />
       <Routes>
         
         // Rotas públicas
