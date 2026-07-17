@@ -162,9 +162,10 @@ function SolicitacaoBadges() {
                   const idPedido = pedido.id_candidatura_pedido || pedido.id;
                   
                   return (
-                    <CandidaturaPedidoRow
+                    <CandidaturaCardUniversal
                       key={idPedido}
-                      pedido={pedido}
+                      dados={pedido}
+                      role = "tm"
                       onClick={() => navigate(`/tm/avaliacao-solicitacao/${idPedido}`)}
                     />
                   );
