@@ -96,6 +96,7 @@ import TM_notificacoes from './pages/TalentManager/TM_notificacoes.jsx';
 import TM_Perfil from './pages/TalentManager/TM_Perfil.jsx';
 import TM_Solicitacoes from './pages/TalentManager/TM_Solicitacoes.jsx';
 import TM_statuscandidatura from './pages/TalentManager/TM_statuscandidatura.jsx';
+import TM_assinatura from './pages/TalentManager/TM_assinatura.jsx';
 
 /*function useMobileWebBlock() {
   const [isMobile, setIsMobile] = useState(() => {
@@ -299,6 +300,8 @@ function App() {
             <Route path="/tm/perfil" element={<TM_Perfil />} />
             <Route path="/tm/certificados" element={<TM_gerar_certificado />} />
             <Route path="/tm/desafios/novo" element={<TM_criar_desafio />} />
+            <Route path="/tm/assinatura" element={<TM_assinatura />} />
+
 
         </Route>
 

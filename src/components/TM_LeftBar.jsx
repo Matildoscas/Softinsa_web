@@ -21,6 +21,7 @@ function LeftSidebarTM() {
   // Estados de controlo dos menus (Versão 2)
   const [badgesAberto, setBadgesAberto] = useState(true);
   const [certificadosAberto, setCertificadosAberto] = useState(true);
+  const [assinaturaAberto, setAssinaturaAberto] = useState(true);
   const [consultoresAberto, setConsultoresAberto] = useState(
     location.pathname.startsWith("/tm/consultores")
   );
@@ -61,6 +62,10 @@ function LeftSidebarTM() {
 
     if (path.startsWith("/tm/certificados") || path.startsWith("/tm/historico")) {
       setCertificadosAberto(true);
+    }
+
+    if (path.startsWith("/tm/assinatura") ) {
+      setAssinaturaAberto(true);
     }
 
     if (path.startsWith("/tm/consultores") || path.startsWith("/tm/desafios")) {
@@ -144,17 +149,21 @@ function LeftSidebarTM() {
             <SubLink to="/tm/consultores" label="Lista de consultores" />
             <SubLink to="/tm/desafios/novo" label="Desafios e lembretes" />
           </MenuGroup>
+
+          <MenuGroup
+            label="Assinatura Email"
+            icon={<BiUser size={16} />}
+            aberto={assinaturaAberto}
+            onToggle={() => setAssinaturaAberto((prev) => !prev)}
+          >
+            <SubLink to="/tm/assinatura" label="Configurar assinatura" />
+          </MenuGroup>
+
         </nav>
       </div>
 
-      {/* Bloco Inferior: Logotipo Softinsa (Versão 1) */}
-      <div style={logoContainerStyle}>
-        <div style={logoBoxStyle}>
-          <span style={logoTextStyle}>
-            SOFT<span style={{ color: "#06b6d4" }}>I</span>NSA
-          </span>
-        </div>
-      </div>
+
+
     </aside>
   );
 }
