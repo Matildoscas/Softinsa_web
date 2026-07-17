@@ -23,7 +23,7 @@ function ProgressoPage() {
             {/* Navbar */}
             <Header />
 
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flex: 1 }}>
                 {/* Sidebar */}
 
                 <LeftSidebar />

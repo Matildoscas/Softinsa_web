@@ -235,6 +235,11 @@ const sidebarStyle = {
   borderRight: "1px solid #e9ecef",
   fontFamily: "system-ui, sans-serif",
   flexShrink: 0,
+  alignSelf: "flex-start",
+  position: "sticky",
+  top: 0,
+  height: "100vh",
+  overflowY: "auto",
   boxSizing: "border-box",
 };
 

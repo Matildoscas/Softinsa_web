@@ -287,6 +287,10 @@ const containerStyle = {
   borderLeft: "1px solid #e5e7eb",
   padding: 16,
   flexShrink: 0,
+  alignSelf: "flex-start",
+  position: "sticky",
+  top: 0,
+  height: "100vh",
   overflowY: "auto",
   textAlign: "left",
 };

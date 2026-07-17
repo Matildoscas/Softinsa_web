@@ -244,7 +244,7 @@ function MeusBadgesPage() {
     <div style={{ backgroundColor: "#f7f7f7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div style={{ display: "flex", flex: 1 }}>
         <LeftSidebar />
 
         <main

@@ -18,6 +18,16 @@ function LoginPage() {
   const [error, setError] = useState(null);
   const [avisoSessao, setAvisoSessao] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showRecuperacao, setShowRecuperacao] = useState(false);
+  const [passoRecuperacao, setPassoRecuperacao] = useState("email");
+  const [recuperacaoLoading, setRecuperacaoLoading] = useState(false);
+  const [recuperacaoError, setRecuperacaoError] = useState("");
+  const [recuperacaoInfo, setRecuperacaoInfo] = useState("");
+  const [recuperacaoEmail, setRecuperacaoEmail] = useState("");
+  const [recuperacaoCodigo, setRecuperacaoCodigo] = useState("");
+  const [recuperacaoNovaPassword, setRecuperacaoNovaPassword] = useState("");
+  const [recuperacaoConfirmarPassword, setRecuperacaoConfirmarPassword] = useState("");
+  const [showRecuperacaoPassword, setShowRecuperacaoPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -240,6 +250,129 @@ function LoginPage() {
     }
   };
 
+  const abrirRecuperacao = () => {
+    const emailNormalizado = email
+      .trim()
+      .replaceAll(" ", "")
+      .toLowerCase();
+
+    setRecuperacaoEmail(emailNormalizado);
+    setRecuperacaoCodigo("");
+    setRecuperacaoNovaPassword("");
+    setRecuperacaoConfirmarPassword("");
+    setRecuperacaoError("");
+    setRecuperacaoInfo("");
+    setPassoRecuperacao("email");
+    setShowRecuperacaoPassword(false);
+    setShowRecuperacao(true);
+  };
+
+  const pedirCodigoRecuperacao = async () => {
+    const emailNormalizado = recuperacaoEmail
+      .trim()
+      .replaceAll(" ", "")
+      .toLowerCase();
+
+    if (!emailNormalizado) {
+      setRecuperacaoError("Indique um email válido.");
+      return;
+    }
+
+    setRecuperacaoLoading(true);
+    setRecuperacaoError("");
+    setRecuperacaoInfo("");
+
+    try {
+      await api.post("/auth/forgot-password/request", {
+        email: emailNormalizado,
+      });
+
+      setRecuperacaoEmail(emailNormalizado);
+      setRecuperacaoInfo("Enviámos um código de 6 dígitos para o seu email.");
+      setPassoRecuperacao("codigo");
+    } catch (err) {
+      setRecuperacaoError(
+        err.response?.data?.error ||
+          "Não foi possível enviar o código."
+      );
+    } finally {
+      setRecuperacaoLoading(false);
+    }
+  };
+
+  const validarCodigoRecuperacao = async () => {
+    const codigo = String(recuperacaoCodigo || "")
+      .replace(/\s+/g, "")
+      .trim();
+
+    if (!/^\d{6}$/.test(codigo)) {
+      setRecuperacaoError("O código deve ter 6 dígitos.");
+      return;
+    }
+
+    setRecuperacaoLoading(true);
+    setRecuperacaoError("");
+    setRecuperacaoInfo("");
+
+    try {
+      await api.post("/auth/forgot-password/verify", {
+        email: recuperacaoEmail,
+        codigo,
+      });
+
+      setRecuperacaoCodigo(codigo);
+      setRecuperacaoInfo("Código válido. Defina agora a nova password.");
+      setPassoRecuperacao("password");
+    } catch (err) {
+      setRecuperacaoError(
+        err.response?.data?.error ||
+          "Código inválido."
+      );
+    } finally {
+      setRecuperacaoLoading(false);
+    }
+  };
+
+  const redefinirPassword = async () => {
+    if (!recuperacaoNovaPassword || !recuperacaoConfirmarPassword) {
+      setRecuperacaoError("Preencha os campos de password.");
+      return;
+    }
+
+    if (recuperacaoNovaPassword.length < 6) {
+      setRecuperacaoError("A nova password deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    if (recuperacaoNovaPassword !== recuperacaoConfirmarPassword) {
+      setRecuperacaoError("As passwords não coincidem.");
+      return;
+    }
+
+    setRecuperacaoLoading(true);
+    setRecuperacaoError("");
+    setRecuperacaoInfo("");
+
+    try {
+      await api.post("/auth/forgot-password/reset", {
+        email: recuperacaoEmail,
+        codigo: recuperacaoCodigo,
+        nova_password: recuperacaoNovaPassword,
+      });
+
+      setRecuperacaoInfo("Password redefinida com sucesso.");
+      setPassoRecuperacao("sucesso");
+      setPassword("");
+    } catch (err) {
+      setRecuperacaoError(
+        err.response?.data?.error ||
+          "Não foi possível redefinir a password."
+      );
+    } finally {
+      setRecuperacaoLoading(false);
+    }
+  };
+
   return (
     <Container fluid className="p-0" style={{ backgroundColor: "#f4f7f6" }}>
       <Row className="g-0">
@@ -261,8 +394,9 @@ function LoginPage() {
                 </Alert>
               )}
 
-              {error && <Alert variant="danger">{error}</Alert>}
+              {error && !showRecuperacao && <Alert variant="danger">{error}</Alert>}
 
+              {!showRecuperacao ? (
               <Form onSubmit={handleLogin}>
                 <Form.Group className="mb-3">
                   <InputGroup>
@@ -336,6 +470,25 @@ function LoginPage() {
                     Registar
                   </a>
                 </div>
+
+                <div className="text-center mt-2">
+                  <button
+                    type="button"
+                    onClick={abrirRecuperacao}
+                    disabled={loading}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "#1a73e8",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      cursor: loading ? "not-allowed" : "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Esqueci-me da password
+                  </button>
+                </div>
                 
                 <Button
                   type="button"
@@ -356,6 +509,162 @@ function LoginPage() {
                   Conhecer o site
                 </Button>
               </Form>
+              ) : (
+                <>
+                  <div className="text-center mb-4">
+                    <h4 style={{ color: "#1d61ff", fontWeight: 700 }}>Recuperar password</h4>
+                    <p className="text-muted mb-0">Insira os dados para recuperar o acesso.</p>
+                  </div>
+
+                  {recuperacaoError && (
+                    <Alert variant="danger">{recuperacaoError}</Alert>
+                  )}
+
+                  {recuperacaoInfo && (
+                    <Alert variant="success">{recuperacaoInfo}</Alert>
+                  )}
+
+                  {passoRecuperacao === "email" && (
+                    <>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Email</Form.Label>
+                        <Form.Control
+                          type="email"
+                          placeholder="Insira o email da conta"
+                          value={recuperacaoEmail}
+                          onChange={(e) => setRecuperacaoEmail(e.target.value)}
+                          disabled={recuperacaoLoading}
+                        />
+                      </Form.Group>
+
+                      <Button
+                        type="button"
+                        className="w-100"
+                        onClick={pedirCodigoRecuperacao}
+                        disabled={recuperacaoLoading}
+                      >
+                        {recuperacaoLoading ? "A enviar..." : "Enviar código"}
+                      </Button>
+                    </>
+                  )}
+
+                  {passoRecuperacao === "codigo" && (
+                    <>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Código de 6 dígitos</Form.Label>
+                        <Form.Control
+                          type="text"
+                          placeholder="000000"
+                          value={recuperacaoCodigo}
+                          onChange={(e) => setRecuperacaoCodigo(e.target.value)}
+                          disabled={recuperacaoLoading}
+                        />
+                      </Form.Group>
+
+                      <div className="d-flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline-secondary"
+                          className="w-50"
+                          onClick={() => setPassoRecuperacao("email")}
+                          disabled={recuperacaoLoading}
+                        >
+                          Voltar
+                        </Button>
+
+                        <Button
+                          type="button"
+                          className="w-50"
+                          onClick={validarCodigoRecuperacao}
+                          disabled={recuperacaoLoading}
+                        >
+                          {recuperacaoLoading ? "A validar..." : "Validar código"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+
+                  {passoRecuperacao === "password" && (
+                    <>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Nova password</Form.Label>
+                        <InputGroup>
+                          <Form.Control
+                            type={showRecuperacaoPassword ? "text" : "password"}
+                            placeholder="Nova password"
+                            value={recuperacaoNovaPassword}
+                            onChange={(e) => setRecuperacaoNovaPassword(e.target.value)}
+                            disabled={recuperacaoLoading}
+                          />
+                          <InputGroup.Text
+                            style={{ cursor: recuperacaoLoading ? "not-allowed" : "pointer" }}
+                            onClick={() =>
+                              !recuperacaoLoading &&
+                              setShowRecuperacaoPassword((prev) => !prev)
+                            }
+                          >
+                            {showRecuperacaoPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </InputGroup.Text>
+                        </InputGroup>
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Confirmar nova password</Form.Label>
+                        <Form.Control
+                          type={showRecuperacaoPassword ? "text" : "password"}
+                          placeholder="Confirmar nova password"
+                          value={recuperacaoConfirmarPassword}
+                          onChange={(e) => setRecuperacaoConfirmarPassword(e.target.value)}
+                          disabled={recuperacaoLoading}
+                        />
+                      </Form.Group>
+
+                      <Button
+                        type="button"
+                        className="w-100"
+                        onClick={redefinirPassword}
+                        disabled={recuperacaoLoading}
+                      >
+                        {recuperacaoLoading ? "A guardar..." : "Guardar nova password"}
+                      </Button>
+                    </>
+                  )}
+
+                  {passoRecuperacao === "sucesso" && (
+                    <Button
+                      type="button"
+                      className="w-100"
+                      onClick={() => {
+                        setShowRecuperacao(false);
+                        setPassoRecuperacao("email");
+                        setRecuperacaoCodigo("");
+                        setRecuperacaoNovaPassword("");
+                        setRecuperacaoConfirmarPassword("");
+                        setRecuperacaoError("");
+                        setRecuperacaoInfo("");
+                      }}
+                    >
+                      Ir para login
+                    </Button>
+                  )}
+
+                  {passoRecuperacao !== "sucesso" && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="w-100 mt-3"
+                      onClick={() => {
+                        setShowRecuperacao(false);
+                        setRecuperacaoError("");
+                        setRecuperacaoInfo("");
+                      }}
+                      disabled={recuperacaoLoading}
+                    >
+                      Voltar ao login
+                    </Button>
+                  )}
+                </>
+              )}
             </Card.Body>
           </Card>
         </Col>
