@@ -4,6 +4,7 @@ import {
   HiOutlineArrowLeft,
   HiOutlineUpload,
   HiOutlineTrash,
+  HiOutlineExternalLink,
 } from "react-icons/hi";
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
@@ -16,6 +17,184 @@ import BadgeImage from "../../components/badge_image.jsx";
 import { resolverUrlFicheiro } from "../../utils/fileUrl.js";
 
 const niveis = ["A", "B", "C", "D", "E"];
+
+function normalizarUrlCurso(valor) {
+  const texto = String(valor ?? "").trim();
+
+  if (
+    !texto ||
+    texto.toLowerCase() === "null"
+  ) {
+    return "";
+  }
+
+  if (
+    texto.startsWith("javascript:") ||
+    texto.startsWith("data:")
+  ) {
+    return "";
+  }
+
+  if (
+    texto.startsWith("https://") ||
+    texto.startsWith("http://")
+  ) {
+    return texto;
+  }
+
+  return `https://${texto}`;
+}
+
+function extrairLinksRequisito(origem) {
+  const encontrados = [];
+
+  function adicionar(valor) {
+    if (!valor) {
+      return;
+    }
+
+    if (Array.isArray(valor)) {
+      valor.forEach(adicionar);
+      return;
+    }
+
+    if (typeof valor === "object") {
+      const url = normalizarUrlCurso(
+        valor.url ||
+        valor.link ||
+        valor.href ||
+        valor.link_requisito ||
+        valor.url_curso ||
+        valor.link_curso
+      );
+
+      if (!url) {
+        return;
+      }
+
+      encontrados.push({
+        url,
+
+        nome:
+          valor.nome_link ||
+          valor.nome_curso ||
+          valor.titulo ||
+          valor.nome ||
+          "",
+      });
+
+      return;
+    }
+
+    const texto = String(valor).trim();
+
+    if (!texto) {
+      return;
+    }
+
+    if (
+      texto.startsWith("[") ||
+      texto.startsWith("{")
+    ) {
+      try {
+        adicionar(JSON.parse(texto));
+        return;
+      } catch {
+        // Continua como URL normal.
+      }
+    }
+
+    const url = normalizarUrlCurso(texto);
+
+    if (url) {
+      encontrados.push({
+        url,
+        nome: "",
+      });
+    }
+  }
+
+  adicionar(origem?.links);
+  adicionar(origem?.links_requisito);
+  adicionar(origem?.cursos);
+  adicionar(origem?.formacoes);
+  adicionar(origem?.link_requisito);
+  adicionar(origem?.link);
+  adicionar(origem?.url);
+  adicionar(origem?.url_curso);
+  adicionar(origem?.link_curso);
+
+  return Array.from(
+    new Map(
+      encontrados.map((item) => [
+        item.url,
+        item,
+      ])
+    ).values()
+  );
+}
+
+function obterNomePlataformaCurso(url) {
+  try {
+    const dominio = new URL(url)
+      .hostname
+      .replace(/^www\./, "")
+      .toLowerCase();
+
+    if (dominio.includes("linkedin.com")) {
+      return "LinkedIn Learning";
+    }
+
+    if (dominio.includes("coursera.org")) {
+      return "Coursera";
+    }
+
+    if (dominio.includes("udemy.com")) {
+      return "Udemy";
+    }
+
+    if (dominio.includes("outsystems.com")) {
+      return "OutSystems";
+    }
+
+    if (
+      dominio.includes("microsoft.com") ||
+      dominio.includes("learn.microsoft")
+    ) {
+      return "Microsoft Learn";
+    }
+
+    if (
+      dominio.includes("youtube.com") ||
+      dominio.includes("youtu.be")
+    ) {
+      return "YouTube";
+    }
+
+    return dominio;
+  } catch {
+    return "curso recomendado";
+  }
+}
+
+function juntarLinks(...listas) {
+  const todos = listas
+    .flat()
+    .filter(
+      (item) =>
+        item &&
+        item.url
+    );
+
+  return Array.from(
+    new Map(
+      todos.map((item) => [
+        item.url,
+        item,
+      ])
+    ).values()
+  );
+}
 
 function obterUtilizadorGuardado() {
   const storedUser = localStorage.getItem("user");
@@ -292,21 +471,31 @@ function SubmeterEvidenciasPage() {
           imagem;
       }
 
-      if (linha.titulo || linha.nome_requisito || linha.descricao_requisito) {
+      if (
+        linha.titulo ||
+        linha.nome_requisito ||
+        linha.descricao_requisito
+      ) {
         const idRequisito =
           linha.id_requisito ||
           linha.id_requisitos;
 
-        const requisitosAtuais =
-          badgeAgrupado.requisitos;
+        const linksLinha =
+          extrairLinksRequisito(linha);
 
-        const requisitoJaExiste = requisitosAtuais.some(
-          (requisito) => String(requisito.id_requisito) === String(idRequisito),
-        );
+        const requisitoExistente =
+          badgeAgrupado.requisitos.find(
+            (requisito) =>
+              String(
+                requisito.id_requisito
+              ) ===
+              String(idRequisito)
+          );
 
-        if (!requisitoJaExiste) {
-          requisitosAtuais.push({
-            id_requisito: idRequisito,
+        if (!requisitoExistente) {
+          badgeAgrupado.requisitos.push({
+            id_requisito:
+              idRequisito,
 
             id_requisitos:
               idRequisito,
@@ -316,18 +505,71 @@ function SubmeterEvidenciasPage() {
               linha.nome_requisito ||
               "Requisito",
 
-            nome: linha.nome_requisito || linha.titulo || "Requisito",
+            nome:
+              linha.nome_requisito ||
+              linha.titulo ||
+              "Requisito",
 
-            descricao: linha.descricao_requisito || "",
+            descricao:
+              linha.descricao_requisito ||
+              linha.descricao ||
+              "",
 
-            link: linha.link_requisito || linha.link || "",
+            links:
+              linksLinha,
+
+            link:
+              linksLinha[0]?.url ||
+              "",
           });
+        } else {
+          requisitoExistente.links =
+            juntarLinks(
+              requisitoExistente.links || [],
+              linksLinha
+            );
+
+          requisitoExistente.link =
+            requisitoExistente
+              .links[0]?.url ||
+            "";
         }
       }
     });
-    return Array.from(
-      mapa.values()
+    const badgesAgrupados =
+      Array.from(
+        mapa.values()
+      );
+
+    badgesAgrupados.forEach(
+      (badgeAgrupado) => {
+        const nivel =
+          obterNivelBadge(
+            badgeAgrupado
+          ) || "-";
+
+        badgeAgrupado.requisitos.sort(
+          (a, b) =>
+            Number(a.id_requisitos || 0) -
+            Number(b.id_requisitos || 0)
+        );
+
+        badgeAgrupado.requisitos =
+          badgeAgrupado.requisitos.map(
+            (requisito, index) => ({
+              ...requisito,
+
+              numero:
+                index + 1,
+
+              codigo:
+                `${nivel}${index + 1}`,
+            })
+          );
+      }
     );
+
+    return badgesAgrupados;
   };
 
   function hidratarRascunho(payload) {
@@ -354,33 +596,88 @@ function SubmeterEvidenciasPage() {
           return anterior;
         }
 
-        const requisitosNormalizados = requisitos.map((req, index) => ({
-          ...req,
-          id_requisito:
-            req.id_requisito ||
-            req.id_requisitos ||
-            req.id ||
-            index,
-          id_requisitos:
-            req.id_requisitos ||
-            req.id_requisito ||
-            req.id ||
-            index,
-          titulo:
-            req.titulo ||
-            req.nome_requisito ||
-            req.nome ||
-            `Requisito ${index + 1}`,
-          nome:
-            req.nome ||
-            req.nome_requisito ||
-            req.titulo ||
-            `Requisito ${index + 1}`,
-          descricao:
-            req.descricao ||
-            req.descricao_requisito ||
-            "",
-        }));
+        const nivel =
+          obterNivelBadge(anterior) ||
+          "-";
+
+        const requisitosNormalizados =
+          requisitos.map((req, index) => {
+            const idRequisito =
+              req.id_requisito ||
+              req.id_requisitos ||
+              req.id ||
+              index;
+
+            const requisitoCatalogo =
+              anterior.requisitos?.find(
+                (item) =>
+                  String(
+                    item.id_requisito ||
+                    item.id_requisitos ||
+                    item.id
+                  ) ===
+                  String(idRequisito)
+              );
+
+            const linksRascunho =
+              extrairLinksRequisito(req);
+
+            const linksCatalogo =
+              extrairLinksRequisito(
+                requisitoCatalogo
+              );
+
+            const links =
+              juntarLinks(
+                linksRascunho,
+                linksCatalogo
+              );
+
+            return {
+              ...requisitoCatalogo,
+              ...req,
+
+              id_requisito:
+                idRequisito,
+
+              id_requisitos:
+                idRequisito,
+
+              titulo:
+                req.titulo ||
+                req.nome_requisito ||
+                req.nome ||
+                requisitoCatalogo?.titulo ||
+                `Requisito ${index + 1}`,
+
+              nome:
+                req.nome ||
+                req.nome_requisito ||
+                req.titulo ||
+                requisitoCatalogo?.nome ||
+                `Requisito ${index + 1}`,
+
+              descricao:
+                req.descricao ||
+                req.descricao_requisito ||
+                requisitoCatalogo?.descricao ||
+                "",
+
+              numero:
+                index + 1,
+
+              codigo:
+                req.codigo ||
+                requisitoCatalogo?.codigo ||
+                `${nivel}${index + 1}`,
+
+              links,
+
+              link:
+                links[0]?.url ||
+                "",
+            };
+          });
 
         return {
           ...anterior,
@@ -1205,15 +1502,40 @@ function RequisitoUploadRow({
 }) {
   const [open, setOpen] = useState(defaultOpen || false);
 
+  const codigo =
+    req.codigo ||
+    req.numero ||
+    req.id_requisito ||
+    req.id_requisitos ||
+    "—";
+
+  const links =
+    extrairLinksRequisito(req);
+
   return (
     <div style={requisitoCard}>
       <div style={requisitoHeader} onClick={() => setOpen((v) => !v)}>
         <div>
-          <span style={{ fontWeight: 600, color: "#111827" }}>
-            Requisito {req.titulo}
+          <span
+            style={{
+              fontWeight: 600,
+              color: "#111827",
+            }}
+          >
+            Requisito {codigo}
           </span>
+
           {" - "}
-          <span style={{ color: "#4470AF", fontWeight: 500 }}>{req.nome}</span>
+
+          <span
+            style={{
+              color: "#4470AF",
+              fontWeight: 500,
+            }}
+          >
+            {req.nome ||
+              req.titulo}
+          </span>
         </div>
 
         {open ? (
@@ -1229,16 +1551,47 @@ function RequisitoUploadRow({
             {req.descricao || "Sem descrição."}
           </div>
 
-          {req.link && (
-            <div style={{ marginBottom: 10 }}>
-              <a
-                href={req.link}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "#4470AF", fontSize: 13 }}
-              >
-                {req.link}
-              </a>
+          {links.length > 0 && (
+            <div style={cursosRequisitoBox}>
+              <div style={cursosRequisitoTitulo}>
+                Cursos e formação recomendada
+              </div>
+
+              <div style={cursosRequisitoLista}>
+                {links.map(
+                  (item, index) => {
+                    const plataforma =
+                      obterNomePlataformaCurso(
+                        item.url
+                      );
+
+                    const texto =
+                      item.nome ||
+                      `Abrir curso em ${plataforma}`;
+
+                    return (
+                      <a
+                        key={`${item.url}-${index}`}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={cursoRequisitoLink}
+                        onClick={(event) =>
+                          event.stopPropagation()
+                        }
+                      >
+                        <HiOutlineExternalLink
+                          size={16}
+                        />
+
+                        <span>
+                          {texto}
+                        </span>
+                      </a>
+                    );
+                  }
+                )}
+              </div>
             </div>
           )}
 
@@ -1593,6 +1946,42 @@ const actionBtn = {
   color: "#374151",
   cursor: "pointer",
   boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+};
+
+const cursosRequisitoBox = {
+  marginBottom: 14,
+  padding: 12,
+  border: "1px solid #bfdbfe",
+  borderRadius: 10,
+  background: "#f8fbff",
+};
+
+const cursosRequisitoTitulo = {
+  marginBottom: 8,
+  color: "#111827",
+  fontSize: 12,
+  fontWeight: 700,
+};
+
+const cursosRequisitoLista = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+};
+
+const cursoRequisitoLink = {
+  minHeight: 36,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: "8px 12px",
+  border: "1px solid #bfdbfe",
+  borderRadius: 8,
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  fontSize: 12,
+  fontWeight: 700,
+  textDecoration: "none",
 };
 
 function nivelParaLetra(idNivel) {
