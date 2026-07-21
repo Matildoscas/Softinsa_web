@@ -3,7 +3,11 @@ import { Button, Spinner, Modal } from "react-bootstrap";
 import { HiOutlineArrowLeft } from "react-icons/hi";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaLinkedinIn } from "react-icons/fa";
-import { HiOutlineDownload, HiOutlineMail } from "react-icons/hi";
+import {
+  HiOutlineDownload,
+  HiOutlineMail,
+  HiOutlineExternalLink,
+} from "react-icons/hi";
 import { BiChevronUp, BiChevronDown, BiMedal } from "react-icons/bi";
 
 import Header from "../../components/Header.jsx";
@@ -50,6 +54,157 @@ function tornarUrlAbsoluta(url) {
   }
 
   return valor;
+}
+
+function normalizarUrlCurso(valor) {
+  const texto = String(valor ?? "").trim();
+
+  if (
+    !texto ||
+    texto.toLowerCase() === "null"
+  ) {
+    return "";
+  }
+
+  if (
+    texto.startsWith("https://") ||
+    texto.startsWith("http://")
+  ) {
+    return texto;
+  }
+
+  /*
+   * Evita protocolos potencialmente
+   * perigosos introduzidos na base de dados.
+   */
+  if (
+    texto.startsWith("javascript:") ||
+    texto.startsWith("data:")
+  ) {
+    return "";
+  }
+
+  return `https://${texto}`;
+}
+
+function extrairLinksRequisito(linha) {
+  const candidatos = [];
+
+  /*
+   * O PostgreSQL pode devolver o json_agg
+   * diretamente como array.
+   */
+  if (Array.isArray(linha?.links)) {
+    candidatos.push(...linha.links);
+  }
+
+  /*
+   * Também aceita o array caso chegue
+   * convertido numa string JSON.
+   */
+  if (
+    typeof linha?.links === "string"
+  ) {
+    const valor =
+      linha.links.trim();
+
+    if (valor) {
+      try {
+        const convertido =
+          JSON.parse(valor);
+
+        if (Array.isArray(convertido)) {
+          candidatos.push(
+            ...convertido
+          );
+        } else {
+          candidatos.push(valor);
+        }
+      } catch {
+        candidatos.push(valor);
+      }
+    }
+  }
+
+  candidatos.push(
+    linha?.link_requisito,
+    linha?.link,
+    linha?.url_curso,
+    linha?.link_curso,
+    linha?.url
+  );
+
+  return [
+    ...new Set(
+      candidatos
+        .map(normalizarUrlCurso)
+        .filter(Boolean)
+    ),
+  ];
+}
+
+function obterNomePlataformaCurso(url) {
+  try {
+    const dominio =
+      new URL(url)
+        .hostname
+        .replace(/^www\./, "")
+        .toLowerCase();
+
+    if (
+      dominio.includes("linkedin.com")
+    ) {
+      return "LinkedIn Learning";
+    }
+
+    if (
+      dominio.includes("coursera.org")
+    ) {
+      return "Coursera";
+    }
+
+    if (
+      dominio.includes("udemy.com")
+    ) {
+      return "Udemy";
+    }
+
+    if (
+      dominio.includes("skillsbuild.org")
+    ) {
+      return "IBM SkillsBuild";
+    }
+
+    if (
+      dominio.includes("microsoft.com") ||
+      dominio.includes("learn.microsoft")
+    ) {
+      return "Microsoft Learn";
+    }
+
+    if (
+      dominio.includes("cloudskillsboost.google")
+    ) {
+      return "Google Cloud Skills Boost";
+    }
+
+    if (
+      dominio.includes("aws.amazon.com")
+    ) {
+      return "AWS Training";
+    }
+
+    if (
+      dominio.includes("youtube.com") ||
+      dominio.includes("youtu.be")
+    ) {
+      return "YouTube";
+    }
+
+    return dominio;
+  } catch {
+    return "curso recomendado";
+  }
 }
 
 function candidaturaFinalizada(item) {
@@ -358,14 +513,19 @@ function BadgeDetailPage() {
           linha.titulo ||
           linha.nome_requisito;
 
-        const requisitoExiste =
-          badgeAgrupado.requisitos.some(
+        const linksLinha =
+          extrairLinksRequisito(
+            linha
+          );
+
+        const requisitoExistente =
+          badgeAgrupado.requisitos.find(
             (requisito) =>
               String(requisito.id) ===
               String(idRequisito)
           );
 
-        if (!requisitoExiste) {
+        if (!requisitoExistente) {
           badgeAgrupado.requisitos.push({
             id:
               idRequisito ||
@@ -380,11 +540,39 @@ function BadgeDetailPage() {
               linha.descricao_requisito ||
               "",
 
+            /*
+            * Guarda todos os cursos associados
+            * ao requisito.
+            */
+            links:
+              linksLinha,
+
+            /*
+            * Mantém este campo para
+            * compatibilidade com outras páginas.
+            */
             link:
-              linha.link_requisito ||
-              linha.link ||
-              "",
+              linksLinha[0] || "",
           });
+        } else {
+          /*
+          * Caso o mesmo requisito apareça em
+          * várias linhas, junta todos os links
+          * sem repetir endereços.
+          */
+          requisitoExistente.links = [
+            ...new Set([
+              ...(
+                requisitoExistente.links ||
+                []
+              ),
+              ...linksLinha,
+            ]),
+          ];
+
+          requisitoExistente.link =
+            requisitoExistente.links[0] ||
+            "";
         }
       }
     });
@@ -2223,40 +2411,136 @@ function NivelSelector({ nivelAtual }) {
   );
 }
 
-function RequisitoRow({ req, defaultOpen }) {
-  const [open, setOpen] = useState(defaultOpen || false);
+function RequisitoRow({
+  req,
+  defaultOpen,
+}) {
+  const [open, setOpen] =
+    useState(
+      defaultOpen || false
+    );
+
+  const links = [
+    ...new Set(
+      (
+        Array.isArray(req?.links)
+          ? req.links
+          : req?.link
+            ? [req.link]
+            : []
+      )
+        .map(normalizarUrlCurso)
+        .filter(Boolean)
+    ),
+  ];
 
   return (
     <div style={requisitoCard}>
-      <div style={requisitoHeader} onClick={() => setOpen((v) => !v)}>
+      <div
+        style={requisitoHeader}
+        onClick={() =>
+          setOpen((valor) => !valor)
+        }
+      >
         <div>
-          <span style={{ fontWeight: 600, color: "#111827" }}>
+          <span
+            style={{
+              fontWeight: 600,
+              color: "#111827",
+            }}
+          >
             Requisito {req.id}
           </span>
+
           {" - "}
-          <span style={{ color: "#4470AF", fontWeight: 500 }}>
+
+          <span
+            style={{
+              color: "#4470AF",
+              fontWeight: 500,
+            }}
+          >
             {req.titulo}
           </span>
         </div>
 
         {open ? (
-          <BiChevronUp size={22} color="#6b7280" />
+          <BiChevronUp
+            size={22}
+            color="#6b7280"
+          />
         ) : (
-          <BiChevronDown size={22} color="#6b7280" />
+          <BiChevronDown
+            size={22}
+            color="#6b7280"
+          />
         )}
       </div>
 
       {open && (
         <div style={requisitoBody}>
-          <span style={{ fontWeight: 600 }}>{req.id}</span>
-          {" - "}
-            {req.descricao || "Sem descrição."}
+          <div>
+            <span
+              style={{
+                fontWeight: 600,
+              }}
+            >
+              {req.id}
+            </span>
 
-          {req.link && (
-            <div style={{ marginTop: 4 }}>
-              <a href={req.link} target="_blank" rel="noreferrer" style={{ color: "#4470AF", fontSize: 13 }}>
-                {req.link}
-              </a>
+            {" - "}
+
+            {req.descricao ||
+              "Sem descrição."}
+          </div>
+
+          {links.length > 0 && (
+            <div style={cursosRequisitoBox}>
+              <div
+                style={
+                  cursosRequisitoTitulo
+                }
+              >
+                Formação recomendada
+              </div>
+
+              <div
+                style={
+                  cursosRequisitoLista
+                }
+              >
+                {links.map(
+                  (link, index) => {
+                    const plataforma =
+                      obterNomePlataformaCurso(
+                        link
+                      );
+
+                    return (
+                      <a
+                        key={`${link}-${index}`}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={
+                          cursoRequisitoLink
+                        }
+                      >
+                        <HiOutlineExternalLink
+                          size={16}
+                        />
+
+                        <span>
+                          Abrir curso
+                          {plataforma
+                            ? ` em ${plataforma}`
+                            : ""}
+                        </span>
+                      </a>
+                    );
+                  }
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -2606,6 +2890,40 @@ const statusBar = {
   fontSize: 12,
   color: "#3b4a60",
   background: "#fbfdff",
+};
+
+const cursosRequisitoBox = {
+  marginTop: 14,
+  paddingTop: 12,
+  borderTop: "1px solid #e5e7eb",
+};
+
+const cursosRequisitoTitulo = {
+  color: "#111827",
+  fontSize: 12,
+  fontWeight: 700,
+  marginBottom: 8,
+};
+
+const cursosRequisitoLista = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+};
+
+const cursoRequisitoLink = {
+  minHeight: 36,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  padding: "8px 12px",
+  borderRadius: 8,
+  border: "1px solid #bfdbfe",
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  fontSize: 12,
+  fontWeight: 700,
+  textDecoration: "none",
 };
 
 export default BadgeDetailPage;
