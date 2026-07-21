@@ -96,6 +96,20 @@ function WelcomeProfilePhoto({ user, size = 72 }) {
   );
 }
 
+function obterSaudacao() {
+  const hora = new Date().getHours();
+
+  if (hora >= 5 && hora < 12) {
+    return "Bom dia";
+  }
+
+  if (hora >= 12 && hora < 20) {
+    return "Boa tarde";
+  }
+
+  return "Boa noite";
+}
+
 function PaginaPrincipalSll() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -324,7 +338,9 @@ function PaginaPrincipalSll() {
               >
                 <div>
                   <h2 style={welcomeTitle}>
-                    Bom dia, {resumo.nome_completo}!
+                    {obterSaudacao()},{" "}
+                    {resumo.nome_completo}
+                    !
                   </h2>
 
                   <div

@@ -72,14 +72,14 @@ function Header() {
     navigate("/login", { replace: true });
   };
 
-  const obterSaudacao = () => {
+  /*const obterSaudacao = () => {
     const hora = new Date().getHours();
     if (hora >= 5 && hora < 12) return "Bom dia";
     if (hora >= 12 && hora < 20) return "Boa tarde";
     return "Boa noite";
-  };
+  };*/
 
-  const primeiroNome = user?.nome_completo ? user.nome_completo.split(" ")[0] : "Utilizador";
+  /*const primeiroNome = user?.nome_completo ? user.nome_completo.split(" ")[0] : "Utilizador";*/
 
   return (
     <header className="app-header" style={headerStyle}>
@@ -92,12 +92,12 @@ function Header() {
       </Navbar.Brand>
 
       {/* Mensagem de Boas-Vindas (Esconde em ecrãs muito pequenos via CSS da classe se necessário, ou fica inline) */}
-      <div className="d-none d-md-flex align-items-center gap-2 ms-3" style={{ fontFamily: 'system-ui, sans-serif' }}>
+      {/*<div className="d-none d-md-flex align-items-center gap-2 ms-3" style={{ fontFamily: 'system-ui, sans-serif' }}>
         <BiStar size={18} color="#0d6efd" style={{ opacity: 0.8 }} />
         <span style={{ fontSize: '14px', color: '#495057', fontWeight: '500' }}>
           {obterSaudacao()}, <strong style={{ color: '#0d6efd' }}>{primeiroNome}</strong>!
         </span>
-      </div>
+      </div>*/}
 
       {/* Barra de Pesquisa */}
       <div className="app-header-search" style={searchContainer}>

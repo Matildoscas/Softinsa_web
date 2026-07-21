@@ -191,6 +191,20 @@ function WelcomeProfilePhoto({ user, size = 72 }) {
   );
 }
 
+function obterSaudacao() {
+  const hora = new Date().getHours();
+
+  if (hora >= 5 && hora < 12) {
+    return "Bom dia";
+  }
+
+  if (hora >= 12 && hora < 20) {
+    return "Boa tarde";
+  }
+
+  return "Boa noite";
+}
+
 // ─── MAIN PAGE ─────────────────────────────────────────────
 
 function PaginaPrincipalAdmin() {
@@ -530,7 +544,9 @@ function PaginaPrincipalAdmin() {
                       marginBottom: 16,
                     }}
                   >
-                    Bom dia, {adminResumo.nome_completo}!
+                    {obterSaudacao()},{" "}
+                    {adminResumo.nome_completo}
+                    !
                   </h5>
 
                   <div

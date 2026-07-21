@@ -312,6 +312,20 @@ function WelcomeProfilePhoto({ user, size = 72 }) {
   );
 }
 
+function obterSaudacao() {
+  const hora = new Date().getHours();
+
+  if (hora >= 5 && hora < 12) {
+    return "Bom dia";
+  }
+
+  if (hora >= 12 && hora < 20) {
+    return "Boa tarde";
+  }
+
+  return "Boa noite";
+}
+
 function DashboardConsultor() {
     const navigate = useNavigate();
     
@@ -832,8 +846,17 @@ function DashboardConsultor() {
                             "
                         >
                             <div>
-                                <h5 className="fw-semibold mb-3" style={{ textAlign: 'left' }}>
-                                    Bom dia, {user?.nome_completo || user?.nome || "Utilizador"}!
+                                <h5
+                                className="fw-semibold mb-3"
+                                style={{
+                                    textAlign: "left",
+                                }}
+                                >
+                                {obterSaudacao()},{" "}
+                                {user?.nome_completo ||
+                                    user?.nome ||
+                                    "Utilizador"}
+                                !
                                 </h5>
                                 <div className="consultor-welcome-stats d-flex gap-2">
                                     <div style={cardStyleBase}>
