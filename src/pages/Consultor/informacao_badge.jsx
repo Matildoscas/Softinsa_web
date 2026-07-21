@@ -88,59 +88,134 @@ function normalizarUrlCurso(valor) {
 }
 
 function extrairLinksRequisito(linha) {
-  const candidatos = [];
+  const encontrados = [];
 
-  /*
-   * O PostgreSQL pode devolver o json_agg
-   * diretamente como array.
-   */
-  if (Array.isArray(linha?.links)) {
-    candidatos.push(...linha.links);
-  }
+  function adicionarLink(valor) {
+    if (!valor) {
+      return;
+    }
 
-  /*
-   * Também aceita o array caso chegue
-   * convertido numa string JSON.
-   */
-  if (
-    typeof linha?.links === "string"
-  ) {
-    const valor =
-      linha.links.trim();
+    /*
+     * Lista de links.
+     */
+    if (Array.isArray(valor)) {
+      valor.forEach(adicionarLink);
+      return;
+    }
 
-    if (valor) {
+    /*
+     * Objeto devolvido pela API:
+     *
+     * {
+     *   url: "...",
+     *   nome_link: "..."
+     * }
+     */
+    if (
+      typeof valor === "object"
+    ) {
+      const url = normalizarUrlCurso(
+        valor.url ||
+        valor.link ||
+        valor.href ||
+        valor.link_requisito ||
+        valor.url_curso ||
+        valor.link_curso
+      );
+
+      if (!url) {
+        return;
+      }
+
+      encontrados.push({
+        url,
+
+        nome:
+          valor.nome_link ||
+          valor.nome_curso ||
+          valor.titulo ||
+          valor.nome ||
+          valor.descricao ||
+          "",
+      });
+
+      return;
+    }
+
+    /*
+     * String simples ou JSON convertido
+     * para string.
+     */
+    const texto =
+      String(valor).trim();
+
+    if (
+      !texto ||
+      texto.toLowerCase() === "null"
+    ) {
+      return;
+    }
+
+    /*
+     * Pode chegar assim:
+     *
+     * '[{"url":"https://..."}]'
+     */
+    if (
+      texto.startsWith("[") ||
+      texto.startsWith("{")
+    ) {
       try {
         const convertido =
-          JSON.parse(valor);
+          JSON.parse(texto);
 
-        if (Array.isArray(convertido)) {
-          candidatos.push(
-            ...convertido
-          );
-        } else {
-          candidatos.push(valor);
-        }
+        adicionarLink(convertido);
+        return;
       } catch {
-        candidatos.push(valor);
+        /*
+         * Se não for JSON válido,
+         * continua como URL normal.
+         */
       }
+    }
+
+    const url =
+      normalizarUrlCurso(texto);
+
+    if (url) {
+      encontrados.push({
+        url,
+        nome: "",
+      });
     }
   }
 
-  candidatos.push(
-    linha?.link_requisito,
-    linha?.link,
-    linha?.url_curso,
-    linha?.link_curso,
-    linha?.url
+  adicionarLink(linha?.links);
+  adicionarLink(linha?.links_requisito);
+  adicionarLink(linha?.cursos);
+  adicionarLink(linha?.formacoes);
+
+  adicionarLink(
+    linha?.link_requisito
   );
 
-  return [
-    ...new Set(
-      candidatos
-        .map(normalizarUrlCurso)
-        .filter(Boolean)
-    ),
-  ];
+  adicionarLink(linha?.link);
+  adicionarLink(linha?.url);
+  adicionarLink(linha?.url_curso);
+  adicionarLink(linha?.link_curso);
+
+  /*
+   * Elimina links repetidos através
+   * do respetivo URL.
+   */
+  return Array.from(
+    new Map(
+      encontrados.map((item) => [
+        item.url,
+        item,
+      ])
+    ).values()
+  );
 }
 
 function obterNomePlataformaCurso(url) {
@@ -527,9 +602,17 @@ function BadgeDetailPage() {
 
         if (!requisitoExistente) {
           badgeAgrupado.requisitos.push({
+            /*
+            * ID original da base de dados.
+            * Continua a ser usado internamente,
+            * mas não será apresentado ao utilizador.
+            */
             id:
               idRequisito ||
-              "Requisito",
+              `requisito-${badgeAgrupado.requisitos.length + 1}`,
+
+            idOriginal:
+              idRequisito || null,
 
             titulo:
               linha.nome_requisito ||
@@ -538,48 +621,95 @@ function BadgeDetailPage() {
 
             descricao:
               linha.descricao_requisito ||
+              linha.descricao ||
               "",
 
-            /*
-            * Guarda todos os cursos associados
-            * ao requisito.
-            */
             links:
               linksLinha,
 
-            /*
-            * Mantém este campo para
-            * compatibilidade com outras páginas.
-            */
             link:
-              linksLinha[0] || "",
+              linksLinha[0]?.url || "",
           });
         } else {
-          /*
-          * Caso o mesmo requisito apareça em
-          * várias linhas, junta todos os links
-          * sem repetir endereços.
-          */
-          requisitoExistente.links = [
-            ...new Set([
-              ...(
-                requisitoExistente.links ||
-                []
-              ),
-              ...linksLinha,
-            ]),
+          const linksCombinados = [
+            ...(
+              requisitoExistente.links ||
+              []
+            ),
+            ...linksLinha,
           ];
 
+          requisitoExistente.links =
+            Array.from(
+              new Map(
+                linksCombinados.map(
+                  (item) => [
+                    item.url,
+                    item,
+                  ]
+                )
+              ).values()
+            );
+
           requisitoExistente.link =
-            requisitoExistente.links[0] ||
+            requisitoExistente
+              .links[0]?.url ||
             "";
         }
       }
     });
 
-    return Array.from(
-      mapa.values()
+    const badgesAgrupados =
+      Array.from(
+        mapa.values()
+      );
+
+    badgesAgrupados.forEach(
+      (badgeAgrupado) => {
+        const nivel =
+          obterNivelBadge(
+            badgeAgrupado
+          ) || "-";
+
+        /*
+        * Ordena pelos IDs reais, para manter
+        * a sequência definida na base de dados.
+        */
+        badgeAgrupado.requisitos.sort(
+          (a, b) => {
+            const idA =
+              Number(a.idOriginal);
+
+            const idB =
+              Number(b.idOriginal);
+
+            if (
+              Number.isFinite(idA) &&
+              Number.isFinite(idB)
+            ) {
+              return idA - idB;
+            }
+
+            return 0;
+          }
+        );
+
+        badgeAgrupado.requisitos =
+          badgeAgrupado.requisitos.map(
+            (requisito, index) => ({
+              ...requisito,
+
+              numero:
+                index + 1,
+
+              codigo:
+                `${nivel}${index + 1}`,
+            })
+          );
+      }
     );
+
+    return badgesAgrupados;
   };
 
   useEffect(() => {
@@ -656,6 +786,35 @@ function BadgeDetailPage() {
             utilizadorRes?.data || userData
           );
         const dados = Array.isArray(todosRes.data) ? todosRes.data : [];
+        console.log(
+          "DADOS RAW DOS REQUISITOS:",
+          dados
+            .filter(
+              (linha) =>
+                Number(
+                  linha.id_badge_modelo ||
+                  linha.id
+                ) === Number(id)
+            )
+            .map((linha) => ({
+              id_requisito:
+                linha.id_requisito ||
+                linha.id_requisitos,
+
+              titulo:
+                linha.nome_requisito ||
+                linha.titulo,
+
+              links:
+                linha.links,
+
+              link_requisito:
+                linha.link_requisito,
+
+              url:
+                linha.url,
+            }))
+        );
         const badgesAgrupados = removerDuplicadosComRequisitos(dados);
 
         const badgeSelecionado = badgesAgrupados.find(
@@ -2420,26 +2579,79 @@ function RequisitoRow({
       defaultOpen || false
     );
 
-  const links = [
-    ...new Set(
-      (
-        Array.isArray(req?.links)
-          ? req.links
-          : req?.link
-            ? [req.link]
-            : []
-      )
-        .map(normalizarUrlCurso)
-        .filter(Boolean)
-    ),
-  ];
+  const codigo =
+    req?.codigo ||
+    req?.id ||
+    "—";
+
+  const links =
+    Array.isArray(req?.links)
+      ? req.links
+          .map((item) => {
+            /*
+             * Compatibilidade com dados antigos,
+             * onde o link podia ser uma String.
+             */
+            if (
+              typeof item === "string"
+            ) {
+              const url =
+                normalizarUrlCurso(
+                  item
+                );
+
+              return url
+                ? {
+                    url,
+                    nome: "",
+                  }
+                : null;
+            }
+
+            if (
+              item &&
+              typeof item === "object"
+            ) {
+              const url =
+                normalizarUrlCurso(
+                  item.url ||
+                  item.link ||
+                  item.href
+                );
+
+              return url
+                ? {
+                    ...item,
+                    url,
+                  }
+                : null;
+            }
+
+            return null;
+          })
+          .filter(Boolean)
+      : req?.link
+        ? [
+            {
+              url:
+                normalizarUrlCurso(
+                  req.link
+                ),
+              nome: "",
+            },
+          ].filter(
+            (item) => item.url
+          )
+        : [];
 
   return (
     <div style={requisitoCard}>
       <div
         style={requisitoHeader}
         onClick={() =>
-          setOpen((valor) => !valor)
+          setOpen(
+            (valor) => !valor
+          )
         }
       >
         <div>
@@ -2449,7 +2661,7 @@ function RequisitoRow({
               color: "#111827",
             }}
           >
-            Requisito {req.id}
+            Requisito {codigo}
           </span>
 
           {" - "}
@@ -2485,7 +2697,7 @@ function RequisitoRow({
                 fontWeight: 600,
               }}
             >
-              {req.id}
+              {codigo}
             </span>
 
             {" - "}
@@ -2501,7 +2713,7 @@ function RequisitoRow({
                   cursosRequisitoTitulo
                 }
               >
-                Formação recomendada
+                Cursos e formação
               </div>
 
               <div
@@ -2510,31 +2722,41 @@ function RequisitoRow({
                 }
               >
                 {links.map(
-                  (link, index) => {
+                  (item, index) => {
                     const plataforma =
                       obterNomePlataformaCurso(
-                        link
+                        item.url
                       );
+
+                    const textoLink =
+                      item.nome ||
+                      `Abrir curso em ${plataforma}`;
 
                     return (
                       <a
-                        key={`${link}-${index}`}
-                        href={link}
+                        key={`${item.url}-${index}`}
+                        href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={
                           cursoRequisitoLink
                         }
+                        onClick={(
+                          event
+                        ) => {
+                          /*
+                           * Impede que o clique no
+                           * curso feche o requisito.
+                           */
+                          event.stopPropagation();
+                        }}
                       >
                         <HiOutlineExternalLink
                           size={16}
                         />
 
                         <span>
-                          Abrir curso
-                          {plataforma
-                            ? ` em ${plataforma}`
-                            : ""}
+                          {textoLink}
                         </span>
                       </a>
                     );
