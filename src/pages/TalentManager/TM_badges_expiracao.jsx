@@ -159,8 +159,6 @@ function BadgesExpiracaoTm() {
 
   const [talentManagerRh, setTalentManagerRh] = useState(null);
 
-  const [especializacao, setEspecializacao] = useState("");
-
   const [pesquisa, setPesquisa] = useState("");
 
   const [pesquisaConsultor, setPesquisaConsultor] = useState("");
@@ -212,8 +210,6 @@ function BadgesExpiracaoTm() {
       const response = await api.get(`/tm/${idUtilizador}/expiracao?dias=90`);
 
       const dados = response.data || {};
-
-      setEspecializacao(dados.talentManager?.especializacao_tm || "");
 
       setPermissoes({
         pode_notificar_consultor: Boolean(
@@ -397,12 +393,6 @@ function BadgesExpiracaoTm() {
               Total de {badgesFiltrados.length}{" "}
               {badgesFiltrados.length === 1 ? "badge" : "badges"}
             </div>
-
-            {especializacao && (
-              <div style={especializacaoTexto}>
-                Especialização: <strong>{especializacao}</strong>
-              </div>
-            )}
 
             {permissoes.pode_notificar_tm_rh && talentManagerRh && (
               <div style={responsavelRh}>
